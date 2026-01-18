@@ -13,7 +13,7 @@ Based on Google's official Android architecture guidance with modern Jetpack Com
 6. [Presentation Layer](#presentation-layer)
 7. [UI Layer](#ui-layer)
 8. [Navigation](#navigation)
-9. [Data Flow Example](#data-flow-example)
+9. [Complete Architecture Flow](#complete-architecture-flow)
 
 ## Architecture Overview
 
@@ -1008,8 +1008,6 @@ fun NavGraphBuilder.authGraph(
     }
 }
 ```
-
-## Navigation Patterns Summary
 
 ### When to Use Navigation3:
 - **All new Compose projects should use Navigation3** as it's the modern navigation API
