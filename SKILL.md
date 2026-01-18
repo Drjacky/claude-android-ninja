@@ -143,27 +143,6 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 └───────────────────────────────────────────────────────────────────────┘
 ```
 
-## Module Structure
-
-```
-app/                    # App module - navigation, DI setup, app entry point
-feature/
-  ├── feature-auth/     # Authentication feature
-  ├── feature-home/     # Home screen feature
-  ├── feature-profile/  # User profile feature
-  ├── feature-settings/ # App settings feature
-  └── feature-<name>/   # Additional features...
-core/
-  ├── domain/           # Pure Kotlin: Use Cases, Repository interfaces, Domain models
-  ├── data/             # Data layer: Repository impl, DataSources, Data models
-  ├── ui/               # Shared UI components, themes, base ViewModels
-  ├── network/          # Retrofit, API models, network utilities
-  ├── database/         # Room DAOs, entities, migrations
-  ├── datastore/        # Preferences storage
-  ├── common/           # Shared utilities, extensions
-  └── testing/          # Test utilities, test doubles
-```
-
 ## Dependency Flow Rules
 
 ```
