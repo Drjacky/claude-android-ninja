@@ -1,5 +1,3 @@
-Based on our comprehensive SKILL.md, here's the updated Architecture Guide in our style:
-
 # Architecture Guide
 
 Based on Google's official Android architecture guidance with modern Jetpack Compose, Navigation3, and modular best practices.
