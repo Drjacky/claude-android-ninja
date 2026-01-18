@@ -1,6 +1,7 @@
 # Testing Patterns
 
-Testing approach following the multi-module architecture with test doubles strategy (no mocking libraries).
+Testing approach following the multi-module architecture with test doubles strategy (no mocking libraries)
+and Google Truth for assertions.
 
 ## Table of Contents
 1. [Testing Philosophy](#testing-philosophy)
@@ -15,10 +16,15 @@ Testing approach following the multi-module architecture with test doubles strat
 
 ### No Mocking Libraries
 
-Our architecture does NOT use mocking libraries (Mockito, MockK). Instead:
+Our architecture avoids mocking libraries in feature and core modules, using test doubles instead.
+We make an exception in the app module for navigation testing, where MockK is used to mock framework classes like NavController.
+- **Feature modules**: No mocking libraries - use test doubles that implement interfaces
+- **Core modules**: No mocking libraries - use test doubles and in-memory databases
+- **App module**: **Use MockK** for navigation testing only (NavController, NavHostController)
 - Create test doubles that implement the same interfaces
 - Test doubles provide realistic implementations with test hooks
 - Results in less brittle tests that exercise more production code
+- Use Google Truth for fluent, readable assertions
 
 ### Test Types by Module
 
@@ -152,6 +158,8 @@ class TestLoginUseCase : LoginUseCase {
 
 ```kotlin
 // feature-auth/src/test/kotlin/com/example/feature/auth/AuthViewModelTest.kt
+import com.google.common.truth.Truth.assertThat
+
 class AuthViewModelTest {
 
     @get:Rule
@@ -179,7 +187,7 @@ class AuthViewModelTest {
     fun `initial state is LoginForm`() = runTest {
         // Assert
         val state = viewModel.uiState.value
-        assertTrue(state is AuthUiState.LoginForm)
+        assertThat(state).isInstanceOf(AuthUiState.LoginForm::class.java)
     }
 
     @Test
@@ -192,7 +200,7 @@ class AuthViewModelTest {
 
         // Assert
         val state = viewModel.uiState.value as AuthUiState.LoginForm
-        assertEquals(testEmail, state.email)
+        assertThat(state.email).isEqualTo(testEmail)
     }
 
     @Test
@@ -209,14 +217,14 @@ class AuthViewModelTest {
 
         // Assert - Check loading state
         val loadingState = viewModel.uiState.value as AuthUiState.LoginForm
-        assertTrue(loadingState.isLoading)
+        assertThat(loadingState.isLoading).isTrue()
 
         // Wait for async operation
         advanceUntilIdle()
 
         // Assert - Check success state
         val successState = viewModel.uiState.value
-        assertTrue(successState is AuthUiState.Success)
+        assertThat(successState).isInstanceOf(AuthUiState.Success::class.java)
     }
 
     @Test
@@ -233,7 +241,7 @@ class AuthViewModelTest {
 
         // Assert
         val state = viewModel.uiState.value
-        assertTrue(state is AuthUiState.Error)
+        assertThat(state).isInstanceOf(AuthUiState.Error::class.java)
     }
 
     @Test
@@ -243,7 +251,7 @@ class AuthViewModelTest {
 
         // Assert
         val state = viewModel.uiState.value
-        assertTrue(state is AuthUiState.RegisterForm)
+        assertThat(state).isInstanceOf(AuthUiState.RegisterForm::class.java)
     }
 
     @Test
@@ -253,7 +261,7 @@ class AuthViewModelTest {
 
         // Assert
         val state = viewModel.uiState.value
-        assertTrue(state is AuthUiState.ForgotPasswordForm)
+        assertThat(state).isInstanceOf(AuthUiState.ForgotPasswordForm::class.java)
     }
 
     @Test
@@ -266,18 +274,18 @@ class AuthViewModelTest {
         advanceUntilIdle()
 
         // Verify we're in error state
-        assertTrue(viewModel.uiState.value is AuthUiState.Error)
+        assertThat(viewModel.uiState.value).isInstanceOf(AuthUiState.Error::class.java)
 
         // Act
         viewModel.onAction(AuthAction.Retry)
 
         // Assert
         val state = viewModel.uiState.value
-        assertTrue(state is AuthUiState.LoginForm)
+        assertThat(state).isInstanceOf(AuthUiState.LoginForm::class.java)
     }
 
     @Test
-    fun `when ClearError action called, error is cleared`() = runTest {
+    fun `when ClearError action called, error is cleared and form is reset`() = runTest {
         // Arrange - cause an error
         testLoginUseCase.shouldSucceed = false
         viewModel.onAction(AuthAction.EmailChanged("test@example.com"))
@@ -290,10 +298,28 @@ class AuthViewModelTest {
 
         // Assert
         val state = viewModel.uiState.value
-        assertTrue(state is AuthUiState.LoginForm)
+        assertThat(state).isInstanceOf(AuthUiState.LoginForm::class.java)
         val loginForm = state as AuthUiState.LoginForm
-        assertEquals("", loginForm.email)
-        assertEquals("", loginForm.password)
+        assertThat(loginForm.email).isEmpty()
+        assertThat(loginForm.password).isEmpty()
+        assertThat(loginForm.emailError).isNull()
+        assertThat(loginForm.passwordError).isNull()
+    }
+
+    @Test
+    fun `when login form has validation errors, error messages are set`() = runTest {
+        // Arrange
+        viewModel.onAction(AuthAction.EmailChanged("invalid-email"))
+        viewModel.onAction(AuthAction.PasswordChanged(""))
+
+        // Act
+        viewModel.onAction(AuthAction.LoginClicked)
+        advanceUntilIdle()
+
+        // Assert
+        val state = viewModel.uiState.value as AuthUiState.LoginForm
+        assertThat(state.emailError).isNotNull()
+        assertThat(state.passwordError).isNotNull()
     }
 }
 ```
@@ -316,14 +342,17 @@ class TestDispatcherRule(
 }
 ```
 
-### Testing StateFlow with Turbine
+### Testing StateFlow with Turbine and Truth
 
 ```kotlin
+import com.google.common.truth.Truth.assertThat
+import app.cash.turbine.test
+
 @Test
 fun `uiState emits correct states during login flow`() = runTest {
     viewModel.uiState.test {
         // Initial state
-        assertTrue(awaitItem() is AuthUiState.LoginForm)
+        assertThat(awaitItem()).isInstanceOf(AuthUiState.LoginForm::class.java)
 
         // Trigger login
         viewModel.onAction(AuthAction.EmailChanged("test@example.com"))
@@ -331,12 +360,40 @@ fun `uiState emits correct states during login flow`() = runTest {
         viewModel.onAction(AuthAction.LoginClicked)
 
         // Should emit Loading state
-        val loadingState = awaitItem() as AuthUiState.LoginForm
-        assertTrue(loadingState.isLoading)
+        val loadingState = awaitItem()
+        assertThat(loadingState).isInstanceOf(AuthUiState.LoginForm::class.java)
+        assertThat((loadingState as AuthUiState.LoginForm).isLoading).isTrue()
 
         // Should emit Success state
         val successState = awaitItem()
-        assertTrue(successState is AuthUiState.Success)
+        assertThat(successState).isInstanceOf(AuthUiState.Success::class.java)
+        assertThat((successState as AuthUiState.Success).user.email).isEqualTo("test@example.com")
+
+        cancelAndIgnoreRemainingEvents()
+    }
+}
+
+@Test
+fun `uiState emits Loading, Error when login fails`() = runTest {
+    testLoginUseCase.shouldSucceed = false
+    
+    viewModel.uiState.test {
+        // Skip initial state
+        skipItems(1)
+        
+        viewModel.onAction(AuthAction.EmailChanged("test@example.com"))
+        viewModel.onAction(AuthAction.PasswordChanged("wrong"))
+        viewModel.onAction(AuthAction.LoginClicked)
+
+        // Should emit Loading state
+        val loadingState = awaitItem() as AuthUiState.LoginForm
+        assertThat(loadingState.isLoading).isTrue()
+
+        // Should emit Error state
+        val errorState = awaitItem()
+        assertThat(errorState).isInstanceOf(AuthUiState.Error::class.java)
+        assertThat((errorState as AuthUiState.Error).message).isNotEmpty()
+        assertThat(errorState.canRetry).isTrue()
 
         cancelAndIgnoreRemainingEvents()
     }
@@ -345,10 +402,12 @@ fun `uiState emits correct states during login flow`() = runTest {
 
 ## Repository Tests
 
-### Testing AuthRepository Implementation
+### Testing AuthRepository Implementation with Truth
 
 ```kotlin
 // core/data/src/test/kotlin/com/example/data/auth/AuthRepositoryImplTest.kt
+import com.google.common.truth.Truth.assertThat
+
 class AuthRepositoryImplTest {
 
     private lateinit var testLocalDataSource: TestAuthLocalDataSource
@@ -381,15 +440,30 @@ class AuthRepositoryImplTest {
         val result = repository.login(testEmail, testPassword)
 
         // Assert
-        assertTrue(result.isSuccess)
-        assertEquals(expectedToken.token, result.getOrNull()?.value)
+        assertThat(result.isSuccess).isTrue()
+        assertThat(result.getOrNull()?.value).isEqualTo(expectedToken.token)
         
         // Verify local storage was updated
         val savedToken = testLocalDataSource.getAuthToken()
-        assertEquals(expectedToken.token, savedToken)
+        assertThat(savedToken).isEqualTo(expectedToken.token)
         
         val savedUser = testLocalDataSource.getUser()
-        assertEquals(expectedToken.user.email, savedUser?.email)
+        assertThat(savedUser?.email).isEqualTo(expectedToken.user.email)
+    }
+
+    @Test
+    fun `login failure returns error result`() = runTest {
+        // Arrange
+        val testEmail = "test@example.com"
+        val testPassword = "wrong-password"
+        testRemoteDataSource.shouldFailLogin = true
+
+        // Act
+        val result = repository.login(testEmail, testPassword)
+
+        // Assert
+        assertThat(result.isFailure).isTrue()
+        assertThat(result.exceptionOrNull()?.message).contains("Invalid")
     }
 
     @Test
@@ -401,8 +475,9 @@ class AuthRepositoryImplTest {
         // Act & Assert
         repository.observeAuthState().test {
             val authState = awaitItem()
-            assertTrue(authState is AuthState.Authenticated)
-            assertEquals("1", (authState as AuthState.Authenticated).user.id)
+            assertThat(authState).isInstanceOf(AuthState.Authenticated::class.java)
+            assertThat((authState as AuthState.Authenticated).user.id).isEqualTo("1")
+            assertThat(authState.user.email).isEqualTo("test@example.com")
             
             cancelAndIgnoreRemainingEvents()
         }
@@ -413,20 +488,56 @@ class AuthRepositoryImplTest {
         // Act & Assert
         repository.observeAuthState().test {
             val authState = awaitItem()
-            assertTrue(authState is AuthState.Unauthenticated)
+            assertThat(authState).isInstanceOf(AuthState.Unauthenticated::class.java)
             
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `observeAuthState emits Error when local data source fails`() = runTest {
+        // Arrange
+        testLocalDataSource.shouldFail = true
+
+        // Act & Assert
+        repository.observeAuthState().test {
+            val authState = awaitItem()
+            assertThat(authState).isInstanceOf(AuthState.Error::class.java)
+            assertThat((authState as AuthState.Error).message).isNotEmpty()
+            
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `register success saves user to local storage`() = runTest {
+        // Arrange
+        val testUser = User("1", "test@example.com", "Test User")
+        testRemoteDataSource.setRegisterResponse(Unit)
+
+        // Act
+        val result = repository.register(testUser)
+
+        // Assert
+        assertThat(result.isSuccess).isTrue()
+        val savedUser = testLocalDataSource.getUser()
+        assertThat(savedUser?.email).isEqualTo(testUser.email)
+        assertThat(savedUser?.name).isEqualTo(testUser.name)
     }
 }
 ```
 
 ## Navigation Tests
 
-### Testing Navigator Implementations in App Module
+### Testing Navigator Implementations in App Module with Truth
 
 ```kotlin
 // app/src/test/kotlin/com/example/navigation/AppNavigatorsTest.kt
+import com.google.common.truth.Truth.assertThat
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+
 class AppNavigatorsTest {
 
     private lateinit var mockNavController: NavHostController
@@ -434,10 +545,14 @@ class AppNavigatorsTest {
     @Before
     fun setup() {
         mockNavController = mockk(relaxed = true)
+        // Mock current destination
+        every { mockNavController.currentDestination } returns mockk {
+            every { route } returns "auth"
+        }
     }
 
     @Test
-    fun `AuthNavigatorImpl navigates to home correctly`() {
+    fun `AuthNavigatorImpl navigates to home with correct pop behavior`() {
         // Arrange
         val authNavigator = createAuthNavigator(mockNavController)
 
@@ -445,46 +560,74 @@ class AppNavigatorsTest {
         authNavigator.navigateToHome()
 
         // Assert
-        verify { mockNavController.navigate("home") {
-            popUpTo("auth") { inclusive = true }
-        } }
+        verify { 
+            mockNavController.navigate(
+                match { it == "home" },
+                match { 
+                    it?.popUpTo?.route == "auth" && 
+                    it.popUpTo.inclusive == true 
+                }
+            ) 
+        }
     }
 
     @Test
-    fun `AuthNavigatorImpl navigates to register correctly`() {
+    fun `AuthNavigatorImpl navigation methods call correct routes`() {
         // Arrange
         val authNavigator = createAuthNavigator(mockNavController)
 
-        // Act
-        authNavigator.navigateToRegister()
+        // Test each navigation method
+        val testCases = listOf(
+            { authNavigator.navigateToRegister() } to "auth/register",
+            { authNavigator.navigateToForgotPassword() } to "auth/forgot_password",
+            { authNavigator.navigateToProfile("user123") } to "profile/user123",
+            { authNavigator.navigateToVerifyEmail("token123") } to "auth/verify/token123",
+            { authNavigator.navigateToResetPassword("reset123") } to "auth/reset/reset123"
+        )
 
-        // Assert
-        verify { mockNavController.navigate("auth/register") }
+        testCases.forEach { (action, expectedRoute) ->
+            // Act
+            action()
+
+            // Assert
+            verify { mockNavController.navigate(match { it == expectedRoute }, any()) }
+        }
     }
 
     @Test
-    fun `AuthNavigatorImpl navigates to profile with userId`() {
+    fun `TestAuthNavigator tracks all navigation events`() {
         // Arrange
-        val authNavigator = createAuthNavigator(mockNavController)
-        val testUserId = "user123"
+        val testNavigator = TestAuthNavigator()
 
         // Act
-        authNavigator.navigateToProfile(testUserId)
+        testNavigator.navigateToHome()
+        testNavigator.navigateToRegister()
+        testNavigator.navigateToProfile("user123")
+        testNavigator.navigateBack()
 
         // Assert
-        verify { mockNavController.navigate("profile/$testUserId") }
+        assertThat(testNavigator.navigationEvents).hasSize(4)
+        assertThat(testNavigator.navigationEvents[0]).isEqualTo("navigateToHome")
+        assertThat(testNavigator.navigationEvents[1]).isEqualTo("navigateToRegister")
+        assertThat(testNavigator.navigationEvents[2]).isEqualTo("navigateToProfile:user123")
+        assertThat(testNavigator.navigationEvents[3]).isEqualTo("navigateBack")
     }
 
     @Test
-    fun `AuthNavigatorImpl navigates back correctly`() {
+    fun `TestAuthNavigator clearEvents works correctly`() {
         // Arrange
-        val authNavigator = createAuthNavigator(mockNavController)
+        val testNavigator = TestAuthNavigator()
+        testNavigator.navigateToHome()
+        testNavigator.navigateToRegister()
+        
+        // Pre-condition
+        assertThat(testNavigator.navigationEvents).isNotEmpty()
 
         // Act
-        authNavigator.navigateBack()
+        testNavigator.clearEvents()
 
         // Assert
-        verify { mockNavController.popBackStack() }
+        assertThat(testNavigator.navigationEvents).isEmpty()
     }
 
     private fun createAuthNavigator(navController: NavHostController): AuthNavigator {
@@ -510,76 +653,27 @@ class AppNavigatorsTest {
 }
 ```
 
-### Testing Navigation in Feature Screens
-
-```kotlin
-// feature-auth/src/test/kotlin/com/example/feature/auth/LoginScreenTest.kt
-class LoginScreenTest {
-
-    private lateinit var testNavigator: TestAuthNavigator
-    private lateinit var testViewModel: AuthViewModel
-
-    @Before
-    fun setup() {
-        testNavigator = TestAuthNavigator()
-        testViewModel = AuthViewModel(
-            loginUseCase = TestLoginUseCase(),
-            registerUseCase = TestRegisterUseCase(),
-            resetPasswordUseCase = TestResetPasswordUseCase()
-        )
-    }
-
-    @Test
-    fun `when login successful, navigator is called`() = runTest {
-        // Arrange
-        testViewModel.onAction(AuthAction.EmailChanged("test@example.com"))
-        testViewModel.onAction(AuthAction.PasswordChanged("password123"))
-
-        // Act
-        testViewModel.onAction(AuthAction.LoginClicked)
-        advanceUntilIdle()
-
-        // In real test, this would be called by the screen composable
-        // when it observes AuthUiState.Success
-        testNavigator.navigateToMainApp()
-
-        // Assert
-        assertTrue(testNavigator.navigationEvents.contains("navigateToMainApp"))
-    }
-
-    @Test
-    fun `when register button clicked, navigator is called`() {
-        // Act
-        testNavigator.navigateToRegister()
-
-        // Assert
-        assertTrue(testNavigator.navigationEvents.contains("navigateToRegister"))
-    }
-
-    @Test
-    fun `when forgot password clicked, navigator is called`() {
-        // Act
-        testNavigator.navigateToForgotPassword()
-
-        // Assert
-        assertTrue(testNavigator.navigationEvents.contains("navigateToForgotPassword"))
-    }
-}
-```
-
 ## UI Tests
 
-### Compose UI Tests for Auth Screen
+### Compose UI Tests for Auth Screen with Truth
 
 ```kotlin
 // feature-auth/src/androidTest/kotlin/com/example/feature/auth/AuthScreenTest.kt
+import com.google.common.truth.Truth.assertThat
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+
 class AuthScreenTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
 
     @Test
-    fun `login screen shows email and password fields`() {
+    fun `login screen shows all required UI elements`() {
         composeTestRule.setContent {
             AppTheme {
                 LoginScreen(
@@ -591,17 +685,12 @@ class AuthScreenTest {
             }
         }
 
-        composeTestRule
-            .onNodeWithText("Email")
-            .assertIsDisplayed()
-
-        composeTestRule
-            .onNodeWithText("Password")
-            .assertIsDisplayed()
-
-        composeTestRule
-            .onNodeWithText("Login")
-            .assertIsDisplayed()
+        // Assert all UI elements are displayed
+        composeTestRule.onNodeWithText("Email").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Password").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Login").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Create Account").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Forgot Password?").assertIsDisplayed()
     }
 
     @Test
@@ -625,7 +714,7 @@ class AuthScreenTest {
     }
 
     @Test
-    fun `error state shows error message`() {
+    fun `error state shows error message and retry button`() {
         val errorMessage = "Invalid credentials"
         
         composeTestRule.setContent {
@@ -641,13 +730,44 @@ class AuthScreenTest {
             }
         }
 
+        // Assert error message is displayed
         composeTestRule
             .onNodeWithText(errorMessage)
             .assertIsDisplayed()
 
+        // Assert retry button is displayed
         composeTestRule
             .onNodeWithText("Retry")
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun `user can input email and password`() {
+        composeTestRule.setContent {
+            AppTheme {
+                LoginScreen(
+                    onLoginSuccess = {},
+                    onRegisterClick = {},
+                    onForgotPasswordClick = {},
+                    viewModel = FakeAuthViewModel(AuthUiState.LoginForm())
+                )
+            }
+        }
+
+        // Input email
+        val email = "test@example.com"
+        composeTestRule
+            .onNodeWithText("Email")
+            .performTextInput(email)
+
+        // Input password
+        val password = "password123"
+        composeTestRule
+            .onNodeWithText("Password")
+            .performTextInput(password)
+
+        // Assert the inputs were captured (in real app, would verify ViewModel state)
+        // This test ensures UI components are interactive
     }
 
     @Test
@@ -665,11 +785,58 @@ class AuthScreenTest {
             }
         }
 
+        // Click create account
         composeTestRule
             .onNodeWithText("Create Account")
             .performClick()
 
-        assertTrue(registerClicked)
+        // Assert callback was triggered
+        assertThat(registerClicked).isTrue()
+    }
+
+    @Test
+    fun `clicking forgot password triggers callback`() {
+        var forgotPasswordClicked = false
+        
+        composeTestRule.setContent {
+            AppTheme {
+                LoginScreen(
+                    onLoginSuccess = {},
+                    onRegisterClick = {},
+                    onForgotPasswordClick = { forgotPasswordClicked = true },
+                    viewModel = FakeAuthViewModel(AuthUiState.LoginForm())
+                )
+            }
+        }
+
+        // Click forgot password
+        composeTestRule
+            .onNodeWithText("Forgot Password?")
+            .performClick()
+
+        // Assert callback was triggered
+        assertThat(forgotPasswordClicked).isTrue()
+    }
+
+    @Test
+    fun `login button is disabled when form is loading`() {
+        composeTestRule.setContent {
+            AppTheme {
+                LoginScreen(
+                    onLoginSuccess = {},
+                    onRegisterClick = {},
+                    onForgotPasswordClick = {},
+                    viewModel = FakeAuthViewModel(
+                        AuthUiState.LoginForm(isLoading = true)
+                    )
+                )
+            }
+        }
+
+        // Assert login button is disabled
+        composeTestRule
+            .onNodeWithText("Login")
+            .assertIsNotEnabled()
     }
 }
 
@@ -688,55 +855,14 @@ class FakeAuthViewModel(private val initialState: AuthUiState) : AuthViewModel(
 }
 ```
 
-### Navigation3 UI Tests
-
-```kotlin
-// app/src/androidTest/kotlin/com/example/navigation/AppNavigationTest.kt
-class AppNavigationTest {
-
-    @get:Rule
-    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
-
-    @Test
-    fun `app starts with auth screen`() {
-        composeTestRule.setContent {
-            AppTheme {
-                AppNavigationSimple()
-            }
-        }
-
-        composeTestRule
-            .onNodeWithText("Email")
-            .assertIsDisplayed()
-    }
-
-    @Test
-    fun `can navigate from login to register`() {
-        composeTestRule.setContent {
-            AppTheme {
-                AppNavigationSimple()
-            }
-        }
-
-        // Click create account
-        composeTestRule
-            .onNodeWithText("Create Account")
-            .performClick()
-
-        // Should be on register screen
-        composeTestRule
-            .onNodeWithText("Register")
-            .assertIsDisplayed()
-    }
-}
-```
-
 ## Test Utilities
 
 ### Test Data Factories (in `core:testing`)
 
 ```kotlin
 // core/testing/src/main/kotlin/com/example/testing/data/TestData.kt
+import com.google.common.truth.Truth.assertThat
+
 object TestData {
     
     // Auth test data
@@ -802,18 +928,41 @@ object TestData {
         email = "test@example.com",
         name = "Test User"
     )
+    
+    // Test assertions
+    fun assertUserEquals(expected: User, actual: User) {
+        assertThat(actual.id).isEqualTo(expected.id)
+        assertThat(actual.email).isEqualTo(expected.email)
+        assertThat(actual.name).isEqualTo(expected.name)
+        assertThat(actual.profileImage).isEqualTo(expected.profileImage)
+    }
+    
+    fun assertAuthTokenEquals(expected: AuthToken, actual: AuthToken) {
+        assertThat(actual.value).isEqualTo(expected.value)
+        assertUserEquals(expected.user, actual.user)
+    }
 }
 ```
 
-### Gradle Test Configuration
+### Gradle Test Configuration with Truth
 
 ```kotlin
+// libs.versions.toml
+[versions]
+truth = "1.1.5"
+turbine = "1.0.0"
+
+[libraries]
+google-truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
+cashapp-turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+
 // build.gradle.kts for feature modules
 dependencies {
     // Test dependencies
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.turbine)
+    testImplementation(libs.google.truth)
+    testImplementation(libs.cashapp.turbine)
     
     // Android test dependencies
     androidTestImplementation(libs.androidx.test.ext.junit)
@@ -836,7 +985,8 @@ dependencies {
     // Testing libraries
     implementation(libs.junit)
     implementation(libs.kotlinx.coroutines.test)
-    implementation(libs.turbine)
+    implementation(libs.google.truth)
+    implementation(libs.cashapp.turbine)
     implementation(libs.androidx.test.core)
 }
 ```
@@ -858,7 +1008,54 @@ dependencies {
 
 # Run specific test class
 ./gradlew :feature:auth:testDebugUnitTest --tests "*AuthViewModelTest"
+
+# Run tests with Truth assertions enabled
+./gradlew test --info
 ```
+
+## Key Testing Principles with Google Truth
+
+1. **Fluent Assertions**: Use Truth's fluent API for readable, maintainable tests:
+   ```kotlin
+   // Instead of: assertEquals(expected, actual)
+   assertThat(actual).isEqualTo(expected)
+   
+   // Instead of: assertTrue(condition)
+   assertThat(condition).isTrue()
+   
+   // Instead of: assertNotNull(value)
+   assertThat(value).isNotNull()
+   ```
+
+2. **Rich Failure Messages**: Truth provides detailed failure messages:
+   ```kotlin
+   // Failure message shows both values
+   assertThat(actualUser.email).isEqualTo("expected@email.com")
+   // Output: Not true that <actual@email.com> is equal to <expected@email.com>
+   ```
+
+3. **Collection Assertions**: Easy collection testing:
+   ```kotlin
+   assertThat(userList).hasSize(3)
+   assertThat(userList).contains(user1)
+   assertThat(userList).doesNotContain(invalidUser)
+   ```
+
+4. **Nullability Support**: Kotlin-friendly null checks:
+   ```kotlin
+   assertThat(nullableValue).isNull()
+   assertThat(nonNullValue).isNotNull()
+   ```
+
+5. **Custom Subjects**: Extend Truth for domain-specific assertions:
+   ```kotlin
+   // In TestData.kt
+   fun assertUserEquals(expected: User, actual: User) {
+       assertThat(actual.id).isEqualTo(expected.id)
+       assertThat(actual.email).isEqualTo(expected.email)
+       assertThat(actual.name).isEqualTo(expected.name)
+   }
+   ```
 
 ## Key Testing Principles in Our Architecture
 
