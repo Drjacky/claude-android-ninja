@@ -1031,8 +1031,17 @@ fun NavGraphBuilder.authGraph(
 9. **Window Adaptive Integration**: Direct access to `windowAdaptiveInfo` for responsive layouts
 10. **Predictive Back Gestures**: Built-in support for Android's predictive back gesture system
 11. **Compose-First Design**: Designed specifically for Jetpack Compose, not adapted from View system
+12. **`windowAdaptiveInfo`**: Provides screen size/type information for adaptive decisions
+13. **`ListDetailPaneScaffold`**: For tablet/foldable list-detail layouts
+14. **`NavHost` from `androidx.navigation3`**: The Navigation3 version of NavHost
+15. **`composable` from `androidx.navigation3.compose`**: Navigation3's composable destination
 
-You're absolutely right! I've presented two different flow visualizations, and they're actually describing two different aspects of the architecture. Let me clarify and combine them into a single comprehensive flow:
+### Migration Note:
+If migrating from Navigation 2.x to Navigation3:
+1. Update imports from `androidx.navigation.*` to `androidx.navigation3.*`
+2. Add `windowAdaptiveInfo` parameter to `NavigationSuiteScaffold`
+3. Update `NavHost` and `rememberNavController()` imports
+4. Consider implementing `ListDetailPaneScaffold` for tablet-optimized layouts
 
 ## Complete Architecture Flow
 

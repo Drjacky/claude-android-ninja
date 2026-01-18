@@ -505,20 +505,6 @@ fun LoginScreen(
 }
 ```
 
-### Key Navigation3 Components:
-- **`NavigationSuiteScaffold`**: Adaptive container that switches between navigation modes
-- **`windowAdaptiveInfo`**: Provides screen size/type information for adaptive decisions
-- **`ListDetailPaneScaffold`**: For tablet/foldable list-detail layouts
-- **`NavHost` from `androidx.navigation3`**: The Navigation3 version of NavHost
-- **`composable` from `androidx.navigation3.compose`**: Navigation3's composable destination
-
-### Migration Note:
-If migrating from Navigation 2.x to Navigation3:
-1. Update imports from `androidx.navigation.*` to `androidx.navigation3.*`
-2. Add `windowAdaptiveInfo` parameter to `NavigationSuiteScaffold`
-3. Update `NavHost` and `rememberNavController()` imports
-4. Consider implementing `ListDetailPaneScaffold` for tablet-optimized layouts
-
 ## Key Dependencies
 
 ```kotlin
