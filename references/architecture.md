@@ -178,11 +178,11 @@ internal class OfflineFirstTopicsRepository @Inject constructor(
 
 ### Data Sources
 
-| Type | Module | Implementation | Purpose |
-|------|--------|----------------|---------|
-| Local | core/database | Room DAO | Persistent storage, source of truth |
-| Remote | core/network | Retrofit API | Network data fetching |
-| Preferences | core/datastore | Proto DataStore | User settings, simple key-value |
+| Type        | Module         | Implementation  | Purpose                             |
+|-------------|----------------|-----------------|-------------------------------------|
+| Local       | core/database  | Room DAO        | Persistent storage, source of truth |
+| Remote      | core/network   | Retrofit API    | Network data fetching               |
+| Preferences | core/datastore | Proto DataStore | User settings, simple key-value     |
 
 ### Model Mapping Strategy
 
@@ -712,7 +712,22 @@ fun NewsResourceCard(
 ### Navigation3 Architecture
 
 ```kotlin
-// app module - Navigation coordination
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.WindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.layout.rememberListDetailPaneScaffoldState
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldState
+import androidx.compose.material3.adaptive.navigationsuite.rememberNavigationSuiteScaffoldState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.navigation3.NavHost
+import androidx.navigation3.compose.rememberNavController
+
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun AppNavigation() {
@@ -720,15 +735,25 @@ fun AppNavigation() {
     val windowAdaptiveInfo = currentWindowAdaptiveInfo()
     val navigationSuiteScaffoldState = rememberNavigationSuiteScaffoldState()
     
-    // Navigator implementations in app module
-    val homeNavigator = remember {
-        object : HomeNavigator {
-            override fun navigateToDetail(resourceId: String) {
-                navController.navigate("home/detail/$resourceId")
+    // Create navigators in app module
+    val authNavigator = remember {
+        object : AuthNavigator {
+            override fun navigateToHome() {
+                navController.navigate("home") {
+                    popUpTo("auth") { inclusive = true }
+                }
             }
+            override fun navigateToRegister() = navController.navigate("auth/register")
+            override fun navigateToForgotPassword() = navController.navigate("auth/forgot_password")
             override fun navigateBack() = navController.popBackStack()
-            override fun navigateToSettings() = navController.navigate("settings")
-            override fun navigateToProfile() = navController.navigate("profile")
+            override fun navigateToProfile(userId: String) = navController.navigate("profile/$userId")
+            override fun navigateToMainApp() {
+                navController.navigate("main") {
+                    popUpTo("auth") { inclusive = true }
+                }
+            }
+            override fun navigateToVerifyEmail(token: String) = navController.navigate("auth/verify/$token")
+            override fun navigateToResetPassword(token: String) = navController.navigate("auth/reset/$token")
         }
     }
     
@@ -737,19 +762,20 @@ fun AppNavigation() {
         windowAdaptiveInfo = windowAdaptiveInfo,
         navigationSuiteItems = {
             item(
-                icon = Icons.Default.Home,
+                icon = androidx.compose.material.icons.Icons.Default.Home,
                 label = "Home",
-                selected = navController.currentDestination?.route?.startsWith("home") == true,
+                selected = navController.currentDestination?.route?.startsWith("home") == true ||
+                          navController.currentDestination?.route == "main",
                 onClick = { navController.navigate("home") }
             )
             item(
-                icon = Icons.Default.Person,
+                icon = androidx.compose.material.icons.Icons.Default.Person,
                 label = "Profile",
                 selected = navController.currentDestination?.route?.startsWith("profile") == true,
-                onClick = { navController.navigate("profile") }
+                onClick = { navController.navigate("profile/current") }
             )
             item(
-                icon = Icons.Default.Settings,
+                icon = androidx.compose.material.icons.Icons.Default.Settings,
                 label = "Settings",
                 selected = navController.currentDestination?.route?.startsWith("settings") == true,
                 onClick = { navController.navigate("settings") }
@@ -758,69 +784,396 @@ fun AppNavigation() {
     ) {
         NavHost(
             navController = navController,
-            startDestination = "home",
+            startDestination = "auth",
             modifier = Modifier.fillMaxSize()
         ) {
-            homeGraph(homeNavigator)
-            profileGraph()
+            authGraph(authNavigator)
+            homeGraph(
+                homeNavigator = remember {
+                    object : HomeNavigator {
+                        override fun navigateToDetails(itemId: String) = 
+                            navController.navigate("home/details/$itemId")
+                        override fun navigateBack() = navController.popBackStack()
+                    }
+                }
+            )
             settingsGraph()
+            
+            // Main app screen (could be tab navigation)
+            composable("main") {
+                MainAppScreen(
+                    onLogout = {
+                        navController.navigate("auth") {
+                            popUpTo("main") { inclusive = true }
+                        }
+                    }
+                )
+            }
+            
+            // Profile feature
+            composable(
+                route = "profile/{userId}",
+                arguments = listOf(navArgument("userId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                ProfileScreen(
+                    userId = backStackEntry.arguments?.getString("userId") ?: "",
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }
 
-// feature-home/navigation/HomeGraph.kt
-fun NavGraphBuilder.homeGraph(homeNavigator: HomeNavigator) {
-    composable(
-        route = HomeDestination.Home.route
+// For list-detail layouts (tablets, foldables)
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Composable
+fun AppNavigationWithListDetail(
+    windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo()
+) {
+    val navController = rememberNavController()
+    val listDetailPaneScaffoldState = rememberListDetailPaneScaffoldState()
+    
+    ListDetailPaneScaffold(
+        state = listDetailPaneScaffoldState,
+        windowAdaptiveInfo = windowAdaptiveInfo,
+        listPane = {
+            // Left pane - list view
+            Column(modifier = Modifier.fillMaxSize()) {
+                // List items that can navigate to detail
+            }
+        },
+        detailPane = {
+            // Right pane - detail view
+            NavHost(
+                navController = navController,
+                startDestination = "auth"
+            ) {
+                authGraph(/* ... */)
+                // Other graphs
+            }
+        }
+    )
+}
+
+// Simple version without adaptive UI (if needed)
+@Composable
+fun AppNavigationSimple() {
+    val navController = rememberNavController()
+    
+    NavHost(
+        navController = navController,
+        startDestination = "auth"
     ) {
-        HomeScreen(
-            onNavigateToDetail = homeNavigator::navigateToDetail,
-            onNavigateToSettings = homeNavigator::navigateToSettings,
-            onNavigateToProfile = homeNavigator::navigateToProfile
+        authGraph(
+            authNavigator = remember {
+                object : AuthNavigator {
+                    override fun navigateToHome() = navController.navigate("home")
+                    override fun navigateToRegister() = navController.navigate("auth/register")
+                    override fun navigateToForgotPassword() = navController.navigate("auth/forgot_password")
+                    override fun navigateBack() = navController.popBackStack()
+                    override fun navigateToProfile(userId: String) = navController.navigate("profile/$userId")
+                    override fun navigateToMainApp() = navController.navigate("main")
+                    override fun navigateToVerifyEmail(token: String) = navController.navigate("auth/verify/$token")
+                    override fun navigateToResetPassword(token: String) = navController.navigate("auth/reset/$token")
+                }
+            }
+        )
+        homeGraph(
+            homeNavigator = remember {
+                object : HomeNavigator {
+                    override fun navigateToDetails(itemId: String) = navController.navigate("home/details/$itemId")
+                    override fun navigateBack() = navController.popBackStack()
+                }
+            }
+        )
+        // Other feature graphs
+    }
+}
+```
+
+#### AuthDestination.kt (`navigation/`)
+```kotlin
+sealed class AuthDestination(val route: String) {
+    object Login : AuthDestination("auth/login")
+    object Register : AuthDestination("auth/register")
+    object ForgotPassword : AuthDestination("auth/forgot_password")
+    
+    object Profile : AuthDestination("auth/profile/{userId}") {
+        fun createRoute(userId: String) = "auth/profile/$userId"
+    }
+    
+    object VerifyEmail : AuthDestination("auth/verify/{token}") {
+        fun createRoute(token: String) = "auth/verify/$token"
+    }
+    
+    companion object {
+        fun fromRoute(route: String?): AuthDestination? {
+            return when {
+                route?.startsWith("auth/profile/") == true -> Profile
+                route?.startsWith("auth/verify/") == true -> VerifyEmail
+                route == Login.route -> Login
+                route == Register.route -> Register
+                route == ForgotPassword.route -> ForgotPassword
+                else -> null
+            }
+        }
+    }
+}
+```
+
+#### AuthNavigator.kt (`navigation/`)
+```kotlin
+interface AuthNavigator {
+    // Navigation to other screens within this feature
+    fun navigateToRegister()
+    fun navigateToForgotPassword()
+    fun navigateBack()
+    
+    // Navigation to other features (implemented in app module)
+    fun navigateToHome()
+    fun navigateToProfile(userId: String)
+    fun navigateToMainApp()
+    
+    // Deep link navigation
+    fun navigateToVerifyEmail(token: String)
+    fun navigateToResetPassword(token: String)
+}
+```
+
+#### AuthGraph.kt (`navigation/`)
+```kotlin
+fun NavGraphBuilder.authGraph(
+    authNavigator: AuthNavigator,
+    startDestination: String = AuthDestination.Login.route
+) {
+    composable(
+        route = AuthDestination.Login.route,
+        arguments = listOf(
+            navArgument("deepLinkToken") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    ) { backStackEntry ->
+        val deepLinkToken = backStackEntry.arguments?.getString("deepLinkToken")
+        
+        LoginScreen(
+            deepLinkToken = deepLinkToken,
+            onLoginSuccess = { user ->
+                authNavigator.navigateToMainApp()
+            },
+            onRegisterClick = {
+                authNavigator.navigateToRegister()
+            },
+            onForgotPasswordClick = {
+                authNavigator.navigateToForgotPassword()
+            }
+        )
+    }
+    
+    composable(route = AuthDestination.Register.route) {
+        RegisterScreen(
+            onRegisterSuccess = { user ->
+                authNavigator.navigateToMainApp()
+            },
+            onNavigateToLogin = {
+                authNavigator.navigateBack()
+            }
+        )
+    }
+    
+    composable(route = AuthDestination.ForgotPassword.route) {
+        ForgotPasswordScreen(
+            onResetSuccess = {
+                authNavigator.navigateBack()
+            },
+            onNavigateBack = {
+                authNavigator.navigateBack()
+            }
         )
     }
     
     composable(
-        route = HomeDestination.Detail.route,
-        arguments = listOf(navArgument("resourceId") { type = NavType.StringType })
+        route = AuthDestination.VerifyEmail.route,
+        arguments = listOf(navArgument("token") { type = NavType.StringType })
     ) { backStackEntry ->
-        val resourceId = backStackEntry.arguments?.getString("resourceId") ?: ""
-        NewsDetailScreen(
-            resourceId = resourceId,
-            onNavigateBack = homeNavigator::navigateBack
+        val token = backStackEntry.arguments?.getString("token")
+        VerifyEmailScreen(
+            token = token ?: "",
+            onVerificationComplete = {
+                authNavigator.navigateToLogin()
+            }
         )
     }
 }
 ```
 
-## Data Flow Example
+## Navigation Patterns Summary
 
-**Scenario**: Display news feed on Home screen with bookmark functionality
+### When to Use Navigation3:
+- **All new Compose projects should use Navigation3** as it's the modern navigation API
+- Building responsive UIs for phones, tablets, foldables, or desktop
+- Need automatic navigation adaptation with `NavigationSuiteScaffold`
+- Want Material 3 adaptive navigation patterns and list-detail layouts
+- **Important**: Navigation3 is currently in beta (1.4.0-beta01), suitable for production but expect minor API changes
 
-1. **App Startup** → `HomeScreen` composable is rendered
-2. **ViewModel Creation** → `HomeViewModel` initialized via Hilt
-3. **Initial Data Load** → ViewModel calls `GetUserNewsResourcesUseCase`
-4. **Use Case Execution** → Combines flows from `NewsRepository` and `UserDataRepository`
-5. **Repository Data Fetch** → `NewsRepository` reads from local Room database
-6. **Database Query** → Room DAO emits `TopicEntity` list via Flow
-7. **Model Mapping** → Repository transforms entities to domain models
-8. **Data Combination** → Use case combines news with user preferences
-9. **UI State Update** → ViewModel receives data, emits `HomeUiState.Success`
-10. **Screen Recomposition** → `HomeScreen` observes state, renders news cards
-11. **User Action** → User taps bookmark icon
-12. **Action Dispatch** → Screen calls `onAction(ToggleBookmark(resourceId))`
-13. **ViewModel Processing** → ViewModel executes `BookmarkNewsUseCase`
-14. **Repository Update** → `UserDataRepository` updates DataStore preferences
-15. **Optimistic Update** → UI updates immediately
-16. **Data Sync** → WorkManager periodically syncs with remote
-17. **Real-time Updates** → Repository observes database changes, emits updates
+### Key Benefits of Navigation3 Architecture:
 
-### Flow Visualization:
+1. **Feature Independence**: Features don't depend on each other; only app module coordinates navigation via `Navigator` interfaces
+2. **Type-Safe Navigation**: Sealed `Destination` classes with `createRoute()` functions
+3. **Testable Navigation**: `Navigator` interfaces allow easy mocking without NavController dependencies
+4. **Adaptive UI**: `NavigationSuiteScaffold` automatically adapts between navigation bar, rail, and drawer based on `windowAdaptiveInfo`
+5. **Single Backstack**: One `NavHost` controls entire app flow within `NavigationSuiteScaffold`
+6. **Material 3 Integration**: Built-in support for Material 3 adaptive design with `ListDetailPaneScaffold`
+7. **Modern API**: Latest navigation patterns including support for predictive back gestures
+8. **Multi-pane Support**: Native support for list-detail layouts on tablets and foldables
+9. **Window Adaptive Integration**: Direct access to `windowAdaptiveInfo` for responsive layouts
+10. **Predictive Back Gestures**: Built-in support for Android's predictive back gesture system
+11. **Compose-First Design**: Designed specifically for Jetpack Compose, not adapted from View system
+
+You're absolutely right! I've presented two different flow visualizations, and they're actually describing two different aspects of the architecture. Let me clarify and combine them into a single comprehensive flow:
+
+## Complete Architecture Flow
+
+### User Interaction Flow (UI → Data):
 ```
-User Action → Screen → ViewModel → UseCase → Repository
-    ↑           ↓         ↓         ↓         ↓
-UI Update ← UiState ← Data Flow ← Transform ← Database
-                                (Offline-first)
+User Action → Screen → ViewModel → UseCase → Repository → Data Source
+   (Event)   (UI)    (State)   (Business)  (Access)   (Persistence)
+      ↓        ↓         ↓          ↓           ↓            ↓
+   Click → Composable → Process → Transform → Retrieve → Local/Remote
+```
+
+### Data Response Flow (Data → UI):
+```
+Data Source → Repository → UseCase → ViewModel → UiState → Screen
+   (Change)    (Update)   (Combine)   (Update)   (State)   (Render)
+       ↓           ↓          ↓          ↓          ↓         ↓
+  DB Update → Map Data → Business Logic → StateFlow → Observe → Recomposition
+```
+
+### Navigation Flow (Feature Coordination):
+```
+User Action → Screen → Navigator Interface → App Module → Navigation3
+   (Navigate)   (Call)     (Contract)      (Implementation)  (Routing)
+       ↓           ↓             ↓                ↓             ↓
+   Tap Link → Call navigate() → Interface → App Navigator → NavController → Destination
+```
+
+## Combined Complete Flow Diagram:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│                              USER INTERACTION FLOW                                 │
+│                                                                                    │
+│  User Action (Event)                                                               │
+│         ↓                                                                          │
+│  ┌────────────────────────────────────────────────────────────────────────────┐    │
+│  │                             PRESENTATION LAYER                             │    │
+│  │  ┌─────────────┐  ┌─────────────────────────┐  ┌──────────────────────┐    │    │
+│  │  │   Screen    │  │      ViewModel          │  │    Navigator         │    │    │
+│  │  │ (Composable)│  │  (StateFlow<UiState>)   │  │   (Interface)        │    │    │
+│  │  └─────┬───────┘  └───────────┬─────────────┘  └──────────┬───────────┘    │    │
+│  │        │                      │                           │                │    │
+│  └────────┼──────────────────────┼───────────────────────────┼────────────────┘    │
+│           │ onAction()           │ updateUiState()           │ navigate()          │
+├───────────┼──────────────────────┼───────────────────────────┼─────────────────────┤
+│           │                      │                           │                     │
+│  ┌────────▼──────────┐ ┌─────────▼──────────┐      ┌─────────▼──────────────┐      │
+│  │    DOMAIN LAYER   │ │    DATA LAYER      │      │    NAVIGATION          │      │
+│  │  ┌─────────────┐  │ │  ┌──────────────┐  │      │  (App Module)          │      │
+│  │  │   UseCase   │  │ │  │  Repository  │  │      │  ┌──────────────────┐  │      │
+│  │  │ (Business)  │  │ │  │ (Data Access)│  │      │  │ App Navigator    │  │      │
+│  │  └──────┬──────┘  │ │  └──────┬───────┘  │      │  │ (Implementation) │  │      │
+│  │         │ invoke()│ │         │ getData()│      │  └──────────┬───────┘  │      │
+│  └─────────┼─────────┘ └─────────┼──────────┘      └─────────────┼──────────┘      │
+│            │                     │                               │                 │
+│  ┌─────────▼─────────────────────▼───────────────────────────────▼──────────────┐  │
+│  │                    DATA SOURCES / NAVIGATION ENGINE                          │  │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌──────────────────────────────┐  │  │
+│  │  │  Local Storage  │  │  Remote API     │  │  Navigation3                 │  │  │
+│  │  │   (Room)        │  │   (Retrofit)    │  │  (NavController)             │  │  │
+│  │  └─────────────────┘  └─────────────────┘  └──────────────────────────────┘  │  │
+│  └──────────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                    │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│                              DATA RESPONSE FLOW                                    │
+│                                                                                    │
+│  ┌────────────────────────────────────────────────────────────────────────────┐    │
+│  │                    REACTIVE DATA STREAM                                    │    │
+│  │                                                                            │    │
+│  │  Data Change (Local/Remote) → Repository Flow → UseCase Transform →        │    │
+│  │  ViewModel StateFlow → Screen Observation → UI Recomposition               │    │
+│  │                                                                            │    │
+│  └────────────────────────────────────────────────────────────────────────────┘    │
+│                                                                                    │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│                              NAVIGATION RESPONSE FLOW                              │
+│                                                                                    │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                    ADAPTIVE UI RENDERING                                    │   │
+│  │                                                                             │   │
+│  │  Navigation3 Route → Feature Graph → Screen Destination →                   │   │
+│  │  NavigationSuiteScaffold → Adaptive Layout → UI Render                      │   │
+│  │                                                                             │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+## Key Flow Rules:
+
+### 1. **Unidirectional Event Flow (DOWN):**
+```
+User Action → Screen → ViewModel → UseCase → Repository → Data Source
+     ↓           ↓         ↓         ↓          ↓           ↓
+  Tap/Click → Handle → Process → Business → Data Access → Persist/Request
+```
+
+### 2. **Unidirectional Data Flow (UP):**
+```
+Data Source → Repository → UseCase → ViewModel → UiState → Screen → UI
+     ↓           ↓         ↓         ↓          ↓         ↓       ↓
+  DB/Network → Map → Combine → Update → Observe → Render → Display
+```
+
+### 3. **Unidirectional Navigation Flow:**
+```
+Screen → Navigator Interface → App Module → Navigation3 → Destination Screen
+   ↓            ↓                  ↓            ↓             ↓
+Call navigate() → Contract → Implementation → Routing → Render New UI
+```
+
+## Concrete Example Flow: Bookmarking a News Item
+
+### Phase 1: User Interaction (Event Flow DOWN)
+```
+1. User taps bookmark icon on news card
+2. Screen: HomeScreen calls viewModel.onAction(ToggleBookmark("news-123"))
+3. ViewModel: HomeViewModel processes action in viewModelScope
+4. UseCase: Calls BookmarkNewsUseCase("news-123", true)
+5. Repository: UserDataRepository.updateBookmark("news-123", true)
+6. Data Source: DataStore writes preference, Room updates if needed
+```
+
+### Phase 2: Data Response (Data Flow UP)
+```
+1. DataStore: Emits preference change via Flow
+2. Repository: UserDataRepository.userData Flow updates
+3. UseCase: GetUserNewsResourcesUseCase combines with news Flow
+4. ViewModel: Receives updated Flow, updates uiState
+5. Screen: Observes uiState change, recomposes news card
+6. UI: Bookmark icon changes from outline to filled
+```
+
+### Phase 3: Navigation Example (Separate Flow)
+```
+1. User taps news card
+2. Screen: Calls homeNavigator.navigateToDetail("news-123")
+3. Navigator Interface: HomeNavigator.navigateToDetail() contract
+4. App Module: AppNavigator implementation routes to "home/detail/news-123"
+5. Navigation3: NavController navigates to detail destination
+6. Feature Graph: Renders NewsDetailScreen
+7. UI: Shows news detail view
 ```
 
 This architecture ensures:
@@ -830,3 +1183,7 @@ This architecture ensures:
 - **Testability**: Each layer can be tested independently
 - **Scalability**: Modular structure supports feature growth
 - **Modern patterns**: Navigation3, Material3 adaptive design, predictive back gestures
+- **Features are independent** (no feature-to-feature dependencies)
+- **Navigation is coordinated centrally** (app module)
+- **Data flows through defined layers** (UI → Domain → Data)
+- **Each concern has clear boundaries** (navigation vs. business logic vs. UI rendering)
