@@ -447,7 +447,7 @@ android {
 dependencies {
     // Feature modules
     implementation(project(":feature-auth"))
-    implementation(project(":feature-home"))
+    implementation(project(":feature-onboarding"))
     implementation(project(":feature-profile"))
     implementation(project(":feature-settings"))
     
@@ -459,7 +459,6 @@ dependencies {
     implementation(project(":core:database"))
     implementation(project(":core:datastore"))
     implementation(project(":core:common"))
-    implementation(project(":core:testing"))
     
     // Navigation3 for adaptive UI
     implementation(libs.bundles.navigation3)
@@ -475,6 +474,7 @@ dependencies {
     implementation(libs.findLibrary("androidx.work.runtime.ktx").get())
     
     // Testing
+    testImplementation(project(":core:testing"))
     testImplementation(libs.bundles.testing)
     androidTestImplementation(libs.bundles.compose.testing)
 }
@@ -664,7 +664,6 @@ kotlin.incremental=true
 kotlin.caching.enabled=true
 
 # Module metadata
-android.enableJetifier=true
 android.defaults.buildfeatures.buildconfig=true
 android.nonTransitiveRClass=true
 ```
@@ -686,10 +685,6 @@ android.nonTransitiveRClass=true
 # Keep Hilt
 -keep class com.example.di.** { *; }
 -keep class * extends dagger.hilt.android.internal.legacy.AggregatedElement { *; }
-
-# Keep Navigation arguments
--keep class * implements androidx.navigation.NavArgs { *; }
--keep class * implements androidx.navigation.NavArgument { *; }
 
 # Generic rules
 -dontwarn kotlinx.coroutines.**
