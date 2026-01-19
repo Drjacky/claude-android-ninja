@@ -105,7 +105,8 @@ build-logic/            # Convention plugins for consistent builds
 │   │   ├── AndroidLibraryConventionPlugin.kt     # Core library modules
 │   │   ├── AndroidFeatureConventionPlugin.kt     # Feature modules
 │   │   ├── AndroidComposeConventionPlugin.kt     # Compose setup
-│   │   └── AndroidHiltConventionPlugin.kt        # Hilt setup
+│   │   ├── AndroidHiltConventionPlugin.kt        # Hilt setup
+│   │   └── AndroidRoomConventionPlugin.kt        # Room setup
 │   └── build.gradle.kts
 ```
 
@@ -475,6 +476,7 @@ interface AuthNavigator {
     fun navigateToRegister()
     fun navigateToForgotPassword()
     fun navigateBack()
+    fun navigateToProfile(userId: String)
     fun navigateToMainApp()
 }
 
@@ -484,6 +486,7 @@ val authNavigator = remember {
         override fun navigateToRegister() = navController.navigate("auth/register")
         override fun navigateToForgotPassword() = navController.navigate("auth/forgot_password")
         override fun navigateBack() = navController.popBackStack()
+        override fun navigateToProfile(userId: String) = navController.navigate("profile/$userId")
         override fun navigateToMainApp() = navController.navigate("main")
     }
 }
