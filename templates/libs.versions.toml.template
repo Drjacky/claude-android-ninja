@@ -24,6 +24,7 @@ composeAnimation = "1.7.0"
 coil = "3.0.4"
 palette = "1.0.0"
 mockkVersion = "1.14.6"
+truth = "1.1.5"
 
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
@@ -50,6 +51,7 @@ androidx-palette = { group = "androidx.palette", name = "palette", version.ref =
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
 compose-rules-detekt = { module = "io.nlopez.compose.rules:detekt", version.ref = "composeRules" }
+google-truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 java-inject = { module = "javax.inject:javax.inject", version.ref = "javaxInjectVersion" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
