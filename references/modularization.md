@@ -271,40 +271,9 @@ mkdir -p feature-auth/src/test/kotlin/com/example/feature/auth
 ```
 
 **Step 2: Configure build.gradle.kts**
-```kotlin
-// feature-auth/build.gradle.kts
-plugins {
-    id("com.example.android.feature")
-    id("com.example.android.compose")
-    id("dagger.hilt.android.plugin")
-    kotlin("kapt")
-}
-
-android {
-    namespace = "com.example.feature.auth"
-}
-
-dependencies {
-    // Core dependencies
-    implementation(project(":core:domain"))
-    implementation(project(":core:ui"))
-    
-    // AndroidX dependencies
-    implementation(libs.androidx.compose.bom)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.bundles.navigation3)
-    
-    // DI
-    implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
-    
-    // Testing
-    testImplementation(project(":core:testing"))
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.turbine)
-}
-```
+Use the Feature Module build file template in `references/gradle-setup.md`.
+It includes the feature convention plugins, core module dependencies, Navigation3,
+and test bundles.
 
 **Step 3: Register in settings.gradle.kts**
 ```kotlin
@@ -397,32 +366,8 @@ mkdir -p core/domain/src/test/kotlin/com/example/core/domain
 ```
 
 **Step 2: Configure build.gradle.kts**
-```kotlin
-// core/domain/build.gradle.kts
-plugins {
-    id("com.example.android.library")
-    kotlin("plugin.serialization")
-}
-
-android {
-    namespace = "com.example.core.domain"
-    
-    buildFeatures {
-        buildConfig = true
-    }
-}
-
-dependencies {
-    // Pure Kotlin - no Android dependencies
-    implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.kotlinx.serialization.json)
-    
-    // Testing
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.turbine)
-}
-```
+Use the Core Domain module build file template in `references/gradle-setup.md`.
+It keeps the module pure Kotlin and includes serialization and test dependencies.
 
 **Step 3: Create domain models and contracts**
 
@@ -433,52 +378,8 @@ For detailed patterns and examples, see the Domain Layer section in
 ### 3. Create App Module Configuration
 
 **Step 1: Configure app module dependencies**
-```kotlin
-// app/build.gradle.kts
-plugins {
-    id("com.example.android.application")
-    id("com.example.android.compose")
-    id("dagger.hilt.android.plugin")
-    kotlin("kapt")
-}
-
-android {
-    namespace = "com.example.app"
-    
-    defaultConfig {
-        applicationId = "com.example.app"
-        versionCode = 1
-        versionName = "1.0"
-    }
-}
-
-dependencies {
-    // Feature modules
-    implementation(project(":feature-auth"))
-    implementation(project(":feature-onboarding"))
-    implementation(project(":feature-profile"))
-    implementation(project(":feature-settings"))
-    
-    // Core modules
-    implementation(project(":core:domain"))
-    implementation(project(":core:data"))
-    implementation(project(":core:ui"))
-    implementation(project(":core:network"))
-    implementation(project(":core:database"))
-    implementation(project(":core:datastore"))
-    implementation(project(":core:common"))
-    
-    // Navigation3 for adaptive UI
-    implementation(libs.bundles.navigation3)
-    
-    // DI
-    implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
-    
-    // Splash screen
-    implementation(libs.androidx.core.splashscreen)
-}
-```
+Use the App module build file template in `references/gradle-setup.md`.
+It includes feature/core module wiring, Navigation3, and DI configuration.
 
 **Step 2: Create app navigation**
 ```kotlin
@@ -590,65 +491,8 @@ val authNavigator = remember {
 
 ## Build Configuration
 
-### Convention Plugins
-
-Create reusable build logic in `build-logic/convention/`:
-- `AndroidApplicationConventionPlugin` - App module
-- `AndroidLibraryConventionPlugin` - Core library modules
-- `AndroidFeatureConventionPlugin` - Feature modules
-- `AndroidComposeConventionPlugin` - Compose setup
-- `AndroidHiltConventionPlugin` - Hilt setup
-- `AndroidRoomConventionPlugin` - Room database setup
-
-```kotlin
-// build-logic/convention/src/main/kotlin/AndroidFeatureConventionPlugin.kt
-class AndroidFeatureConventionPlugin : Plugin<Project> {
-    override fun apply(target: Project) {
-        with(target) {
-            pluginManager.apply {
-                apply("com.android.library")
-                apply("org.jetbrains.kotlin.android")
-                apply("kotlin-kapt")
-                apply("dagger.hilt.android.plugin")
-            }
-            
-            extensions.configure<LibraryExtension> {
-                configureAndroidCommon(this)
-                defaultConfig {
-                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                }
-            }
-            
-            dependencies {
-                add("implementation", project(":core:domain"))
-                add("implementation", project(":core:ui"))
-                add("implementation", libs.bundles.compose)
-                add("implementation", libs.androidx.lifecycle.viewmodel.compose)
-                add("implementation", libs.bundles.navigation3)
-                add("implementation", libs.hilt.android)
-                add("kapt", libs.hilt.compiler)
-            }
-        }
-    }
-}
-
-// build-logic/convention/src/main/kotlin/AndroidComposeConventionPlugin.kt
-class AndroidComposeConventionPlugin : Plugin<Project> {
-    override fun apply(target: Project) {
-        with(target) {
-            extensions.configure<LibraryExtension> {
-                buildFeatures {
-                    compose = true
-                }
-                
-                composeOptions {
-                    kotlinCompilerExtensionVersion = libs.versions.androidxComposeCompiler.get()
-                }
-            }
-        }
-    }
-}
-```
+Convention plugin definitions and examples live in `references/gradle-setup.md`
+so all build logic stays centralized in one place.
 
 ## Best Practices
 
