@@ -293,7 +293,7 @@ fun AuthActivityList(
     ) {
         items(
             items = events,
-            key = { it.hashCode() }
+            key = { authEventKey(it) }
         ) { event ->
             AuthEventCard(
                 event = event,
@@ -320,6 +320,12 @@ fun AuthActivityList(
             }
         }
     }
+}
+
+private fun authEventKey(event: AuthEvent): String = when (event) {
+    is AuthEvent.SessionRefreshed -> "refreshed-${event.timestamp}"
+    is AuthEvent.SessionExpired -> "expired-${event.reason}"
+    is AuthEvent.Error -> "error-${event.message}-${event.retryable}"
 }
 ```
 
@@ -668,7 +674,7 @@ fun AuthActivityListOptimized(
     ) {
         items(
             items = events,
-            key = { it.hashCode() } // Essential for stable keys
+            key = { authEventKey(it) } // Essential for stable keys
         ) { event ->
             val title by remember(event) {
                 derivedStateOf { formatAuthEventTitle(event) }
