@@ -680,47 +680,6 @@ class AndroidComposeConventionPlugin : Plugin<Project> {
 }
 ```
 
-### Version Catalog
-
-```kotlin
-// gradle/libs.versions.toml
-[versions]
-kotlin = "1.9.22"
-compose-bom = "2024.02.01"
-hilt = "2.50"
-room = "2.6.1"
-coroutines = "1.7.3"
-navigation3 = "1.4.0-beta01"
-material3-adaptive = "1.0.0-beta01"
-
-[libraries]
-androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
-kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
-
-# Navigation3
-androidx-navigation3-compose = { group = "androidx.navigation3", name = "navigation3-compose", version.ref = "navigation3" }
-androidx-material3-adaptive-navigation3 = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation3", version.ref = "material3-adaptive" }
-
-[bundles]
-navigation3 = [
-    "androidx-navigation3-compose",
-    "androidx-material3-adaptive-navigation3"
-]
-
-compose = [
-    "androidx-compose-ui",
-    "androidx-compose-ui-tooling-preview",
-    "androidx-compose-material3",
-    "androidx-compose-foundation",
-    "androidx-compose-ui-tooling"
-]
-
-[plugins]
-hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
-kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
-```
-
 ## Best Practices
 
 1. **Start Simple**: Begin with app + core modules, add features as needed
