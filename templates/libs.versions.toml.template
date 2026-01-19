@@ -24,7 +24,8 @@ composeAnimation = "1.7.0"
 coil = "3.0.4"
 palette = "1.0.0"
 mockkVersion = "1.14.6"
-truth = "1.1.5"
+truth = "1.4.5"
+turbine = "1.2.1"
 
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
@@ -66,6 +67,7 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockkVersion" }
 mockk-agent-jvm = { module = "io.mockk:mockk-agent-jvm", version.ref = "mockkVersion" }
 plugin-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 
 [bundles]
 compose = [
