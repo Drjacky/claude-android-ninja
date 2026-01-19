@@ -1,6 +1,6 @@
 # Testing Patterns
 
-Testing approach following the multi-module architecture with test doubles strategy (no mocking libraries)
+Testing approach following our multi-module architecture with test doubles strategy (no mocking libraries)
 and Google Truth for assertions.
 
 ## Table of Contents

@@ -1,6 +1,6 @@
 # Architecture Guide
 
-Based on Google's official Android architecture guidance with modern Jetpack Compose, Navigation3, and modular best practices.
+Based on Google's official Android architecture guidance with modern Jetpack Compose, Navigation3, and our modular best practices.
 
 ## Table of Contents
 1. [Architecture Overview](#architecture-overview)

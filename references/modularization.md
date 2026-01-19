@@ -1,6 +1,6 @@
 # Modularization Guide
 
-Based on the modern Android multi-module architecture with Navigation3, Jetpack Compose, and strict dependency rules.
+Based on our modern Android multi-module architecture with Navigation3, Jetpack Compose, and strict dependency rules.
 
 ## Table of Contents
 1. [Benefits](#benefits)
