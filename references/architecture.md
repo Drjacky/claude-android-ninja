@@ -117,6 +117,8 @@ interface AuthRepository {
     suspend fun register(user: User): Result<Unit>
     suspend fun resetPassword(email: String): Result<Unit>
     fun observeAuthState(): Flow<AuthState>
+    fun observeAuthEvents(): Flow<AuthEvent>
+    suspend fun refreshSession(): Result<Unit>
 }
 
 // core/data - Repository implementation
@@ -152,6 +154,12 @@ internal class AuthRepositoryImpl @Inject constructor(
                 }
             }
             .catch { e -> emit(AuthState.Error(e.message ?: "Unknown error")) }
+
+    override fun observeAuthEvents(): Flow<AuthEvent> =
+        localDataSource.observeAuthEvents()
+
+    override suspend fun refreshSession(): Result<Unit> =
+        remoteDataSource.refreshSession()
 }
 ```
 
@@ -272,6 +280,7 @@ interface AuthRepository {
     suspend fun resetPassword(email: String): Result<Unit>
     fun observeAuthState(): Flow<AuthState>
     fun observeAuthEvents(): Flow<AuthEvent>
+    suspend fun refreshSession(): Result<Unit>
 }
 ```
 
