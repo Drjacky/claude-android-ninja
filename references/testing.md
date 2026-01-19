@@ -935,53 +935,6 @@ object TestData {
 }
 ```
 
-### Gradle Test Configuration with Truth
-
-```kotlin
-// libs.versions.toml
-[versions]
-truth = "1.1.5"
-turbine = "1.0.0"
-
-[libraries]
-google-truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
-cashapp-turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
-
-// build.gradle.kts for feature modules
-dependencies {
-    // Test dependencies
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.google.truth)
-    testImplementation(libs.cashapp.turbine)
-    
-    // Android test dependencies
-    androidTestImplementation(libs.androidx.test.ext.junit)
-    androidTestImplementation(libs.androidx.test.espresso.core)
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.androidx.compose.ui.test.manifest)
-    
-    // Test utilities from core
-    testImplementation(project(":core:testing"))
-    androidTestImplementation(project(":core:testing"))
-}
-
-// build.gradle.kts for core:testing module
-dependencies {
-    // Depend on all core modules for test utilities
-    implementation(project(":core:domain"))
-    implementation(project(":core:data"))
-    implementation(project(":core:ui"))
-    
-    // Testing libraries
-    implementation(libs.junit)
-    implementation(libs.kotlinx.coroutines.test)
-    implementation(libs.google.truth)
-    implementation(libs.cashapp.turbine)
-    implementation(libs.androidx.test.core)
-}
-```
-
 ### Running Tests
 
 ```bash
