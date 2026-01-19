@@ -5,13 +5,12 @@ Based on Google's official Android architecture guidance with modern Jetpack Com
 ## Table of Contents
 1. [Architecture Overview](#architecture-overview)
 2. [Architecture Principles](#architecture-principles)
-3. [Module Structure](#module-structure)
-4. [Data Layer](#data-layer)
-5. [Domain Layer](#domain-layer)
-6. [Presentation Layer](#presentation-layer)
-7. [UI Layer](#ui-layer)
-8. [Navigation](#navigation)
-9. [Complete Architecture Flow](#complete-architecture-flow)
+3. [Data Layer](#data-layer)
+4. [Domain Layer](#domain-layer)
+5. [Presentation Layer](#presentation-layer)
+6. [UI Layer](#ui-layer)
+7. [Navigation](#navigation)
+8. [Complete Architecture Flow](#complete-architecture-flow)
 
 ## Architecture Overview
 
@@ -99,24 +98,7 @@ Four-layer architecture with strict module separation and unidirectional data fl
 
 ## Module Structure
 
-```
-app/                    # App module - navigation, DI setup, app entry point
-feature/
-  ├── feature-auth/     # Authentication feature
-  ├── feature-onboarding/ # Signup and onboarding flow
-  ├── feature-profile/  # User profile feature
-  ├── feature-settings/ # App settings feature
-  └── feature-<name>/   # Additional features...
-core/
-  ├── domain/           # Pure Kotlin: Use Cases, Repository interfaces, Domain models
-  ├── data/             # Data layer: Repository impl, DataSources, Data models
-  ├── ui/               # Shared UI components, themes, base ViewModels
-  ├── network/          # Retrofit, API models, network utilities
-  ├── database/         # Room DAOs, entities, migrations
-  ├── datastore/        # Preferences storage
-  ├── common/           # Shared utilities, extensions
-  └── testing/          # Test utilities, test doubles
-```
+See the full module layout and naming conventions in `references/modularization.md`.
 
 ## Data Layer
 
@@ -418,7 +400,7 @@ class AuthViewModel @Inject constructor(
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
     
     fun onAction(action: AuthAction) {
-        when (action) {
+            when (action) {
             is AuthAction.EmailChanged -> updateLoginForm { it.copy(email = action.email) }
             is AuthAction.PasswordChanged -> updateLoginForm { it.copy(password = action.password) }
             AuthAction.LoginClicked -> performLogin()
@@ -609,279 +591,8 @@ fun AuthFormCard(
 
 ### Navigation3 Architecture
 
-```kotlin
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.WindowAdaptiveInfo
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
-import androidx.compose.material3.adaptive.layout.rememberListDetailPaneScaffoldState
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldState
-import androidx.compose.material3.adaptive.navigationsuite.rememberNavigationSuiteScaffoldState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.navigation3.NavHost
-import androidx.navigation3.compose.rememberNavController
-
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
-@Composable
-fun AppNavigation() {
-    val navController = rememberNavController()
-    val windowAdaptiveInfo = currentWindowAdaptiveInfo()
-    val navigationSuiteScaffoldState = rememberNavigationSuiteScaffoldState()
-    
-    // Create navigators in app module
-    val authNavigator = remember {
-        object : AuthNavigator {
-            override fun navigateToRegister() = navController.navigate("auth/register")
-            override fun navigateToForgotPassword() = navController.navigate("auth/forgot_password")
-            override fun navigateBack() = navController.popBackStack()
-            override fun navigateToProfile(userId: String) = navController.navigate("profile/$userId")
-            override fun navigateToMainApp() {
-                navController.navigate("main") {
-                    popUpTo("auth") { inclusive = true }
-                }
-            }
-            override fun navigateToVerifyEmail(token: String) = navController.navigate("auth/verify/$token")
-            override fun navigateToResetPassword(token: String) = navController.navigate("auth/reset/$token")
-        }
-    }
-    
-    NavigationSuiteScaffold(
-        state = navigationSuiteScaffoldState,
-        windowAdaptiveInfo = windowAdaptiveInfo,
-        navigationSuiteItems = {
-            item(
-                icon = androidx.compose.material.icons.Icons.Default.Lock,
-                label = "Auth",
-                selected = navController.currentDestination?.route?.startsWith("auth") == true ||
-                          navController.currentDestination?.route == "main",
-                onClick = { navController.navigate("auth") }
-            )
-            item(
-                icon = androidx.compose.material.icons.Icons.Default.Person,
-                label = "Profile",
-                selected = navController.currentDestination?.route?.startsWith("profile") == true,
-                onClick = { navController.navigate("profile/current") }
-            )
-            item(
-                icon = androidx.compose.material.icons.Icons.Default.Settings,
-                label = "Settings",
-                selected = navController.currentDestination?.route?.startsWith("settings") == true,
-                onClick = { navController.navigate("settings") }
-            )
-        }
-    ) {
-        NavHost(
-            navController = navController,
-            startDestination = "auth",
-            modifier = Modifier.fillMaxSize()
-        ) {
-            authGraph(authNavigator)
-            settingsGraph()
-            
-            // Main app screen (could be tab navigation)
-            composable("main") {
-                MainAppScreen(
-                    onLogout = {
-                        navController.navigate("auth") {
-                            popUpTo("main") { inclusive = true }
-                        }
-                    }
-                )
-            }
-            
-            // Profile feature
-            composable(
-                route = "profile/{userId}",
-                arguments = listOf(navArgument("userId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                ProfileScreen(
-                    userId = backStackEntry.arguments?.getString("userId") ?: "",
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-        }
-    }
-}
-
-// For list-detail layouts (tablets, foldables)
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
-@Composable
-fun AppNavigationWithListDetail(
-    windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo()
-) {
-    val navController = rememberNavController()
-    val listDetailPaneScaffoldState = rememberListDetailPaneScaffoldState()
-    
-    ListDetailPaneScaffold(
-        state = listDetailPaneScaffoldState,
-        windowAdaptiveInfo = windowAdaptiveInfo,
-        listPane = {
-            // Left pane - list view
-            Column(modifier = Modifier.fillMaxSize()) {
-                // List items that can navigate to detail
-            }
-        },
-        detailPane = {
-            // Right pane - detail view
-            NavHost(
-                navController = navController,
-                startDestination = "auth"
-            ) {
-                authGraph(/* ... */)
-                // Other graphs
-            }
-        }
-    )
-}
-
-// Simple version without adaptive UI (if needed)
-@Composable
-fun AppNavigationSimple() {
-    val navController = rememberNavController()
-    
-    NavHost(
-        navController = navController,
-        startDestination = "auth"
-    ) {
-        authGraph(
-            authNavigator = remember {
-                object : AuthNavigator {
-                    override fun navigateToRegister() = navController.navigate("auth/register")
-                    override fun navigateToForgotPassword() = navController.navigate("auth/forgot_password")
-                    override fun navigateBack() = navController.popBackStack()
-                    override fun navigateToProfile(userId: String) = navController.navigate("profile/$userId")
-                    override fun navigateToMainApp() = navController.navigate("main")
-                    override fun navigateToVerifyEmail(token: String) = navController.navigate("auth/verify/$token")
-                    override fun navigateToResetPassword(token: String) = navController.navigate("auth/reset/$token")
-                }
-            }
-        )
-        // Other feature graphs
-    }
-}
-```
-
-#### AuthDestination.kt (`navigation/`)
-```kotlin
-sealed class AuthDestination(val route: String) {
-    object Login : AuthDestination("auth/login")
-    object Register : AuthDestination("auth/register")
-    object ForgotPassword : AuthDestination("auth/forgot_password")
-    
-    object Profile : AuthDestination("auth/profile/{userId}") {
-        fun createRoute(userId: String) = "auth/profile/$userId"
-    }
-    
-    object VerifyEmail : AuthDestination("auth/verify/{token}") {
-        fun createRoute(token: String) = "auth/verify/$token"
-    }
-    
-    companion object {
-        fun fromRoute(route: String?): AuthDestination? {
-            return when {
-                route?.startsWith("auth/profile/") == true -> Profile
-                route?.startsWith("auth/verify/") == true -> VerifyEmail
-                route == Login.route -> Login
-                route == Register.route -> Register
-                route == ForgotPassword.route -> ForgotPassword
-                else -> null
-            }
-        }
-    }
-}
-```
-
-#### AuthNavigator.kt (`navigation/`)
-```kotlin
-interface AuthNavigator {
-    // Navigation to other screens within this feature
-    fun navigateToRegister()
-    fun navigateToForgotPassword()
-    fun navigateBack()
-    
-    // Navigation to other features (implemented in app module)
-    fun navigateToProfile(userId: String)
-    fun navigateToMainApp()
-    
-    // Deep link navigation
-    fun navigateToVerifyEmail(token: String)
-    fun navigateToResetPassword(token: String)
-}
-```
-
-#### AuthGraph.kt (`navigation/`)
-```kotlin
-fun NavGraphBuilder.authGraph(
-    authNavigator: AuthNavigator,
-    startDestination: String = AuthDestination.Login.route
-) {
-    composable(
-        route = AuthDestination.Login.route,
-        arguments = listOf(
-            navArgument("deepLinkToken") {
-                type = NavType.StringType
-                nullable = true
-                defaultValue = null
-            }
-        )
-    ) { backStackEntry ->
-        val deepLinkToken = backStackEntry.arguments?.getString("deepLinkToken")
-        
-        LoginScreen(
-            deepLinkToken = deepLinkToken,
-            onLoginSuccess = { user ->
-                authNavigator.navigateToMainApp()
-            },
-            onRegisterClick = {
-                authNavigator.navigateToRegister()
-            },
-            onForgotPasswordClick = {
-                authNavigator.navigateToForgotPassword()
-            }
-        )
-    }
-    
-    composable(route = AuthDestination.Register.route) {
-        RegisterScreen(
-            onRegisterSuccess = { user ->
-                authNavigator.navigateToMainApp()
-            },
-            onNavigateToLogin = {
-                authNavigator.navigateBack()
-            }
-        )
-    }
-    
-    composable(route = AuthDestination.ForgotPassword.route) {
-        ForgotPasswordScreen(
-            onResetSuccess = {
-                authNavigator.navigateBack()
-            },
-            onNavigateBack = {
-                authNavigator.navigateBack()
-            }
-        )
-    }
-    
-    composable(
-        route = AuthDestination.VerifyEmail.route,
-        arguments = listOf(navArgument("token") { type = NavType.StringType })
-    ) { backStackEntry ->
-        val token = backStackEntry.arguments?.getString("token")
-        VerifyEmailScreen(
-            token = token ?: "",
-            onVerificationComplete = {
-                authNavigator.navigateToLogin()
-            }
-        )
-    }
-}
-```
+Implementation examples for `AppNavigation`, `AuthDestination`, `AuthNavigator`, and `AuthGraph` live in
+`references/modularization.md` to keep navigation wiring in one place.
 
 ### When to Use Navigation3:
 - **All new Compose projects should use Navigation3** as it's the modern navigation API

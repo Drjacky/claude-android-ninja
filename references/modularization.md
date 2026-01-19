@@ -424,38 +424,11 @@ dependencies {
 }
 ```
 
-**Step 3: Create domain models**
-```kotlin
-// core/domain/model/User.kt
-data class User(
-    val id: String,
-    val email: String,
-    val name: String,
-    val profileImage: String? = null
-)
+**Step 3: Create domain models and contracts**
 
-// core/domain/model/AuthToken.kt
-data class AuthToken(
-    val value: String,
-    val user: User
-)
-
-// core/domain/repository/AuthRepository.kt
-interface AuthRepository {
-    suspend fun login(email: String, password: String): Result<AuthToken>
-    suspend fun register(user: User): Result<Unit>
-    suspend fun resetPassword(email: String): Result<Unit>
-    fun observeAuthState(): Flow<AuthState>
-}
-
-// core/domain/usecase/ObserveAuthStateUseCase.kt
-class ObserveAuthStateUseCase @Inject constructor(
-    private val authRepository: AuthRepository
-) {
-    operator fun invoke(): Flow<AuthState> =
-        authRepository.observeAuthState()
-}
-```
+Define domain models, repository interfaces, and use cases in `core/domain`.
+For detailed patterns and examples, see the Domain Layer section in
+`references/architecture.md`.
 
 ### 3. Create App Module Configuration
 
@@ -590,11 +563,8 @@ fun AppNavigation() {
 
 ### Navigation Flow
 
-```
-User Action → Screen → Navigator Interface → App Module → Navigation3 → Destination
-   ↓            ↓           ↓                  ↓            ↓           ↓
-Tap Link → Call navigate() → Contract → Implementation → NavController → Feature Graph
-```
+For end-to-end flow diagrams (UI → data → navigation), see the Complete Architecture
+Flow section in `references/architecture.md`.
 
 ### Example: Auth Feature Navigation
 
