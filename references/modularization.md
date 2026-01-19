@@ -66,16 +66,16 @@ feature-auth/
 ### Core Modules (`core/`)
 Shared library code used across features with strict dependency direction.
 
-| Module | Purpose | Dependencies | Key Classes |
-|--------|---------|--------------|-------------|
-| `core:domain` | Domain models, use cases, repository interfaces | None (pure Kotlin) | `Topic`, `UserNewsResource`, `GetUserNewsResourcesUseCase`, `NewsRepository` interface |
-| `core:data` | Repository implementations, data coordination | `core:domain` | `OfflineFirstTopicsRepository`, `UserDataRepositoryImpl` |
-| `core:database` | Room database, DAOs, entities | `core:model` (if separate), otherwise `core:domain` | `NiaDatabase`, `TopicDao`, `TopicEntity` |
-| `core:network` | Retrofit API, network models | `core:model` (if separate), otherwise `core:domain` | `RetrofitNetwork`, `NetworkTopic` |
-| `core:datastore` | Proto DataStore preferences | None | `UserPreferencesDataSource` |
-| `core:common` | Shared utilities, extensions | None | `AppDispatchers`, `ResultExtensions` |
-| `core:ui` | Reusable UI components, themes, base ViewModels | `core:domain` (optional) | `NewsResourceCard`, `NiaTheme`, `BaseViewModel` |
-| `core:testing` | Test utilities, test doubles | Depends on module being tested | `TestDispatcherRule`, `FakeRepository` |
+| Module           | Purpose                                         | Dependencies                                        | Key Classes                                                                            |
+|------------------|-------------------------------------------------|-----------------------------------------------------|----------------------------------------------------------------------------------------|
+| `core:domain`    | Domain models, use cases, repository interfaces | None (pure Kotlin)                                  | `Topic`, `UserNewsResource`, `GetUserNewsResourcesUseCase`, `NewsRepository` interface |
+| `core:data`      | Repository implementations, data coordination   | `core:domain`                                       | `OfflineFirstTopicsRepository`, `UserDataRepositoryImpl`                               |
+| `core:database`  | Room database, DAOs, entities                   | `core:model` (if separate), otherwise `core:domain` | `MyDatabase`, `TopicDao`, `TopicEntity`                                                |
+| `core:network`   | Retrofit API, network models                    | `core:model` (if separate), otherwise `core:domain` | `RetrofitNetwork`, `NetworkTopic`                                                      |
+| `core:datastore` | Proto DataStore preferences                     | None                                                | `UserPreferencesDataSource`                                                            |
+| `core:common`    | Shared utilities, extensions                    | None                                                | `AppDispatchers`, `ResultExtensions`                                                   |
+| `core:ui`        | Reusable UI components, themes, base ViewModels | `core:domain` (optional)                            | `NewsResourceCard`, `MyTheme`, `BaseViewModel`                                         |
+| `core:testing`   | Test utilities, test doubles                    | Depends on module being tested                      | `TestDispatcherRule`, `FakeRepository`                                                 |
 
 ## Module Structure
 
@@ -98,14 +98,14 @@ core/
   ├── datastore/        # Preferences storage
   ├── common/           # Shared utilities, extensions
   └── testing/          # Test utilities, test doubles
-build-logic/           # Convention plugins for consistent builds
+build-logic/            # Convention plugins for consistent builds
 ├── convention/
 │   ├── src/main/kotlin/
-│   │   ├── AndroidApplicationConventionPlugin.kt
-│   │   ├── AndroidLibraryConventionPlugin.kt
-│   │   ├── AndroidFeatureConventionPlugin.kt
-│   │   ├── AndroidComposeConventionPlugin.kt
-│   │   └── AndroidHiltConventionPlugin.kt
+│   │   ├── AndroidApplicationConventionPlugin.kt # App module
+│   │   ├── AndroidLibraryConventionPlugin.kt     # Core library modules
+│   │   ├── AndroidFeatureConventionPlugin.kt     # Feature modules
+│   │   ├── AndroidComposeConventionPlugin.kt     # Compose setup
+│   │   └── AndroidHiltConventionPlugin.kt        # Hilt setup
 │   └── build.gradle.kts
 ```
 
@@ -641,6 +641,12 @@ val homeNavigator = remember {
 ### Convention Plugins
 
 Create reusable build logic in `build-logic/convention/`:
+- `AndroidApplicationConventionPlugin` - App module
+- `AndroidLibraryConventionPlugin` - Core library modules
+- `AndroidFeatureConventionPlugin` - Feature modules
+- `AndroidComposeConventionPlugin` - Compose setup
+- `AndroidHiltConventionPlugin` - Hilt setup
+- `AndroidRoomConventionPlugin` - Room database setup
 
 ```kotlin
 // build-logic/convention/src/main/kotlin/AndroidFeatureConventionPlugin.kt
@@ -690,47 +696,6 @@ class AndroidComposeConventionPlugin : Plugin<Project> {
         }
     }
 }
-```
-
-### Version Catalog
-
-```kotlin
-// gradle/libs.versions.toml
-[versions]
-kotlin = "1.9.22"
-compose-bom = "2024.02.01"
-hilt = "2.50"
-room = "2.6.1"
-coroutines = "1.7.3"
-navigation3 = "1.4.0-beta01"
-material3-adaptive = "1.0.0-beta01"
-
-[libraries]
-androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
-kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
-
-# Navigation3
-androidx-navigation3-compose = { group = "androidx.navigation3", name = "navigation3-compose", version.ref = "navigation3" }
-androidx-material3-adaptive-navigation3 = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation3", version.ref = "material3-adaptive" }
-
-[bundles]
-navigation3 = [
-    "androidx-navigation3-compose",
-    "androidx-material3-adaptive-navigation3"
-]
-
-compose = [
-    "androidx-compose-ui",
-    "androidx-compose-ui-tooling-preview",
-    "androidx-compose-material3",
-    "androidx-compose-foundation",
-    "androidx-compose-ui-tooling"
-]
-
-[plugins]
-hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
-kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 ```
 
 ## Best Practices

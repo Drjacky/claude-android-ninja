@@ -20,7 +20,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Creating a new project?**
 → Read [modularization.md](references/modularization.md) for project structure
-→ Use templates in `assets/templates/`
+→ Use templates in `templates/`
 → Set up **app module** for navigation and DI setup
 → Configure **feature modules** and **core modules**
 
@@ -499,99 +499,6 @@ fun LoginScreen(
             else -> {
                 // Should not happen for login screen
                 Text("Unexpected state")
-            }
-        }
-    }
-}
-```
-
-## Key Dependencies
-
-```kotlin
-// libs.versions.toml
-[versions]
-kotlin = "1.9.22"
-compose-bom = "2024.02.01"
-hilt = "2.50"
-room = "2.6.1"
-coroutines = "1.7.3"
-navigation3 = "1.4.0-beta01"
-material3-adaptive = "1.0.0-beta01"
-
-[libraries]
-# Core dependencies
-androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
-kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
-
-# Navigation3 dependencies
-androidx-navigation3-compose = { group = "androidx.navigation3", name = "navigation3-compose", version.ref = "navigation3" }
-androidx-material3-adaptive-navigation3 = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation3", version.ref = "material3-adaptive" }
-
-# UI dependencies
-androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "compose-bom" }
-androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "compose-bom" }
-androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version = "2.7.0" }
-
-[bundles]
-compose = [
-    "androidx-compose-ui",
-    "androidx-compose-ui-tooling-preview",
-    "androidx-compose-material3",
-    "androidx-compose-foundation"
-]
-
-navigation3 = [
-    "androidx-navigation3-compose",
-    "androidx-material3-adaptive-navigation3"
-]
-
-[plugins]
-hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
-kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
-```
-
-## Build Configuration
-
-Use convention plugins in `build-logic/` for consistent configuration:
-
-### Convention Plugins:
-- `AndroidApplicationConventionPlugin` - App module
-- `AndroidLibraryConventionPlugin` - Core library modules
-- `AndroidFeatureConventionPlugin` - Feature modules
-- `AndroidComposeConventionPlugin` - Compose setup
-- `AndroidHiltConventionPlugin` - Hilt setup
-- `AndroidRoomConventionPlugin` - Room database setup
-
-### Feature Module Build Configuration:
-```kotlin
-// build-logic/convention/src/main/kotlin/AndroidFeatureConventionPlugin.kt
-class AndroidFeatureConventionPlugin : Plugin<Project> {
-    override fun apply(target: Project) {
-        with(target) {
-            pluginManager.apply {
-                apply("com.android.library")
-                apply("org.jetbrains.kotlin.android")
-                apply("kotlin-kapt")
-                apply("dagger.hilt.android.plugin")
-            }
-            
-            extensions.configure<LibraryExtension> {
-                configureAndroidCommon(this)
-                defaultConfig {
-                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                }
-            }
-            
-            dependencies {
-                add("implementation", project(":core:domain"))
-                add("implementation", project(":core:ui"))
-                add("implementation", libs.bundles.compose)
-                add("implementation", libs.androidx.lifecycle.viewmodel.compose)
-                add("implementation", libs.bundles.navigation3)
-                add("implementation", libs.hilt.android)
-                add("kapt", libs.hilt.compiler)
             }
         }
     }
