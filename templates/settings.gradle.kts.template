@@ -1,0 +1,119 @@
+//settings.gradle.kts
+pluginManagement {
+    includeBuild("build-logic")
+    repositories {
+        google {
+            content {
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+                includeGroupByRegex("androidx.*")
+            }
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google {
+            content {
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+                includeGroupByRegex("androidx.*")
+            }
+        }
+        mavenCentral()
+
+        // Add any custom repositories here
+        maven { url = uri("https://jitpack.io") }
+    }
+
+    versionCatalogs {
+        create("libs") {
+            from(files("gradle/libs.versions.toml"))
+        }
+    }
+}
+
+rootProject.name = "{{PROJECT_NAME}}"
+
+// Enable modern Gradle features
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
+
+// App module - Navigation coordination, DI setup, app entry point
+include(":app")
+
+// Feature modules - Self-contained features with clear boundaries
+// include(":feature-auth")
+// include(":feature-home")
+// include(":feature-profile")
+// include(":feature-settings")
+
+// Core modules - Shared library code with strict dependency rules
+include(":core:domain")    // Pure Kotlin: Use Cases, Repository interfaces, Domain models
+include(":core:data")      // Data layer: Repository implementations, DataSources, Data models
+include(":core:ui")        // Shared UI components, themes, base ViewModels
+include(":core:network")   // Retrofit, API models, network utilities
+include(":core:database")  // Room DAOs, entities, migrations
+include(":core:datastore") // Preferences storage (DataStore)
+include(":core:common")    // Shared utilities, extensions, dispatchers
+include(":core:testing")   // Test utilities, test doubles, test rules
+
+// Configure build optimization for multi-module projects
+configureBuildOptimization()
+
+/**
+ * Configures build optimization settings for our modular architecture
+ */
+fun configureBuildOptimization() {
+    // Set consistent build file names
+    gradle.settingsEvaluated {
+        for (project in projects) {
+            project.setBuildFileName("build.gradle.kts")
+        }
+    }
+
+    // Configure project structure validation
+    gradle.projectsLoaded {
+        validateProjectStructure()
+    }
+}
+
+/**
+ * Validates that our modular architecture rules are followed
+ */
+fun validateProjectStructure() {
+    val projects = gradle.rootProject.allprojects
+
+    // Validate no feature-to-feature dependencies
+    projects.forEach { project ->
+        project.afterEvaluate {
+            val dependencies = configurations.getByName("implementation").allDependencies
+            dependencies.forEach { dependency ->
+                if (dependency is ProjectDependency) {
+                    val dependencyPath = dependency.dependencyProject.path
+                    val currentPath = project.path
+
+                    // Feature modules cannot depend on other feature modules
+                    if (currentPath.startsWith(":feature-") && dependencyPath.startsWith(":feature-") && currentPath != dependencyPath) {
+                        logger.warn("⚠️  VIOLATION: Feature module $currentPath depends on feature module $dependencyPath")
+                        logger.warn("   This violates our architecture rule: NO feature-to-feature dependencies allowed")
+                    }
+
+                    // Core:domain should have no Android dependencies (enforced in build.gradle.kts)
+                    if (currentPath == ":core:domain") {
+                        // This is validated in the core:domain build file
+                    }
+
+                    // Core:data should depend on core:domain
+                    if (currentPath == ":core:data" && !dependencyPath.startsWith(":core:")) {
+                        logger.warn("⚠️  Core:data should only depend on other core modules")
+                    }
+                }
+            }
+        }
+    }
+}
