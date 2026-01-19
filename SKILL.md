@@ -19,29 +19,40 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 ## Workflow Decision Tree
 
 **Creating a new project?**
-→ Read [modularization.md](references/modularization.md) for project structure
-→ Use templates in `templates/`
-→ Set up **app module** for navigation and DI setup
-→ Configure **feature modules** and **core modules**
+→ Start with `templates/settings.gradle.kts.template` for settings and module includes  
+→ Start with `templates/libs.versions.toml.template` for the version catalog  
+→ Read [modularization.md](references/modularization.md) for structure and module types  
+→ Use [gradle-setup.md](references/gradle-setup.md) for build files and build logic  
 
-**Adding a new feature?**
-→ Create **feature module** following naming convention `feature-[name]`
-→ Implement **Presentation Layer** in feature module
+**Configuring Gradle/build files?**
+→ Use [gradle-setup.md](references/gradle-setup.md) for module `build.gradle.kts` patterns  
+→ Keep convention plugins and build logic in `build-logic/` as described in [gradle-setup.md](references/gradle-setup.md)  
+
+**Adding or updating dependencies?**
+→ Follow [dependencies.md](references/dependencies.md)  
+→ Update `templates/libs.versions.toml.template` if the dependency is missing  
+
+**Adding a new feature/module?**
+→ Follow module naming in [modularization.md](references/modularization.md)  
+→ Implement Presentation in the feature module  
 → Follow dependency flow: Feature → Core/Domain → Core/Data
-→ Add navigation from **app module**
 
-**Building UI screens?**
+**Building UI screens/components?**
 → Read [compose-patterns.md](references/compose-patterns.md)
-→ Create Screen + ViewModel + UiState in **feature module**
+→ Create Screen + ViewModel + UiState in the feature module  
 → Use shared components from `core/ui` when possible
 
-**Setting up data layer?**
-→ Read data layer section in [architecture.md](references/architecture.md)
+**Setting up data/domain layers?**
+→ Read [architecture.md](references/architecture.md)  
 → Create Repository interfaces in `core/domain`
 → Implement Repository in `core/data`
 → Create DataSource + DAO in `core/data`
 
 **Setting up navigation?**
-→ Configure navigation graph in **app module**
-→ Use feature module navigation destinations
-→ Handle deep links and navigation arguments
+→ Follow Navigation Coordination in [modularization.md](references/modularization.md)  
+→ Configure navigation graph in the app module  
+→ Use feature navigation destinations and navigator interfaces  
+
+**Adding tests?**
+→ Use [testing.md](references/testing.md) for patterns and examples  
+→ Keep test doubles in `core/testing`  
