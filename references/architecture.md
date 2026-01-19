@@ -247,6 +247,22 @@ class AuthSessionWorker @AssistedInject constructor(
 ### Use Case Pattern
 
 ```kotlin
+// core/domain/usecase/LoginUseCase.kt
+class LoginUseCase @Inject constructor(
+    private val authRepository: AuthRepository
+) {
+    suspend operator fun invoke(email: String, password: String): Result<AuthToken> =
+        authRepository.login(email, password)
+}
+
+// core/domain/usecase/RegisterUseCase.kt
+class RegisterUseCase @Inject constructor(
+    private val authRepository: AuthRepository
+) {
+    suspend operator fun invoke(user: User): Result<Unit> =
+        authRepository.register(user)
+}
+
 // core/domain/usecase/ObserveAuthStateUseCase.kt
 class ObserveAuthStateUseCase @Inject constructor(
     private val authRepository: AuthRepository
@@ -332,6 +348,15 @@ sealed interface AuthUiState {
         val passwordError: String? = null
     ) : AuthUiState
     
+    data class RegisterForm(
+        val email: String = "",
+        val password: String = "",
+        val confirmPassword: String = "",
+        val name: String = "",
+        val isLoading: Boolean = false,
+        val errors: Map<String, String> = emptyMap()
+    ) : AuthUiState
+    
     data class ForgotPasswordForm(
         val email: String = "",
         val isLoading: Boolean = false,
@@ -360,6 +385,12 @@ sealed class AuthAction {
     data object ForgotPasswordClicked : AuthAction()
     data object RegisterClicked : AuthAction()
     
+    // Register screen actions
+    data class NameChanged(val name: String) : AuthAction()
+    data class ConfirmPasswordChanged(val confirmPassword: String) : AuthAction()
+    data object RegisterSubmit : AuthAction()
+    data object NavigateToLogin : AuthAction()
+    
     // Forgot password actions
     data object ResetPasswordClicked : AuthAction()
     
@@ -379,6 +410,7 @@ sealed class AuthAction {
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
+    private val registerUseCase: RegisterUseCase,
     private val resetPasswordUseCase: ResetPasswordUseCase
 ) : ViewModel() {
 
@@ -391,10 +423,16 @@ class AuthViewModel @Inject constructor(
             is AuthAction.PasswordChanged -> updateLoginForm { it.copy(password = action.password) }
             AuthAction.LoginClicked -> performLogin()
             AuthAction.ForgotPasswordClicked -> _uiState.value = AuthUiState.ForgotPasswordForm()
+            AuthAction.RegisterClicked -> _uiState.value = AuthUiState.RegisterForm()
+            is AuthAction.NameChanged -> updateRegisterForm { it.copy(name = action.name) }
+            is AuthAction.ConfirmPasswordChanged -> updateRegisterForm {
+                it.copy(confirmPassword = action.confirmPassword)
+            }
+            AuthAction.RegisterSubmit -> performRegistration()
+            AuthAction.NavigateToLogin -> _uiState.value = AuthUiState.LoginForm()
             AuthAction.ResetPasswordClicked -> performPasswordReset()
             AuthAction.Retry -> _uiState.value = AuthUiState.LoginForm()
             AuthAction.ClearError -> _uiState.value = AuthUiState.LoginForm()
-            AuthAction.RegisterClicked,
             AuthAction.NavigateBack -> Unit
         }
     }
@@ -423,8 +461,28 @@ class AuthViewModel @Inject constructor(
         }
     }
     
+    private fun performRegistration() {
+        viewModelScope.launch {
+            val current = _uiState.value as? AuthUiState.RegisterForm ?: return@launch
+            _uiState.value = current.copy(isLoading = true)
+            val user = User(id = "", email = current.email, name = current.name)
+            val result = registerUseCase(user)
+            _uiState.value = result.fold(
+                onSuccess = { AuthUiState.Success(user) },
+                onFailure = { error -> AuthUiState.Error(error.message ?: "Registration failed") }
+            )
+        }
+    }
+    
     private fun updateLoginForm(transform: (AuthUiState.LoginForm) -> AuthUiState.LoginForm) {
         val current = _uiState.value as? AuthUiState.LoginForm ?: return
+        _uiState.value = transform(current)
+    }
+    
+    private fun updateRegisterForm(
+        transform: (AuthUiState.RegisterForm) -> AuthUiState.RegisterForm
+    ) {
+        val current = _uiState.value as? AuthUiState.RegisterForm ?: return
         _uiState.value = transform(current)
     }
 }
