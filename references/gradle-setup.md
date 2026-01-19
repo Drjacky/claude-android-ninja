@@ -700,70 +700,8 @@ android.nonTransitiveRClass=true
 
 ### Settings Configuration
 
-`settings.gradle.kts`:
-```kotlin
-pluginManagement {
-    includeBuild("build-logic")
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-        
-        // Add any custom repositories here
-        maven { url = uri("https://jitpack.io") }
-    }
-    
-    versionCatalogs {
-        create("libs") {
-            from(files("gradle/libs.versions.toml"))
-        }
-    }
-}
-
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
-enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
-
-rootProject.name = "MyApp"
-
-// App module
-include(":app")
-
-// Feature modules
-include(":feature-auth")
-include(":feature-home")
-include(":feature-profile")
-include(":feature-settings")
-
-// Core modules
-include(":core:domain")
-include(":core:data")
-include(":core:ui")
-include(":core:network")
-include(":core:database")
-include(":core:datastore")
-include(":core:common")
-include(":core:testing")
-
-// Build optimization
-configureBuildOptimization()
-
-fun configureBuildOptimization() {
-    // Enable parallel build for modules
-    gradle.settingsEvaluated {
-        for (project in projects) {
-            project.setBuildFileName("build.gradle.kts")
-        }
-    }
-}
-```
+Check `templates/settings.gradle.kts.template` as the source of truth for settings setup,
+module includes, and repository configuration.
 
 ### Root Build File
 
