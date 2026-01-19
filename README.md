@@ -1,4 +1,3 @@
-
 <p align="center">
   <img width="300px" src="/claude-android-ninja.png" />
 </p>
@@ -9,8 +8,7 @@ This repository is an **Agent Skill** package for Android development with Kotli
 It provides a structured set of instructions, templates, and references that help agents build
 production‑quality Android apps consistently and efficiently.
 
-Learn more about the Agent Skills format here:  
-[agentskills.io](https://agentskills.io/home)
+Learn more about the Agent Skills format here: [agentskills.io](https://agentskills.io/home)
 
 ## What This Skill Covers
 - Modular Android architecture (feature‑first, core modules, strict dependencies)
