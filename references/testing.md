@@ -45,6 +45,7 @@ We make an exception in the app module for navigation testing, where MockK is us
 class TestAuthRepository : AuthRepository {
 
     private val authStateFlow = MutableStateFlow<AuthState>(AuthState.Unauthenticated)
+    private val authEventsFlow = MutableSharedFlow<AuthEvent>()
     private val users = mutableMapOf<String, User>()
     private val authTokens = mutableMapOf<String, AuthToken>()
 
@@ -60,6 +61,10 @@ class TestAuthRepository : AuthRepository {
     fun setAuthToken(email: String, token: AuthToken) {
         authTokens[email] = token
     }
+    
+    fun sendAuthEvent(event: AuthEvent) {
+        authEventsFlow.tryEmit(event)
+    }
 
     // Interface implementation
     override suspend fun login(email: String, password: String): Result<AuthToken> {
@@ -73,8 +78,14 @@ class TestAuthRepository : AuthRepository {
     }
 
     override fun observeAuthState(): Flow<AuthState> = authStateFlow
+    
+    override fun observeAuthEvents(): Flow<AuthEvent> = authEventsFlow
 
     override suspend fun resetPassword(email: String): Result<Unit> {
+        return Result.success(Unit)
+    }
+    
+    override suspend fun refreshSession(): Result<Unit> {
         return Result.success(Unit)
     }
 }
@@ -125,28 +136,10 @@ class TestAuthNavigator : AuthNavigator {
 }
 ```
 
-### Test UseCase Pattern
+### UseCase Setup Pattern
 
-```kotlin
-// core/testing/src/main/kotlin/com/example/testing/domain/
-class TestLoginUseCase : LoginUseCase {
-    
-    var shouldSucceed = true
-    var delayMillis: Long = 0
-    
-    override suspend fun invoke(email: String, password: String): Result<AuthToken> {
-        if (delayMillis > 0) {
-            delay(delayMillis)
-        }
-        
-        return if (shouldSucceed) {
-            Result.success(AuthToken("test-token", User("1", email, "Test User")))
-        } else {
-            Result.failure(Exception("Login failed"))
-        }
-    }
-}
-```
+Use real use cases wired to test doubles so you exercise production logic:
+`LoginUseCase(testAuthRepository)` and `RegisterUseCase(testAuthRepository)`.
 
 ## ViewModel Tests
 
@@ -162,20 +155,22 @@ class AuthViewModelTest {
     val dispatcherRule = TestDispatcherRule()
 
     private lateinit var testAuthRepository: TestAuthRepository
-    private lateinit var testLoginUseCase: TestLoginUseCase
-    private lateinit var testRegisterUseCase: TestRegisterUseCase
+    private lateinit var loginUseCase: LoginUseCase
+    private lateinit var registerUseCase: RegisterUseCase
+    private lateinit var resetPasswordUseCase: ResetPasswordUseCase
     private lateinit var viewModel: AuthViewModel
 
     @Before
     fun setup() {
         testAuthRepository = TestAuthRepository()
-        testLoginUseCase = TestLoginUseCase()
-        testRegisterUseCase = TestRegisterUseCase()
+        loginUseCase = LoginUseCase(testAuthRepository)
+        registerUseCase = RegisterUseCase(testAuthRepository)
+        resetPasswordUseCase = ResetPasswordUseCase(testAuthRepository)
         
         viewModel = AuthViewModel(
-            loginUseCase = testLoginUseCase,
-            registerUseCase = testRegisterUseCase,
-            resetPasswordUseCase = TestResetPasswordUseCase()
+            loginUseCase = loginUseCase,
+            registerUseCase = registerUseCase,
+            resetPasswordUseCase = resetPasswordUseCase
         )
     }
 
@@ -204,6 +199,10 @@ class AuthViewModelTest {
         // Arrange
         val testEmail = "test@example.com"
         val testPassword = "password123"
+        testAuthRepository.setAuthToken(
+            testEmail,
+            AuthToken("test-token", User("1", testEmail, "Test User"))
+        )
         
         viewModel.onAction(AuthAction.EmailChanged(testEmail))
         viewModel.onAction(AuthAction.PasswordChanged(testPassword))
@@ -353,6 +352,10 @@ fun `uiState emits correct states during login flow`() = runTest {
         // Trigger login
         viewModel.onAction(AuthAction.EmailChanged("test@example.com"))
         viewModel.onAction(AuthAction.PasswordChanged("password123"))
+        testAuthRepository.setAuthToken(
+            "test@example.com",
+            AuthToken("test-token", User("1", "test@example.com", "Test User"))
+        )
         viewModel.onAction(AuthAction.LoginClicked)
 
         // Should emit Loading state
@@ -371,8 +374,6 @@ fun `uiState emits correct states during login flow`() = runTest {
 
 @Test
 fun `uiState emits Loading, Error when login fails`() = runTest {
-    testLoginUseCase.shouldSucceed = false
-    
     viewModel.uiState.test {
         // Skip initial state
         skipItems(1)
@@ -548,23 +549,23 @@ class AppNavigatorsTest {
     }
 
     @Test
-fun `AuthNavigatorImpl navigates to main app with correct pop behavior`() {
+    fun `AuthNavigatorImpl navigates to main app with correct pop behavior`() {
         // Arrange
         val authNavigator = createAuthNavigator(mockNavController)
 
         // Act
-    authNavigator.navigateToMainApp()
+        authNavigator.navigateToMainApp()
 
         // Assert
         verify { 
-        mockNavController.navigate(
-            match { it == "main" },
-            match { 
-                it?.popUpTo?.route == "auth" && 
-                it.popUpTo.inclusive == true 
-            }
-        ) 
-    }
+            mockNavController.navigate(
+                match { it == "main" },
+                match { 
+                    it?.popUpTo?.route == "auth" && 
+                    it.popUpTo.inclusive == true 
+                }
+            ) 
+        }
     }
 
     @Test
@@ -596,24 +597,24 @@ fun `AuthNavigatorImpl navigates to main app with correct pop behavior`() {
         val testNavigator = TestAuthNavigator()
 
         // Act
-    testNavigator.navigateToMainApp()
+        testNavigator.navigateToMainApp()
         testNavigator.navigateToRegister()
         testNavigator.navigateToProfile("user123")
         testNavigator.navigateBack()
 
         // Assert
         assertThat(testNavigator.navigationEvents).hasSize(4)
-    assertThat(testNavigator.navigationEvents[0]).isEqualTo("navigateToMainApp")
-    assertThat(testNavigator.navigationEvents[1]).isEqualTo("navigateToRegister")
-    assertThat(testNavigator.navigationEvents[2]).isEqualTo("navigateToProfile:user123")
-    assertThat(testNavigator.navigationEvents[3]).isEqualTo("navigateBack")
+        assertThat(testNavigator.navigationEvents[0]).isEqualTo("navigateToMainApp")
+        assertThat(testNavigator.navigationEvents[1]).isEqualTo("navigateToRegister")
+        assertThat(testNavigator.navigationEvents[2]).isEqualTo("navigateToProfile:user123")
+        assertThat(testNavigator.navigationEvents[3]).isEqualTo("navigateBack")
     }
 
     @Test
     fun `TestAuthNavigator clearEvents works correctly`() {
         // Arrange
         val testNavigator = TestAuthNavigator()
-    testNavigator.navigateToMainApp()
+        testNavigator.navigateToMainApp()
         testNavigator.navigateToRegister()
         
         // Pre-condition
@@ -668,10 +669,10 @@ class AuthScreenTest {
         composeTestRule.setContent {
             AppTheme {
                 LoginScreen(
-                    onLoginSuccess = {},
+                    uiState = AuthUiState.LoginForm(),
+                    onAction = {},
                     onRegisterClick = {},
-                    onForgotPasswordClick = {},
-                    viewModel = FakeAuthViewModel(AuthUiState.LoginForm())
+                    onForgotPasswordClick = {}
                 )
             }
         }
@@ -689,12 +690,10 @@ class AuthScreenTest {
         composeTestRule.setContent {
             AppTheme {
                 LoginScreen(
-                    onLoginSuccess = {},
+                    uiState = AuthUiState.LoginForm(isLoading = true),
+                    onAction = {},
                     onRegisterClick = {},
-                    onForgotPasswordClick = {},
-                    viewModel = FakeAuthViewModel(
-                        AuthUiState.LoginForm(isLoading = true)
-                    )
+                    onForgotPasswordClick = {}
                 )
             }
         }
@@ -711,12 +710,10 @@ class AuthScreenTest {
         composeTestRule.setContent {
             AppTheme {
                 LoginScreen(
-                    onLoginSuccess = {},
+                    uiState = AuthUiState.Error(errorMessage, canRetry = true),
+                    onAction = {},
                     onRegisterClick = {},
-                    onForgotPasswordClick = {},
-                    viewModel = FakeAuthViewModel(
-                        AuthUiState.Error(errorMessage, canRetry = true)
-                    )
+                    onForgotPasswordClick = {}
                 )
             }
         }
@@ -737,10 +734,10 @@ class AuthScreenTest {
         composeTestRule.setContent {
             AppTheme {
                 LoginScreen(
-                    onLoginSuccess = {},
+                    uiState = AuthUiState.LoginForm(),
+                    onAction = {},
                     onRegisterClick = {},
-                    onForgotPasswordClick = {},
-                    viewModel = FakeAuthViewModel(AuthUiState.LoginForm())
+                    onForgotPasswordClick = {}
                 )
             }
         }
@@ -768,10 +765,10 @@ class AuthScreenTest {
         composeTestRule.setContent {
             AppTheme {
                 LoginScreen(
-                    onLoginSuccess = {},
+                    uiState = AuthUiState.LoginForm(),
+                    onAction = {},
                     onRegisterClick = { registerClicked = true },
-                    onForgotPasswordClick = {},
-                    viewModel = FakeAuthViewModel(AuthUiState.LoginForm())
+                    onForgotPasswordClick = {}
                 )
             }
         }
@@ -792,10 +789,10 @@ class AuthScreenTest {
         composeTestRule.setContent {
             AppTheme {
                 LoginScreen(
-                    onLoginSuccess = {},
+                    uiState = AuthUiState.LoginForm(),
+                    onAction = {},
                     onRegisterClick = {},
-                    onForgotPasswordClick = { forgotPasswordClicked = true },
-                    viewModel = FakeAuthViewModel(AuthUiState.LoginForm())
+                    onForgotPasswordClick = { forgotPasswordClicked = true }
                 )
             }
         }
@@ -814,12 +811,10 @@ class AuthScreenTest {
         composeTestRule.setContent {
             AppTheme {
                 LoginScreen(
-                    onLoginSuccess = {},
+                    uiState = AuthUiState.LoginForm(isLoading = true),
+                    onAction = {},
                     onRegisterClick = {},
-                    onForgotPasswordClick = {},
-                    viewModel = FakeAuthViewModel(
-                        AuthUiState.LoginForm(isLoading = true)
-                    )
+                    onForgotPasswordClick = {}
                 )
             }
         }
@@ -831,19 +826,6 @@ class AuthScreenTest {
     }
 }
 
-// Fake ViewModel for UI tests
-class FakeAuthViewModel(private val initialState: AuthUiState) : AuthViewModel(
-    loginUseCase = TestLoginUseCase(),
-    registerUseCase = TestRegisterUseCase(),
-    resetPasswordUseCase = TestResetPasswordUseCase()
-) {
-    private val _uiState = MutableStateFlow(initialState)
-    override val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
-    
-    override fun onAction(action: AuthAction) {
-        // No-op for UI tests
-    }
-}
 ```
 
 ## Test Utilities
