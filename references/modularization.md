@@ -68,14 +68,14 @@ Shared library code used across features with strict dependency direction.
 
 | Module           | Purpose                                         | Dependencies                                        | Key Classes                                                                            |
 |------------------|-------------------------------------------------|-----------------------------------------------------|----------------------------------------------------------------------------------------|
-| `core:domain`    | Domain models, use cases, repository interfaces | None (pure Kotlin)                                  | `Topic`, `UserNewsResource`, `GetUserNewsResourcesUseCase`, `NewsRepository` interface |
-| `core:data`      | Repository implementations, data coordination   | `core:domain`                                       | `OfflineFirstTopicsRepository`, `UserDataRepositoryImpl`                               |
-| `core:database`  | Room database, DAOs, entities                   | `core:model` (if separate), otherwise `core:domain` | `MyDatabase`, `TopicDao`, `TopicEntity`                                                |
-| `core:network`   | Retrofit API, network models                    | `core:model` (if separate), otherwise `core:domain` | `RetrofitNetwork`, `NetworkTopic`                                                      |
-| `core:datastore` | Proto DataStore preferences                     | None                                                | `UserPreferencesDataSource`                                                            |
+| `core:domain`    | Domain models, use cases, repository interfaces | None (pure Kotlin)                                  | `AuthToken`, `User`, `LoginUseCase`, `AuthRepository` interface                        |
+| `core:data`      | Repository implementations, data coordination   | `core:domain`                                       | `AuthRepositoryImpl`, `AuthRemoteDataSource`, `AuthLocalDataSource`                    |
+| `core:database`  | Room database, DAOs, entities                   | `core:model` (if separate), otherwise `core:domain` | `AuthDatabase`, `AuthTokenDao`, `UserEntity`                                           |
+| `core:network`   | Retrofit API, network models                    | `core:model` (if separate), otherwise `core:domain` | `AuthApi`, `NetworkAuthResponse`                                                       |
+| `core:datastore` | Proto DataStore preferences                     | None                                                | `AuthPreferencesDataSource`                                                            |
 | `core:common`    | Shared utilities, extensions                    | None                                                | `AppDispatchers`, `ResultExtensions`                                                   |
-| `core:ui`        | Reusable UI components, themes, base ViewModels | `core:domain` (optional)                            | `NewsResourceCard`, `MyTheme`, `BaseViewModel`                                         |
-| `core:testing`   | Test utilities, test doubles                    | Depends on module being tested                      | `TestDispatcherRule`, `FakeRepository`                                                 |
+| `core:ui`        | Reusable UI components, themes, base ViewModels | `core:domain` (optional)                            | `AuthForm`, `AuthTheme`, `BaseViewModel`                                               |
+| `core:testing`   | Test utilities, test doubles                    | Depends on module being tested                      | `TestDispatcherRule`, `TestAuthRepository`                                             |
 
 ## Module Structure
 
@@ -84,11 +84,11 @@ Shared library code used across features with strict dependency direction.
 ```
 app/                    # App module - navigation, DI setup, app entry point
 feature/
-  ├── feature-auth/     # Authentication feature
-  ├── feature-home/     # Home screen feature
-  ├── feature-profile/  # User profile feature
-  ├── feature-settings/ # App settings feature
-  └── feature-<name>/   # Additional features...
+  ├── feature-auth/       # Authentication feature
+  ├── feature-onboarding/ # Signup and onboarding flow
+  ├── feature-profile/    # User profile feature
+  ├── feature-settings/   # App settings feature
+  └── feature-<name>/     # Additional features...
 core/
   ├── domain/           # Pure Kotlin: Use Cases, Repository interfaces, Domain models
   ├── data/             # Data layer: Repository impl, DataSources, Data models
@@ -112,35 +112,35 @@ build-logic/            # Convention plugins for consistent builds
 ### Feature Module Structure
 
 ```
-feature-home/
+feature-auth/
 ├── build.gradle.kts
 ├── src/main/
-│   ├── kotlin/com/example/feature/home/
+│   ├── kotlin/com/example/feature/auth/
 │   │   ├── presentation/              # Presentation Layer
-│   │   │   ├── HomeScreen.kt          # Main composable
-│   │   │   ├── HomeRoute.kt           # Feature route composable
+│   │   │   ├── AuthScreen.kt          # Main composable
+│   │   │   ├── AuthRoute.kt           # Feature route composable
 │   │   │   ├── viewmodel/             
-│   │   │   │   ├── HomeViewModel.kt   # State holder
-│   │   │   │   ├── HomeUiState.kt     # UI state models
-│   │   │   │   └── HomeActions.kt     # User actions
+│   │   │   │   ├── AuthViewModel.kt   # State holder
+│   │   │   │   ├── AuthUiState.kt     # UI state models
+│   │   │   │   └── AuthActions.kt     # User actions
 │   │   │   └── components/            # Feature-specific UI components
-│   │   │       ├── NewsResourceCard.kt
-│   │   │       └── HomeTopBar.kt
+│   │   │       ├── AuthFormCard.kt
+│   │   │       └── AuthHeader.kt
 │   │   ├── navigation/                # Navigation Layer
-│   │   │   ├── HomeDestination.kt     # Feature routes (sealed class)
-│   │   │   ├── HomeNavigator.kt       # Navigation interface
-│   │   │   └── HomeGraph.kt           # NavGraphBuilder extension
+│   │   │   ├── AuthDestination.kt     # Feature routes (sealed class)
+│   │   │   ├── AuthNavigator.kt       # Navigation interface
+│   │   │   └── AuthGraph.kt           # NavGraphBuilder extension
 │   │   └── di/                        # Feature-specific DI
-│   │       └── HomeModule.kt          # Hilt module
+│   │       └── AuthModule.kt          # Hilt module
 │   └── res/                          # Feature resources
 │       ├── drawable/
 │       └── values/
 └── src/test/                         # Feature tests
-    └── kotlin/com/example/feature/home/
+    └── kotlin/com/example/feature/auth/
         ├── presentation/viewmodel/
-        │   └── HomeViewModelTest.kt
+        │   └── AuthViewModelTest.kt
         └── navigation/
-            └── HomeDestinationTest.kt
+            └── AuthDestinationTest.kt
 ```
 
 ### Core Module Structure
@@ -150,17 +150,16 @@ core/domain/
 ├── build.gradle.kts
 ├── src/main/kotlin/com/example/core/domain/
 │   ├── model/                         # Domain models
-│   │   ├── Topic.kt
-│   │   ├── NewsResource.kt
-│   │   └── UserNewsResource.kt
+│   │   ├── User.kt
+│   │   ├── AuthToken.kt
+│   │   └── AuthState.kt
 │   ├── repository/                    # Repository interfaces
-│   │   ├── TopicsRepository.kt
-│   │   ├── NewsRepository.kt
-│   │   └── UserDataRepository.kt
+│   │   └── AuthRepository.kt
 │   ├── usecase/                       # Use cases
-│   │   ├── GetUserNewsResourcesUseCase.kt
-│   │   ├── BookmarkNewsUseCase.kt
-│   │   └── GetTopicsUseCase.kt
+│   │   ├── LoginUseCase.kt
+│   │   ├── RegisterUseCase.kt
+│   │   ├── ResetPasswordUseCase.kt
+│   │   └── ObserveAuthStateUseCase.kt
 │   └── di/                           # Domain DI (if needed)
 │       └── DomainModule.kt
 └── src/test/kotlin/com/example/core/domain/
@@ -202,7 +201,7 @@ graph TB
     
     subgraph "Feature Modules"
         Auth[feature-auth]
-        Home[feature-home]
+        Onboarding[feature-onboarding]
         Profile[feature-profile]
         Settings[feature-settings]
     end
@@ -217,7 +216,7 @@ graph TB
     end
     
     App --> Auth
-    App --> Home
+    App --> Onboarding
     App --> Profile
     App --> Settings
     
@@ -231,8 +230,8 @@ graph TB
     Auth -.-> Domain
     Auth -.-> UI
     
-    Home -.-> Domain
-    Home -.-> UI
+    Onboarding -.-> Domain
+    Onboarding -.-> UI
     
     Profile -.-> Domain
     Profile -.-> UI
@@ -250,7 +249,7 @@ graph TB
     UI -.-> Domain
     
     style Auth fill:#e1f5fe
-    style Home fill:#e1f5fe
+    style Onboarding fill:#e1f5fe
     style Profile fill:#e1f5fe
     style Settings fill:#e1f5fe
     style UI fill:#f3e5f5
@@ -342,7 +341,6 @@ interface AuthNavigator {
     fun navigateToRegister()
     fun navigateToForgotPassword()
     fun navigateBack()
-    fun navigateToHome()
     fun navigateToProfile(userId: String)
     fun navigateToMainApp()
 }
@@ -428,33 +426,34 @@ dependencies {
 
 **Step 3: Create domain models**
 ```kotlin
-// core/domain/model/Topic.kt
-data class Topic(
+// core/domain/model/User.kt
+data class User(
     val id: String,
+    val email: String,
     val name: String,
-    val description: String,
-    val imageUrl: String?,
-    val createdAt: Instant,
-    val updatedAt: Instant
+    val profileImage: String? = null
 )
 
-// core/domain/repository/TopicsRepository.kt
-interface TopicsRepository {
-    fun getTopics(): Flow<List<Topic>>
-    fun getTopic(id: String): Flow<Topic>
-    suspend fun refreshTopics(): Result<Unit>
-    suspend fun syncWith(synchronizer: Synchronizer): Boolean
+// core/domain/model/AuthToken.kt
+data class AuthToken(
+    val value: String,
+    val user: User
+)
+
+// core/domain/repository/AuthRepository.kt
+interface AuthRepository {
+    suspend fun login(email: String, password: String): Result<AuthToken>
+    suspend fun register(user: User): Result<Unit>
+    suspend fun resetPassword(email: String): Result<Unit>
+    fun observeAuthState(): Flow<AuthState>
 }
 
-// core/domain/usecase/GetTopicsUseCase.kt
-class GetTopicsUseCase @Inject constructor(
-    private val topicsRepository: TopicsRepository
+// core/domain/usecase/ObserveAuthStateUseCase.kt
+class ObserveAuthStateUseCase @Inject constructor(
+    private val authRepository: AuthRepository
 ) {
-    operator fun invoke(): Flow<List<Topic>> =
-        topicsRepository.getTopics()
-            .map { topics ->
-                topics.sortedBy { it.name }
-            }
+    operator fun invoke(): Flow<AuthState> =
+        authRepository.observeAuthState()
 }
 ```
 
@@ -483,7 +482,7 @@ android {
 dependencies {
     // Feature modules
     implementation(project(":feature-auth"))
-    implementation(project(":feature-home"))
+    implementation(project(":feature-onboarding"))
     implementation(project(":feature-profile"))
     implementation(project(":feature-settings"))
     
@@ -521,11 +520,6 @@ fun AppNavigation() {
     // Create navigator implementations
     val authNavigator = remember {
         object : AuthNavigator {
-            override fun navigateToHome() {
-                navController.navigate("home") {
-                    popUpTo("auth") { inclusive = true }
-                }
-            }
             override fun navigateToRegister() = navController.navigate("auth/register")
             override fun navigateToForgotPassword() = navController.navigate("auth/forgot_password")
             override fun navigateBack() = navController.popBackStack()
@@ -538,25 +532,15 @@ fun AppNavigation() {
         }
     }
     
-    val homeNavigator = remember {
-        object : HomeNavigator {
-            override fun navigateToDetail(resourceId: String) = 
-                navController.navigate("home/detail/$resourceId")
-            override fun navigateBack() = navController.popBackStack()
-            override fun navigateToSettings() = navController.navigate("settings")
-            override fun navigateToProfile() = navController.navigate("profile")
-        }
-    }
-    
     NavigationSuiteScaffold(
         state = navigationSuiteScaffoldState,
         windowAdaptiveInfo = windowAdaptiveInfo,
         navigationSuiteItems = {
             item(
-                icon = Icons.Default.Home,
-                label = "Home",
-                selected = navController.currentDestination?.route?.startsWith("home") == true,
-                onClick = { navController.navigate("home") }
+                icon = Icons.Default.Lock,
+                label = "Auth",
+                selected = navController.currentDestination?.route?.startsWith("auth") == true,
+                onClick = { navController.navigate("auth") }
             )
             item(
                 icon = Icons.Default.Person,
@@ -578,7 +562,6 @@ fun AppNavigation() {
             modifier = Modifier.fillMaxSize()
         ) {
             authGraph(authNavigator)
-            homeGraph(homeNavigator)
             profileGraph()
             settingsGraph()
             
@@ -613,25 +596,24 @@ User Action → Screen → Navigator Interface → App Module → Navigation3 �
 Tap Link → Call navigate() → Contract → Implementation → NavController → Feature Graph
 ```
 
-### Example: Home Feature Navigation
+### Example: Auth Feature Navigation
 
 ```kotlin
-// feature-home/navigation/HomeNavigator.kt
-interface HomeNavigator {
-    fun navigateToDetail(resourceId: String)
+// feature-auth/navigation/AuthNavigator.kt
+interface AuthNavigator {
+    fun navigateToRegister()
+    fun navigateToForgotPassword()
     fun navigateBack()
-    fun navigateToSettings()
-    fun navigateToProfile()
+    fun navigateToMainApp()
 }
 
 // In App module implementation:
-val homeNavigator = remember {
-    object : HomeNavigator {
-        override fun navigateToDetail(resourceId: String) = 
-            navController.navigate("home/detail/$resourceId")
+val authNavigator = remember {
+    object : AuthNavigator {
+        override fun navigateToRegister() = navController.navigate("auth/register")
+        override fun navigateToForgotPassword() = navController.navigate("auth/forgot_password")
         override fun navigateBack() = navController.popBackStack()
-        override fun navigateToSettings() = navController.navigate("settings")
-        override fun navigateToProfile() = navController.navigate("profile")
+        override fun navigateToMainApp() = navController.navigate("main")
     }
 }
 ```
@@ -757,7 +739,7 @@ kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 If migrating from NowInAndroid's `api/impl` structure:
 
 1. **Consolidate features**: Merge `feature/{name}/api` and `feature/{name}/impl` into single `feature-{name}` module
-2. **Update dependencies**: Change `implementation(project(":feature:topic:api"))` to Navigator interfaces
+2. **Update dependencies**: Change `implementation(project(":feature:auth:api"))` to Navigator interfaces
 3. **Move navigation**: Bring all navigation logic into app module
 4. **Update build files**: Simplify gradle configurations
 5. **Add Navigation3**: Replace old Navigation with Navigation3 components

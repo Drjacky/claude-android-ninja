@@ -90,10 +90,6 @@ class TestAuthNavigator : AuthNavigator {
     val navigationEvents: List<String> get() = _navigationEvents
 
     // Interface implementation with tracking
-    override fun navigateToHome() {
-        _navigationEvents.add("navigateToHome")
-    }
-
     override fun navigateToRegister() {
         _navigationEvents.add("navigateToRegister")
     }
@@ -552,23 +548,23 @@ class AppNavigatorsTest {
     }
 
     @Test
-    fun `AuthNavigatorImpl navigates to home with correct pop behavior`() {
+fun `AuthNavigatorImpl navigates to main app with correct pop behavior`() {
         // Arrange
         val authNavigator = createAuthNavigator(mockNavController)
 
         // Act
-        authNavigator.navigateToHome()
+    authNavigator.navigateToMainApp()
 
         // Assert
         verify { 
-            mockNavController.navigate(
-                match { it == "home" },
-                match { 
-                    it?.popUpTo?.route == "auth" && 
-                    it.popUpTo.inclusive == true 
-                }
-            ) 
-        }
+        mockNavController.navigate(
+            match { it == "main" },
+            match { 
+                it?.popUpTo?.route == "auth" && 
+                it.popUpTo.inclusive == true 
+            }
+        ) 
+    }
     }
 
     @Test
@@ -600,24 +596,24 @@ class AppNavigatorsTest {
         val testNavigator = TestAuthNavigator()
 
         // Act
-        testNavigator.navigateToHome()
+    testNavigator.navigateToMainApp()
         testNavigator.navigateToRegister()
         testNavigator.navigateToProfile("user123")
         testNavigator.navigateBack()
 
         // Assert
         assertThat(testNavigator.navigationEvents).hasSize(4)
-        assertThat(testNavigator.navigationEvents[0]).isEqualTo("navigateToHome")
-        assertThat(testNavigator.navigationEvents[1]).isEqualTo("navigateToRegister")
-        assertThat(testNavigator.navigationEvents[2]).isEqualTo("navigateToProfile:user123")
-        assertThat(testNavigator.navigationEvents[3]).isEqualTo("navigateBack")
+    assertThat(testNavigator.navigationEvents[0]).isEqualTo("navigateToMainApp")
+    assertThat(testNavigator.navigationEvents[1]).isEqualTo("navigateToRegister")
+    assertThat(testNavigator.navigationEvents[2]).isEqualTo("navigateToProfile:user123")
+    assertThat(testNavigator.navigationEvents[3]).isEqualTo("navigateBack")
     }
 
     @Test
     fun `TestAuthNavigator clearEvents works correctly`() {
         // Arrange
         val testNavigator = TestAuthNavigator()
-        testNavigator.navigateToHome()
+    testNavigator.navigateToMainApp()
         testNavigator.navigateToRegister()
         
         // Pre-condition
@@ -632,11 +628,6 @@ class AppNavigatorsTest {
 
     private fun createAuthNavigator(navController: NavHostController): AuthNavigator {
         return object : AuthNavigator {
-            override fun navigateToHome() {
-                navController.navigate("home") {
-                    popUpTo("auth") { inclusive = true }
-                }
-            }
             override fun navigateToRegister() = navController.navigate("auth/register")
             override fun navigateToForgotPassword() = navController.navigate("auth/forgot_password")
             override fun navigateBack() = navController.popBackStack()

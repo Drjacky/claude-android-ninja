@@ -103,7 +103,7 @@ Four-layer architecture with strict module separation and unidirectional data fl
 app/                    # App module - navigation, DI setup, app entry point
 feature/
   ├── feature-auth/     # Authentication feature
-  ├── feature-home/     # Home screen feature
+  ├── feature-onboarding/ # Signup and onboarding flow
   ├── feature-profile/  # User profile feature
   ├── feature-settings/ # App settings feature
   └── feature-<name>/   # Additional features...
@@ -130,47 +130,46 @@ core/
 
 ```kotlin
 // core/domain - Repository interface (contract)
-interface TopicsRepository {
-    fun getTopics(): Flow<List<Topic>>
-    fun getTopic(id: String): Flow<Topic>
-    suspend fun syncWith(synchronizer: Synchronizer): Boolean
-    suspend fun refreshTopics(): Result<Unit>
+interface AuthRepository {
+    suspend fun login(email: String, password: String): Result<AuthToken>
+    suspend fun register(user: User): Result<Unit>
+    suspend fun resetPassword(email: String): Result<Unit>
+    fun observeAuthState(): Flow<AuthState>
 }
 
 // core/data - Repository implementation
-internal class OfflineFirstTopicsRepository @Inject constructor(
-    private val topicDao: TopicDao,
-    private val networkDataSource: NetworkDataSource,
-    private val topicMapper: TopicMapper
-) : TopicsRepository {
+internal class AuthRepositoryImpl @Inject constructor(
+    private val localDataSource: AuthLocalDataSource,
+    private val remoteDataSource: AuthRemoteDataSource,
+    private val authMapper: AuthMapper
+) : AuthRepository {
 
-    override fun getTopics(): Flow<List<Topic>> =
-        topicDao.getTopicEntities()
-            .map { entities -> entities.map(topicMapper::toDomain) }
-            .catch { e -> emit(emptyList()) } // Graceful error handling
-
-    override fun getTopic(id: String): Flow<Topic> =
-        topicDao.getTopicEntity(id)
-            .map(topicMapper::toDomain)
-
-    override suspend fun syncWith(synchronizer: Synchronizer): Boolean =
-        synchronizer.changeListSync(
-            versionReader = ChangeListVersions::topicVersion,
-            changeListFetcher = { networkDataSource.getTopicChangeList(after = it) },
-            versionUpdater = { latestVersion ->
-                copy(topicVersion = latestVersion)
-            },
-            modelDeleter = topicDao::deleteTopics,
-            modelUpdater = { changedIds ->
-                val networkTopics = networkDataSource.getTopics(ids = changedIds)
-                topicDao.upsertTopics(networkTopics.map(topicMapper::toEntity))
-            },
-        )
-
-    override suspend fun refreshTopics(): Result<Unit> = runCatching {
-        val topics = networkDataSource.getTopics()
-        topicDao.upsertTopics(topics.map(topicMapper::toEntity))
+    override suspend fun login(email: String, password: String): Result<AuthToken> = runCatching {
+        val response = remoteDataSource.login(email, password)
+        localDataSource.saveAuthToken(response.token)
+        localDataSource.saveUser(authMapper.toEntity(response.user))
+        response.token
     }
+
+    override suspend fun register(user: User): Result<Unit> = runCatching {
+        remoteDataSource.register(authMapper.toNetwork(user))
+        Unit
+    }
+
+    override suspend fun resetPassword(email: String): Result<Unit> =
+        remoteDataSource.resetPassword(email)
+
+    override fun observeAuthState(): Flow<AuthState> =
+        localDataSource.observeAuthToken()
+            .map { token ->
+                if (token != null) {
+                    val user = authMapper.toDomain(localDataSource.getUser())
+                    AuthState.Authenticated(user)
+                } else {
+                    AuthState.Unauthenticated
+                }
+            }
+            .catch { e -> emit(AuthState.Error(e.message ?: "Unknown error")) }
 }
 ```
 
@@ -185,37 +184,31 @@ internal class OfflineFirstTopicsRepository @Inject constructor(
 ### Model Mapping Strategy
 
 ```kotlin
-// core/data/mapping/TopicMapper.kt
-class TopicMapper @Inject constructor() {
+// core/data/mapping/AuthMapper.kt
+class AuthMapper @Inject constructor() {
     
     // Entity → Domain
-    fun toDomain(entity: TopicEntity): Topic = Topic(
-        id = entity.id,
-        name = entity.name,
-        description = entity.description,
-        imageUrl = entity.imageUrl,
-        createdAt = entity.createdAt,
-        updatedAt = entity.updatedAt
+    fun toDomain(entity: UserEntity?): User = User(
+        id = entity?.id.orEmpty(),
+        email = entity?.email.orEmpty(),
+        name = entity?.name.orEmpty(),
+        profileImage = entity?.profileImage
     )
     
-    // DTO → Entity
-    fun toEntity(dto: TopicDto): TopicEntity = TopicEntity(
-        id = dto.id,
-        name = dto.name,
-        description = dto.description,
-        imageUrl = dto.imageUrl,
-        createdAt = Instant.parse(dto.createdAt),
-        updatedAt = Instant.parse(dto.updatedAt)
+    // Network → Entity
+    fun toEntity(user: NetworkUser): UserEntity = UserEntity(
+        id = user.id,
+        email = user.email,
+        name = user.name,
+        profileImage = user.profileImage
     )
     
-    // Domain → Entity (optional, for updates)
-    fun toEntity(domain: Topic): TopicEntity = TopicEntity(
-        id = domain.id,
-        name = domain.name,
-        description = domain.description,
-        imageUrl = domain.imageUrl,
-        createdAt = domain.createdAt,
-        updatedAt = domain.updatedAt
+    // Domain → Network (for register/update)
+    fun toNetwork(user: User): NetworkUser = NetworkUser(
+        id = user.id,
+        email = user.email,
+        name = user.name,
+        profileImage = user.profileImage
     )
 }
 ```
@@ -223,30 +216,21 @@ class TopicMapper @Inject constructor() {
 ### Data Synchronization
 
 ```kotlin
-// core/data/sync/SyncWorker.kt
+// core/data/sync/AuthSessionWorker.kt
 @HiltWorker
-class SyncWorker @AssistedInject constructor(
+class AuthSessionWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
-    private val newsRepository: NewsRepository,
-    private val topicsRepository: TopicsRepository,
-) : CoroutineWorker(context, params), Synchronizer {
+    private val authRepository: AuthRepository
+) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        try {
-            val results = listOf(
-                newsRepository.syncWith(this@SyncWorker),
-                topicsRepository.syncWith(this@SyncWorker),
-            )
-            
-            if (results.all { it }) {
-                Result.success()
-            } else {
-                Result.retry()
-            }
-        } catch (e: Exception) {
-            Result.failure()
-        }
+        runCatching {
+            authRepository.refreshSession()
+        }.fold(
+            onSuccess = { Result.success() },
+            onFailure = { Result.retry() }
+        )
     }
 }
 ```
@@ -263,47 +247,33 @@ class SyncWorker @AssistedInject constructor(
 ### Use Case Pattern
 
 ```kotlin
-// core/domain/usecase/GetUserNewsResourcesUseCase.kt
-class GetUserNewsResourcesUseCase @Inject constructor(
-    private val newsRepository: NewsRepository,
-    private val userDataRepository: UserDataRepository,
-    private val newsMapper: NewsMapper
+// core/domain/usecase/ObserveAuthStateUseCase.kt
+class ObserveAuthStateUseCase @Inject constructor(
+    private val authRepository: AuthRepository
 ) {
-    operator fun invoke(): Flow<List<UserNewsResource>> =
-        newsRepository.getNewsResources()
-            .combine(userDataRepository.userData) { newsResources, userData ->
-                newsResources.map { news ->
-                    newsMapper.toUserNewsResource(news, userData)
-                }
-            }
-            .map { resources ->
-                resources.sortedByDescending { it.publishedAt }
-            }
+    operator fun invoke(): Flow<AuthState> =
+        authRepository.observeAuthState()
 }
 
-// core/domain/usecase/BookmarkNewsUseCase.kt
-class BookmarkNewsUseCase @Inject constructor(
-    private val userDataRepository: UserDataRepository
+// core/domain/usecase/ResetPasswordUseCase.kt
+class ResetPasswordUseCase @Inject constructor(
+    private val authRepository: AuthRepository
 ) {
-    suspend operator fun invoke(newsResourceId: String, bookmarked: Boolean): Result<Unit> =
-        runCatching {
-            userDataRepository.setNewsResourceBookmarked(newsResourceId, bookmarked)
-        }
+    suspend operator fun invoke(email: String): Result<Unit> =
+        authRepository.resetPassword(email)
 }
 ```
 
 ### Repository Interface Pattern
 
 ```kotlin
-// core/domain/repository/NewsRepository.kt
-interface NewsRepository {
-    fun getNewsResources(): Flow<List<NewsResource>>
-    fun getNewsResource(id: String): Flow<NewsResource>
-    suspend fun refreshNewsResources(): Result<Unit>
-    suspend fun syncWith(synchronizer: Synchronizer): Boolean
-    
-    // Events
-    fun observeNewsEvents(): Flow<NewsEvent>
+// core/domain/repository/AuthRepository.kt
+interface AuthRepository {
+    suspend fun login(email: String, password: String): Result<AuthToken>
+    suspend fun register(user: User): Result<Unit>
+    suspend fun resetPassword(email: String): Result<Unit>
+    fun observeAuthState(): Flow<AuthState>
+    fun observeAuthEvents(): Flow<AuthEvent>
 }
 ```
 
@@ -311,30 +281,29 @@ interface NewsRepository {
 
 ```kotlin
 // core/domain/model/
-data class Topic(
+data class User(
     val id: String,
+    val email: String,
     val name: String,
-    val description: String,
-    val imageUrl: String?,
-    val createdAt: Instant,
-    val updatedAt: Instant
+    val profileImage: String? = null
 )
 
-data class UserNewsResource(
-    val id: String,
-    val title: String,
-    val content: String,
-    val url: String,
-    val publishedAt: Instant,
-    val topics: List<Topic>,
-    val isBookmarked: Boolean,
-    val isFollowing: Boolean
+data class AuthToken(
+    val value: String,
+    val user: User
 )
 
-sealed class NewsEvent {
-    data class ResourceUpdated(val id: String) : NewsEvent()
-    data class SyncCompleted(val timestamp: Instant) : NewsEvent()
-    data class Error(val message: String, val retryable: Boolean) : NewsEvent()
+sealed class AuthState {
+    data object Loading : AuthState()
+    data object Unauthenticated : AuthState()
+    data class Authenticated(val user: User) : AuthState()
+    data class Error(val message: String) : AuthState()
+}
+
+sealed class AuthEvent {
+    data class SessionRefreshed(val timestamp: Instant) : AuthEvent()
+    data class SessionExpired(val reason: String) : AuthEvent()
+    data class Error(val message: String, val retryable: Boolean) : AuthEvent()
 }
 ```
 
@@ -351,159 +320,112 @@ sealed class NewsEvent {
 ### UiState Modeling
 
 ```kotlin
-// feature-home/presentation/viewmodel/HomeUiState.kt
-sealed interface HomeUiState {
-    data object Loading : HomeUiState
+// feature-auth/presentation/viewmodel/AuthUiState.kt
+sealed interface AuthUiState {
+    data object Loading : AuthUiState
     
-    data class Success(
-        val feed: List<UserNewsResource>,
-        val selectedTopic: String? = null,
-        val isRefreshing: Boolean = false,
-        val isLoadingMore: Boolean = false
-    ) : HomeUiState
+    data class LoginForm(
+        val email: String = "",
+        val password: String = "",
+        val isLoading: Boolean = false,
+        val emailError: String? = null,
+        val passwordError: String? = null
+    ) : AuthUiState
+    
+    data class ForgotPasswordForm(
+        val email: String = "",
+        val isLoading: Boolean = false,
+        val emailError: String? = null,
+        val isEmailSent: Boolean = false
+    ) : AuthUiState
+    
+    data class Success(val user: User) : AuthUiState
     
     data class Error(
         val message: String,
-        val canRetry: Boolean = true,
-        val errorType: ErrorType = ErrorType.Network
-    ) : HomeUiState
-    
-    data object Empty : HomeUiState
-}
-
-enum class ErrorType {
-    Network, Server, Database, Unknown
+        val canRetry: Boolean = true
+    ) : AuthUiState
 }
 ```
 
 ### Actions Pattern
 
 ```kotlin
-// feature-home/presentation/viewmodel/HomeActions.kt
-sealed class HomeAction {
-    // Data loading
-    data object LoadInitial : HomeAction()
-    data object Refresh : HomeAction()
-    data object LoadMore : HomeAction()
+// feature-auth/presentation/viewmodel/AuthActions.kt
+sealed class AuthAction {
+    // Login screen actions
+    data class EmailChanged(val email: String) : AuthAction()
+    data class PasswordChanged(val password: String) : AuthAction()
+    data object LoginClicked : AuthAction()
+    data object ForgotPasswordClicked : AuthAction()
+    data object RegisterClicked : AuthAction()
     
-    // User interactions
-    data class SelectTopic(val topicId: String) : HomeAction()
-    data class ToggleBookmark(val resourceId: String) : HomeAction()
-    data class NavigateToDetail(val resourceId: String) : HomeAction()
+    // Forgot password actions
+    data object ResetPasswordClicked : AuthAction()
     
     // Error handling
-    data object Retry : HomeAction()
-    data object ClearError : HomeAction()
+    data object Retry : AuthAction()
+    data object ClearError : AuthAction()
     
     // Navigation
-    data object NavigateToSettings : HomeAction()
-    data object NavigateToProfile : HomeAction()
+    data object NavigateBack : AuthAction()
 }
 ```
 
 ### ViewModel Pattern
 
 ```kotlin
-// feature-home/presentation/viewmodel/HomeViewModel.kt
+// feature-auth/presentation/viewmodel/AuthViewModel.kt
 @HiltViewModel
-class HomeViewModel @Inject constructor(
-    private val getUserNewsResourcesUseCase: GetUserNewsResourcesUseCase,
-    private val bookmarkNewsUseCase: BookmarkNewsUseCase,
-    private val topicsRepository: TopicsRepository,
-    private val appDispatchers: AppDispatchers
+class AuthViewModel @Inject constructor(
+    private val loginUseCase: LoginUseCase,
+    private val resetPasswordUseCase: ResetPasswordUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
-    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.LoginForm())
+    val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
     
-    private val _actions = MutableSharedFlow<HomeAction>()
-    val actions: SharedFlow<HomeAction> = _actions.asSharedFlow()
-    
-    init {
-        loadInitialData()
-        observeDataChanges()
-    }
-    
-    fun onAction(action: HomeAction) {
-        viewModelScope.launch(appDispatchers.io) {
-            when (action) {
-                HomeAction.LoadInitial -> loadInitialData()
-                HomeAction.Refresh -> refreshData()
-                HomeAction.LoadMore -> loadMoreData()
-                is HomeAction.SelectTopic -> selectTopic(action.topicId)
-                is HomeAction.ToggleBookmark -> toggleBookmark(action.resourceId)
-                is HomeAction.NavigateToDetail -> navigateToDetail(action.resourceId)
-                HomeAction.Retry -> handleRetry()
-                HomeAction.ClearError -> clearError()
-                HomeAction.NavigateToSettings -> navigateToSettings()
-                HomeAction.NavigateToProfile -> navigateToProfile()
-            }
+    fun onAction(action: AuthAction) {
+        when (action) {
+            is AuthAction.EmailChanged -> updateLoginForm { it.copy(email = action.email) }
+            is AuthAction.PasswordChanged -> updateLoginForm { it.copy(password = action.password) }
+            AuthAction.LoginClicked -> performLogin()
+            AuthAction.ForgotPasswordClicked -> _uiState.value = AuthUiState.ForgotPasswordForm()
+            AuthAction.ResetPasswordClicked -> performPasswordReset()
+            AuthAction.Retry -> _uiState.value = AuthUiState.LoginForm()
+            AuthAction.ClearError -> _uiState.value = AuthUiState.LoginForm()
+            AuthAction.RegisterClicked,
+            AuthAction.NavigateBack -> Unit
         }
     }
     
-    private fun loadInitialData() {
+    private fun performLogin() {
         viewModelScope.launch {
-            _uiState.value = HomeUiState.Loading
-            
-            getUserNewsResourcesUseCase()
-                .catch { e ->
-                    _uiState.value = HomeUiState.Error(
-                        message = "Failed to load data: ${e.message}",
-                        canRetry = true
-                    )
-                }
-                .collect { newsResources ->
-                    _uiState.value = if (newsResources.isEmpty()) {
-                        HomeUiState.Empty
-                    } else {
-                        HomeUiState.Success(feed = newsResources)
-                    }
-                }
+            val current = _uiState.value as? AuthUiState.LoginForm ?: return@launch
+            _uiState.value = current.copy(isLoading = true)
+            val result = loginUseCase(current.email, current.password)
+            _uiState.value = result.fold(
+                onSuccess = { token -> AuthUiState.Success(token.user) },
+                onFailure = { error -> AuthUiState.Error(error.message ?: "Login failed") }
+            )
         }
     }
     
-    private suspend fun toggleBookmark(resourceId: String) {
-        val currentState = _uiState.value
-        if (currentState is HomeUiState.Success) {
-            val currentFeed = currentState.feed.toMutableList()
-            val index = currentFeed.indexOfFirst { it.id == resourceId }
-            
-            if (index != -1) {
-                val resource = currentFeed[index]
-                val updatedResource = resource.copy(isBookmarked = !resource.isBookmarked)
-                currentFeed[index] = updatedResource
-                
-                // Optimistic update
-                _uiState.value = currentState.copy(feed = currentFeed)
-                
-                // Actual update
-                bookmarkNewsUseCase(resourceId, updatedResource.isBookmarked)
-                    .onFailure { e ->
-                        // Revert on failure
-                        currentFeed[index] = resource
-                        _uiState.value = currentState.copy(feed = currentFeed)
-                    }
-            }
-        }
-    }
-    
-    private fun observeDataChanges() {
+    private fun performPasswordReset() {
         viewModelScope.launch {
-            topicsRepository.observeNewsEvents()
-                .collect { event ->
-                    when (event) {
-                        is NewsEvent.SyncCompleted -> {
-                            if (_uiState.value is HomeUiState.Success) {
-                                loadInitialData() // Refresh on sync completion
-                            }
-                        }
-                        is NewsEvent.Error -> {
-                            // Handle error events
-                        }
-                        else -> Unit
-                    }
-                }
+            val current = _uiState.value as? AuthUiState.ForgotPasswordForm ?: return@launch
+            _uiState.value = current.copy(isLoading = true)
+            val result = resetPasswordUseCase(current.email)
+            _uiState.value = result.fold(
+                onSuccess = { current.copy(isLoading = false, isEmailSent = true) },
+                onFailure = { error -> current.copy(isLoading = false, emailError = error.message) }
+            )
         }
+    }
+    
+    private fun updateLoginForm(transform: (AuthUiState.LoginForm) -> AuthUiState.LoginForm) {
+        val current = _uiState.value as? AuthUiState.LoginForm ?: return
+        _uiState.value = transform(current)
     }
 }
 ```
@@ -515,100 +437,58 @@ class HomeViewModel @Inject constructor(
 ### Screen Composition Pattern
 
 ```kotlin
-// feature-home/presentation/HomeScreen.kt
+// feature-auth/presentation/LoginScreen.kt
 @Composable
-fun HomeScreen(
-    onNavigateToDetail: (String) -> Unit,
-    onNavigateToSettings: () -> Unit,
-    onNavigateToProfile: () -> Unit,
-    viewModel: HomeViewModel = hiltViewModel()
+fun LoginScreen(
+    onRegisterClick: () -> Unit,
+    onForgotPasswordClick: () -> Unit,
+    onLoginSuccess: (User) -> Unit,
+    viewModel: AuthViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val coroutineScope = rememberCoroutineScope()
     
-    // Handle navigation actions
-    LaunchedEffect(Unit) {
-        viewModel.actions.collect { action ->
-            when (action) {
-                is HomeAction.NavigateToDetail -> onNavigateToDetail(action.resourceId)
-                HomeAction.NavigateToSettings -> onNavigateToSettings()
-                HomeAction.NavigateToProfile -> onNavigateToProfile()
-                else -> Unit
-            }
+    LaunchedEffect(uiState) {
+        if (uiState is AuthUiState.Success) {
+            onLoginSuccess((uiState as AuthUiState.Success).user)
         }
     }
     
-    HomeContent(
+    AuthContent(
         uiState = uiState,
-        onAction = { action ->
-            coroutineScope.launch {
-                viewModel.onAction(action)
-            }
-        },
+        onAction = viewModel::onAction,
+        onRegisterClick = onRegisterClick,
+        onForgotPasswordClick = onForgotPasswordClick,
         modifier = Modifier.fillMaxSize()
     )
 }
 
 @Composable
-private fun HomeContent(
-    uiState: HomeUiState,
-    onAction: (HomeAction) -> Unit,
+private fun AuthContent(
+    uiState: AuthUiState,
+    onAction: (AuthAction) -> Unit,
+    onRegisterClick: () -> Unit,
+    onForgotPasswordClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier) {
         when (uiState) {
-            HomeUiState.Loading -> LoadingScreen()
-            is HomeUiState.Success -> SuccessContent(uiState, onAction)
-            is HomeUiState.Error -> ErrorContent(uiState, onAction)
-            HomeUiState.Empty -> EmptyStateScreen(onAction)
-        }
-    }
-}
-
-@Composable
-private fun SuccessContent(
-    uiState: HomeUiState.Success,
-    onAction: (HomeAction) -> Unit
-) {
-    Scaffold(
-        topBar = {
-            HomeTopBar(
-                onSettingsClick = { onAction(HomeAction.NavigateToSettings) },
-                onProfileClick = { onAction(HomeAction.NavigateToProfile) }
+            AuthUiState.Loading -> LoadingScreen()
+            is AuthUiState.LoginForm -> AuthFormCard(
+                state = uiState,
+                onEmailChanged = { onAction(AuthAction.EmailChanged(it)) },
+                onPasswordChanged = { onAction(AuthAction.PasswordChanged(it)) },
+                onLoginClick = { onAction(AuthAction.LoginClicked) },
+                onRegisterClick = onRegisterClick,
+                onForgotPasswordClick = onForgotPasswordClick
             )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { onAction(HomeAction.Refresh) },
-                icon = { Icon(Icons.Default.Refresh, "Refresh") },
-                text = { Text("Refresh") },
-                expanded = !uiState.isRefreshing
+            is AuthUiState.ForgotPasswordForm -> ForgotPasswordCard(
+                state = uiState,
+                onEmailChanged = { onAction(AuthAction.EmailChanged(it)) },
+                onResetClick = { onAction(AuthAction.ResetPasswordClicked) },
+                onBackClick = { onAction(AuthAction.NavigateBack) }
             )
-        }
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier.padding(paddingValues),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(uiState.feed) { resource ->
-                NewsResourceCard(
-                    resource = resource,
-                    onBookmarkClick = { onAction(HomeAction.ToggleBookmark(resource.id)) },
-                    onClick = { onAction(HomeAction.NavigateToDetail(resource.id)) },
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-            }
-            
-            if (uiState.isLoadingMore) {
-                item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-            }
+            is AuthUiState.Error -> ErrorContent(uiState.message, onRetry = { onAction(AuthAction.Retry) })
+            is AuthUiState.Success -> Unit
         }
     }
 }
@@ -617,88 +497,50 @@ private fun SuccessContent(
 ### Shared UI Components
 
 ```kotlin
-// core/ui/components/NewsResourceCard.kt
+// core/ui/components/AuthFormCard.kt
 @Composable
-fun NewsResourceCard(
-    resource: UserNewsResource,
-    onBookmarkClick: () -> Unit,
-    onClick: () -> Unit,
+fun AuthFormCard(
+    state: AuthUiState.LoginForm,
+    onEmailChanged: (String) -> Unit,
+    onPasswordChanged: (String) -> Unit,
+    onLoginClick: () -> Unit,
+    onRegisterClick: () -> Unit,
+    onForgotPasswordClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        onClick = onClick,
-        modifier = modifier,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
+    Card(modifier = modifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Header with bookmark
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = resource.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                
-                IconButton(onClick = onBookmarkClick) {
-                    Icon(
-                        imageVector = if (resource.isBookmarked) {
-                            Icons.Filled.Bookmark
-                        } else {
-                            Icons.Outlined.Bookmark
-                        },
-                        contentDescription = if (resource.isBookmarked) {
-                            "Remove bookmark"
-                        } else {
-                            "Add bookmark"
-                        }
-                    )
-                }
-            }
-            
-            // Content preview
-            Text(
-                text = resource.content,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
+            Text("Welcome back", style = MaterialTheme.typography.titleMedium)
+            OutlinedTextField(
+                value = state.email,
+                onValueChange = onEmailChanged,
+                label = { Text("Email") },
+                isError = state.emailError != null
             )
-            
-            // Topics
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.fillMaxWidth()
+            OutlinedTextField(
+                value = state.password,
+                onValueChange = onPasswordChanged,
+                label = { Text("Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                isError = state.passwordError != null
+            )
+            Button(
+                onClick = onLoginClick,
+                enabled = state.email.isNotBlank() && state.password.isNotBlank() && !state.isLoading
             ) {
-                resource.topics.forEach { topic ->
-                    TopicChip(topic = topic)
-                }
+                Text(if (state.isLoading) "Signing in..." else "Login")
             }
-            
-            // Metadata
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = "Published ${formatDate(resource.publishedAt)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                if (resource.isFollowing) {
-                    Badge {
-                        Text("Following")
-                    }
-                }
+                TextButton(onClick = onRegisterClick) { Text("Create account") }
+                TextButton(onClick = onForgotPasswordClick) { Text("Forgot password?") }
             }
         }
     }
@@ -736,11 +578,6 @@ fun AppNavigation() {
     // Create navigators in app module
     val authNavigator = remember {
         object : AuthNavigator {
-            override fun navigateToHome() {
-                navController.navigate("home") {
-                    popUpTo("auth") { inclusive = true }
-                }
-            }
             override fun navigateToRegister() = navController.navigate("auth/register")
             override fun navigateToForgotPassword() = navController.navigate("auth/forgot_password")
             override fun navigateBack() = navController.popBackStack()
@@ -760,11 +597,11 @@ fun AppNavigation() {
         windowAdaptiveInfo = windowAdaptiveInfo,
         navigationSuiteItems = {
             item(
-                icon = androidx.compose.material.icons.Icons.Default.Home,
-                label = "Home",
-                selected = navController.currentDestination?.route?.startsWith("home") == true ||
+                icon = androidx.compose.material.icons.Icons.Default.Lock,
+                label = "Auth",
+                selected = navController.currentDestination?.route?.startsWith("auth") == true ||
                           navController.currentDestination?.route == "main",
-                onClick = { navController.navigate("home") }
+                onClick = { navController.navigate("auth") }
             )
             item(
                 icon = androidx.compose.material.icons.Icons.Default.Person,
@@ -786,15 +623,6 @@ fun AppNavigation() {
             modifier = Modifier.fillMaxSize()
         ) {
             authGraph(authNavigator)
-            homeGraph(
-                homeNavigator = remember {
-                    object : HomeNavigator {
-                        override fun navigateToDetails(itemId: String) = 
-                            navController.navigate("home/details/$itemId")
-                        override fun navigateBack() = navController.popBackStack()
-                    }
-                }
-            )
             settingsGraph()
             
             // Main app screen (could be tab navigation)
@@ -865,7 +693,6 @@ fun AppNavigationSimple() {
         authGraph(
             authNavigator = remember {
                 object : AuthNavigator {
-                    override fun navigateToHome() = navController.navigate("home")
                     override fun navigateToRegister() = navController.navigate("auth/register")
                     override fun navigateToForgotPassword() = navController.navigate("auth/forgot_password")
                     override fun navigateBack() = navController.popBackStack()
@@ -873,14 +700,6 @@ fun AppNavigationSimple() {
                     override fun navigateToMainApp() = navController.navigate("main")
                     override fun navigateToVerifyEmail(token: String) = navController.navigate("auth/verify/$token")
                     override fun navigateToResetPassword(token: String) = navController.navigate("auth/reset/$token")
-                }
-            }
-        )
-        homeGraph(
-            homeNavigator = remember {
-                object : HomeNavigator {
-                    override fun navigateToDetails(itemId: String) = navController.navigate("home/details/$itemId")
-                    override fun navigateBack() = navController.popBackStack()
                 }
             }
         )
@@ -928,7 +747,6 @@ interface AuthNavigator {
     fun navigateBack()
     
     // Navigation to other features (implemented in app module)
-    fun navigateToHome()
     fun navigateToProfile(userId: String)
     fun navigateToMainApp()
     
@@ -1148,37 +966,36 @@ Screen → Navigator Interface → App Module → Navigation3 → Destination Sc
 Call navigate() → Contract → Implementation → Routing → Render New UI
 ```
 
-## Concrete Example Flow: Bookmarking a News Item
+## Concrete Example Flow: Resetting a Password
 
 ### Phase 1: User Interaction (Event Flow DOWN)
 ```
-1. User taps bookmark icon on news card
-2. Screen: HomeScreen calls viewModel.onAction(ToggleBookmark("news-123"))
-3. ViewModel: HomeViewModel processes action in viewModelScope
-4. UseCase: Calls BookmarkNewsUseCase("news-123", true)
-5. Repository: UserDataRepository.updateBookmark("news-123", true)
-6. Data Source: DataStore writes preference, Room updates if needed
+1. User taps "Forgot Password?" on the login screen
+2. Screen: LoginScreen calls viewModel.onAction(AuthAction.ForgotPasswordClicked)
+3. ViewModel: AuthViewModel switches to AuthUiState.ForgotPasswordForm
+4. User enters email and taps "Reset Password"
+5. ViewModel: Calls ResetPasswordUseCase(email)
+6. Repository: AuthRepository.resetPassword(email)
+7. Data Source: RemoteAuthDataSource sends reset email
 ```
 
 ### Phase 2: Data Response (Data Flow UP)
 ```
-1. DataStore: Emits preference change via Flow
-2. Repository: UserDataRepository.userData Flow updates
-3. UseCase: GetUserNewsResourcesUseCase combines with news Flow
-4. ViewModel: Receives updated Flow, updates uiState
-5. Screen: Observes uiState change, recomposes news card
-6. UI: Bookmark icon changes from outline to filled
+1. Remote data source returns Result
+2. Repository maps response to Result<Unit>
+3. ViewModel updates uiState with isEmailSent or emailError
+4. Screen observes uiState, shows confirmation or error
 ```
 
 ### Phase 3: Navigation Example (Separate Flow)
 ```
-1. User taps news card
-2. Screen: Calls homeNavigator.navigateToDetail("news-123")
-3. Navigator Interface: HomeNavigator.navigateToDetail() contract
-4. App Module: AppNavigator implementation routes to "home/detail/news-123"
-5. Navigation3: NavController navigates to detail destination
-6. Feature Graph: Renders NewsDetailScreen
-7. UI: Shows news detail view
+1. User taps "Create Account"
+2. Screen: Calls authNavigator.navigateToRegister()
+3. Navigator Interface: AuthNavigator.navigateToRegister() contract
+4. App Module: AppNavigator implementation routes to "auth/register"
+5. Navigation3: NavController navigates to register destination
+6. Feature Graph: Renders RegisterScreen
+7. UI: Shows registration form
 ```
 
 This architecture ensures:
