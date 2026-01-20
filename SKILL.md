@@ -1,4 +1,8 @@
-# Android Development
+---
+name: android-kotlin-compose
+description: Create production-quality Android applications following Google's official Android architecture guidance with Kotlin, Jetpack Compose, MVVM architecture, Hilt dependency injection, Room database, and multi-module architecture. Triggers on requests to create Android projects, modules, screens, ViewModels, repositories, or when asked about Android architecture patterns and best practices.
+---
+# Android Kotlin Compose Development
 
 Create production-quality Android applications following Google's official architecture guidance and best practices.
 Use when building Android apps with Kotlin, Jetpack Compose, MVVM architecture, Hilt dependency injection, Room database, or Android multi-module projects.
