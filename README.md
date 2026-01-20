@@ -38,3 +38,30 @@ This skill is focused on Android app development using:
 - Material 3
 - Hilt
 - Room
+
+## Installation
+
+### 1) Claude Code (manual)
+Clone or download this repo, then place it in Claude’s skills folder and refresh skills.
+
+```
+~/.claude/skills/claude-android-ninja/
+├── SKILL.md
+├── references/
+└── templates/
+```
+
+If you prefer project‑local skills, use `.claude/skills/` inside your project.
+
+### 2) OpenSkills CLI
+[OpenSkills](https://github.com/numman-ali/openskills) can install any skill repo and generate the AGENTS/skills metadata for multiple agents.
+
+```bash
+npx openskills install drjacky/claude-android-ninja
+npx openskills sync
+```
+
+Optional universal install (shared across agents):
+```bash
+npx openskills install drjacky/claude-android-ninja --universal
+```
