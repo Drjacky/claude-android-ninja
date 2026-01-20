@@ -509,15 +509,3 @@ so all build logic stays centralized in one place.
 8. **Dependency Direction**: Always follow `feature → core:domain → core:data`
 9. **No Feature-to-Feature**: Never create dependencies between features
 10. **Adaptive UI Ready**: Design for all form factors with Navigation3
-
-## Migration from Legacy Structure
-
-If migrating from NowInAndroid's `api/impl` structure:
-
-1. **Consolidate features**: Merge `feature/{name}/api` and `feature/{name}/impl` into single `feature-{name}` module
-2. **Update dependencies**: Change `implementation(project(":feature:auth:api"))` to Navigator interfaces
-3. **Move navigation**: Bring all navigation logic into app module
-4. **Update build files**: Simplify gradle configurations
-5. **Add Navigation3**: Replace old Navigation with Navigation3 components
-
-This simplified structure reduces complexity while maintaining all benefits of modular architecture.
