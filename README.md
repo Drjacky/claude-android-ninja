@@ -20,15 +20,15 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - Dependency management rules and templates
 
 ## Key Files
-- `SKILL.md` — entry point and workflow decision tree
-- `references/architecture.md` — architecture principles, data/domain layers, and flows
-- `references/modularization.md` — module structure and navigation wiring
-- `references/compose-patterns.md` — Compose UI patterns and best practices
-- `references/gradle-setup.md` — build logic, conventions, and build files
-- `references/testing.md` — testing patterns and examples
-- `references/dependencies.md` — dependency rules and version catalog guidance
-- `templates/libs.versions.toml.template` — version catalog source of truth
-- `templates/settings.gradle.kts.template` — Gradle settings source of truth
+- `SKILL.md` - entry point and workflow decision tree
+- `references/architecture.md` - architecture principles, data/domain layers, and flows
+- `references/modularization.md` - module structure and navigation wiring
+- `references/compose-patterns.md` - Compose UI patterns and best practices
+- `references/gradle-setup.md` - build logic, conventions, and build files
+- `references/testing.md` - testing patterns and examples
+- `references/dependencies.md` - dependency rules and version catalog guidance
+- `templates/libs.versions.toml.template` - version catalog source of truth
+- `templates/settings.gradle.kts.template` - Gradle settings source of truth
 
 ## Scope
 This skill is focused on Android app development using:
