@@ -11,14 +11,15 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 ## Quick Reference
 
-| Task                                                 | Reference File                                        |
-|------------------------------------------------------|-------------------------------------------------------|
-| Project structure & modules                          | [modularization.md](references/modularization.md)     |
-| Architecture layers (Presentation, Domain, Data, UI) | [architecture.md](references/architecture.md)         |
-| Jetpack Compose patterns                             | [compose-patterns.md](references/compose-patterns.md) |
-| Gradle & build configuration                         | [gradle-setup.md](references/gradle-setup.md)         |
-| Testing approach                                     | [testing.md](references/testing.md)                   |
-| Multi-module dependencies                            | [dependencies.md](references/dependencies.md)         |
+| Task                                                 | Reference File                                              |
+|------------------------------------------------------|-------------------------------------------------------------|
+| Project structure & modules                          | [modularization.md](references/modularization.md)           |
+| Architecture layers (Presentation, Domain, Data, UI) | [architecture.md](references/architecture.md)               |
+| Jetpack Compose patterns                             | [compose-patterns.md](references/compose-patterns.md)       |
+| Gradle & build configuration                         | [gradle-setup.md](references/gradle-setup.md)               |
+| Testing approach                                     | [testing.md](references/testing.md)                         |
+| Runtime permissions                                  | [android-permissions.md](references/android-permissions.md) |
+| Multi-module dependencies                            | [dependencies.md](references/dependencies.md)               |
 
 ## Workflow Decision Tree
 
@@ -60,3 +61,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Adding tests?**
 → Use [testing.md](references/testing.md) for patterns and examples  
 → Keep test doubles in `core/testing`  
+
+**Handling runtime permissions?**
+→ Follow [android-permissions.md](references/android-permissions.md) for manifest declarations and Compose permission patterns  
+→ Request permissions contextually and handle "Don't ask again" flows  

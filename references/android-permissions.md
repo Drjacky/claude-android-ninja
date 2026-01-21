@@ -1,6 +1,6 @@
 # Android Runtime Permissions
 
-Practical, Compose-first patterns for requesting permissions in an auth-focused app. This guide follows modern Android best practices and our modular architecture.
+Practical, Compose-first patterns for requesting permissions in Android apps. This guide follows modern Android best practices and our modular architecture.
 
 ## Table of Contents
 1. [Where Permissions Live](#where-permissions-live)
@@ -33,7 +33,7 @@ Auto-granted when declared. No runtime request needed.
 ```
 
 ### Media + Camera (Runtime)
-Use for QR login or profile photo capture.
+Use for camera capture and media access.
 
 ```xml
 <!-- Camera -->
@@ -62,126 +62,94 @@ Use for QR login or profile photo capture.
 
 ## Requesting Permissions in Compose
 
-Prefer the Activity Result APIs. No extra dependencies required.
-
-### Single Permission (QR Login)
+Use Accompanist Permissions with Compose-first APIs.
 
 ```kotlin
+dependencies {
+    implementation(libs.accompanist.permissions)
+}
+```
+
+### Single Permission (CameraAccess)
+
+```kotlin
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun QrLoginButton(
-    onOpenScanner: () -> Unit,
+fun CameraAccess(
+    onOpenCamera: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    var hasRequested by rememberSaveable { mutableStateOf(false) }
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        hasRequested = true
-        if (granted) onOpenScanner()
-    }
+    val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
     Button(
         modifier = modifier,
         onClick = {
-            if (ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.CAMERA
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                onOpenScanner()
+            if (permissionState.status.isGranted) {
+                onOpenCamera()
             } else {
-                launcher.launch(Manifest.permission.CAMERA)
+                permissionState.launchPermissionRequest()
             }
         }
     ) {
-        Text("Scan QR Code")
+        Text("Open Camera")
     }
 }
 ```
 
-### Multiple Permissions (Profile Photo Upload)
+### Multiple Permissions (PhotoAccess)
 
 ```kotlin
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun ProfilePhotoAccess(
+fun PhotoAccess(
     onOpenPicker: () -> Unit,
     onShowRationale: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val activity = context as? Activity
-    val permissions = remember { buildMediaPermissions() }
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
-        if (results.values.all { it }) onOpenPicker()
-    }
+    val permissionsState = rememberMultiplePermissionsState(
+        permissions = buildMediaPermissions()
+    )
 
     Button(
         modifier = modifier,
         onClick = {
-            val allGranted = permissions.all {
-                ContextCompat.checkSelfPermission(context, it) ==
-                    PackageManager.PERMISSION_GRANTED
+            when {
+                permissionsState.allPermissionsGranted -> onOpenPicker()
+                permissionsState.shouldShowRationale -> onShowRationale()
+                else -> permissionsState.launchMultiplePermissionRequest()
             }
-            if (allGranted) {
-                onOpenPicker()
-                return@Button
-            }
-
-            val shouldShowRationale = activity != null && permissions.any {
-                ActivityCompat.shouldShowRequestPermissionRationale(activity, it)
-            }
-            if (shouldShowRationale) onShowRationale() else launcher.launch(permissions.toTypedArray())
         }
     ) {
-        Text("Choose Profile Photo")
+        Text("Choose Photo")
     }
 }
 ```
 
 ## Rationale and "Don't Ask Again"
 
-- Request permissions **contextually** (e.g., when the user taps "Scan QR Code").
+- Request permissions **contextually** (e.g., when the user taps "Open Camera").
 - If the user denies and "Don't ask again" is selected, guide them to Settings.
 
 ```kotlin
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraAccessGate(
-    onOpenScanner: () -> Unit,
+    onOpenCamera: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
-    val context = LocalContext.current
-    val activity = context as? Activity
-    var hasRequested by rememberSaveable { mutableStateOf(false) }
-
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        hasRequested = true
-        if (granted) onOpenScanner()
-    }
-
-    val hasPermission = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.CAMERA
-    ) == PackageManager.PERMISSION_GRANTED
-
-    val shouldShowRationale = activity != null &&
-        ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.CAMERA)
+    val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
     when {
-        hasPermission -> onOpenScanner()
-        shouldShowRationale -> AuthPermissionRationale(onAllow = {
-            launcher.launch(Manifest.permission.CAMERA)
-        })
-        hasRequested -> AuthPermissionSettingsPrompt(onOpenSettings = onOpenSettings)
-        else -> AuthPermissionRequest(onRequest = {
-            launcher.launch(Manifest.permission.CAMERA)
-        })
+        permissionState.status.isGranted -> onOpenCamera()
+        permissionState.status.shouldShowRationale -> PermissionRationaleCard(
+            onAllow = { permissionState.launchPermissionRequest() }
+        )
+        permissionState.status.isPermanentlyDenied() -> PermissionSettingsPrompt(
+            onOpenSettings = onOpenSettings
+        )
+        else -> PermissionRequestCard(
+            onRequest = { permissionState.launchPermissionRequest() }
+        )
     }
 }
 ```
@@ -194,6 +162,15 @@ fun openAppSettings(context: Context) {
         data = Uri.fromParts("package", context.packageName, null)
     }
     context.startActivity(intent)
+}
+```
+
+Helper for "Don't ask again":
+
+```kotlin
+@OptIn(ExperimentalPermissionsApi::class)
+fun PermissionStatus.isPermanentlyDenied(): Boolean {
+    return this is PermissionStatus.Denied && !shouldShowRationale
 }
 ```
 
