@@ -21,6 +21,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Runtime permissions                                  | [android-permissions.md](references/android-permissions.md) |
 | Kotlin delegation patterns                           | [kotlin-delegation.md](references/kotlin-delegation.md)     |
 | Crash reporting                                      | [crashlytics.md](references/crashlytics.md)                 |
+| StrictMode guardrails                                | [android-strictmode.md](references/android-strictmode.md)   |
 | Multi-module dependencies                            | [dependencies.md](references/dependencies.md)               |
 
 ## Workflow Decision Tree
@@ -75,3 +76,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Adding crash reporting / monitoring?**
 → Follow [crashlytics.md](references/crashlytics.md) for provider-agnostic interfaces and module placement  
 → Use DI bindings to swap between Firebase Crashlytics or Sentry  
+
+**Enabling StrictMode guardrails?**
+→ Follow [android-strictmode.md](references/android-strictmode.md) for app-level setup and Compose compiler diagnostics  
+→ Use Sentry/Firebase init from [crashlytics.md](references/crashlytics.md) to ship StrictMode logs  

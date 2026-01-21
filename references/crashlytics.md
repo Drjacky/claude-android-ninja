@@ -126,6 +126,22 @@ Sentry uses a ContentProvider for auto-initialization. Configure via `AndroidMan
 </application>
 ```
 
+### Application Initialization (Sentry)
+
+Enable logs so StrictMode `.penaltyLog()` events can be shipped.
+
+```kotlin
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        SentryAndroid.init(this) { options ->
+            options.dsn = "YOUR_DSN_HERE"
+            options.logs.isEnabled = true
+        }
+    }
+}
+```
+
 ### Jetpack Compose Specifics
 
 - **Automatic navigation tracking**: With `androidx.navigation`, Sentry records navigation breadcrumbs and transactions automatically via the plugin.
@@ -170,6 +186,17 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-analytics") // Breadcrumbs + screen tracking
+}
+```
+
+### Application Initialization (Firebase)
+
+```kotlin
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        FirebaseApp.initializeApp(this)
+    }
 }
 ```
 
