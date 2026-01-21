@@ -145,6 +145,109 @@ fun AuthProfileScreen(userId: String) {
 }
 ```
 
+## Firebase Crashlytics Setup (Plugin + Compose)
+
+Use the Gradle plugin and Firebase BoM. The separate `-ktx` artifact is no longer required.
+
+```kotlin
+// build.gradle.kts (project-level)
+plugins {
+    id("com.google.gms.google-services") version "4.4.2" apply false
+    id("com.google.firebase.crashlytics") version "3.0.6" apply false
+}
+```
+
+```kotlin
+// app/build.gradle.kts
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
+}
+
+dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-analytics") // Breadcrumbs + screen tracking
+}
+```
+
+### Compose Screen Tracking (Navigation3)
+
+Crashlytics breadcrumbs do not automatically include Compose destination names.
+Log screen transitions at the app-level navigation coordinator.
+
+```kotlin
+@Composable
+fun AuthAppNavHost(
+    navController: NavHostController
+) {
+    val analytics = Firebase.analytics
+    val backStackEntry by navController.currentBackStackEntryAsState()
+
+    LaunchedEffect(backStackEntry) {
+        val route = backStackEntry?.destination?.route ?: return@LaunchedEffect
+        analytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW) {
+            param(FirebaseAnalytics.Param.SCREEN_NAME, route)
+            param(FirebaseAnalytics.Param.SCREEN_CLASS, "MainActivity")
+        }
+    }
+
+    NavHost(navController, startDestination = "auth/login") {
+        composable("auth/login") { AuthLoginScreen() }
+        composable("auth/forgot-password") { ForgotPasswordScreen() }
+        composable("auth/profile") { AuthProfileScreen() }
+    }
+}
+```
+
+### Capturing UI State (Delegation)
+
+Use delegation to standardize custom keys and logs across ViewModels.
+
+```kotlin
+interface CrashlyticsStateLogger {
+    fun logUiState(key: String, value: String)
+    fun logAction(message: String)
+}
+
+class FirebaseCrashlyticsStateLogger @Inject constructor(
+    private val crashlytics: FirebaseCrashlytics
+) : CrashlyticsStateLogger {
+    override fun logUiState(key: String, value: String) {
+        crashlytics.setCustomKey(key, value)
+    }
+
+    override fun logAction(message: String) {
+        crashlytics.log(message)
+    }
+}
+
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    logger: CrashlyticsStateLogger
+) : ViewModel(), CrashlyticsStateLogger by logger {
+
+    fun onRoleSelected(role: String) {
+        logUiState("auth_role", role)
+        logAction("Auth role selected: $role")
+    }
+}
+```
+
+### Non-fatal Exceptions in Coroutines
+
+```kotlin
+val crashHandler = CoroutineExceptionHandler { _, exception ->
+    Firebase.crashlytics.recordException(exception)
+}
+
+viewModelScope.launch(crashHandler) {
+    repository.refreshSession()
+}
+```
+
 ## Wiring in the App Module
 
 Use DI bindings to switch providers without recalling features:
