@@ -464,8 +464,9 @@ fun AppNavigation() {
 }
 ```
 
-This app-level screen tracking is optional and typically used to provide Crashlytics
-breadcrumbs or analytics screen views. For more details, see `references/crashlytics.md`.
+This app-level screen tracking is optional and typically used to provide Firebase Crashlytics
+breadcrumbs or analytics screen views. Sentry handles screen tracking via its plugin.
+For more details, see `references/crashlytics.md`.
 
 ## Navigation Coordination
 
