@@ -39,22 +39,22 @@ class MyApplication : Application() {
 
 ### ThreadPolicy Options
 
-- `detectAll()` — Enables all thread policy checks.
-- `detectDiskReads()` — Detects reading data from disk.
-- `detectDiskWrites()` — Detects writing data to disk.
-- `detectNetwork()` — Detects network operations (HTTP requests, etc.).
-- `detectCustomSlowCalls()` — Detects slow operations (e.g., SQLite queries).
-- `permitAll()` — Disables all thread policy detections.
+- `detectAll()` - Enables all thread policy checks.
+- `detectDiskReads()` - Detects reading data from disk.
+- `detectDiskWrites()` - Detects writing data to disk.
+- `detectNetwork()` - Detects network operations (HTTP requests, etc.).
+- `detectCustomSlowCalls()` - Detects slow operations (e.g., SQLite queries).
+- `permitAll()` - Disables all thread policy detections.
 
 ### VmPolicy Options
 
-- `detectAll()` — Enables all VM policy checks.
-- `detectActivityLeaks()` — Detects Activity object leaks.
-- `detectLeakedClosableObjects()` — Detects when Closeable objects are not closed properly.
-- `detectLeakedSqlLiteObjects()` — Detects SQLite cursor objects that have not been closed.
-- `detectFileUriExposure()` — Detects when a file:// URI is exposed outside the app.
-- `detectCleartextNetwork()` — Detects unencrypted network traffic (HTTP instead of HTTPS).
-- `detectUnsafeIntentLaunch()` — Detects unsafe intent launches.
+- `detectAll()` - Enables all VM policy checks.
+- `detectActivityLeaks()` - Detects Activity object leaks.
+- `detectLeakedClosableObjects()` - Detects when Closeable objects are not closed properly.
+- `detectLeakedSqlLiteObjects()` - Detects SQLite cursor objects that have not been closed.
+- `detectFileUriExposure()` - Detects when a file:// URI is exposed outside the app.
+- `detectCleartextNetwork()` - Detects unencrypted network traffic (HTTP instead of HTTPS).
+- `detectUnsafeIntentLaunch()` - Detects unsafe intent launches.
 
 ## 2) Compose Stability Guardrails
 
