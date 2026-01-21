@@ -1,6 +1,7 @@
 # Kotlin Delegation (Composition over Inheritance)
 
-Use Kotlin's class delegation (`by`) to share behavior across ViewModels and classes without relying on base classes. This keeps responsibilities explicit, improves testability, and avoids deep inheritance chains.
+Use Kotlin's class delegation (`by`) to share behavior across ViewModels and classes without relying on base classes.
+This keeps responsibilities explicit, improves testability, and avoids deep inheritance chains.
 
 ## Why Delegation in Android
 
@@ -85,5 +86,4 @@ class LoginViewModel @Inject constructor(
 
 ## Sources
 
-- https://medium.com/@mahesh31.ambekar/why-kotlin-delegation-beats-base-classes-in-android-78b4a15d055b
 - https://kotlinlang.org/docs/delegation.html
