@@ -176,13 +176,13 @@ dependencies {
 ### Compose Screen Tracking (Navigation3)
 
 Crashlytics breadcrumbs do not automatically include Compose destination names.
-Log screen transitions at the app-level navigation coordinator.
+Log screen transitions in the **app-level** `AppNavigation()` coordinator.
+See the centralized navigation setup in `references/modularization.md`.
 
 ```kotlin
 @Composable
-fun AuthAppNavHost(
-    navController: NavHostController
-) {
+fun AppNavigation() {
+    val navController = rememberNavController()
     val analytics = Firebase.analytics
     val backStackEntry by navController.currentBackStackEntryAsState()
 

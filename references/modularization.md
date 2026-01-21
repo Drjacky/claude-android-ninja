@@ -391,6 +391,16 @@ fun AppNavigation() {
     val navController = rememberNavController()
     val windowAdaptiveInfo = currentWindowAdaptiveInfo()
     val navigationSuiteScaffoldState = rememberNavigationSuiteScaffoldState()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val analytics = Firebase.analytics
+    
+    LaunchedEffect(backStackEntry) {
+        val route = backStackEntry?.destination?.route ?: return@LaunchedEffect
+        analytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW) {
+            param(FirebaseAnalytics.Param.SCREEN_NAME, route)
+            param(FirebaseAnalytics.Param.SCREEN_CLASS, "MainActivity")
+        }
+    }
     
     // Create navigator implementations
     val authNavigator = remember {
@@ -453,6 +463,9 @@ fun AppNavigation() {
     }
 }
 ```
+
+This app-level screen tracking is optional and typically used to provide Crashlytics
+breadcrumbs or analytics screen views. For more details, see `references/crashlytics.md`.
 
 ## Navigation Coordination
 
