@@ -1,6 +1,7 @@
 # Crash Reporting (Firebase Crashlytics / Sentry)
 
-This guide shows how to integrate crash reporting in a **modular** Android app so the provider (Firebase Crashlytics or Sentry) can be swapped without touching feature code.
+This guide shows how to integrate crash reporting in a **modular** Android app so the provider (Firebase Crashlytics or Sentry)
+can be swapped without touching feature code.
 
 ## Goals
 
@@ -92,6 +93,58 @@ class SentryCrashReporter @Inject constructor(
 }
 ```
 
+## Sentry Setup (Plugin + Compose)
+
+Use the Gradle plugin for setup; it auto-adds the core SDK and configures uploads.
+
+```kotlin
+// app/build.gradle.kts
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.sentry.android)
+    alias(libs.plugins.sentry.kotlin.compiler)
+}
+
+dependencies {
+    implementation(libs.sentry.compose.android)
+    // The Sentry plugin automatically adds the core SDK.
+}
+```
+
+### Manifest Configuration
+
+Sentry uses a ContentProvider for auto-initialization. Configure via `AndroidManifest.xml`.
+
+```xml
+<application>
+    <meta-data android:name="io.sentry.dsn" android:value="YOUR_DSN_HERE" />
+    <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
+    <meta-data android:name="io.sentry.traces.user-interaction.enable" android:value="true" />
+    <meta-data android:name="io.sentry.attach-view-hierarchy" android:value="true" />
+    <meta-data android:name="io.sentry.attach-screenshot" android:value="true" />
+</application>
+```
+
+### Jetpack Compose Specifics
+
+- **Automatic navigation tracking**: With `androidx.navigation`, Sentry records navigation breadcrumbs and transactions automatically via the plugin.
+- **Automatic @Composable tagging**: The `sentry-kotlin-compiler` plugin tags composables based on function names (no manual `Modifier.sentryTag()` needed).
+- **Manual tracing for critical screens**: Wrap key content with `SentryTraced`.
+
+```kotlin
+import io.sentry.compose.SentryTraced
+
+@Composable
+fun ProductDetailScreen(productId: String) {
+    SentryTraced(name = "product_detail_screen") {
+        Column {
+            Text("Product: $productId")
+        }
+    }
+}
+```
+
 ## Wiring in the App Module
 
 Use DI bindings to switch providers without recalling features:
@@ -140,6 +193,7 @@ class LoginViewModel @Inject constructor(
 - Follow `references/gradle-setup.md` for plugin configuration patterns.
 - For provider-specific setup, follow the official docs:
   - Sentry Android install and configuration: https://docs.sentry.io/platforms/android/
+  - Sentry manual setup + plugin details: https://docs.sentry.io/platforms/android/manual-setup/
   - Firebase Crashlytics setup: https://firebase.google.com/docs/crashlytics/android/get-started
   - Crashlytics + Compose example: https://firebase.blog/posts/2022/06/adding-crashlytics-to-jetpack-compose-app/
   - Sentry + Compose integration: https://docs.sentry.io/platforms/android/integrations/jetpack-compose/

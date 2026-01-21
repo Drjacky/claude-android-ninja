@@ -27,6 +27,8 @@ palette = "1.0.0"
 mockkVersion = "1.14.6"
 truth = "1.4.5"
 turbine = "1.2.1"
+sentry = "8.30.0"
+sentryPlugin = "5.12.2"
 
 [libraries]
 accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanist" }
@@ -69,6 +71,8 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockkVersion" }
 mockk-agent-jvm = { module = "io.mockk:mockk-agent-jvm", version.ref = "mockkVersion" }
 plugin-detekt = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+sentry-android = { group = "io.sentry", name = "sentry-android", version.ref = "sentry" }
+sentry-compose-android = { group = "io.sentry", name = "sentry-compose-android", version.ref = "sentry" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 
 [bundles]
@@ -94,5 +98,7 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+sentry-android = { id = "io.sentry.android.gradle", version.ref = "sentryPlugin" }
+sentry-kotlin-compiler = { id = "io.sentry.kotlin.compiler.gradle", version.ref = "sentryPlugin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
