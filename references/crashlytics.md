@@ -136,10 +136,10 @@ Sentry uses a ContentProvider for auto-initialization. Configure via `AndroidMan
 import io.sentry.compose.SentryTraced
 
 @Composable
-fun ProductDetailScreen(productId: String) {
-    SentryTraced(name = "product_detail_screen") {
+fun AuthProfileScreen(userId: String) {
+    SentryTraced(name = "auth_profile_screen") {
         Column {
-            Text("Product: $productId")
+            Text("User: $userId")
         }
     }
 }
