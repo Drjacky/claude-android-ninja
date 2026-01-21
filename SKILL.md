@@ -19,6 +19,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Gradle & build configuration                         | [gradle-setup.md](references/gradle-setup.md)               |
 | Testing approach                                     | [testing.md](references/testing.md)                         |
 | Runtime permissions                                  | [android-permissions.md](references/android-permissions.md) |
+| Kotlin delegation patterns                           | [kotlin-delegation.md](references/kotlin-delegation.md)     |
 | Multi-module dependencies                            | [dependencies.md](references/dependencies.md)               |
 
 ## Workflow Decision Tree
@@ -65,3 +66,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Handling runtime permissions?**
 → Follow [android-permissions.md](references/android-permissions.md) for manifest declarations and Compose permission patterns  
 → Request permissions contextually and handle "Don't ask again" flows  
+
+**Sharing logic across ViewModels or avoiding base classes?**
+→ Use delegation via interfaces as described in [kotlin-delegation.md](references/kotlin-delegation.md)  
+→ Prefer small, injected delegates for validation, analytics, or feature flags  

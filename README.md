@@ -26,6 +26,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `references/compose-patterns.md` - Compose UI patterns and best practices
 - `references/gradle-setup.md` - build logic, conventions, and build files
 - `references/android-permissions.md` - runtime permissions and best practices
+- `references/kotlin-delegation.md` - delegation patterns and composition guidance
 - `references/testing.md` - testing patterns and examples
 - `references/dependencies.md` - dependency rules and version catalog guidance
 - `templates/libs.versions.toml.template` - version catalog source of truth

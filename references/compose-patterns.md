@@ -157,22 +157,49 @@ sealed class AuthAction {
 
 ### Modern ViewModel with Form State
 
+Use delegation for shared behavior (validation, analytics, feature flags) instead of base classes.
+See `references/kotlin-delegation.md` for guidance and tradeoffs.
+
 ```kotlin
 // feature-auth/presentation/viewmodel/AuthViewModel.kt
+interface AuthFormValidator {
+    fun validateEmail(email: String): String?
+    fun validatePassword(password: String): String?
+}
+
+class DefaultAuthFormValidator @Inject constructor() : AuthFormValidator {
+    override fun validateEmail(email: String): String? =
+        if (email.contains("@")) null else "Invalid email"
+
+    override fun validatePassword(password: String): String? =
+        if (password.length >= 8) null else "Password too short"
+}
+
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
     private val registerUseCase: RegisterUseCase,
-    private val resetPasswordUseCase: ResetPasswordUseCase
-) : ViewModel() {
+    private val resetPasswordUseCase: ResetPasswordUseCase,
+    validator: AuthFormValidator
+) : ViewModel(), AuthFormValidator by validator {
 
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.LoginForm())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
     
     fun onAction(action: AuthAction) {
         when (action) {
-            is AuthAction.EmailChanged -> updateLoginForm { it.copy(email = action.email) }
-            is AuthAction.PasswordChanged -> updateLoginForm { it.copy(password = action.password) }
+            is AuthAction.EmailChanged -> updateLoginForm {
+                it.copy(
+                    email = action.email,
+                    emailError = validateEmail(action.email)
+                )
+            }
+            is AuthAction.PasswordChanged -> updateLoginForm {
+                it.copy(
+                    password = action.password,
+                    passwordError = validatePassword(action.password)
+                )
+            }
             AuthAction.LoginClicked -> performLogin()
             AuthAction.ForgotPasswordClicked -> _uiState.value = AuthUiState.ForgotPasswordForm()
             AuthAction.RegisterClicked -> _uiState.value = AuthUiState.RegisterForm()
