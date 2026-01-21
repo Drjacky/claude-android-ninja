@@ -164,15 +164,15 @@ Swap to Sentry by binding `SentryCrashReporter` instead.
 
 ## Compose + ViewModel Usage
 
-Keep logging in ViewModels or use delegated helpers (see `references/kotlin-delegation.md`).
+Use delegation for cross-cutting concerns (see `references/kotlin-delegation.md`) to keep ViewModels lean.
 
 ```kotlin
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val crashReporter: CrashReporter
-) : ViewModel() {
+    crashReporter: CrashReporter
+) : ViewModel(), CrashReporter by crashReporter {
     fun onLoginFailed(error: Throwable) {
-        crashReporter.recordException(
+        recordException(
             error,
             mapOf("action" to "login")
         )
