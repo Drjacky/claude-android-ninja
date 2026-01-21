@@ -20,6 +20,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Testing approach                                     | [testing.md](references/testing.md)                         |
 | Runtime permissions                                  | [android-permissions.md](references/android-permissions.md) |
 | Kotlin delegation patterns                           | [kotlin-delegation.md](references/kotlin-delegation.md)     |
+| Crash reporting                                      | [crashlytics.md](references/crashlytics.md)                 |
 | Multi-module dependencies                            | [dependencies.md](references/dependencies.md)               |
 
 ## Workflow Decision Tree
@@ -70,3 +71,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Sharing logic across ViewModels or avoiding base classes?**
 → Use delegation via interfaces as described in [kotlin-delegation.md](references/kotlin-delegation.md)  
 → Prefer small, injected delegates for validation, analytics, or feature flags  
+
+**Adding crash reporting / monitoring?**
+→ Follow [crashlytics.md](references/crashlytics.md) for provider-agnostic interfaces and module placement  
+→ Use DI bindings to swap between Firebase Crashlytics or Sentry  
