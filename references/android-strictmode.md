@@ -77,10 +77,24 @@ kotlin.collections.*
 com.external.library.models.*
 ```
 
-## 3) CI Guardrails
+## 3) (Optional) Automated "Strict" Testing (CI/CD)
 
-Fail CI on stability regressions by parsing Compose reports in a custom Gradle task
-or CI job. Keep this in build logic or CI configuration, not in feature modules.
+Use Compose Guard to enforce a stability baseline and fail builds on regressions.
+
+**Step 1:** Generate a baseline:
+
+```
+./gradlew stabilityDump
+```
+
+**Step 2:** Enforce it in CI:
+
+```
+./gradlew stabilityCheck
+```
+
+If a developer introduces an unstable parameter (e.g., mutating a data class or
+using an unstable list), the build fails immediately to prevent performance regressions.
 
 ## Uploading StrictMode Signals to Crash Reporters
 
