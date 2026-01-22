@@ -12,7 +12,7 @@ We integrate it through build-logic convention plugins so every module is config
 ## Version Catalog
 Use `templates/libs.versions.toml.template` as the source of truth for:
 - The Detekt plugin version.
-- The Compose detekt rules dependency (`compose-rules-detekt`).
+- The detekt rules dependency(including Compose rules) (`detekt.yml.template`).
 
 If you move to Detekt 2.x, use the new plugin ID (`dev.detekt`) in the catalog.
 For Detekt 1.23.x, the plugin ID remains `io.gitlab.arturbosch.detekt`.
