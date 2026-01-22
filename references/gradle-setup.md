@@ -6,9 +6,10 @@ Build system patterns following our modern Android multi-module architecture wit
 1. [Project Structure](#project-structure)
 2. [Version Catalog](#version-catalog)
 3. [Convention Plugins](#convention-plugins)
-4. [Module Build Files](#module-build-files)
-5. [Build Variants & Optimization](#build-variants--optimization)
-6. [Build Performance](#build-performance)
+4. [Code Quality (Detekt)](#code-quality-detekt)
+5. [Module Build Files](#module-build-files)
+6. [Build Variants & Optimization](#build-variants--optimization)
+7. [Build Performance](#build-performance)
 
 ## Project Structure
 
@@ -42,6 +43,7 @@ dependencies {
     compileOnly(libs.kotlin.gradlePlugin)
     compileOnly(libs.hilt.gradlePlugin)
     compileOnly(libs.ksp.gradlePlugin)
+    compileOnly(libs.plugin.detekt)
 }
 
 gradlePlugin {
@@ -69,6 +71,10 @@ gradlePlugin {
         register("androidRoom") {
             id = "com.example.android.room"
             implementationClass = "com.example.convention.AndroidRoomConventionPlugin"
+        }
+        register("androidDetekt") {
+            id = "com.example.android.detekt"
+            implementationClass = "com.example.convention.DetektConventionPlugin"
         }
     }
 }
@@ -392,6 +398,54 @@ private fun Project.configureAndroidDependencies() {
 }
 ```
 
+### Detekt Convention Plugin
+
+`build-logic/convention/src/main/kotlin/com/example/convention/DetektConventionPlugin.kt`:
+```kotlin
+package com.example.convention
+
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.withType
+
+class DetektConventionPlugin : Plugin<Project> {
+    override fun apply(target: Project) = with(target) {
+        val libs = rootProject.extensions.getByType<VersionCatalogsExtension>().named("libs")
+        val detektPluginId = libs.findPlugin("detekt").get().pluginId
+
+        pluginManager.apply(detektPluginId)
+
+        dependencies {
+            add("detektPlugins", libs.findLibrary("compose-rules-detekt").get())
+        }
+
+        extensions.configure<DetektExtension> {
+            buildUponDefaultConfig = true
+            basePath = rootProject.projectDir.absolutePath
+            parallel = true
+
+            val rootConfig = rootProject.file("plugins/detekt.yml")
+            val moduleConfig = file("detekt.yml")
+            if (moduleConfig.exists()) {
+                config.setFrom(moduleConfig, rootConfig)
+            } else {
+                config.setFrom(rootConfig)
+            }
+        }
+
+        tasks.withType<Detekt>().configureEach {
+            jvmTarget = "17"
+        }
+    }
+}
+```
+
 ## Module Build Files
 
 ### App Module
@@ -611,6 +665,11 @@ dependencies {
     androidTestImplementation(libs.bundles.compose.testing)
 }
 ```
+
+## Code Quality (Detekt)
+
+Detekt is integrated via a convention plugin to keep rules consistent across modules.
+See `references/code-quality.md` for setup details, baseline usage, and CI guidance.
 
 ## Build Variants & Optimization
 
