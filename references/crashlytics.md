@@ -64,30 +64,28 @@ class FirebaseCrashReporter @Inject constructor(
 
 ```kotlin
 // core/data/analytics/SentryCrashReporter.kt
-class SentryCrashReporter @Inject constructor(
-    private val hub: IHub
-) : CrashReporter {
+class SentryCrashReporter @Inject constructor() : CrashReporter {
     override fun setUserId(id: String?) {
-        hub.setUser { user ->
-            user.id = id
+        Sentry.configureScope { scope ->
+            scope.user = User().apply { this.id = id }
         }
     }
 
     override fun setUserProperty(key: String, value: String) {
-        hub.setTag(key, value)
+        Sentry.setTag(key, value)
     }
 
     override fun log(message: String) {
-        hub.addBreadcrumb(message)
+        Sentry.addBreadcrumb(message)
     }
 
     override fun recordException(
         throwable: Throwable,
         context: Map<String, String>
     ) {
-        hub.withScope { scope ->
+        Sentry.withScope { scope ->
             context.forEach { (k, v) -> scope.setTag(k, v) }
-            hub.captureException(throwable)
+            Sentry.captureException(throwable)
         }
     }
 }
@@ -137,6 +135,12 @@ class MyApplication : Application() {
         SentryAndroid.init(this) { options ->
             options.dsn = "YOUR_DSN_HERE"
             options.logs.isEnabled = true
+            options.environment = if (BuildConfig.DEBUG) "debug" else "production"
+            options.release = BuildConfig.VERSION_NAME
+            options.tracesSampleRate = 1.0
+            options.profilesSampleRate = 1.0
+            options.enableAutoSessionTracking = true
+            options.sendDefaultPii = false
         }
     }
 }
