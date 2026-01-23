@@ -28,6 +28,7 @@ palette = "1.0.0"
 mockkVersion = "1.14.6"
 okhttpLogging = "5.3.2"
 retrofit2 = "3.0.0"
+slf4j = "2.0.3"
 truth = "1.4.5"
 turbine = "1.2.1"
 sentry = "8.30.0"
@@ -77,6 +78,7 @@ okhttp3-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-
 plugin-detekt = { module = "dev.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 retrofit2 = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit2" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+slf4j-simple = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4j" }
 sentry-android = { group = "io.sentry", name = "sentry-android", version.ref = "sentry" }
 sentry-compose-android = { group = "io.sentry", name = "sentry-compose-android", version.ref = "sentry" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
