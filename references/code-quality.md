@@ -11,11 +11,12 @@ We integrate it through build-logic convention plugins so every module is config
 
 ## Version Catalog
 Use `templates/libs.versions.toml.template` as the source of truth for:
-- The Detekt plugin version.
-- The detekt rules dependency(including Compose rules) (`detekt.yml.template`).
+- The Detekt plugin version and plugin ID.
+- The Compose detekt rules dependency (`compose-rules-detekt`).
 
-If you move to Detekt 2.x, use the new plugin ID (`dev.detekt`) in the catalog.
-For Detekt 1.23.x, the plugin ID remains `io.gitlab.arturbosch.detekt`.
+Use `templates/detekt.yml.template` as the baseline rules file; copy it to
+`plugins/detekt.yml` and customize it there (modules can optionally provide
+a local `detekt.yml` override).
 
 ## Detekt Convention Plugin (Build Logic)
 Create `build-logic/convention/src/main/kotlin/com/example/convention/DetektConventionPlugin.kt`:
@@ -98,3 +99,8 @@ plugins {
 - Run in CI: `./gradlew detekt` (or `detektMain` for Android-only source sets)
 
 If the project uses Gradle toolchains, Detekt will resolve the proper JDK automatically.
+
+## Compose Rules
+The Compose detekt ruleset requires the rules to be enabled in `detekt.yml`.
+Start from `templates/detekt.yml.template` and turn on the Compose rule set there.
+Pick a Compose rules version compatible with Kotlin 2.2.21 and Detekt 2.x. [Compose rules + detekt compatibility](https://mrmans0n.github.io/compose-rules/detekt/)

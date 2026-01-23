@@ -23,6 +23,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Crash reporting                                      | [crashlytics.md](references/crashlytics.md)                 |
 | StrictMode guardrails                                | [android-strictmode.md](references/android-strictmode.md)   |
 | Multi-module dependencies                            | [dependencies.md](references/dependencies.md)               |
+| Code quality (Detekt)                                | [code-quality.md](references/code-quality.md)               |
 
 ## Workflow Decision Tree
 
@@ -35,6 +36,10 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Configuring Gradle/build files?**
 → Use [gradle-setup.md](references/gradle-setup.md) for module `build.gradle.kts` patterns  
 → Keep convention plugins and build logic in `build-logic/` as described in [gradle-setup.md](references/gradle-setup.md)  
+
+**Setting up code quality / Detekt?**
+→ Use [code-quality.md](references/code-quality.md) for Detekt convention plugin setup  
+→ Start from `templates/detekt.yml.template` for rules and enable Compose rules  
 
 **Adding or updating dependencies?**
 → Follow [dependencies.md](references/dependencies.md)  

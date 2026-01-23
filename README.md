@@ -25,12 +25,14 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `references/modularization.md` - module structure and navigation wiring
 - `references/compose-patterns.md` - Compose UI patterns and best practices
 - `references/gradle-setup.md` - build logic, conventions, and build files
+- `references/code-quality.md` - Detekt setup and code quality rules
 - `references/android-permissions.md` - runtime permissions and best practices
 - `references/kotlin-delegation.md` - delegation patterns and composition guidance
 - `references/crashlytics.md` - crash reporting with modular provider swaps
 - `references/android-strictmode.md` - StrictMode guardrails and Compose stability
 - `references/testing.md` - testing patterns and examples
 - `references/dependencies.md` - dependency rules and version catalog guidance
+- `templates/detekt.yml.template` - Detekt rules baseline
 - `templates/libs.versions.toml.template` - version catalog source of truth
 - `templates/settings.gradle.kts.template` - Gradle settings source of truth
 
