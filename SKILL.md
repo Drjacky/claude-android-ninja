@@ -25,6 +25,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Multi-module dependencies                            | [dependencies.md](references/dependencies.md)               |
 | Code quality (Detekt)                                | [code-quality.md](references/code-quality.md)               |
 | Design patterns                                      | [design-patterns.md](references/design-patterns.md)         |
+| Android performance benchmarking                     | [android-performance.md](references/android-performance.md) |
 
 ## Workflow Decision Tree
 
@@ -90,3 +91,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Choosing design patterns for a new feature, business logic, or system?**
 → Use [design-patterns.md](references/design-patterns.md) for Android-focused pattern guidance  
 → Align with [architecture.md](references/architecture.md) and [modularization.md](references/modularization.md)  
+
+**Measuring performance regressions or startup/jank?**
+→ Use [android-performance.md](references/android-performance.md) for Macrobenchmark setup and commands  
+→ Keep benchmark module aligned with `benchmark` build type in [gradle-setup.md](references/gradle-setup.md)  

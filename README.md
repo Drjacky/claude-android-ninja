@@ -32,6 +32,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `references/android-strictmode.md` - StrictMode guardrails and Compose stability
 - `references/testing.md` - testing patterns and examples
 - `references/dependencies.md` - dependency rules and version catalog guidance
+- `references/android-performance.md` - benchmarking and performance checks
 - `templates/detekt.yml.template` - Detekt rules baseline
 - `templates/libs.versions.toml.template` - version catalog source of truth
 - `templates/settings.gradle.kts.template` - Gradle settings source of truth

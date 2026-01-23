@@ -10,7 +10,8 @@ and Google Truth for assertions.
 4. [Repository Tests](#repository-tests)
 5. [Navigation Tests](#navigation-tests)
 6. [UI Tests](#ui-tests)
-7. [Test Utilities](#test-utilities)
+7. [Performance Benchmarks](#performance-benchmarks)
+8. [Test Utilities](#test-utilities)
 
 ## Testing Philosophy
 
@@ -827,6 +828,11 @@ class AuthScreenTest {
 }
 
 ```
+
+## Performance Benchmarks
+
+Use Macrobenchmark for end-to-end performance checks (startup, navigation, and Compose scrolling).
+Setup and commands live in `references/android-performance.md`.
 
 ## Test Utilities
 
