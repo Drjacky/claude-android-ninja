@@ -23,6 +23,7 @@ detekt = "2.0.0-alpha.1"
 composeRules = "0.5.0"
 composeAnimation = "1.7.0"
 coil = "3.0.4"
+kotlinLogging = "7.0.3"
 palette = "1.0.0"
 mockkVersion = "1.14.6"
 okhttpLogging = "5.3.2"
@@ -68,6 +69,7 @@ kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.9.0" }
+kotlin-logging-jvm = { group = "io.github.oshai", name = "kotlin-logging-jvm", version.ref = "kotlinLogging" }
 leakcanary-android = { group = "com.squareup.leakcanary", name = "leakcanary-android", version = "2.14" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockkVersion" }
 mockk-agent-jvm = { module = "io.mockk:mockk-agent-jvm", version.ref = "mockkVersion" }
