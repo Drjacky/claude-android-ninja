@@ -95,6 +95,7 @@ Four-layer architecture with strict module separation and unidirectional data fl
 6. **Layer separation**: Strict separation between Presentation, Domain, Data, and UI layers
 7. **Dependency direction**: Features depend on Core modules, not on other features
 8. **Navigation coordination**: App module coordinates navigation between features
+9. **Pattern fit**: Choose patterns that match Android constraints and the module boundaries (see `references/design-patterns.md`)
 
 ## Module Structure
 

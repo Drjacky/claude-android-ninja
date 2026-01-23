@@ -24,6 +24,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | StrictMode guardrails                                | [android-strictmode.md](references/android-strictmode.md)   |
 | Multi-module dependencies                            | [dependencies.md](references/dependencies.md)               |
 | Code quality (Detekt)                                | [code-quality.md](references/code-quality.md)               |
+| Design patterns                                      | [design-patterns.md](references/design-patterns.md)         |
 
 ## Workflow Decision Tree
 
@@ -85,3 +86,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Enabling StrictMode guardrails?**
 → Follow [android-strictmode.md](references/android-strictmode.md) for app-level setup and Compose compiler diagnostics  
 → Use Sentry/Firebase init from [crashlytics.md](references/crashlytics.md) to ship StrictMode logs  
+
+**Choosing design patterns for a new feature, business logic, or system?**
+→ Use [design-patterns.md](references/design-patterns.md) for Android-focused pattern guidance  
+→ Align with [architecture.md](references/architecture.md) and [modularization.md](references/modularization.md)  

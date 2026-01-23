@@ -35,6 +35,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `templates/detekt.yml.template` - Detekt rules baseline
 - `templates/libs.versions.toml.template` - version catalog source of truth
 - `templates/settings.gradle.kts.template` - Gradle settings source of truth
+- `references/design-patterns.md` - Android-focused design patterns
 
 ## Scope
 This skill is focused on Android app development using:
