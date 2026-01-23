@@ -180,6 +180,7 @@ class AuthViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
     private val registerUseCase: RegisterUseCase,
     private val resetPasswordUseCase: ResetPasswordUseCase,
+    private val savedStateHandle: SavedStateHandle,
     validator: AuthFormValidator
 ) : ViewModel(), AuthFormValidator by validator {
 

@@ -35,6 +35,7 @@ class ConsoleLogger : Logger {
 }
 
 class ExampleViewModel(
+    private val savedStateHandle: SavedStateHandle,
     logger: Logger
 ) : ViewModel(), Logger by logger {
     fun runAction() {
@@ -62,6 +63,7 @@ class DefaultFormValidator @Inject constructor() : FormValidator {
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
+    private val savedStateHandle: SavedStateHandle,
     validator: FormValidator
 ) : ViewModel(), FormValidator by validator {
 

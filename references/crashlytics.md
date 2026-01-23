@@ -271,6 +271,7 @@ class FirebaseCrashlyticsStateLogger @Inject constructor(
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
     logger: CrashlyticsStateLogger
 ) : ViewModel(), CrashlyticsStateLogger by logger {
 
@@ -317,6 +318,7 @@ Use delegation for cross-cutting concerns (see `references/kotlin-delegation.md`
 ```kotlin
 @HiltViewModel
 class LoginViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
     crashReporter: CrashReporter
 ) : ViewModel(), CrashReporter by crashReporter {
     fun onLoginFailed(error: Throwable) {

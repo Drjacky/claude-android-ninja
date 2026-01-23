@@ -104,7 +104,7 @@ Use this when designing new features, modules, pure business logic, or shared ut
 ### Mediator
 - **When**: Multiple components need coordinated interaction.
 - **Android use**: App-level navigation coordinator (`AppNavigation`).
-- **Notes**: Keeps features independent from each other.
+- **Notes**: Keeps features independent of each other.
 
 ### Memento
 - **When**: You must restore state without breaking encapsulation.
