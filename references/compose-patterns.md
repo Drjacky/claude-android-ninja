@@ -159,6 +159,8 @@ sealed class AuthAction {
 
 Use delegation for shared behavior (validation, analytics, feature flags) instead of base classes.
 See `references/kotlin-delegation.md` for guidance and tradeoffs.
+For process-death survival, include `SavedStateHandle` in ViewModels and persist critical UI state
+that must be restored (forms, in-progress flows). See the official guidance on SavedStateHandle.
 
 ```kotlin
 // feature-auth/presentation/viewmodel/AuthViewModel.kt
