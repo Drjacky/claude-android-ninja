@@ -200,4 +200,12 @@ Use `GrantPermissionRule` for instrumentation tests and keep permission logic in
 val permissionRule = GrantPermissionRule.grant(Manifest.permission.CAMERA)
 ```
 
+### Performance Checks (Macrobenchmark)
+If permission flows impact startup or navigation timing, use Macrobenchmark to measure:
+- App launch to the permission-gated screen.
+- Time from action tap to permission dialog trigger (app-side only).
+
+See `references/android-performance.md` for Macrobenchmark setup and commands, and the Android team guidance:
+https://medium.com/androiddevelopers/measure-and-improve-performance-with-macrobenchmark-560abd0aa5bb
+
 For additional testing patterns, see `references/testing.md`.
