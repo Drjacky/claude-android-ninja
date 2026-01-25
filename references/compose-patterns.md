@@ -690,10 +690,11 @@ fun LoginScreenAllStatesPreview(
 ## Performance Optimization
 
 ### Stability, Immutability, and Persistent Collections
-Compose can skip recomposition when inputs are stable. Mark value classes as `@Immutable` or
-`@Stable` when they truly are, and only optimize for stability if recomposition is a real
-performance issue. For collections in state, prefer persistent collections so unchanged structure and items
-can be reused and avoid invalidating unaffected composables.
+Compose can skip recomposition when inputs are stable. Annotate value types with `@Immutable` only when they are
+deeply immutable, and use `@Stable` only when all mutations are observable by Compose. 
+Apply stability annotations deliberately and only when recomposition is a proven performance concern.
+For collections held in state, prefer persistent collections to enable structural sharing, so unchanged items and
+structure are reused and unaffected composables are not unnecessarily invalidated.
 
 ```kotlin
 import kotlinx.collections.immutable.PersistentList
