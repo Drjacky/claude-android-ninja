@@ -689,6 +689,40 @@ fun LoginScreenAllStatesPreview(
 
 ## Performance Optimization
 
+### Stability, Immutability, and Persistent Collections
+Compose can skip recomposition when inputs are stable. Mark value classes as `@Immutable` or
+`@Stable` when they truly are, and only optimize for stability if recomposition is a real
+performance issue. For collections in state, prefer persistent collections so unchanged content
+can reuse instances and avoid unnecessary recompositions.
+
+```kotlin
+import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentList
+
+@Immutable
+data class AuthEventUi(
+    val id: String,
+    val label: String
+)
+
+@HiltViewModel
+class AuthEventsViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    private val _events = MutableStateFlow<PersistentList<AuthEventUi>>(persistentListOf())
+    val events: StateFlow<PersistentList<AuthEventUi>> = _events.asStateFlow()
+
+    fun onEventAdded(event: AuthEventUi) {
+        _events.update { it.add(event) }
+    }
+
+    fun onEventsLoaded(events: List<AuthEventUi>) {
+        _events.value = events.toPersistentList()
+    }
+}
+```
+
 ### Lazy Composition
 
 ```kotlin
