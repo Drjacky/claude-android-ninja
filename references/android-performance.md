@@ -83,6 +83,13 @@ class AuthStartupBenchmark {
 }
 ```
 
+#### Macrobenchmark Best Practices
+- Prefer `CompilationMode.Partial()` to approximate Baseline Profile behavior when comparing changes.
+- Use `StartupMode.COLD/WARM/HOT` to measure the scenario you care about.
+- Keep actions in `measureRepeated` focused and deterministic (e.g., navigate to one screen, scroll one list).
+- Wait for UI idleness with `device.waitForIdle()` between steps when needed.
+- Use `FrameTimingMetric()` when measuring Compose list scroll or navigation jank.
+
 #### Common Metrics
 - `StartupTimingMetric()` for cold/warm start.
 - `FrameTimingMetric()` for scrolling/jank.
