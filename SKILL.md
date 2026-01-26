@@ -16,6 +16,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Project structure & modules                          | [modularization.md](references/modularization.md)           |
 | Architecture layers (Presentation, Domain, Data, UI) | [architecture.md](references/architecture.md)               |
 | Jetpack Compose patterns                             | [compose-patterns.md](references/compose-patterns.md)       |
+| Kotlin best practices                                | [kotlin-patterns.md](references/kotlin-patterns.md)         |
 | Gradle & build configuration                         | [gradle-setup.md](references/gradle-setup.md)               |
 | Testing approach                                     | [testing.md](references/testing.md)                         |
 | Runtime permissions                                  | [android-permissions.md](references/android-permissions.md) |
@@ -54,8 +55,13 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Building UI screens/components?**
 → Read [compose-patterns.md](references/compose-patterns.md)
+→ **Always** align Kotlin code with [kotlin-patterns.md](references/kotlin-patterns.md)  
 → Create Screen + ViewModel + UiState in the feature module  
 → Use shared components from `core/ui` when possible
+
+**Writing any Kotlin code?**
+→ **Always** follow [kotlin-patterns.md](references/kotlin-patterns.md)  
+→ Ensure practices align with [architecture.md](references/architecture.md), [modularization.md](references/modularization.md), and [compose-patterns.md](references/compose-patterns.md)
 
 **Setting up data/domain layers?**
 → Read [architecture.md](references/architecture.md)  
