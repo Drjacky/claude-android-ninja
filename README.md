@@ -34,10 +34,10 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `references/testing.md` - testing patterns and examples
 - `references/dependencies.md` - dependency rules and version catalog guidance
 - `references/android-performance.md` - benchmarking and performance checks
+- `references/design-patterns.md` - Android-focused design patterns
 - `templates/detekt.yml.template` - Detekt rules baseline
 - `templates/libs.versions.toml.template` - version catalog source of truth
 - `templates/settings.gradle.kts.template` - Gradle settings source of truth
-- `references/design-patterns.md` - Android-focused design patterns
 
 ## Scope
 This skill is focused on Android app development using:
