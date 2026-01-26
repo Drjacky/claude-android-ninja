@@ -214,6 +214,40 @@ interface AuthRepository {
 }
 ```
 
+### Avoid `Job` in `withContext` or Ad-Hoc `Job()` Usage
+Passing a `Job` into `withContext` breaks structured concurrency. Prefer `coroutineScope`/`supervisorScope`
+and keep a reference to the returned `Job` when you need cancellation.
+
+```kotlin
+class AuthSyncService(
+    private val scope: CoroutineScope,
+    private val authSyncer: AuthSyncer
+) {
+    private var syncJob: Job? = null
+
+    fun startSync() {
+        syncJob?.cancel()
+        syncJob = scope.launch {
+            authSyncer.syncAll()
+        }
+    }
+}
+```
+
+### Yield During Heavy Work
+For CPU-heavy loops, use `yield()` or `ensureActive()` to keep cancellation responsive.
+
+```kotlin
+suspend fun reconcileSessions(sessions: List<AuthSession>) = withContext(Dispatchers.Default) {
+    sessions.forEachIndexed { index, session ->
+        if (index % 50 == 0) {
+            yield()
+        }
+        reconcile(session)
+    }
+}
+```
+
 ### ViewModels Should Launch Coroutines (Not Expose `suspend`)
 Keep async orchestration in the ViewModel. Expose UI triggers and let the ViewModel launch work.
 Repositories/use cases remain `suspend`/`Flow`.
