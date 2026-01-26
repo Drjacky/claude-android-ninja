@@ -159,11 +159,13 @@ suspend fun loadAuthDashboard(): AuthDashboard = coroutineScope {
     val user = async { authRemote.fetchUser() }
     val sessions = async { authRemote.fetchSessions() }
     val security = async { authRemote.fetchSecurityStatus() }
+    
+    val results = awaitAll(user, sessions, security)
 
     AuthDashboard(
-        user = user.await(),
-        sessions = sessions.await(),
-        security = security.await()
+        user = results[0] as User,
+        sessions = results[1] as List<Session>,
+        security = results[2] as SecurityStatus
     )
 }
 ```
@@ -184,9 +186,9 @@ class AuthAuditRepository(
 }
 ```
 
-### Prefer `supervisorScope` Over `SupervisorJob` in `withContext`
-`SupervisorJob` in `withContext` does not do what most people expect. Use `supervisorScope`
-when you want child failures isolated.
+### Prefer `supervisorScope` for Independent Task Failures Avoid passing a `SupervisorJob` into `withContext`;
+it doesn't provide the isolation most expect because the scope itself will still fail if a child does.
+Use `supervisorScope` instead to ensure that a failure in one child coroutine doesn't automatically cancel its siblings or the parent.
 
 ```kotlin
 suspend fun refreshAuthCaches(): Unit = supervisorScope {
