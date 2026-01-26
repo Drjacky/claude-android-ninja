@@ -235,7 +235,8 @@ class AuthSyncService(
 ```
 
 ### Yield During Heavy Work
-For CPU-heavy loops, use `yield()` or `ensureActive()` to keep cancellation responsive.
+For long-running CPU-bound loops, periodically call `yield()` to allow rescheduling, or `ensureActive()` when only
+cancellation checks are needed. Avoid using either in short-lived or already suspending work.
 
 ```kotlin
 suspend fun reconcileSessions(sessions: List<AuthSession>) = withContext(Dispatchers.Default) {
