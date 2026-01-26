@@ -140,3 +140,76 @@ fun login_updates_auth_state() = runTest {
     assertThat(repository.isLoggedIn()).isTrue()
 }
 ```
+
+### Avoid `async` with Immediate `await`
+If you need the result immediately, call the suspend function directly or use `withContext`.
+
+```kotlin
+suspend fun fetchAuthProfile(): AuthProfile {
+    val profile = authRemote.fetchProfile()
+    return profile.toDomain()
+}
+```
+
+### Use `awaitAll` for Parallel Work
+Prefer `awaitAll()` so failures cancel remaining work promptly.
+
+```kotlin
+suspend fun loadAuthDashboard(): AuthDashboard = coroutineScope {
+    val user = async { authRemote.fetchUser() }
+    val sessions = async { authRemote.fetchSessions() }
+    val security = async { authRemote.fetchSecurityStatus() }
+
+    AuthDashboard(
+        user = user.await(),
+        sessions = sessions.await(),
+        security = security.await()
+    )
+}
+```
+
+### Keep Suspend/Flow Thread-Safe
+Suspending functions should handle their own dispatcher using `withContext`, and flows should
+use `flowOn` for upstream work.
+
+```kotlin
+class AuthAuditRepository(
+    private val ioDispatcher: CoroutineDispatcher,
+    private val auditStore: AuditStore
+) {
+    suspend fun readAuditLog(): List<AuthAuditEntry> =
+        withContext(ioDispatcher) {
+            auditStore.readAll()
+        }
+}
+```
+
+### Prefer `supervisorScope` Over `SupervisorJob` in `withContext`
+`SupervisorJob` in `withContext` does not do what most people expect. Use `supervisorScope`
+when you want child failures isolated.
+
+```kotlin
+suspend fun refreshAuthCaches(): Unit = supervisorScope {
+    launch { authCache.refreshTokens() }
+    launch { authCache.refreshSessions() }
+}
+```
+
+### Functions Returning `Flow` Should Not Be `suspend`
+Wrap any suspend setup inside the flow builder so collection triggers all work.
+
+```kotlin
+fun observeAuthEvents(): Flow<AuthEvent> = flow {
+    val sources = authEventSources()
+    emitAll(sources.asFlow().flatMapMerge { it.observe() })
+}
+```
+
+### Prefer `suspend` for One-Off Values
+Use a suspending function when only a single value is expected.
+
+```kotlin
+interface AuthRepository {
+    suspend fun fetchCurrentUser(): AuthUser
+}
+```
