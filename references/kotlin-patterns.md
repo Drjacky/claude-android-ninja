@@ -184,9 +184,9 @@ class AuthAuditRepository(
 }
 ```
 
-### Prefer `supervisorScope` for Independent Task Failures Avoid passing a `SupervisorJob` into `withContext`;
-it doesn't provide the isolation most expect because the scope itself will still fail if a child does.
-Use `supervisorScope` instead to ensure that a failure in one child coroutine doesn't automatically cancel its siblings or the parent.
+### Prefer `supervisorScope` for Independent Task Failures
+Avoid passing a `SupervisorJob` into `withContext`; it doesn't provide the isolation most expect because the scope itself
+will still fail if a child does. Use `supervisorScope` instead so one child failure doesn't cancel siblings or the parent.
 
 ```kotlin
 suspend fun refreshAuthCaches(): Unit = supervisorScope {
@@ -211,5 +211,23 @@ Use a suspending function when only a single value is expected.
 ```kotlin
 interface AuthRepository {
     suspend fun fetchCurrentUser(): AuthUser
+}
+```
+
+### ViewModels Should Launch Coroutines (Not Expose `suspend`)
+Keep async orchestration in the ViewModel. Expose UI triggers and let the ViewModel launch work.
+Repositories/use cases remain `suspend`/`Flow`.
+
+```kotlin
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val loginUseCase: LoginUseCase,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    fun onLoginClick(email: String, password: String) {
+        viewModelScope.launch {
+            loginUseCase(email, password)
+        }
+    }
 }
 ```
