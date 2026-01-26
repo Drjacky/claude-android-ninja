@@ -156,17 +156,15 @@ Prefer `awaitAll()` so failures cancel remaining work promptly.
 
 ```kotlin
 suspend fun loadAuthDashboard(): AuthDashboard = coroutineScope {
-    val user = async { authRemote.fetchUser() }
-    val sessions = async { authRemote.fetchSessions() }
-    val security = async { authRemote.fetchSecurityStatus() }
-    
-    val results = awaitAll(user, sessions, security)
-
-    AuthDashboard(
-        user = results[0] as User,
-        sessions = results[1] as List<Session>,
-        security = results[2] as SecurityStatus
+    val deferreds = listOf(
+        async { authRemote.fetchUser() },
+        async { authRemote.fetchSessions() },
+        async { authRemote.fetchSecurityStatus() }
     )
+
+    val (user, sessions, security) = deferreds.awaitAll()
+
+    AuthDashboard(user, sessions, security)
 }
 ```
 
