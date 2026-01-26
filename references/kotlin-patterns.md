@@ -46,3 +46,97 @@ fun reduceSessions(
 When you store lists in Compose or ViewModel state, prefer persistent collections for structural
 sharing and stable updates. This is covered in
 `references/compose-patterns.md` → “Stability, Immutability, and Persistent Collections”.
+
+## Coroutines Best Practices (Android)
+Use coroutines in a testable, lifecycle-aware way. Highlights from Android guidance:
+https://developer.android.com/kotlin/coroutines/coroutines-best-practices
+
+### Inject Dispatchers (Avoid Hardcoding)
+Inject `CoroutineDispatcher` (or a small wrapper) so production and test behavior are consistent.
+
+```kotlin
+class AuthRepository(
+    private val remote: AuthRemoteDataSource,
+    private val ioDispatcher: CoroutineDispatcher
+) {
+    suspend fun login(email: String, password: String): AuthResult =
+        withContext(ioDispatcher) {
+            remote.login(email, password)
+        }
+}
+```
+
+### Avoid GlobalScope, Prefer Structured Concurrency
+Use `viewModelScope`/`lifecycleScope` for UI and inject external scope only when work must outlive UI.
+
+```kotlin
+class AuthSessionRefresher(
+    private val authStore: AuthStore,
+    private val externalScope: CoroutineScope,
+    private val ioDispatcher: CoroutineDispatcher
+) {
+    fun refreshSession() {
+        externalScope.launch(ioDispatcher) {
+            authStore.refresh()
+        }
+    }
+}
+```
+
+### Make Coroutines Cancellable
+For long-running loops or blocking work, check for cancellation to keep UI responsive.
+
+```kotlin
+class AuthLogUploader(
+    private val uploader: LogUploader
+) {
+    suspend fun upload(files: List<AuthLogFile>) {
+        for (file in files) {
+            ensureActive()
+            uploader.upload(file)
+        }
+    }
+}
+```
+
+### Handle Exceptions Carefully
+Catch expected exceptions inside the coroutine. Never swallow `CancellationException`.
+
+```kotlin
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val loginUseCase: LoginUseCase,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    fun login(email: String, password: String) {
+        viewModelScope.launch {
+            try {
+                loginUseCase(email, password)
+            } catch (e: IOException) {
+                // expose UI error state
+            } catch (e: CancellationException) {
+                throw e
+            }
+        }
+    }
+}
+```
+
+### Test with runTest and Shared Scheduler
+Use `runTest` and share the same scheduler across test dispatchers.
+
+```kotlin
+@Test
+fun login_updates_auth_state() = runTest {
+    val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+    val repository = AuthRepository(
+        remote = FakeAuthRemoteDataSource(),
+        ioDispatcher = testDispatcher
+    )
+
+    repository.login("user@example.com", "password")
+
+    assertThat(repository.isLoggedIn()).isTrue()
+}
+```
