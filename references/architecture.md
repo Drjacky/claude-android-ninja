@@ -1,6 +1,7 @@
 # Architecture Guide
 
 Based on Google's official Android architecture guidance with modern Jetpack Compose, Navigation3, and our modular best practices.
+All Kotlin code in this architecture must align with `references/kotlin-patterns.md`.
 
 ## Table of Contents
 1. [Architecture Overview](#architecture-overview)

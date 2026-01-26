@@ -1,6 +1,7 @@
 # Jetpack Compose Patterns
 
 Modern UI patterns following Google's Material 3 guidelines with Navigation3, adaptive layouts, and our modular architecture.
+All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 
 ## Table of Contents
 1. [Screen Architecture](#screen-architecture)

@@ -1,6 +1,7 @@
 # Modularization Guide
 
 Based on our modern Android multi-module architecture with Navigation3, Jetpack Compose, and strict dependency rules.
+All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 
 ## Table of Contents
 1. [Benefits](#benefits)
