@@ -169,8 +169,8 @@ suspend fun loadAuthDashboard(): AuthDashboard = coroutineScope {
 ```
 
 ### Keep Suspend/Flow Thread-Safe
-Suspending functions should handle their own dispatcher using `withContext`, and flows should
-use `flowOn` for upstream work.
+Suspend APIs must be safe to call from any dispatcher. Use `withContext` inside suspend functions and `flowOn` for
+upstream flow work. Avoid dispatcher switching for trivial mapping logic, and keep domain and use-case layers dispatcher-agnostic.
 
 ```kotlin
 class AuthAuditRepository(
