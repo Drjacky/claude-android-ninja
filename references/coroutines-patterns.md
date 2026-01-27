@@ -390,25 +390,47 @@ class AuthViewModel @Inject constructor(
 ```
 
 ### Treat NonCancellable as a Last Resort
-Use `NonCancellable` only for critical cleanup logic. Never wrap normal work in it.
-This prevents unkillable coroutines and shutdown issues.
+Use `NonCancellable` only for critical resource cleanup that must complete even when the coroutine is cancelled. This prevents resource leaks but should be used sparingly.
+`NonCancellable` doesn't prevent cancellation; it allows suspended functions to complete during the cancelling state. Keep cleanup code fast and bounded.
 
 ```kotlin
-class AuthSessionManager(
-    private val sessionStore: SessionStore,
-    private val analytics: Analytics
+class CameraRepository(
+    private val camera: Camera2,
+    private val ioDispatcher: CoroutineDispatcher
 ) {
-    suspend fun logout() {
-        // Normal work should be cancellable
-        sessionStore.clearSession()
-        
-        // Only use NonCancellable for critical cleanup
-        withContext(NonCancellable) {
-            analytics.logLogout()
+    suspend fun capturePhoto(): Photo = withContext(ioDispatcher) {
+        try {
+            camera.open()
+            camera.capture()
+        } finally {
+            // Critical: release hardware even if cancelled
+            withContext(NonCancellable) {
+                camera.close()
+            }
+        }
+    }
+}
+
+class DatabaseConnection(
+    private val db: SQLiteDatabase,
+    private val ioDispatcher: CoroutineDispatcher
+) {
+    suspend fun executeTransaction(block: suspend () -> Unit) = withContext(ioDispatcher) {
+        try {
+            db.beginTransaction()
+            block()
+            db.setTransactionSuccessful()
+        } finally {
+            // Must end transaction even if cancelled
+            withContext(NonCancellable) {
+                db.endTransaction()
+            }
         }
     }
 }
 ```
+
+Warning: Never wrap normal business logic in `NonCancellable`. It should only guard cleanup code that prevents resource leaks or corruption.
 
 ### Prefer Explicit Timeouts for Hardware and Uncontrolled APIs
 Use `withTimeout` or `withTimeoutOrNull` for operations that can hang indefinitely when interacting with hardware or third-party SDKs without built-in timeout mechanisms.
