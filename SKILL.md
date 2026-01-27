@@ -17,6 +17,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Architecture layers (Presentation, Domain, Data, UI) | [architecture.md](references/architecture.md)               |
 | Jetpack Compose patterns                             | [compose-patterns.md](references/compose-patterns.md)       |
 | Kotlin best practices                                | [kotlin-patterns.md](references/kotlin-patterns.md)         |
+| Coroutines best practices                            | [coroutines-patterns.md](references/coroutines-patterns.md) |
 | Gradle & build configuration                         | [gradle-setup.md](references/gradle-setup.md)               |
 | Testing approach                                     | [testing.md](references/testing.md)                         |
 | Runtime permissions                                  | [android-permissions.md](references/android-permissions.md) |

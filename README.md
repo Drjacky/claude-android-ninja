@@ -25,6 +25,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `references/modularization.md` - module structure and navigation wiring
 - `references/compose-patterns.md` - Compose UI patterns and best practices
 - `references/kotlin-patterns.md` - Kotlin best practices (must-read for Kotlin code)
+- `references/coroutines-patterns.md` - coroutines best practices and patterns
 - `references/gradle-setup.md` - build logic, conventions, and build files
 - `references/code-quality.md` - Detekt setup and code quality rules
 - `references/android-permissions.md` - runtime permissions and best practices
