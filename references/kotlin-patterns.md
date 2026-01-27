@@ -208,6 +208,21 @@ class AuthAuditRepository(
 }
 ```
 
+### Avoid Blocking Calls in Coroutines
+Do not call blocking APIs (`Thread.sleep`, blocking I/O, locks) on a coroutine thread. If unavoidable,
+isolate the work on `Dispatchers.IO` (or a dedicated dispatcher).
+
+```kotlin
+class AuthLegacyKeyStore(
+    private val ioDispatcher: CoroutineDispatcher,
+    private val legacyStore: LegacyKeyStore
+) {
+    suspend fun loadKeys(): List<AuthKey> = withContext(ioDispatcher) {
+        legacyStore.readKeysBlocking()
+    }
+}
+```
+
 ### Prefer `supervisorScope` for Independent Task Failures
 Avoid passing a `SupervisorJob` into `withContext`; it doesn't provide the isolation most expect because the scope itself
 will still fail if a child does. Use `supervisorScope` instead so one child failure doesn't cancel siblings or the parent.
