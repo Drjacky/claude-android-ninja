@@ -123,6 +123,26 @@ class AuthViewModel @Inject constructor(
 }
 ```
 
+### Do Not Catch `Throwable`
+Catch only expected exception types. Avoid `catch (Throwable)` because it includes fatal errors and
+`CancellationException`. Prefer a `CoroutineExceptionHandler` for unexpected failures so cancellation
+propagates correctly without manual rethrowing.
+
+```kotlin
+private val crashHandler = CoroutineExceptionHandler { _, throwable ->
+    crashReporter.record(throwable)
+}
+
+fun launchWithCrashReporting(block: suspend () -> Unit) {
+    viewModelScope.launch(crashHandler) {
+        block()
+    }
+}
+```
+
+If you must catch `Throwable` (rare), rethrow `CancellationException` immediately so structured
+concurrency remains intact.
+
 ### Test with runTest and Shared Scheduler
 Use `runTest` and share the same scheduler across test dispatchers.
 
@@ -169,7 +189,7 @@ If you want new subscribers to receive only the latest value, use `replay = 1` a
 add `extraBufferCapacity` for bursty emissions.
 
 Guidance for events vs state:
-- Use `SharedFlow(replay = 0)` for one-shot, lossy UI events (toasts, navigation).
+- Use `SharedFlow(replay = 0)` for one-shot, lossy UI events (toasts, dialogs, navigation).
 - If an event must survive the UI being stopped, persist it as state and render it on resume
   (StateFlow/ViewModel state/persistence), rather than relying on buffering.
 
