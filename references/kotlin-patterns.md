@@ -140,6 +140,10 @@ fun launchWithCrashReporting(block: suspend () -> Unit) {
 }
 ```
 
+Note on `CoroutineExceptionHandler`:
+- `CoroutineExceptionHandler` only works when passed to the root coroutine (the initial `launch` or `async`).
+It is ignored if passed to `withContext` or nested coroutines.
+
 If you must catch `Throwable` (rare), rethrow `CancellationException` immediately so structured
 concurrency remains intact.
 
