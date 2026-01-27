@@ -331,6 +331,26 @@ interface AuthRepository {
 }
 ```
 
+### Prefer Explicit Coroutine Names for Long-Lived Work
+For long-lived or background work, add `CoroutineName` to improve debugging and structured logs.
+
+```kotlin
+class AuthSessionRefresher(
+    private val authStore: AuthStore,
+    private val externalScope: CoroutineScope,
+    private val ioDispatcher: CoroutineDispatcher
+) {
+    fun startPeriodicRefresh() {
+        externalScope.launch(ioDispatcher + CoroutineName("AuthSessionRefresher")) {
+            while (isActive) {
+                authStore.refreshSessions()
+                delay(30.minutes)
+            }
+        }
+    }
+}
+```
+
 ### Avoid `Job` in `withContext` or Ad-Hoc `Job()` Usage
 Passing a `Job` into `withContext` breaks structured concurrency. Prefer `coroutineScope`/`supervisorScope`
 and keep a reference to the returned `Job` when you need cancellation.
