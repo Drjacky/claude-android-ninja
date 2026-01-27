@@ -151,6 +151,30 @@ suspend fun fetchAuthProfile(): AuthProfile {
 }
 ```
 
+### Prefer `launch` for Fire-and-Forget, `async` for Values
+Use `launch` for side effects and `async` only when a value is needed and explicitly awaited.
+This keeps intent clear and prevents accidental ignored results.
+
+```kotlin
+fun refreshAuthState() {
+    viewModelScope.launch {
+        authSyncer.refreshSession()
+    }
+}
+
+suspend fun loadAuthDashboard(): AuthDashboard = coroutineScope {
+    val deferreds = listOf(
+        async { authRemote.fetchUser() },
+        async { authRemote.fetchSessions() },
+        async { authRemote.fetchSecurityStatus() }
+    )
+
+    val (user, sessions, security) = deferreds.awaitAll()
+
+    AuthDashboard(user, sessions, security)
+}
+```
+
 ### Use `awaitAll` for Parallel Work
 Prefer `awaitAll()` so failures cancel remaining work promptly.
 
