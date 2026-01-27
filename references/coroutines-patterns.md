@@ -388,3 +388,24 @@ class AuthViewModel @Inject constructor(
     }
 }
 ```
+
+### Treat NonCancellable as a Last Resort
+Use `NonCancellable` only for critical cleanup logic. Never wrap normal work in it.
+This prevents unkillable coroutines and shutdown issues.
+
+```kotlin
+class AuthSessionManager(
+    private val sessionStore: SessionStore,
+    private val analytics: Analytics
+) {
+    suspend fun logout() {
+        // Normal work should be cancellable
+        sessionStore.clearSession()
+        
+        // Only use NonCancellable for critical cleanup
+        withContext(NonCancellable) {
+            analytics.logLogout()
+        }
+    }
+}
+```
