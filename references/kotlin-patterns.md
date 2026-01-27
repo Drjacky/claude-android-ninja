@@ -168,6 +168,11 @@ Note on buffering:
 If you want new subscribers to receive only the latest value, use `replay = 1` and optionally
 add `extraBufferCapacity` for bursty emissions.
 
+Guidance for events vs state:
+- Use `SharedFlow(replay = 0)` for one-shot, lossy UI events (toasts, navigation).
+- If an event must survive the UI being stopped, persist it as state and render it on resume
+  (StateFlow/ViewModel state/persistence), rather than relying on buffering.
+
 ### Avoid `async` with Immediate `await`
 If you need the result immediately, call the suspend function directly or use `withContext`.
 
