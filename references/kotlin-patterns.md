@@ -305,3 +305,35 @@ class AuthViewModel @Inject constructor(
     }
 }
 ```
+
+### Repositories/Use Cases Should Not Launch Coroutines
+Non-UI layers should expose `suspend` functions or `Flow` and let callers control scope/lifecycle.
+This avoids hidden lifetimes and keeps cancellation/testability predictable.
+
+```kotlin
+class AuthRepository(
+    private val remote: AuthRemoteDataSource
+) {
+    suspend fun refreshSession(): AuthSession =
+        remote.refreshSession()
+}
+
+class RefreshSessionUseCase @Inject constructor(
+    private val repository: AuthRepository
+) {
+    suspend operator fun invoke(): AuthSession =
+        repository.refreshSession()
+}
+
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val refreshSessionUseCase: RefreshSessionUseCase,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    fun onRefreshSession() {
+        viewModelScope.launch {
+            refreshSessionUseCase()
+        }
+    }
+}
+```
