@@ -141,6 +141,33 @@ fun login_updates_auth_state() = runTest {
 }
 ```
 
+### Prefer StateFlow Over LiveData for New Code
+Use `StateFlow` for observable state and `SharedFlow` for events. Reserve `LiveData` for interop
+or legacy code that still requires it.
+
+```kotlin
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Loading)
+    val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+
+    // replay is for new collectors; extraBufferCapacity is for bursts from existing collectors
+    private val _events = MutableSharedFlow<AuthEvent>(
+        replay = 0,
+        extraBufferCapacity = 1
+    )
+    val events: SharedFlow<AuthEvent> = _events.asSharedFlow()
+}
+```
+
+Note on buffering:
+- `replay` controls how many values new subscribers receive.
+- `extraBufferCapacity` adds temporary queue space for bursts from active emitters.
+If you want new subscribers to receive only the latest value, use `replay = 1` and optionally
+add `extraBufferCapacity` for bursty emissions.
+
 ### Avoid `async` with Immediate `await`
 If you need the result immediately, call the suspend function directly or use `withContext`.
 
