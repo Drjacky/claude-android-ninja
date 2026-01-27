@@ -390,7 +390,9 @@ class AuthViewModel @Inject constructor(
 ```
 
 ### Treat NonCancellable as a Last Resort
-Use `NonCancellable` only for critical resource cleanup that must complete even when the coroutine is cancelled. This prevents resource leaks but should be used sparingly.
+Use `NonCancellable` only for critical resource cleanup (such as camera, sensors, database connections, file handles) that
+must complete even when the coroutine is cancelled. This prevents resource leaks but should be used sparingly.
+
 `NonCancellable` doesn't prevent cancellation; it allows suspended functions to complete during the cancelling state. Keep cleanup code fast and bounded.
 
 ```kotlin
@@ -406,24 +408,6 @@ class CameraRepository(
             // Critical: release hardware even if cancelled
             withContext(NonCancellable) {
                 camera.close()
-            }
-        }
-    }
-}
-
-class DatabaseConnection(
-    private val db: SQLiteDatabase,
-    private val ioDispatcher: CoroutineDispatcher
-) {
-    suspend fun executeTransaction(block: suspend () -> Unit) = withContext(ioDispatcher) {
-        try {
-            db.beginTransaction()
-            block()
-            db.setTransactionSuccessful()
-        } finally {
-            // Must end transaction even if cancelled
-            withContext(NonCancellable) {
-                db.endTransaction()
             }
         }
     }
