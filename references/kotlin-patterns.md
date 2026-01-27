@@ -152,7 +152,7 @@ Use `runTest` and share the same scheduler across test dispatchers.
 
 ```kotlin
 @Test
-fun login_updates_auth_state() = runTest {
+fun `login updates auth state`() = runTest {
     val testDispatcher = UnconfinedTestDispatcher(testScheduler)
     val repository = AuthRepository(
         remote = FakeAuthRemoteDataSource(),
@@ -261,6 +261,28 @@ class AuthAuditRepository(
         withContext(ioDispatcher) {
             auditStore.readAll()
         }
+}
+```
+
+### Avoid Nested `withContext` Chains
+Do not stack multiple `withContext` calls across layers. Switch dispatchers at clear boundaries
+(typically data sources) and keep domain/use cases dispatcher-agnostic to avoid thread hopping.
+
+```kotlin
+class AuthRemoteDataSource(
+    private val ioDispatcher: CoroutineDispatcher,
+    private val api: AuthApi
+) {
+    suspend fun fetchUser(): AuthUser = withContext(ioDispatcher) {
+        api.fetchUser()
+    }
+}
+
+class FetchUserUseCase @Inject constructor(
+    private val dataSource: AuthRemoteDataSource
+) {
+    suspend operator fun invoke(): AuthUser =
+        dataSource.fetchUser()
 }
 ```
 
