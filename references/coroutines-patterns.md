@@ -409,3 +409,44 @@ class AuthSessionManager(
     }
 }
 ```
+
+### Prefer Explicit Timeouts for Hardware and Uncontrolled APIs
+Use `withTimeout` or `withTimeoutOrNull` for operations that can hang indefinitely when interacting with hardware or third-party SDKs without built-in timeout mechanisms.
+
+Note: Modern HTTP clients (OkHttp, Ktor) have sophisticated timeout configuration. Configure those at the client level instead of wrapping each call. Use explicit timeouts only when the underlying API has no timeout control.
+
+```kotlin
+class BiometricAuthRepository(
+    private val biometricSdk: ThirdPartyBiometricSdk,
+    private val ioDispatcher: CoroutineDispatcher
+) {
+    suspend fun authenticate(): BiometricResult? = withContext(ioDispatcher) {
+        // Third-party SDK has no timeout mechanism, so we add one
+        withTimeoutOrNull(30.seconds) {
+            biometricSdk.authenticate()
+        }
+    }
+}
+
+class HardwarePrinterRepository(
+    private val printerSdk: ThirdPartyPrinterSdk,
+    private val ioDispatcher: CoroutineDispatcher
+) {
+    suspend fun print(document: PrintDocument): PrintResult = withContext(ioDispatcher) {
+        // Hardware operations can hang on device issues
+        try {
+            withTimeout(60.seconds) {
+                printerSdk.print(document)
+            }
+        } catch (e: TimeoutCancellationException) {
+            // Handle timeout as a specific failure case
+            PrintResult.Timeout
+        }
+    }
+}
+```
+
+Important notes:
+- `withTimeout` throws `TimeoutCancellationException` (a subclass of `CancellationException`), which will cancel the coroutine unless caught and handled
+- Wrap `withContext` with timeout, not the other way around, so the timeout covers the full operation including dispatcher switch
+- Use `withTimeoutOrNull` when a null result is acceptable; use `withTimeout` with explicit timeout handling when you need to distinguish timeout from other failures
