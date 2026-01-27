@@ -151,26 +151,35 @@ Guidance for events vs state:
   (StateFlow/ViewModel state/persistence), rather than relying on buffering.
 
 ### Avoid `async` with Immediate `await`
-If you need the result immediately, call the suspend function directly or use `withContext`.
+Don't use `async` followed immediately by `await` in the same scope. Use `withContext` for sequential work or call the suspend function directly.
 
 ```kotlin
+// Good: direct call or withContext for sequential work
 suspend fun fetchAuthProfile(): AuthProfile {
-    val profile = authRemote.fetchProfile()
+    val profile = withContext(Dispatchers.IO) {
+        authRemote.fetchProfile()
+    }
     return profile.toDomain()
+}
+
+// Good: simple sequential call
+suspend fun refreshAuth(): AuthResult {
+    return authRemote.refresh()
 }
 ```
 
-### Prefer `launch` for Fire-and-Forget, `async` for Values
-Use `launch` for side effects and `async` only when a value is needed and explicitly awaited.
-This keeps intent clear and prevents accidental ignored results.
+### Prefer `launch` for Fire-and-Forget, `async` for Values, `withContext` for Sequential Work
+Use `launch` for side effects, `async` for parallel work that returns values, and `withContext` for sequential operations that need dispatcher switching or structured concurrency.
 
 ```kotlin
+// launch: fire-and-forget side effects
 fun refreshAuthState() {
     viewModelScope.launch {
         authSyncer.refreshSession()
     }
 }
 
+// async: parallel work returning values
 suspend fun loadAuthDashboard(): AuthDashboard = coroutineScope {
     val deferreds = listOf(
         async { authRemote.fetchUser() },
@@ -182,22 +191,30 @@ suspend fun loadAuthDashboard(): AuthDashboard = coroutineScope {
 
     AuthDashboard(user, sessions, security)
 }
+
+// withContext: sequential work with dispatcher switch
+suspend fun processAuthData(data: AuthData): ProcessedAuth = withContext(Dispatchers.Default) {
+    data.process()
+}
 ```
 
 ### Use `awaitAll` for Parallel Work
-Prefer `awaitAll()` so failures cancel remaining work promptly.
+Prefer `awaitAll()` so failures cancel remaining work promptly. It handles exceptions properly and cancels sibling coroutines when one fails.
 
 ```kotlin
-suspend fun loadAuthDashboard(): AuthDashboard = coroutineScope {
-    val deferreds = listOf(
-        async { authRemote.fetchUser() },
-        async { authRemote.fetchSessions() },
-        async { authRemote.fetchSecurityStatus() }
-    )
-
-    val (user, sessions, security) = deferreds.awaitAll()
-
-    AuthDashboard(user, sessions, security)
+suspend fun syncAuthData(): SyncResult = coroutineScope {
+    try {
+        val results = listOf(
+            async { syncTokens() },
+            async { syncPermissions() },
+            async { syncPreferences() }
+        ).awaitAll()
+        
+        SyncResult.Success(results)
+    } catch (e: Exception) {
+        // All remaining work is cancelled on first failure
+        SyncResult.Failed(e)
+    }
 }
 ```
 
