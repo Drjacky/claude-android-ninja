@@ -19,48 +19,8 @@ This guide focuses on **Macrobenchmark** for Compose apps.
 - Compose screen navigation and list scrolling.
 - Animation/jank investigations that need repeatable results.
 
-#### Module Setup (Recommended)
-Create a dedicated `:benchmark` test module that targets the app module.
-
-`benchmark/build.gradle.kts`:
-```kotlin
-plugins {
-    id("com.android.test")
-    id("org.jetbrains.kotlin.android")
-}
-
-android {
-    namespace = "com.example.benchmark"
-    compileSdk = 35
-
-    targetProjectPath = ":app"
-    testBuildType = "benchmark"
-
-    defaultConfig {
-        minSdk = 23
-        testInstrumentationRunner = "androidx.benchmark.junit4.AndroidBenchmarkRunner"
-    }
-}
-
-dependencies {
-    implementation(libs.androidx.benchmark.macro.junit4)
-    implementation(libs.androidx.junit)
-    implementation(libs.androidx.test.runner)
-    implementation(libs.androidx.test.uiautomator)
-}
-```
-
-#### App Build Type
-Use a `benchmark` build type based on `release` (already shown in `references/gradle-setup.md`):
-```kotlin
-buildTypes {
-    create("benchmark") {
-        initWith(getByName("release"))
-        signingConfig = signingConfigs.getByName("debug")
-        isDebuggable = false
-    }
-}
-```
+#### Module Setup
+Create a dedicated `:benchmark` test module. See `references/gradle-setup.md` → "Benchmark Module (Optional)" for the complete module setup and app build type configuration.
 
 #### Compose Macrobenchmark Example
 ```kotlin

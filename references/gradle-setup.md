@@ -666,6 +666,40 @@ dependencies {
 }
 ```
 
+### Benchmark Module (Optional)
+
+Create a dedicated `:benchmark` test module for macrobenchmark performance testing. See `references/android-performance.md` for when to use.
+
+`benchmark/build.gradle.kts`:
+```kotlin
+plugins {
+    id("com.android.test")
+    id("org.jetbrains.kotlin.android")
+}
+
+android {
+    namespace = "com.example.benchmark"
+    compileSdk = libs.findVersion("compileSdk").get().toInt()
+
+    targetProjectPath = ":app"
+    testBuildType = "benchmark"
+
+    defaultConfig {
+        minSdk = 23
+        testInstrumentationRunner = "androidx.benchmark.junit4.AndroidBenchmarkRunner"
+    }
+}
+
+dependencies {
+    implementation(libs.androidx.benchmark.macro.junit4)
+    implementation(libs.androidx.junit)
+    implementation(libs.androidx.test.runner)
+    implementation(libs.androidx.test.uiautomator)
+}
+```
+
+Note: The `benchmark` build type must be defined in the app module (shown in the app module example above).
+
 ## Code Quality (Detekt)
 
 Detekt is integrated via a convention plugin to keep rules consistent across modules.
