@@ -13,7 +13,7 @@ A clear and concise description of the best practice, pattern, or topic you'd li
 Describe the scenario or problem this would help solve.
 
 **Example:**
-"I need guidance on implementing Paging 3 with our modular architecture."
+"I need guidance on implementing Paging 3 with LazyColumn in Compose following our modular architecture."
 
 ## Related Topics
 If this relates to existing references in the SKILL, mention them here.
