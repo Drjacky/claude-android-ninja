@@ -81,8 +81,154 @@ Results are generated per device:
 
 Use these in CI to detect regressions and track changes over time.
 
+### Baseline Profiles
+
+Baseline Profiles improve app startup and runtime performance by pre-compiling critical code paths. They are automatically generated and included in release builds.
+
+#### When to Use
+- Improve cold start time (10-30% faster).
+- Optimize critical user journeys (scrolling, navigation, animations).
+- Reduce jank in frequently used screens.
+
+#### Module Setup
+
+Create a `:baselineprofile` test module using pure Gradle configuration (no GUI templates needed).
+
+`baselineprofile/build.gradle.kts`:
+```kotlin
+plugins {
+    id("com.android.test")
+    id("org.jetbrains.kotlin.android")
+    id("androidx.baselineprofile")
+}
+
+android {
+    namespace = "com.example.baselineprofile"
+    compileSdk = libs.findVersion("compileSdk").get().toInt()
+
+    targetProjectPath = ":app"
+
+    defaultConfig {
+        minSdk = 23
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    testOptions.managedDevices.devices {
+        create<com.android.build.api.dsl.ManagedVirtualDevice>("pixel6Api31") {
+            device = "Pixel 6"
+            apiLevel = 31
+            systemImageSource = "aosp"
+        }
+    }
+}
+
+dependencies {
+    implementation(libs.androidx.test.ext.junit)
+    implementation(libs.androidx.test.espresso.core)
+    implementation(libs.androidx.test.uiautomator)
+    implementation(libs.androidx.benchmark.macro.junit4)
+}
+
+baselineProfile {
+    managedDevices += "pixel6Api31"
+    useConnectedDevices = false
+}
+```
+
+Update `app/build.gradle.kts`:
+```kotlin
+plugins {
+    id("com.example.android.application")
+    id("androidx.baselineprofile")
+}
+
+dependencies {
+    baselineProfile(project(":baselineprofile"))
+}
+```
+
+#### Define the Baseline Profile Generator
+
+`baselineprofile/src/main/java/.../BaselineProfileGenerator.kt`:
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class BaselineProfileGenerator {
+    @get:Rule
+    val rule = BaselineProfileRule()
+
+    @Test
+    fun generate() = rule.collect(
+        packageName = "com.example.app",
+        includeInStartupProfile = true,
+        profileBlock = {
+            startActivityAndWait()
+            
+            // Add critical user journeys here
+            device.wait(Until.hasObject(By.res("auth_form")), 5000)
+            
+            // Navigate through key screens
+            device.findObject(By.text("Login")).click()
+            device.waitForIdle()
+        }
+    )
+}
+```
+
+#### Generate the Baseline Profile
+
+Run the generation task:
+```bash
+./gradlew :app:generateReleaseBaselineProfile
+```
+
+The generated profile is automatically placed in `app/src/release/generated/baselineProfiles/baseline-prof.txt` and included in release builds.
+
+#### Benchmark the Baseline Profile
+
+Compare performance with and without Baseline Profiles:
+
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class StartupBenchmark {
+    @get:Rule
+    val benchmarkRule = MacrobenchmarkRule()
+
+    @Test
+    fun startupNoCompilation() = startup(CompilationMode.None())
+
+    @Test
+    fun startupWithBaselineProfiles() = startup(
+        CompilationMode.Partial(
+            baselineProfileMode = BaselineProfileMode.Require
+        )
+    )
+
+    private fun startup(compilationMode: CompilationMode) =
+        benchmarkRule.measureRepeated(
+            packageName = "com.example.app",
+            metrics = listOf(StartupTimingMetric()),
+            compilationMode = compilationMode,
+            iterations = 10,
+            startupMode = StartupMode.COLD
+        ) {
+            pressHome()
+            startActivityAndWait()
+        }
+}
+```
+
+#### Key Points
+- Baseline Profiles are only installed in release builds.
+- Use physical devices or GMDs with `systemImageSource = "aosp"`.
+- Update profiles when adding new features or changing critical paths.
+- Include both startup and runtime journeys (scrolling, navigation) for best results.
+
 ## References
 - Benchmarking overview: https://developer.android.com/topic/performance/benchmarking/benchmarking-overview
 - Macrobenchmark overview: https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview
 - Macrobenchmark metrics: https://developer.android.com/topic/performance/benchmarking/macrobenchmark-metrics
 - Macrobenchmark control app: https://developer.android.com/topic/performance/benchmarking/macrobenchmark-control-app
+- Baseline Profiles overview: https://developer.android.com/topic/performance/baselineprofiles/overview
+- Create Baseline Profiles: https://developer.android.com/topic/performance/baselineprofiles/create-baselineprofile
+- Configure Baseline Profiles: https://developer.android.com/topic/performance/baselineprofiles/configure-baselineprofiles
+- Measure Baseline Profiles: https://developer.android.com/topic/performance/baselineprofiles/measure-baselineprofile
