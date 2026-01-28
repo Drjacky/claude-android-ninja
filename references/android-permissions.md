@@ -2,13 +2,16 @@
 
 Practical, Compose-first patterns for requesting permissions in Android apps. This guide follows modern Android best practices and our modular architecture.
 
+All code must align with `references/kotlin-patterns.md` and `references/compose-patterns.md`.
+
 ## Table of Contents
 1. [Where Permissions Live](#where-permissions-live)
 2. [Common Permission Sets](#common-permission-sets)
-3. [Requesting Permissions in Compose](#requesting-permissions-in-compose)
-4. [Rationale and "Don't Ask Again"](#rationale-and-dont-ask-again)
-5. [Version-Specific Handling](#version-specific-handling)
-6. [Testing](#testing)
+3. [Requesting Runtime Permissions in Compose](#requesting-runtime-permissions-in-compose)
+4. [Requesting Special Permissions](#requesting-special-permissions)
+5. [Rationale and Don't Ask Again](#rationale-and-dont-ask-again)
+6. [Version-Specific Handling](#version-specific-handling)
+7. [Testing](#testing)
 
 ## Where Permissions Live
 
@@ -20,6 +23,8 @@ Practical, Compose-first patterns for requesting permissions in Android apps. Th
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.CAMERA" />
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
 ```
 
 ## Common Permission Sets
@@ -32,23 +37,30 @@ Auto-granted when declared. No runtime request needed.
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 ```
 
-### Media + Camera (Runtime)
-Use for camera capture and media access.
+### Camera (Runtime)
 
 ```xml
-<!-- Camera -->
 <uses-permission android:name="android.permission.CAMERA" />
+```
 
-<!-- Media access (Android 13+) -->
+### Media Access (Runtime, Android 13+)
+Prefer Photo Picker when possible to avoid permission requests entirely.
+
+```xml
+<!-- Android 14+ partial access -->
+<uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+
+<!-- Android 13+ full access -->
 <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
 
-<!-- Legacy storage (Android 12L and below) -->
+<!-- Legacy storage (Android 12 and below) -->
 <uses-permission
     android:name="android.permission.READ_EXTERNAL_STORAGE"
     android:maxSdkVersion="32" />
 ```
 
-### Notifications (Android 13+)
+### Notifications (Runtime, Android 13+)
 
 ```xml
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -58,103 +70,348 @@ Use for camera capture and media access.
 
 ```xml
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 ```
 
-## Requesting Permissions in Compose
+## Requesting Runtime Permissions in Compose
 
-Use Accompanist Permissions with Compose-first APIs.
+Use `rememberLauncherForActivityResult` with `ActivityResultContracts.RequestPermission` or `RequestMultiplePermissions`.
 
-```kotlin
-dependencies {
-    implementation(libs.accompanist.permissions)
-}
-```
+**Note**: Accompanist library is deprecated. Use native Compose APIs shown below.
 
-### Single Permission (CameraAccess)
+### Single Permission (Camera)
+
+Place permission logic in Screen composables (not ViewModels) following our architecture.
 
 ```kotlin
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CameraAccess(
-    onOpenCamera: () -> Unit,
+fun CameraScreen(
+    onPhotoCaptured: (Bitmap) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
-
-    Button(
-        modifier = modifier,
-        onClick = {
-            if (permissionState.status.isGranted) {
-                onOpenCamera()
-            } else {
-                permissionState.launchPermissionRequest()
-            }
+    val context = LocalContext.current
+    var showRationale by remember { mutableStateOf(false) }
+    
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Open camera
+        } else {
+            showRationale = true
         }
-    ) {
-        Text("Open Camera")
+    }
+    
+    Column(modifier = modifier.fillMaxSize()) {
+        if (showRationale) {
+            PermissionRationaleCard(
+                title = "Camera Access Required",
+                description = "We need camera access to take photos.",
+                onDismiss = { showRationale = false },
+                onOpenSettings = { openAppSettings(context) }
+            )
+        }
+        
+        Button(
+            onClick = {
+                when (PackageManager.PERMISSION_GRANTED) {
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.CAMERA
+                    ) -> {
+                        // Open camera
+                    }
+                    else -> launcher.launch(Manifest.permission.CAMERA)
+                }
+            }
+        ) {
+            Text("Take Photo")
+        }
     }
 }
 ```
 
-### Multiple Permissions (PhotoAccess)
+### Multiple Permissions (Media Access)
 
 ```kotlin
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun PhotoAccess(
-    onOpenPicker: () -> Unit,
-    onShowRationale: () -> Unit,
+fun MediaPickerScreen(
+    onMediaSelected: (Uri) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val permissionsState = rememberMultiplePermissionsState(
-        permissions = buildMediaPermissions()
-    )
-
-    Button(
-        modifier = modifier,
-        onClick = {
-            when {
-                permissionsState.allPermissionsGranted -> onOpenPicker()
-                permissionsState.shouldShowRationale -> onShowRationale()
-                else -> permissionsState.launchMultiplePermissionRequest()
+    val context = LocalContext.current
+    var showRationale by remember { mutableStateOf(false) }
+    
+    val permissions = buildMediaPermissions()
+    
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissionsMap ->
+        when {
+            permissionsMap.values.any { it } -> {
+                // At least one permission granted
             }
+            else -> showRationale = true
+        }
+    }
+    
+    Button(
+        onClick = {
+            val hasPermission = permissions.any { permission ->
+                ContextCompat.checkSelfPermission(
+                    context,
+                    permission
+                ) == PackageManager.PERMISSION_GRANTED
+            }
+            
+            if (hasPermission) {
+                // Open media picker
+            } else {
+                launcher.launch(permissions.toTypedArray())
+            }
+        }
+    ) {
+        Text("Choose Media")
+    }
+}
+```
+
+### Notifications Permission (Android 13+)
+
+Request notifications contextually after user performs an action that benefits from notifications.
+
+```kotlin
+@Composable
+fun NotificationSettingsScreen(
+    viewModel: NotificationViewModel = hiltViewModel(),
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        viewModel.onNotificationPermissionResult(isGranted)
+    }
+    
+    Column(modifier = modifier.fillMaxSize()) {
+        SwitchRow(
+            title = "Enable Notifications",
+            description = "Get notified about important updates",
+            checked = uiState.notificationsEnabled,
+            onCheckedChange = { enabled ->
+                if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    when (PackageManager.PERMISSION_GRANTED) {
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        ) -> viewModel.enableNotifications()
+                        else -> launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                } else {
+                    viewModel.toggleNotifications(enabled)
+                }
+            }
+        )
+    }
+}
+```
+
+### Photo Picker (Preferred for Media on Android 13+)
+
+Photo Picker avoids permission requests entirely. Use this instead of requesting media permissions when possible.
+
+```kotlin
+@Composable
+fun PhotoPickerScreen(
+    onPhotoSelected: (Uri) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let { onPhotoSelected(it) }
+    }
+    
+    Button(
+        onClick = {
+            launcher.launch(
+                PickVisualMediaRequest(
+                    mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly
+                )
+            )
         }
     ) {
         Text("Choose Photo")
     }
 }
+
+// For multiple photos
+@Composable
+fun MultiPhotoPickerScreen(
+    onPhotosSelected: (List<Uri>) -> Unit,
+    maxItems: Int = 10,
+    modifier: Modifier = Modifier
+) {
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems)
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            onPhotosSelected(uris)
+        }
+    }
+    
+    Button(
+        onClick = {
+            launcher.launch(
+                PickVisualMediaRequest(
+                    mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly
+                )
+            )
+        }
+    ) {
+        Text("Choose Photos")
+    }
+}
 ```
 
-## Rationale and "Don't Ask Again"
+## Requesting Special Permissions
 
-- Request permissions **contextually** (e.g., when the user taps "Open Camera").
-- If the user denies and "Don't ask again" is selected, guide them to Settings.
+Special permissions (like exact alarms, all files access) require users to grant them from system settings. Apps cannot show a permission dialog; instead, they redirect users to the settings page.
+
+### Exact Alarms (Special Permission)
 
 ```kotlin
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CameraAccessGate(
-    onOpenCamera: () -> Unit,
-    onOpenSettings: () -> Unit
+fun ScheduleEmailScreen(
+    viewModel: EmailViewModel = hiltViewModel(),
+    modifier: Modifier = Modifier
 ) {
-    val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
+    val context = LocalContext.current
+    val alarmManager = remember { context.getSystemService<AlarmManager>()!! }
+    var showRationale by remember { mutableStateOf(false) }
+    
+    val settingsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        // Check permission on return
+    }
+    
+    LaunchedEffect(Unit) {
+        // Check permission on resume
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (!alarmManager.canScheduleExactAlarms()) {
+                showRationale = true
+            }
+        }
+    }
+    
+    if (showRationale) {
+        AlertDialog(
+            onDismissRequest = { showRationale = false },
+            title = { Text("Exact Alarm Permission Required") },
+            text = { 
+                Text("To send your email at the exact time you choose, we need permission to schedule exact alarms. Tap 'Grant' to open settings.") 
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showRationale = false
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            settingsLauncher.launch(
+                                Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                            )
+                        }
+                    }
+                ) {
+                    Text("Grant")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRationale = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+    
+    Button(
+        onClick = {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (alarmManager.canScheduleExactAlarms()) {
+                    viewModel.scheduleEmail()
+                } else {
+                    showRationale = true
+                }
+            } else {
+                viewModel.scheduleEmail()
+            }
+        }
+    ) {
+        Text("Schedule Email")
+    }
+}
+```
 
-    when {
-        permissionState.status.isGranted -> onOpenCamera()
-        permissionState.status.shouldShowRationale -> PermissionRationaleCard(
-            onAllow = { permissionState.launchPermissionRequest() }
-        )
-        permissionState.status.isPermanentlyDenied() -> PermissionSettingsPrompt(
-            onOpenSettings = onOpenSettings
-        )
-        else -> PermissionRequestCard(
-            onRequest = { permissionState.launchPermissionRequest() }
+### All Files Access (Special Permission)
+
+```kotlin
+@Composable
+fun FileManagerScreen(
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    var showRationale by remember { mutableStateOf(false) }
+    
+    val settingsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        // Check permission on return
+    }
+    
+    if (showRationale) {
+        AlertDialog(
+            onDismissRequest = { showRationale = false },
+            title = { Text("All Files Access Required") },
+            text = { 
+                Text("To manage all your files, we need access to all storage. Tap 'Grant' to open settings and enable 'All files access'.") 
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showRationale = false
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            settingsLauncher.launch(
+                                Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                                    data = Uri.fromParts("package", context.packageName, null)
+                                }
+                            )
+                        }
+                    }
+                ) {
+                    Text("Grant")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRationale = false }) {
+                    Text("Cancel")
+                }
+            }
         )
     }
 }
 ```
 
-To open app settings:
+## Rationale and Don't Ask Again
+
+### Best Practices
+- Request permissions **contextually** (when user taps "Take Photo", not on app startup).
+- Show rationale explaining **why** the permission is needed and **what benefits** it provides.
+- If user denies multiple times, guide them to settings.
+- Track denial count in ViewModel/SavedStateHandle (not with `shouldShowRationale` which is unreliable).
+
+### Open App Settings
 
 ```kotlin
 fun openAppSettings(context: Context) {
@@ -165,47 +422,192 @@ fun openAppSettings(context: Context) {
 }
 ```
 
-Helper for "Don't ask again":
+### Rationale Dialog Component
 
 ```kotlin
-@OptIn(ExperimentalPermissionsApi::class)
-fun PermissionStatus.isPermanentlyDenied(): Boolean {
-    return this is PermissionStatus.Denied && !shouldShowRationale
+@Composable
+fun PermissionRationaleCard(
+    title: String,
+    description: String,
+    onDismiss: () -> Unit,
+    onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text("Not Now")
+                }
+                Button(onClick = onOpenSettings) {
+                    Text("Open Settings")
+                }
+            }
+        }
+    }
+}
+```
+
+### Track Denial Count (Proper Pattern)
+
+```kotlin
+@HiltViewModel
+class CameraViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    private var denialCount: Int
+        get() = savedStateHandle["camera_denial_count"] ?: 0
+        set(value) { savedStateHandle["camera_denial_count"] = value }
+    
+    fun onPermissionDenied() {
+        denialCount++
+    }
+    
+    fun shouldShowSettings(): Boolean = denialCount >= 2
 }
 ```
 
 ## Version-Specific Handling
 
-- Prefer the **Photo Picker** (`ActivityResultContracts.PickVisualMedia`) on Android 13+ to avoid storage permissions.
-- Use `READ_MEDIA_IMAGES/VIDEO` on Android 13+, and `READ_EXTERNAL_STORAGE` on Android 12L and below.
+### Media Permissions (Android 14+ Partial Access)
+
+Android 14 introduced partial media access where users can grant access to selected photos only.
 
 ```kotlin
 fun buildMediaPermissions(): List<String> = when {
-    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> listOf(
-        Manifest.permission.READ_MEDIA_IMAGES
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> listOf(
+        Manifest.permission.READ_MEDIA_IMAGES,
+        Manifest.permission.READ_MEDIA_VIDEO,
+        Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
     )
-    Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2 -> listOf(
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> listOf(
+        Manifest.permission.READ_MEDIA_IMAGES,
+        Manifest.permission.READ_MEDIA_VIDEO
+    )
+    else -> listOf(
         Manifest.permission.READ_EXTERNAL_STORAGE
     )
-    else -> emptyList()
+}
+
+fun checkMediaPermission(context: Context): MediaAccessLevel = when {
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
+        when {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.READ_MEDIA_IMAGES
+            ) == PackageManager.PERMISSION_GRANTED -> MediaAccessLevel.Full
+            
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+            ) == PackageManager.PERMISSION_GRANTED -> MediaAccessLevel.Partial
+            
+            else -> MediaAccessLevel.None
+        }
+    }
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.READ_MEDIA_IMAGES
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            MediaAccessLevel.Full
+        } else {
+            MediaAccessLevel.None
+        }
+    }
+    else -> {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            MediaAccessLevel.Full
+        } else {
+            MediaAccessLevel.None
+        }
+    }
+}
+
+enum class MediaAccessLevel {
+    Full, Partial, None
+}
+```
+
+### Notification Permissions (Android 13+)
+
+```kotlin
+fun shouldRequestNotificationPermission(context: Context): Boolean {
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) != PackageManager.PERMISSION_GRANTED
 }
 ```
 
 ## Testing
 
-Use `GrantPermissionRule` for instrumentation tests and keep permission logic in small helpers.
+### Grant Permission in Tests
 
 ```kotlin
 @get:Rule
-val permissionRule = GrantPermissionRule.grant(Manifest.permission.CAMERA)
+val permissionRule = GrantPermissionRule.grant(
+    Manifest.permission.CAMERA,
+    Manifest.permission.POST_NOTIFICATIONS
+)
+
+@Test
+fun testCameraFeature() {
+    // Permission automatically granted
+    composeTestRule.setContent {
+        CameraScreen(onPhotoCaptured = {})
+    }
+    
+    composeTestRule.onNodeWithText("Take Photo").performClick()
+}
+```
+
+### Test Permission Denial Flow
+
+```kotlin
+@Test
+fun testPermissionDenialShowsRationale() {
+    composeTestRule.setContent {
+        CameraScreen(onPhotoCaptured = {})
+    }
+    
+    composeTestRule.onNodeWithText("Take Photo").performClick()
+    
+    // Simulate denial
+    composeTestRule.onNodeWithText("Camera Access Required").assertIsDisplayed()
+}
 ```
 
 ### Performance Checks (Macrobenchmark)
-If permission flows impact startup or navigation timing, use Macrobenchmark to measure:
-- App launch to the permission-gated screen.
-- Time from action tap to permission dialog trigger (app-side only).
+If permission flows impact startup or navigation timing, use Macrobenchmark to measure. See `references/android-performance.md` for setup.
 
-See `references/android-performance.md` for Macrobenchmark setup and commands, and the Android team guidance:
-https://medium.com/androiddevelopers/measure-and-improve-performance-with-macrobenchmark-560abd0aa5bb
-
-For additional testing patterns, see `references/testing.md`.
+## References
+- Request runtime permissions: https://developer.android.com/training/permissions/requesting
+- Request special permissions: https://developer.android.com/training/permissions/requesting-special
+- Photo Picker: https://developer.android.com/training/data-storage/shared/photopicker
+- App permissions best practices: https://developer.android.com/training/permissions/best-practices
