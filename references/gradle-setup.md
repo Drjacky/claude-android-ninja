@@ -700,6 +700,38 @@ dependencies {
 
 Note: The `benchmark` build type must be defined in the app module (shown in the app module example above).
 
+### Compose Stability Analyzer (Optional)
+
+For real-time stability analysis and CI validation of Jetpack Compose composables. See `references/android-performance.md` → "Compose Stability Validation (Optional)" for when to use.
+
+Root `build.gradle.kts`:
+```kotlin
+plugins {
+    alias(libs.plugins.compose.stability.analyzer) apply false
+}
+```
+
+Module `build.gradle.kts` (typically app or feature modules):
+```kotlin
+plugins {
+    id("com.example.android.application")
+    alias(libs.plugins.compose.stability.analyzer)
+}
+
+composeStabilityAnalyzer {
+    stabilityValidation {
+        enabled.set(true)
+        outputDir.set(layout.projectDirectory.dir("stability"))
+        includeTests.set(false)
+        failOnStabilityChange.set(true) // Fail build on stability regressions
+        
+        // Optional: Exclude specific packages or classes
+        ignoredPackages.set(listOf("com.example.internal"))
+        ignoredClasses.set(listOf("PreviewComposables"))
+    }
+}
+```
+
 ## Code Quality (Detekt)
 
 Detekt is integrated via a convention plugin to keep rules consistent across modules.
