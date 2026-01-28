@@ -223,6 +223,59 @@ class StartupBenchmark {
 - Update profiles when adding new features or changing critical paths.
 - Include both startup and runtime journeys (scrolling, navigation) for best results.
 
+## Compose Stability Validation (Optional)
+
+The [Compose Stability Analyzer](https://github.com/skydoves/compose-stability-analyzer) provides real-time analysis and CI guardrails for Jetpack Compose stability.
+
+### IDE Plugin (Optional)
+
+The Compose Stability Analyzer IntelliJ Plugin provides real-time visual feedback in Android Studio:
+- **Gutter Icons**: Colored dots showing if a composable is skippable.
+- **Hover Tooltips**: Detailed stability information and reasons.
+- **Inline Parameter Hints**: Badges showing parameter stability.
+- **Code Inspections**: Quick fixes and warnings for unstable composables.
+
+Install via: **Settings** → **Plugins** → **Marketplace** → "Compose Stability Analyzer"
+
+### Gradle Plugin for CI/CD
+
+For setup instructions, see `references/gradle-setup.md` → "Compose Stability Analyzer (Optional)".
+
+#### Generate Baseline
+
+Create a snapshot of current composables' stability:
+```bash
+./gradlew :app:stabilityDump
+```
+
+Commit the generated `.stability` file to version control.
+
+#### Validate in CI
+
+Check for stability changes:
+```bash
+./gradlew :app:stabilityCheck
+```
+
+The build fails if composable stability regresses, preventing performance issues from reaching production.
+
+#### GitHub Actions Example
+
+```yaml
+stability_check:
+  name: Compose Stability Check
+  runs-on: ubuntu-latest
+  needs: build
+  steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-java@v5
+      with:
+        distribution: 'zulu'
+        java-version: 21
+    - name: Stability Check
+      run: ./gradlew stabilityCheck
+```
+
 ## References
 - Benchmarking overview: https://developer.android.com/topic/performance/benchmarking/benchmarking-overview
 - Macrobenchmark overview: https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview
