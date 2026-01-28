@@ -1,6 +1,11 @@
 build:
   maxIssues: 0
   excludeCorrectable: false
+  excludes:
+    - '**/build/**'
+    - '**/generated/**'
+    - '**/*.kts'
+    - '**/resources/**'
   weights:
   # complexity: 2
   # LongParameterList: 1
@@ -539,9 +544,9 @@ Compose:
     # -- You can optionally have a list of types to be treated as lambdas (e.g. typedefs or fun interfaces not picked up automatically)
     # treatAsLambda: MyLambdaType
   Material2:
-    active: false # Opt-in, disabled by default. Turn on if you want to disallow Material 2 usages.
-    # -- You can optionally allow parts of it, if you are in the middle of a migration.
-    # allowedFromM2: icons.Icons,TopAppBar
+    active: true # Material 2 is not allowed. Only Material 3 is permitted.
+    # -- You can optionally allow specific parts if needed during migration.
+    # allowedFromM2: icons.Icons
   ModifierClickableOrder:
     active: true
     # -- You can optionally add your own Modifier types

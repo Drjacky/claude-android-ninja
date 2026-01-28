@@ -24,6 +24,7 @@ Create `build-logic/convention/src/main/kotlin/com/example/convention/DetektConv
 package com.example.convention
 
 import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -59,14 +60,29 @@ class DetektConventionPlugin : Plugin<Project> {
                 config.setFrom(rootConfig)
             }
 
-            val baselineFile = rootProject.file("plugins/detekt-baseline.xml")
-            if (baselineFile.exists()) {
-                baseline = baselineFile
+            // Use per-module baselines (not shared)
+            val moduleBaseline = file("detekt-baseline.xml")
+            if (moduleBaseline.exists()) {
+                baseline = moduleBaseline
             }
         }
 
-        // Type resolution and consistent JDK target.
+        // Enable type resolution and set consistent JDK target.
         tasks.withType<Detekt>().configureEach {
+            jvmTarget = "17"
+            
+            // Enable type resolution for Android modules
+            // This is critical for accurate Compose/Android analysis
+            reports {
+                html.required.set(true)
+                xml.required.set(true)
+                txt.required.set(false)
+                sarif.required.set(true)
+            }
+        }
+        
+        // Configure baseline task
+        tasks.withType<DetektCreateBaselineTask>().configureEach {
             jvmTarget = "17"
         }
     }
@@ -94,13 +110,120 @@ plugins {
 }
 ```
 
+## Running Detekt
+
+### Local Development
+
+Run detekt for all modules:
+```bash
+./gradlew detekt
+```
+
+Run for specific module:
+```bash
+./gradlew :app:detekt
+./gradlew :feature-auth:detekt
+```
+
+Run with type resolution (slower, more accurate):
+```bash
+./gradlew detektMain
+```
+
+### Excluding Generated Code
+
+Add to `plugins/detekt.yml`:
+```yaml
+build:
+  excludes:
+    - '**/build/**'
+    - '**/generated/**'
+    - '**/*.kts'
+    - '**/resources/**'
+```
+
 ## Baselines & CI
-- Generate a baseline: `./gradlew detektBaseline`
-- Run in CI: `./gradlew detekt` (or `detektMain` for Android-only source sets)
+
+### When to Use Baselines
+
+**Use baselines when:**
+- Adopting detekt in an existing project with many violations
+- You want to prevent new issues without fixing old ones immediately
+- You're enabling new rules gradually
+
+**Don't use baselines when:**
+- Starting a new project (fix issues instead)
+- In active development (baselines hide problems)
+
+### Creating Per-Module Baselines
+
+Generate baseline for a specific module:
+```bash
+./gradlew :app:detektBaseline
+```
+
+This creates `app/detekt-baseline.xml` which suppresses existing issues in that module only.
+
+Commit the baseline:
+```bash
+git add app/detekt-baseline.xml
+git commit -m "Add detekt baseline for app module"
+```
+
+### CI Integration
+
+**GitHub Actions example:**
+
+```yaml
+name: Code Quality
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  detekt:
+    name: Detekt Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+      
+      - name: Run Detekt
+        run: ./gradlew detekt
+      
+      - name: Upload SARIF to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: build/reports/detekt/detekt.sarif
+      
+      - name: Upload HTML Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detekt-reports
+          path: '**/build/reports/detekt/'
+```
+
+**Key CI considerations:**
+- Use `if: always()` to upload reports even on failure
+- Upload SARIF for GitHub Security tab integration
+- Fail the build if issues are found (default behavior)
+- Cache Gradle dependencies for faster builds
 
 If the project uses Gradle toolchains, Detekt will resolve the proper JDK automatically.
 
 ## Compose Rules
-The Compose detekt ruleset requires the rules to be enabled in `detekt.yml`.
-Start from `templates/detekt.yml.template` and turn on the Compose rule set there.
-Pick a Compose rules version compatible with Kotlin 2.2.21 and Detekt 2.x. [Compose rules + detekt compatibility](https://mrmans0n.github.io/compose-rules/detekt/)
+The Compose detekt ruleset is configured in `templates/detekt.yml.template`. Use that template as-is.
+For compatibility information and latest rules, see: [Compose rules + detekt compatibility](https://mrmans0n.github.io/compose-rules/detekt/)
