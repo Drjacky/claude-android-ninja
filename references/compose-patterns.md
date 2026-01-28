@@ -246,6 +246,82 @@ fun AuthRoute(viewModel: AuthViewModel = hiltViewModel()) {
 }
 ```
 
+### Lifecycle-Aware Flow Collection for Side Effects
+
+Use `collectAsStateWithLifecycle()` for state observation. For side effects (toasts, analytics, dialogs) that cannot use state, collect flows inside `LaunchedEffect` with lifecycle awareness.
+
+```kotlin
+@Composable
+fun AuthScreen(
+    viewModel: AuthViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // For single flow: use flowWithLifecycle
+    LaunchedEffect(viewModel.toastEvents, lifecycleOwner) {
+        viewModel.toastEvents
+            .flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
+            .collect { message ->
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    LoginScreen(
+        uiState = uiState,
+        onAction = viewModel::onAction
+    )
+}
+```
+
+For multiple flows or complex scoped operations, use `repeatOnLifecycle`:
+
+```kotlin
+@Composable
+fun AuthScreen(
+    viewModel: AuthViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // For multiple flows: use repeatOnLifecycle
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            launch {
+                viewModel.toastEvents.collect { message ->
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
+            }
+            
+            launch {
+                viewModel.analyticsEvents.collect { event ->
+                    // Log analytics event
+                }
+            }
+            
+            launch {
+                viewModel.dialogEvents.collect { dialog ->
+                    // Show dialog based on event
+                }
+            }
+        }
+    }
+
+    LoginScreen(
+        uiState = uiState,
+        onAction = viewModel::onAction
+    )
+}
+```
+
+Key points:
+- Use `collectAsStateWithLifecycle()` for state that drives UI
+- Use `flowWithLifecycle` for a single side-effect flow
+- Use `repeatOnLifecycle` for multiple flows or complex scoped operations
+- Both prevent leaked collectors and wasted background work during lifecycle changes
+
 ## Component Patterns
 
 ### Stateless, Reusable Components
