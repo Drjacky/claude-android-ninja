@@ -82,13 +82,6 @@ npx openskills install drjacky/claude-android-ninja --universal
 
 If you need a best practice topic or pattern that's missing from this SKILL, please create a feature request on GitHub. This helps us prioritize what to add next.
 
-Examples of topics you might request:
-- Testing patterns (unit tests, UI tests, integration tests)
-- Specific library patterns (Paging, WorkManager, etc.)
-- Build and CI/CD patterns
-- Security best practices
-- Accessibility patterns
-
 [Create a Feature Request](https://github.com/drjacky/claude-android-ninja/issues/new?template=feature_request.md)
 
 ### Report Issues
