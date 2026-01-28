@@ -75,3 +75,24 @@ Optional universal install (shared across agents):
 ```bash
 npx openskills install drjacky/claude-android-ninja --universal
 ```
+
+## Contributing
+
+### Request Missing Best Practices
+
+If you need a best practice topic or pattern that's missing from this SKILL, please create a feature request on GitHub. This helps us prioritize what to add next.
+
+Examples of topics you might request:
+- Testing patterns (unit tests, UI tests, integration tests)
+- Specific library patterns (Paging, WorkManager, etc.)
+- Build and CI/CD patterns
+- Security best practices
+- Accessibility patterns
+
+[Create a Feature Request](https://github.com/drjacky/claude-android-ninja/issues/new?template=feature_request.md)
+
+### Report Issues
+
+Found a bug, outdated pattern, or incorrect guidance? Please report it so we can fix it.
+
+[Report a Bug](https://github.com/drjacky/claude-android-ninja/issues/new?template=bug_report.md)
