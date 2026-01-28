@@ -56,6 +56,13 @@ class MyApplication : Application() {
 - `detectCleartextNetwork()` - Detects unencrypted network traffic (HTTP instead of HTTPS).
 - `detectUnsafeIntentLaunch()` - Detects unsafe intent launches.
 
+### Penalty Options
+
+- `penaltyLog()` - Logs violations to Logcat. By Default, use this option.
+- `penaltyDeath()` - Crashes the app on violation (useful for catching issues during development).
+- `penaltyFlashScreen()` - Flashes the screen on violation (visual feedback).
+- `penaltyDropBox()` - Logs violations to DropBoxManager for system-level tracking.
+
 ## 2) Compose Stability Guardrails
 
 Enable compiler reports + metrics for Compose stability diagnostics.
@@ -77,24 +84,26 @@ kotlin.collections.*
 com.external.library.models.*
 ```
 
-## 3) (Optional) Automated "Strict" Testing (CI/CD)
+### Analyzing Compose Metrics
 
-Use Compose Guard to enforce a stability baseline and fail builds on regressions.
+After building, review the generated metrics:
 
-**Step 1:** Generate a baseline:
+```bash
+# View unstable composables
+cat build/compose_reports/module_composables.txt
 
-```
-./gradlew stabilityDump
-```
-
-**Step 2:** Enforce it in CI:
-
-```
-./gradlew stabilityCheck
+# View detailed stability info
+cat build/compose_reports/module_classes.txt
 ```
 
-If a developer introduces an unstable parameter (e.g., mutating a data class or
-using an unstable list), the build fails immediately to prevent performance regressions.
+Look for:
+- `unstable` parameters (mutable or unrecognized types)
+- `skippable: false` composables (recompose unnecessarily)
+- High `groups` counts (complex composition structure)
+
+## 3) CI Guardrails (Optional)
+
+See: `references/android-performance.md` → "Compose Stability Validation (Optional)".
 
 ## Uploading StrictMode Signals to Crash Reporters
 
