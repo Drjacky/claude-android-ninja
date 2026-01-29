@@ -181,24 +181,10 @@ implementation("androidx.compose.ui:ui:1.7.0")
 **`debugImplementation`** - Debug builds only
 - `leakcanary-android`, `androidx-compose-ui-tooling`, `androidx-compose-ui-test-manifest`
 
-### Test Bundles (Add to libs.versions.toml if needed)
+### Test Bundles
 
-```toml
-[bundles]
-unit-test = [
-    "junit",
-    "kotlin-test-junit",
-    "kotlinx-coroutines-test",
-    "turbine",
-    "google-truth"
-]
-
-android-test = [
-    "androidx-junit",
-    "androidx-espresso-core",
-    "androidx-compose-ui-test-junit4"
-]
-```
+Use `libs.bundles.unit-test` and `libs.bundles.android-test` for consistent test dependencies across modules. 
+These are defined in `templates/libs.versions.toml.template`.
 
 ## Build Performance Considerations
 
@@ -298,66 +284,5 @@ dependencies {
 ```
 
 5. **Test thoroughly** before committing
-
-## Example: Complete Feature Module Dependencies
-
-```kotlin
-// feature-auth/build.gradle.kts
-plugins {
-    id("com.example.android.feature")
-    id("com.example.android.compose")
-    id("com.example.android.hilt")
-}
-
-dependencies {
-    // Core modules
-    implementation(projects.core.domain)
-    implementation(projects.core.ui)
-    
-    // Compose (versions from BOM)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.ui.tooling.preview)
-    
-    // AndroidX
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    
-    // Hilt
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    
-    // Navigation
-    implementation(libs.bundles.navigation3)
-    
-    // Coroutines
-    implementation(libs.kotlinx.coroutines.android)
-    
-    // Image loading
-    implementation(libs.coil.compose)
-    
-    // Testing
-    testImplementation(libs.bundles.unit.test)
-    androidTestImplementation(libs.bundles.android.test)
-    
-    // Debug
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.leakcanary.android)
-}
-```
-
-## Quick Reference
-
-| Library Type  | Recommended             | Template Key                                |
-|---------------|-------------------------|---------------------------------------------|
-| HTTP Client   | Retrofit + OkHttp       | `retrofit2`, `okhttp3-logging-interceptor`  |
-| Image Loading | Coil 3.x                | `coil-compose`, `coil-network-okhttp`       |
-| Serialization | kotlinx-serialization   | `kotlinx-serialization`                     |
-| DI            | Hilt                    | `hilt-android`, `hilt-compiler`             |
-| Database      | Room                    | `room-runtime`, `room-compiler`, `room-ktx` |
-| Async         | Coroutines              | `kotlinx-coroutines-android`                |
-| Testing       | JUnit + Truth + Turbine | `junit`, `google-truth`, `turbine`          |
 
 For setup patterns and convention plugins, see `references/gradle-setup.md`.

@@ -115,6 +115,20 @@ navigation3 = [
     "androidx-compose-material3-navigation3"
 ]
 
+unit-test = [
+    "junit",
+    "kotlin-test-junit",
+    "kotlinx-coroutines-test",
+    "turbine",
+    "google-truth"
+]
+
+android-test = [
+    "androidx-junit",
+    "androidx-espresso-core",
+    "androidx-compose-ui-test-junit4"
+]
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
