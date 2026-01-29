@@ -66,9 +66,8 @@ class FirebaseCrashReporter @Inject constructor(
 // core/data/analytics/SentryCrashReporter.kt
 class SentryCrashReporter @Inject constructor() : CrashReporter {
     override fun setUserId(id: String?) {
-        Sentry.configureScope { scope ->
-            scope.user = User().apply { this.id = id }
-        }
+        val user = User().apply { this.id = id }
+        Sentry.setUser(user)
     }
 
     override fun setUserProperty(key: String, value: String) {
@@ -83,10 +82,8 @@ class SentryCrashReporter @Inject constructor() : CrashReporter {
         throwable: Throwable,
         context: Map<String, String>
     ) {
-        Sentry.withScope { scope ->
-            context.forEach { (k, v) -> scope.setTag(k, v) }
-            Sentry.captureException(throwable)
-        }
+        context.forEach { (k, v) -> Sentry.setTag(k, v) }
+        Sentry.captureException(throwable)
     }
 }
 ```
@@ -142,8 +139,16 @@ class MyApplication : Application() {
             // options.tracePropagationTargets = listOf("api.example.com", "https://auth.example.com")
             // options.propagateTraceparent = true
             // options.traceOptionsRequests = false
+            
+            // Profiling configuration:
+            // profilesSampleRate: % of transactions to profile (requires tracesSampleRate > 0)
+            // Use this for production profiling of sampled transactions
             options.profilesSampleRate = 1.0
+            
+            // Alternative: profileSessionSampleRate profiles % of sessions (not transactions)
+            // Only use ONE of profilesSampleRate OR profileSessionSampleRate, not both
             // options.profileSessionSampleRate = 0.2
+            
             // options.profileLifecycle = SentryOptions.ProfileLifecycle.TRACE
             // options.startProfilerOnAppStart = true
             options.enableAutoSessionTracking = true
@@ -201,9 +206,9 @@ plugins {
 }
 
 dependencies {
-    implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
-    implementation("com.google.firebase:firebase-crashlytics")
-    implementation("com.google.firebase:firebase-analytics") // Breadcrumbs + screen tracking
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.analytics) // Breadcrumbs + screen tracking
 }
 ```
 
@@ -249,7 +254,7 @@ fun AppNavigation() {
 
 ### Capturing UI State (Delegation)
 
-Use delegation to standardize custom keys and logs across ViewModels.
+Use delegation to standardize custom keys and logs across ViewModels. See `references/kotlin-delegation.md` for more patterns.
 
 ```kotlin
 interface CrashlyticsStateLogger {
@@ -272,12 +277,22 @@ class FirebaseCrashlyticsStateLogger @Inject constructor(
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
+    crashReporter: CrashReporter,
     logger: CrashlyticsStateLogger
-) : ViewModel(), CrashlyticsStateLogger by logger {
+) : ViewModel(), 
+    CrashReporter by crashReporter,
+    CrashlyticsStateLogger by logger {
 
     fun onRoleSelected(role: String) {
         logUiState("auth_role", role)
         logAction("Auth role selected: $role")
+    }
+    
+    fun onLoginFailed(error: Throwable) {
+        recordException(
+            error,
+            mapOf("action" to "login", "screen" to "auth")
+        )
     }
 }
 ```
@@ -296,7 +311,7 @@ viewModelScope.launch(crashHandler) {
 
 ## Wiring in the App Module
 
-Use DI bindings to switch providers without recalling features:
+Use DI bindings to switch providers without changing feature code:
 
 ```kotlin
 @Module
@@ -311,31 +326,316 @@ abstract class CrashReporterModule {
 
 Swap to Sentry by binding `SentryCrashReporter` instead.
 
-## Compose + ViewModel Usage
+## Best Practices
 
-Use delegation for cross-cutting concerns (see `references/kotlin-delegation.md`) to keep ViewModels lean.
+- **Initialize once** in the app module.
+- **Avoid PII** in tags and logs; keep user identifiers minimal. Use data scrubbing for sensitive information.
+- **Use sampling** for performance tracing/profiling if enabled.
+- **Send non-fatal errors intentionally**: log only what helps debugging.
+- **Quality breadcrumbs**: Focus on user actions and state changes, not internal implementation details.
+- **Upload mapping files**: Ensure ProGuard/R8 mappings are uploaded for symbolicated stack traces.
+
+## ProGuard/R8 Configuration
+
+Both providers require proper mapping file upload for symbolicated crashes in release builds.
+
+### Firebase Crashlytics
+
+The Firebase Crashlytics Gradle plugin automatically uploads mapping files during the build process when you use ProGuard or R8:
 
 ```kotlin
-@HiltViewModel
-class LoginViewModel @Inject constructor(
-    private val savedStateHandle: SavedStateHandle,
-    crashReporter: CrashReporter
-) : ViewModel(), CrashReporter by crashReporter {
-    fun onLoginFailed(error: Throwable) {
-        recordException(
-            error,
-            mapOf("action" to "login")
-        )
+// app/build.gradle.kts
+plugins {
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
+}
+
+android {
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
     }
 }
 ```
 
-## Best Practices
+The plugin automatically generates mapping UUIDs and uploads them. No additional keep rules are needed - Firebase SDK handles this automatically.
 
-- **Initialize once** in the app module.
-- **Avoid PII** in tags and logs; keep user identifiers minimal.
-- **Use sampling** for performance tracing/profiling if enabled.
-- **Send non-fatal errors intentionally**: log only what helps debugging.
+### Sentry
+
+Sentry requires the Gradle plugin for automatic mapping upload:
+
+```kotlin
+// app/build.gradle.kts
+plugins {
+    alias(libs.plugins.sentry.android)
+}
+
+sentry {
+    // Generates a JVM (Java, Kotlin, etc.) source bundle and uploads it to Sentry
+    includeSourceContext.set(true)
+    
+    // Enable or disable the automatic configuration of ProGuard/R8 for Sentry
+    // When enabled, the Sentry Gradle Plugin will automatically add the necessary keep rules
+    autoInstallation.sentryVersion.set(libs.versions.sentry.get())
+    
+    // Upload ProGuard mapping files
+    includeProguardMapping.set(true)
+    autoUploadProguardMapping.set(true)
+    
+    // Set organization and project from sentry.properties or here
+    org.set("your-org")
+    projectName.set("your-project")
+    authToken.set(System.getenv("SENTRY_AUTH_TOKEN"))
+}
+```
+
+Required ProGuard rules are automatically added by the plugin. For manual configuration, see: https://docs.sentry.io/platforms/android/configuration/releases/#proguard-r8--dexguard
+
+## Breadcrumb Best Practices
+
+Good breadcrumbs help reconstruct user actions leading to a crash. Bad breadcrumbs create noise.
+
+### Good Breadcrumbs (User Actions & State Changes)
+
+```kotlin
+// User navigation
+Sentry.addBreadcrumb(Breadcrumb().apply {
+    message = "User navigated to profile screen"
+    category = "navigation"
+    level = SentryLevel.INFO
+})
+
+// User interactions
+Sentry.addBreadcrumb(Breadcrumb().apply {
+    message = "User clicked logout button"
+    category = "ui.click"
+    level = SentryLevel.INFO
+    data = mapOf("button_id" to "logout_btn")
+})
+
+// Important state changes
+Sentry.addBreadcrumb(Breadcrumb().apply {
+    message = "Auth state changed to logged out"
+    category = "state"
+    level = SentryLevel.INFO
+})
+```
+
+### Bad Breadcrumbs (Too Much Noise)
+
+```kotlin
+// Don't: Internal implementation details
+Sentry.addBreadcrumb("Coroutine launched on IO dispatcher") // ❌
+
+// Don't: Every method call
+Sentry.addBreadcrumb("getUserId() called") // ❌
+
+// Don't: Verbose data dumps
+Sentry.addBreadcrumb("User data: $entireUserObject") // ❌ (also PII risk)
+```
+
+### Automatic Navigation Breadcrumbs
+
+Both providers automatically track navigation in Jetpack Compose with Navigation library. For custom breadcrumbs, add them in the app-level navigation coordinator.
+
+## Network Request Tracking
+
+### Failed Network Requests
+
+Track failed API calls to understand network-related crashes.
+
+```kotlin
+// In OkHttp interceptor or repository layer
+class AuthRepository(
+    private val crashReporter: CrashReporter
+) {
+    suspend fun login(email: String, password: String): Result<AuthToken> {
+        return try {
+            val response = authApi.login(email, password)
+            Result.success(response)
+        } catch (e: IOException) {
+            // Network error
+            crashReporter.log("Network error during login: ${e.message}")
+            crashReporter.recordException(e, mapOf(
+                "endpoint" to "auth/login",
+                "error_type" to "network"
+            ))
+            Result.failure(e)
+        } catch (e: HttpException) {
+            // HTTP error (4xx, 5xx)
+            crashReporter.log("HTTP error during login: ${e.code()}")
+            crashReporter.recordException(e, mapOf(
+                "endpoint" to "auth/login",
+                "status_code" to e.code().toString(),
+                "error_type" to "http"
+            ))
+            Result.failure(e)
+        }
+    }
+}
+```
+
+**Note**: For Sentry with OkHttp, use `sentry-okhttp` integration for automatic network breadcrumbs: https://docs.sentry.io/platforms/android/integrations/okhttp/
+
+## Testing Crash Reporting
+
+### Test Crashes in Development
+
+Add a debug-only method to test crash reporting:
+
+```kotlin
+@HiltViewModel
+class DebugViewModel @Inject constructor(
+    private val crashReporter: CrashReporter
+) : ViewModel() {
+    
+    // Only available in debug builds
+    fun testCrash() {
+        if (BuildConfig.DEBUG) {
+            // Test non-fatal exception
+            crashReporter.recordException(
+                RuntimeException("Test crash from debug menu"),
+                mapOf("test" to "true", "source" to "debug_menu")
+            )
+            
+            // Test fatal crash (uncomment to test)
+            // throw RuntimeException("Test fatal crash")
+        }
+    }
+}
+
+// In your debug/settings screen
+@Composable
+fun DebugScreen(viewModel: DebugViewModel = hiltViewModel()) {
+    Button(onClick = { viewModel.testCrash() }) {
+        Text("Test Non-Fatal Crash")
+    }
+}
+```
+
+### Disable Crash Reporting in Debug (Optional)
+
+To avoid polluting production data with debug crashes:
+
+**Firebase:**
+```xml
+<application>
+  <meta-data
+    android:name="firebase_crashlytics_collection_enabled"
+    android:value="false" 
+  />
+</application>
+```
+
+Enable at runtime:
+```kotlin
+if (BuildConfig.DEBUG) {
+    FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(false)
+}
+```
+
+**Sentry:**
+```kotlin
+SentryAndroid.init(this) { options ->
+    options.environment = if (BuildConfig.DEBUG) "debug" else "production"
+    // Optional: disable entirely in debug
+    options.dsn = if (BuildConfig.DEBUG) "" else "YOUR_DSN_HERE"
+}
+```
+
+## Data Scrubbing (Privacy/GDPR)
+
+Remove sensitive information before sending to crash reporters.
+
+### Built-in Scrubbing (Sentry)
+
+Sentry automatically scrubs common PII fields:
+
+```kotlin
+SentryAndroid.init(this) { options ->
+    // Disable automatic PII scrubbing if you need custom control
+    options.sendDefaultPii = false
+    
+    // Add custom data scrubbing
+    options.setBeforeSend { event, hint ->
+        // Scrub email addresses from exception messages
+        event.message?.message = event.message?.message?.replace(
+            Regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"),
+            "[REDACTED_EMAIL]"
+        )
+        
+        // Remove specific tags that might contain PII
+        event.removeTag("user_email")
+        event.removeExtra("raw_user_data")
+        
+        event
+    }
+}
+```
+
+### Custom Scrubbing for Both Providers
+
+Implement scrubbing in your `CrashReporter` wrapper:
+
+```kotlin
+class PrivacyAwareCrashReporter(
+    private val delegate: CrashReporter
+) : CrashReporter by delegate {
+    
+    private val emailRegex = Regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")
+    private val sensitiveKeys = setOf("password", "token", "secret", "key", "auth")
+    
+    override fun recordException(
+        throwable: Throwable,
+        context: Map<String, String>
+    ) {
+        // Scrub context
+        val scrubbedContext = context.filterKeys { key ->
+            !sensitiveKeys.any { key.contains(it, ignoreCase = true) }
+        }.mapValues { (_, value) ->
+            value.replace(emailRegex, "[REDACTED_EMAIL]")
+        }
+        
+        delegate.recordException(throwable, scrubbedContext)
+    }
+    
+    override fun log(message: String) {
+        val scrubbedMessage = message.replace(emailRegex, "[REDACTED_EMAIL]")
+        delegate.log(scrubbedMessage)
+    }
+}
+```
+
+Wire it in DI:
+
+```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class CrashReporterModule {
+    @Binds
+    abstract fun bindCrashReporter(
+        impl: PrivacyAwareCrashReporter
+    ): CrashReporter
+    
+    @Provides
+    @Singleton
+    fun providePrivacyAwareCrashReporter(
+        @Named("raw") rawReporter: CrashReporter
+    ): PrivacyAwareCrashReporter = PrivacyAwareCrashReporter(rawReporter)
+    
+    @Provides
+    @Singleton
+    @Named("raw")
+    fun provideRawCrashReporter(): CrashReporter = FirebaseCrashReporter(
+        FirebaseCrashlytics.getInstance()
+    )
+}
+```
 
 ## Gradle & Setup Guidance
 
