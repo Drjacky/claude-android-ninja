@@ -30,9 +30,12 @@ fun AuthRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
-    LaunchedEffect(uiState) {
-        if (uiState is AuthUiState.Success) {
-            onLoginSuccess((uiState as AuthUiState.Success).user)
+    // Collect one-time navigation events
+    LaunchedEffect(viewModel) {
+        viewModel.navigationEvents.collect { event ->
+            when (event) {
+                is AuthNavigationEvent.LoginSuccess -> onLoginSuccess(event.user)
+            }
         }
     }
     
@@ -160,8 +163,8 @@ sealed class AuthAction {
 
 Use delegation for shared behavior (validation, analytics, feature flags) instead of base classes.
 See `references/kotlin-delegation.md` for guidance and tradeoffs.
-For process-death survival, include `SavedStateHandle` in ViewModels and persist critical UI state
-that must be restored (forms, in-progress flows). See the official guidance on SavedStateHandle.
+
+For process-death survival, include `SavedStateHandle` in ViewModels and persist critical UI state (forms, in-progress flows) using `savedStateHandle.getStateFlow()` for automatic restoration.
 
 ```kotlin
 // feature-auth/presentation/viewmodel/AuthViewModel.kt
@@ -178,6 +181,11 @@ class DefaultAuthFormValidator @Inject constructor() : AuthFormValidator {
         if (password.length >= 8) null else "Password too short"
 }
 
+// Navigation events (one-time events)
+sealed interface AuthNavigationEvent {
+    data class LoginSuccess(val user: User) : AuthNavigationEvent
+}
+
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
@@ -187,16 +195,42 @@ class AuthViewModel @Inject constructor(
     validator: AuthFormValidator
 ) : ViewModel(), AuthFormValidator by validator {
 
+    // UI State
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.LoginForm())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
     
+    // One-time navigation events (SharedFlow with no replay)
+    private val _navigationEvents = MutableSharedFlow<AuthNavigationEvent>(
+        replay = 0,
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val navigationEvents: SharedFlow<AuthNavigationEvent> = _navigationEvents.asSharedFlow()
+    
+    // Process-death survival: persist form state
+    private val email = savedStateHandle.getStateFlow("email", "")
+    
+    init {
+        // Restore email if saved
+        if (email.value.isNotEmpty()) {
+            _uiState.update { state ->
+                if (state is AuthUiState.LoginForm) {
+                    state.copy(email = email.value)
+                } else state
+            }
+        }
+    }
+    
     fun onAction(action: AuthAction) {
         when (action) {
-            is AuthAction.EmailChanged -> updateLoginForm {
-                it.copy(
-                    email = action.email,
-                    emailError = validateEmail(action.email)
-                )
+            is AuthAction.EmailChanged -> {
+                savedStateHandle["email"] = action.email
+                updateLoginForm {
+                    it.copy(
+                        email = action.email,
+                        emailError = validateEmail(action.email)
+                    )
+                }
             }
             is AuthAction.PasswordChanged -> updateLoginForm {
                 it.copy(
@@ -219,8 +253,28 @@ class AuthViewModel @Inject constructor(
             AuthAction.NavigateBack -> Unit
         }
     }
+    
+    private fun performLogin() {
+        val currentState = _uiState.value as? AuthUiState.LoginForm ?: return
+        
+        viewModelScope.launch {
+            _uiState.update { AuthUiState.Loading }
+            
+            loginUseCase(currentState.email, currentState.password).fold(
+                onSuccess = { user -> 
+                    _navigationEvents.emit(AuthNavigationEvent.LoginSuccess(user))
+                },
+                onFailure = { error ->
+                    _uiState.update { 
+                        AuthUiState.Error(error.message ?: "Login failed", canRetry = true)
+                    }
+                }
+            )
+        }
+    }
+    
+    // Other helper methods omitted for brevity (updateLoginForm, updateRegisterForm, etc.)
 }
-```
 
 ### State Collection with Lifecycle
 
@@ -230,16 +284,9 @@ fun AuthRoute(viewModel: AuthViewModel = hiltViewModel()) {
     // Lifecycle-aware state collection
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
-    // Coroutine scope for handling actions
-    val coroutineScope = rememberCoroutineScope()
-    
     LoginScreen(
         uiState = uiState,
-        onAction = { action ->
-            coroutineScope.launch {
-                viewModel.onAction(action)
-            }
-        },
+        onAction = viewModel::onAction,
         onRegisterClick = { viewModel.onAction(AuthAction.RegisterClicked) },
         onForgotPasswordClick = { viewModel.onAction(AuthAction.ForgotPasswordClicked) }
     )
@@ -420,10 +467,12 @@ fun AuthActivityList(
             }
         }
         
-        // Load more trigger
-        item {
-            LaunchedEffect(Unit) {
-                onLoadMore()
+        // Load more trigger: only when not already loading and reached end
+        if (!isLoadingMore && events.isNotEmpty()) {
+            item {
+                LaunchedEffect(events.size) {
+                    onLoadMore()
+                }
             }
         }
     }
@@ -553,8 +602,11 @@ fun AdaptiveAppNavigation() {
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun AuthSessionListDetailLayout(
+    viewModel: AuthSessionViewModel = hiltViewModel(),
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo()
 ) {
+    val authEvents by viewModel.events.collectAsStateWithLifecycle()
+    val selectedEvent by viewModel.selectedEvent.collectAsStateWithLifecycle()
     val listDetailPaneScaffoldState = rememberListDetailPaneScaffoldState()
     
     ListDetailPaneScaffold(
@@ -566,21 +618,19 @@ fun AuthSessionListDetailLayout(
                 items(authEvents) { event ->
                     AuthEventListItem(
                         event = event,
-                        onClick = {
-                            // Update detail pane
-                        }
+                        onClick = { viewModel.selectEvent(event) }
                     )
                 }
             }
         },
         detailPane = {
             // Detail view - shows selected event
-            AuthEventDetailScreen(
-                event = selectedEvent,
-                onBackClick = {
-                    // Handle back navigation in detail pane
-                }
-            )
+            selectedEvent?.let { event ->
+                AuthEventDetailScreen(
+                    event = event,
+                    onBackClick = { viewModel.clearSelection() }
+                )
+            }
         }
     )
 }
@@ -612,8 +662,10 @@ fun AppTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            // Use surface color for natural look
+            window.statusBarColor = colorScheme.surface.toArgb()
+            // Light status bar icons for light theme, dark icons for dark theme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
     
@@ -818,8 +870,9 @@ fun AuthActivityListOptimized(
             items = events,
             key = { authEventKey(it) } // Essential for stable keys
         ) { event ->
-            val title by remember(event) {
-                derivedStateOf { formatAuthEventTitle(event) }
+            // Use remember for expensive computations
+            val title = remember(event) { 
+                formatAuthEventTitle(event) 
             }
             
             AuthEventCard(
@@ -872,19 +925,66 @@ fun SearchableAuthActivity(
 
 ### Remember/Lambda Best Practices
 
+**Default approach (99% of cases):** Keep it simple. Let Compose handle optimizations automatically when your data types are stable/immutable.
+
 ```kotlin
 @Composable
-fun AuthEventCardOptimized(
+fun AuthEventCard(
+    event: AuthEvent,  // Make sure AuthEvent is @Immutable
+    onClick: (AuthEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Direct lambda is fine - no premature optimization needed
+    Card(
+        onClick = { onClick(event) },
+        modifier = modifier
+    ) {
+        // Card content...
+    }
+}
+
+// Ensure your data model is immutable for Compose stability
+@Immutable
+data class AuthEvent(
+    val id: String,
+    val name: String,
+    val timestamp: Long
+)
+```
+
+**When `onClick` changes frequently and performance matters (deeply nested/large lists):** Use `rememberUpdatedState` to always reference the latest callback without recreating the lambda.
+
+```kotlin
+@Composable
+fun AuthEventCard(
     event: AuthEvent,
     onClick: (AuthEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Use rememberUpdatedState for lambdas that change
+    // Keeps reference to latest onClick without recreating lambda
     val currentOnClick by rememberUpdatedState(onClick)
     
-    // Memoize expensive callbacks
-    val onClickMemoized = remember(event) {
-        { currentOnClick(event) }
+    Card(
+        onClick = { currentOnClick(event) },
+        modifier = modifier
+    ) {
+        // Card content...
+    }
+}
+```
+
+**When both `event` and `onClick` change independently and you need true memoization (rare):**
+
+```kotlin
+@Composable
+fun AuthEventCard(
+    event: AuthEvent,
+    onClick: (AuthEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Creates one lambda per unique (event, onClick) pair
+    val onClickMemoized = remember(event, onClick) {
+        { onClick(event) }
     }
     
     Card(
@@ -895,3 +995,5 @@ fun AuthEventCardOptimized(
     }
 }
 ```
+
+**Key takeaway:** Start simple. Only optimize if profiling shows actual performance issues. Premature optimization adds complexity without benefit.
