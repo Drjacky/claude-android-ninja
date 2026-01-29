@@ -19,6 +19,43 @@ class AuthRepository(
 }
 ```
 
+### Use `limitedParallelism` for Custom Dispatcher Pools
+Prefer `limitedParallelism` over creating custom `ExecutorService` dispatchers. This is more efficient and integrates better with structured concurrency.
+
+```kotlin
+// Single-threaded dispatcher (e.g., for Room or SQLite operations)
+class AuthDatabaseModule {
+    @Provides
+    @Singleton
+    fun provideDatabaseDispatcher(): CoroutineDispatcher =
+        Dispatchers.IO.limitedParallelism(1)
+}
+
+// Limited concurrency for CPU-intensive work
+class AuthCryptoModule {
+    @Provides
+    @Singleton
+    fun provideCryptoDispatcher(): CoroutineDispatcher =
+        Dispatchers.Default.limitedParallelism(4)
+}
+
+// Usage
+class AuthTokenEncryptor(
+    private val cryptoDispatcher: CoroutineDispatcher
+) {
+    suspend fun encrypt(token: AuthToken): EncryptedToken = withContext(cryptoDispatcher) {
+        // CPU-intensive encryption limited to 4 threads
+        performEncryption(token)
+    }
+}
+```
+
+Benefits over custom ExecutorService:
+- Shares thread pool with parent dispatcher (more efficient)
+- Proper integration with structured concurrency
+- Automatic cleanup and resource management
+- Better debugging and profiling support
+
 ### Avoid GlobalScope, Prefer Structured Concurrency
 Use `viewModelScope`/`lifecycleScope` for UI and inject external scope only when work must outlive UI.
 
@@ -100,24 +137,6 @@ It is ignored if passed to `withContext` or nested coroutines.
 If you must catch `Throwable` (rare), rethrow `CancellationException` immediately so structured
 concurrency remains intact.
 
-### Test with runTest and Shared Scheduler
-Use `runTest` and share the same scheduler across test dispatchers.
-
-```kotlin
-@Test
-fun `login updates auth state`() = runTest {
-    val testDispatcher = UnconfinedTestDispatcher(testScheduler)
-    val repository = AuthRepository(
-        remote = FakeAuthRemoteDataSource(),
-        ioDispatcher = testDispatcher
-    )
-
-    repository.login("user@example.com", "password")
-
-    assertThat(repository.isLoggedIn()).isTrue()
-}
-```
-
 ### Prefer StateFlow Over LiveData for New Code
 Use `StateFlow` for observable state and `SharedFlow` for events. Reserve `LiveData` for interop
 or legacy code that still requires it.
@@ -133,7 +152,8 @@ class AuthViewModel @Inject constructor(
     // replay is for new collectors; extraBufferCapacity is for bursts from existing collectors
     private val _events = MutableSharedFlow<AuthEvent>(
         replay = 0,
-        extraBufferCapacity = 1
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
     val events: SharedFlow<AuthEvent> = _events.asSharedFlow()
 }
@@ -149,6 +169,36 @@ Guidance for events vs state:
 - Use `SharedFlow(replay = 0)` for one-shot, lossy UI events (toasts, dialogs, navigation).
 - If an event must survive the UI being stopped, persist it as state and render it on resume
   (StateFlow/ViewModel state/persistence), rather than relying on buffering.
+
+### Convert Cold Flows to Hot StateFlows with `stateIn`
+Use `stateIn` to share expensive Flow operations across multiple collectors and cache the latest value. 
+This prevents repeated work when multiple UI components observe the same data.
+
+```kotlin
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val authRepository: AuthRepository,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    // Cold flow: each collector triggers separate database query
+    private val authSessionFlow: Flow<AuthSession?> = authRepository.observeAuthSession()
+    
+    // Hot StateFlow: shared across all collectors, 5s stop timeout
+    val authSession: StateFlow<AuthSession?> = authSessionFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000),
+            initialValue = null
+        )
+}
+```
+
+Key `SharingStarted` strategies:
+- `WhileSubscribed(5000)`: Stops upstream flow 5s after last collector unsubscribes. Best for most UI cases (survives quick config changes, saves resources when backgrounded).
+- `Eagerly`: Starts immediately and never stops. Use for critical always-needed state (auth status, app config).
+- `Lazily`: Starts on first subscriber, never stops. Use when you want to keep the flow hot after first access.
+
+Common mistake: Using `stateIn` with `Eagerly` by default. Prefer `WhileSubscribed` to avoid wasted resources.
 
 ### Avoid `async` with Immediate `await`
 Don't use `async` followed immediately by `await` in the same scope. Use `withContext` for sequential work or call the suspend function directly.
@@ -292,6 +342,38 @@ fun observeAuthEvents(): Flow<AuthEvent> = flow {
 }
 ```
 
+### Use `flatMapLatest` for Sequential Flow Switching, `flatMapMerge` for Concurrent
+Choose the right flattening operator based on whether you want to cancel previous work or run it concurrently.
+
+```kotlin
+// flatMapLatest: Cancels previous flow when input changes (search queries, user selections)
+fun searchAuth(query: StateFlow<String>): Flow<List<AuthUser>> =
+    query.flatMapLatest { searchQuery ->
+        if (searchQuery.isEmpty()) {
+            flowOf(emptyList())
+        } else {
+            authRepository.search(searchQuery)
+        }
+    }
+
+// flatMapMerge: Runs flows concurrently (multiple independent data sources)
+fun observeAuthEvents(): Flow<AuthEvent> = flow {
+    val sources = authEventSources()
+    emitAll(sources.asFlow().flatMapMerge { it.observe() })
+}
+
+// flatMapConcat: Sequential, waits for each flow to complete (rare, order-dependent processing)
+fun processAuthBatches(batches: Flow<AuthBatch>): Flow<ProcessedBatch> =
+    batches.flatMapConcat { batch ->
+        flow { emit(processBatch(batch)) }
+    }
+```
+
+When to use each:
+- `flatMapLatest`: User-driven changes (search, filters, selections) where only the latest matters
+- `flatMapMerge`: Multiple independent sources running in parallel
+- `flatMapConcat`: Order-dependent sequential processing (rare)
+
 ### Prefer `suspend` for One-Off Values
 Use a suspending function when only a single value is expected.
 
@@ -414,7 +496,7 @@ must complete even when the coroutine is cancelled. This prevents resource leaks
 
 ```kotlin
 class CameraRepository(
-    private val camera: Camera2,
+    private val camera: Camera,  // CameraX or hardware wrapper
     private val ioDispatcher: CoroutineDispatcher
 ) {
     suspend fun capturePhoto(): Photo = withContext(ioDispatcher) {
