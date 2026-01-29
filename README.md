@@ -10,7 +10,9 @@ production‑quality Android apps consistently and efficiently.
 
 Learn more about the Agent Skills format here: [agentskills.io](https://agentskills.io/home)
 
-## What This Skill Covers
+📦 **Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-android-ninja-skill-md)**
+
+## 🎯 What This Skill Covers
 - Modular Android architecture (feature‑first, core modules, strict dependencies)
 - Domain/Data/UI layering patterns with auth‑focused examples
 - Jetpack Compose patterns, state management, and adaptive UI
@@ -19,7 +21,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - Testing practices with test doubles and Google Truth
 - Dependency management rules and templates
 
-## Key Files
+## 📂 Key Files
 - `SKILL.md` - entry point and workflow decision tree
 - `references/architecture.md` - architecture principles, data/domain layers, and flows
 - `references/modularization.md` - module structure and navigation wiring
@@ -40,7 +42,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `templates/libs.versions.toml.template` - version catalog source of truth
 - `templates/settings.gradle.kts.template` - Gradle settings source of truth
 
-## Scope
+## 🔧 Scope
 This skill is focused on Android app development using:
 - Kotlin
 - Jetpack Compose
@@ -49,9 +51,9 @@ This skill is focused on Android app development using:
 - Hilt
 - Room
 
-## Installation
+## 📥 Installation
 
-### 1) Claude Code (manual)
+### 1️⃣ Claude Code (manual)
 Clone or download this repo, then place it in Claude’s skills folder and refresh skills.
 
 ```
@@ -63,7 +65,7 @@ Clone or download this repo, then place it in Claude’s skills folder and refre
 
 If you prefer project‑local skills, use `.claude/skills/` inside your project.
 
-### 2) OpenSkills CLI
+### 2️⃣ OpenSkills CLI
 [OpenSkills](https://github.com/numman-ali/openskills) can install any skill repo and generate the AGENTS/skills metadata for multiple agents.
 
 ```bash
@@ -76,15 +78,15 @@ Optional universal install (shared across agents):
 npx openskills install drjacky/claude-android-ninja --universal
 ```
 
-## Contributing
+## 🤝 Contributing
 
-### Request Missing Best Practices
+### 💡 Request Missing Best Practices
 
 If you need a best practice topic or pattern that's missing from this SKILL, please create a feature request on GitHub. This helps us prioritize what to add next.
 
 [Create a Feature Request](https://github.com/drjacky/claude-android-ninja/issues/new?template=feature_request.md)
 
-### Report Issues
+### 🐛 Report Issues
 
 Found a bug, outdated pattern, or incorrect guidance? Please report it so we can fix it.
 
