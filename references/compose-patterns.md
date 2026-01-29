@@ -135,18 +135,18 @@ sealed interface AuthUiState {
 ```kotlin
 // feature-auth/presentation/viewmodel/AuthActions.kt
 sealed class AuthAction {
-    // Login screen actions
+    // Login form actions
     data class EmailChanged(val email: String) : AuthAction()
     data class PasswordChanged(val password: String) : AuthAction()
     data object LoginClicked : AuthAction()
-    data object ForgotPasswordClicked : AuthAction()
-    data object RegisterClicked : AuthAction()
+    data object ShowRegisterForm : AuthAction()
+    data object ShowForgotPasswordForm : AuthAction()
     
-    // Register screen actions
+    // Register form actions
     data class NameChanged(val name: String) : AuthAction()
     data class ConfirmPasswordChanged(val confirmPassword: String) : AuthAction()
     data object RegisterSubmit : AuthAction()
-    data object NavigateToLogin : AuthAction()
+    data object ShowLoginForm : AuthAction()
     
     // Forgot password actions
     data object ResetPasswordClicked : AuthAction()
@@ -154,9 +154,6 @@ sealed class AuthAction {
     // Error handling
     data object Retry : AuthAction()
     data object ClearError : AuthAction()
-    
-    // Navigation
-    data object NavigateBack : AuthAction()
 }
 ```
 
@@ -242,18 +239,17 @@ class AuthViewModel @Inject constructor(
                 )
             }
             AuthAction.LoginClicked -> performLogin()
-            AuthAction.ForgotPasswordClicked -> _uiState.value = AuthUiState.ForgotPasswordForm()
-            AuthAction.RegisterClicked -> _uiState.value = AuthUiState.RegisterForm()
+            AuthAction.ShowForgotPasswordForm -> _uiState.value = AuthUiState.ForgotPasswordForm()
+            AuthAction.ShowRegisterForm -> _uiState.value = AuthUiState.RegisterForm()
             is AuthAction.NameChanged -> updateRegisterForm { it.copy(name = action.name) }
             is AuthAction.ConfirmPasswordChanged -> updateRegisterForm {
                 it.copy(confirmPassword = action.confirmPassword)
             }
             AuthAction.RegisterSubmit -> performRegistration()
-            AuthAction.NavigateToLogin -> _uiState.value = AuthUiState.LoginForm()
+            AuthAction.ShowLoginForm -> _uiState.value = AuthUiState.LoginForm()
             AuthAction.ResetPasswordClicked -> performPasswordReset()
             AuthAction.Retry -> _uiState.value = AuthUiState.LoginForm()
             AuthAction.ClearError -> _uiState.value = AuthUiState.LoginForm()
-            AuthAction.NavigateBack -> Unit
         }
     }
     
@@ -284,15 +280,27 @@ class AuthViewModel @Inject constructor(
 
 ```kotlin
 @Composable
-fun AuthRoute(viewModel: AuthViewModel = hiltViewModel()) {
-    // Lifecycle-aware state collection
+fun AuthRoute(
+    authNavigator: AuthNavigator,
+    viewModel: AuthViewModel = hiltViewModel()
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    // Collect one-time navigation events
+    LaunchedEffect(viewModel) {
+        viewModel.navigationEvents.collect { event ->
+            when (event) {
+                is AuthNavigationEvent.LoginSuccess -> authNavigator.navigateToMainApp()
+                is AuthNavigationEvent.RegisterSuccess -> authNavigator.navigateToMainApp()
+            }
+        }
+    }
     
     LoginScreen(
         uiState = uiState,
         onAction = viewModel::onAction,
-        onRegisterClick = { viewModel.onAction(AuthAction.RegisterClicked) },
-        onForgotPasswordClick = { viewModel.onAction(AuthAction.ForgotPasswordClicked) }
+        onRegisterClick = authNavigator::navigateToRegister,
+        onForgotPasswordClick = authNavigator::navigateToForgotPassword
     )
 }
 ```
