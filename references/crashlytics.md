@@ -451,25 +451,25 @@ Track failed API calls to understand network-related crashes.
 
 ```kotlin
 // In OkHttp interceptor or repository layer
-class AuthRepository(
-    private val crashReporter: CrashReporter
-) {
+class AuthRepository @Inject constructor(
+    crashReporter: CrashReporter
+) : CrashReporter by crashReporter {
     suspend fun login(email: String, password: String): Result<AuthToken> {
         return try {
             val response = authApi.login(email, password)
             Result.success(response)
         } catch (e: IOException) {
             // Network error
-            crashReporter.log("Network error during login: ${e.message}")
-            crashReporter.recordException(e, mapOf(
+            log("Network error during login: ${e.message}")
+            recordException(e, mapOf(
                 "endpoint" to "auth/login",
                 "error_type" to "network"
             ))
             Result.failure(e)
         } catch (e: HttpException) {
             // HTTP error (4xx, 5xx)
-            crashReporter.log("HTTP error during login: ${e.code()}")
-            crashReporter.recordException(e, mapOf(
+            log("HTTP error during login: ${e.code()}")
+            recordException(e, mapOf(
                 "endpoint" to "auth/login",
                 "status_code" to e.code().toString(),
                 "error_type" to "http"
@@ -491,14 +491,14 @@ Add a debug-only method to test crash reporting:
 ```kotlin
 @HiltViewModel
 class DebugViewModel @Inject constructor(
-    private val crashReporter: CrashReporter
-) : ViewModel() {
+    crashReporter: CrashReporter
+) : ViewModel(), CrashReporter by crashReporter {
     
     // Only available in debug builds
     fun testCrash() {
         if (BuildConfig.DEBUG) {
             // Test non-fatal exception
-            crashReporter.recordException(
+            recordException(
                 RuntimeException("Test crash from debug menu"),
                 mapOf("test" to "true", "source" to "debug_menu")
             )
@@ -583,9 +583,9 @@ SentryAndroid.init(this) { options ->
 Implement scrubbing in your `CrashReporter` wrapper:
 
 ```kotlin
-class PrivacyAwareCrashReporter(
-    private val delegate: CrashReporter
-) : CrashReporter by delegate {
+class PrivacyAwareCrashReporter @Inject constructor(
+    crashReporter: CrashReporter
+) : CrashReporter by crashReporter {
     
     private val emailRegex = Regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")
     private val sensitiveKeys = setOf("password", "token", "secret", "key", "auth")
@@ -601,12 +601,13 @@ class PrivacyAwareCrashReporter(
             value.replace(emailRegex, "[REDACTED_EMAIL]")
         }
         
-        delegate.recordException(throwable, scrubbedContext)
+        // Use super to call the delegated implementation
+        super.recordException(throwable, scrubbedContext)
     }
     
     override fun log(message: String) {
         val scrubbedMessage = message.replace(emailRegex, "[REDACTED_EMAIL]")
-        delegate.log(scrubbedMessage)
+        super.log(scrubbedMessage)
     }
 }
 ```
