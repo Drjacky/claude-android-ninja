@@ -8,10 +8,11 @@ and Google Truth for assertions.
 2. [Test Doubles](#test-doubles)
 3. [ViewModel Tests](#viewmodel-tests)
 4. [Repository Tests](#repository-tests)
-5. [Navigation Tests](#navigation-tests)
-6. [UI Tests](#ui-tests)
-7. [Performance Benchmarks](#performance-benchmarks)
-8. [Test Utilities](#test-utilities)
+5. [Coroutine Testing](#coroutine-testing)
+6. [Navigation Tests](#navigation-tests)
+7. [UI Tests](#ui-tests)
+8. [Performance Benchmarks](#performance-benchmarks)
+9. [Test Utilities](#test-utilities)
 
 ## Testing Philosophy
 
@@ -523,6 +524,317 @@ class AuthRepositoryImplTest {
         assertThat(savedUser?.name).isEqualTo(testUser.name)
     }
 }
+```
+
+## Coroutine Testing
+
+### Test Dispatcher Rule (in `core:testing`)
+
+Use a custom JUnit rule to set `Dispatchers.Main` to a test dispatcher for all coroutine tests.
+
+```kotlin
+// core/testing/src/main/kotlin/com/example/testing/rule/TestDispatcherRule.kt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import org.junit.rules.TestWatcher
+import org.junit.runner.Description
+
+class TestDispatcherRule(
+    private val testDispatcher: TestDispatcher = StandardTestDispatcher(),
+) : TestWatcher() {
+
+    override fun starting(description: Description) {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    override fun finished(description: Description) {
+        Dispatchers.resetMain()
+    }
+}
+```
+
+### Testing with `runTest` and Shared Scheduler
+
+Use `runTest` for coroutine tests. Share the same scheduler across test dispatchers for predictable timing.
+
+```kotlin
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import com.google.common.truth.Truth.assertThat
+
+class AuthRepositoryTest {
+
+    @get:Rule
+    val dispatcherRule = TestDispatcherRule()
+
+    @Test
+    fun `login updates auth state`() = runTest {
+        // Arrange
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val repository = AuthRepository(
+            remote = FakeAuthRemoteDataSource(),
+            ioDispatcher = testDispatcher
+        )
+
+        // Act
+        repository.login("user@example.com", "password")
+
+        // Assert
+        assertThat(repository.isLoggedIn()).isTrue()
+    }
+}
+```
+
+### Using `advanceUntilIdle()` for Async Operations
+
+Use `advanceUntilIdle()` to wait for all pending coroutines to complete in tests.
+
+```kotlin
+@Test
+fun `login triggers loading then success state`() = runTest {
+    // Arrange
+    val viewModel = AuthViewModel(loginUseCase, savedStateHandle)
+    
+    // Act
+    viewModel.onAction(AuthAction.LoginClicked)
+    
+    // Assert loading state
+    val loadingState = viewModel.uiState.value
+    assertThat((loadingState as AuthUiState.LoginForm).isLoading).isTrue()
+    
+    // Wait for async work to complete
+    advanceUntilIdle()
+    
+    // Assert final state
+    val finalState = viewModel.uiState.value
+    assertThat(finalState).isInstanceOf(AuthUiState.Success::class.java)
+}
+```
+
+### Testing Delays and Timeouts with `advanceTimeBy()`
+
+Use `advanceTimeBy()` to test time-dependent coroutine logic without actually waiting.
+
+```kotlin
+@Test
+fun `session refresh happens after 30 minutes`() = runTest {
+    // Arrange
+    val sessionRefresher = AuthSessionRefresher(
+        authStore = testAuthStore,
+        externalScope = this,
+        ioDispatcher = UnconfinedTestDispatcher(testScheduler)
+    )
+    
+    // Act
+    sessionRefresher.startPeriodicRefresh()
+    
+    // Fast-forward 30 minutes
+    advanceTimeBy(30 * 60 * 1000L)
+    
+    // Assert
+    assertThat(testAuthStore.refreshCallCount).isEqualTo(1)
+    
+    // Fast-forward another 30 minutes
+    advanceTimeBy(30 * 60 * 1000L)
+    
+    // Assert second refresh
+    assertThat(testAuthStore.refreshCallCount).isEqualTo(2)
+}
+```
+
+### Testing Timeout Behavior
+
+Test `withTimeout` and `withTimeoutOrNull` behavior using virtual time.
+
+```kotlin
+@Test
+fun `biometric authentication times out after 30 seconds`() = runTest {
+    // Arrange
+    val slowBiometricSdk = FakeBiometricSdk(responseDelayMs = 40_000L)
+    val repository = BiometricAuthRepository(
+        biometricSdk = slowBiometricSdk,
+        ioDispatcher = UnconfinedTestDispatcher(testScheduler)
+    )
+    
+    // Act
+    val result = repository.authenticate()
+    
+    // Fast-forward past the timeout
+    advanceTimeBy(35_000L)
+    
+    // Assert - should return null due to timeout
+    assertThat(result).isNull()
+}
+
+@Test
+fun `printer returns timeout result when operation hangs`() = runTest {
+    // Arrange
+    val hangingPrinterSdk = FakePrinterSdk(hangOnPrint = true)
+    val repository = HardwarePrinterRepository(
+        printerSdk = hangingPrinterSdk,
+        ioDispatcher = UnconfinedTestDispatcher(testScheduler)
+    )
+    
+    // Act
+    val resultDeferred = async { repository.print(testDocument) }
+    
+    // Fast-forward past the 60s timeout
+    advanceTimeBy(65_000L)
+    val result = resultDeferred.await()
+    
+    // Assert
+    assertThat(result).isEqualTo(PrintResult.Timeout)
+}
+```
+
+### Checking Virtual Time with `currentTime`
+
+Use `currentTime` to verify time progression in tests.
+
+```kotlin
+@Test
+fun `exponential backoff delays increase correctly`() = runTest {
+    // Arrange
+    val retryManager = AuthRetryManager()
+    val startTime = currentTime
+    
+    // Act & Assert
+    retryManager.retryWithBackoff(attempt = 1)
+    assertThat(currentTime - startTime).isEqualTo(1000L) // 1 second
+    
+    retryManager.retryWithBackoff(attempt = 2)
+    assertThat(currentTime - startTime).isEqualTo(3000L) // +2 seconds
+    
+    retryManager.retryWithBackoff(attempt = 3)
+    assertThat(currentTime - startTime).isEqualTo(7000L) // +4 seconds
+}
+```
+
+### Testing Flow Emissions with Turbine
+
+Use Turbine library for testing Flow emissions over time.
+
+```kotlin
+import app.cash.turbine.test
+import com.google.common.truth.Truth.assertThat
+
+@Test
+fun `auth state flow emits correct states`() = runTest {
+    // Arrange
+    val repository = AuthRepository(testDataSource, testDispatcher)
+    
+    // Act & Assert
+    repository.observeAuthState().test {
+        // Initial state
+        assertThat(awaitItem()).isInstanceOf(AuthState.Unauthenticated::class.java)
+        
+        // Trigger login
+        repository.login("user@example.com", "password")
+        advanceUntilIdle()
+        
+        // Should emit Authenticated
+        val authState = awaitItem()
+        assertThat(authState).isInstanceOf(AuthState.Authenticated::class.java)
+        assertThat((authState as AuthState.Authenticated).user.email).isEqualTo("user@example.com")
+        
+        cancelAndIgnoreRemainingEvents()
+    }
+}
+
+@Test
+fun `session refresh flow emits at correct intervals`() = runTest {
+    // Arrange
+    val refresher = AuthSessionRefresher(testStore, this, testDispatcher)
+    
+    // Act & Assert
+    testStore.sessionUpdates.test {
+        refresher.startPeriodicRefresh()
+        
+        // First refresh happens immediately
+        assertThat(awaitItem()).isNotNull()
+        
+        // Advance 30 minutes
+        advanceTimeBy(30 * 60 * 1000L)
+        assertThat(awaitItem()).isNotNull()
+        
+        // Advance another 30 minutes
+        advanceTimeBy(30 * 60 * 1000L)
+        assertThat(awaitItem()).isNotNull()
+        
+        cancelAndIgnoreRemainingEvents()
+    }
+}
+```
+
+### Testing Cancellation
+
+Test that coroutines respond to cancellation correctly.
+
+```kotlin
+@Test
+fun `auth log upload stops on cancellation`() = runTest {
+    // Arrange
+    val uploader = AuthLogUploader(testUploader)
+    val job = launch {
+        uploader.upload(listOf(file1, file2, file3, file4, file5))
+    }
+    
+    // Act - cancel after some uploads
+    advanceTimeBy(100L)
+    job.cancel()
+    advanceUntilIdle()
+    
+    // Assert - not all files were uploaded
+    assertThat(testUploader.uploadedFiles.size).isLessThan(5)
+}
+
+@Test
+fun `camera cleanup happens even when cancelled`() = runTest {
+    // Arrange
+    val camera = FakeCamera()
+    val repository = CameraRepository(camera, testDispatcher)
+    
+    // Act - start capture then cancel
+    val job = launch {
+        try {
+            repository.capturePhoto()
+        } catch (e: CancellationException) {
+            // Expected
+        }
+    }
+    
+    advanceTimeBy(50L)
+    job.cancel()
+    advanceUntilIdle()
+    
+    // Assert - camera was closed despite cancellation (NonCancellable cleanup)
+    assertThat(camera.isClosed).isTrue()
+}
+```
+
+### Key Coroutine Testing Principles
+
+1. **Always use `runTest`**: Provides virtual time and automatic completion waiting
+2. **Share test scheduler**: Use `UnconfinedTestDispatcher(testScheduler)` or `StandardTestDispatcher()`
+3. **Inject dispatchers**: Never hardcode dispatchers in production code - always inject for testability
+4. **Use `advanceUntilIdle()`**: Wait for all pending coroutines before assertions
+5. **Use `advanceTimeBy()`**: Fast-forward time for delay/timeout testing without actually waiting
+6. **Test cancellation**: Verify coroutines handle cancellation correctly
+7. **Test cleanup**: Ensure resources are released even on cancellation
+
+### Dispatcher Choices in Tests
+
+```kotlin
+// UnconfinedTestDispatcher: Executes coroutines immediately (eager)
+// Good for: Most tests, when you want synchronous behavior
+val unconfinedDispatcher = UnconfinedTestDispatcher(testScheduler)
+
+// StandardTestDispatcher: Queues coroutines (requires advanceUntilIdle)
+// Good for: Testing execution order, complex timing scenarios
+val standardDispatcher = StandardTestDispatcher(testScheduler)
 ```
 
 ## Navigation Tests
