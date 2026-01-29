@@ -20,11 +20,11 @@ Separate navigation, state management, and pure UI concerns with our modular app
 
 ```kotlin
 // feature-auth/presentation/AuthRoute.kt
+// Note: AuthNavigator is defined in feature-auth/navigation/AuthNavigator.kt
+// and implemented in the app module. See references/modularization.md
 @Composable
 fun AuthRoute(
-    onRegisterClick: () -> Unit,
-    onForgotPasswordClick: () -> Unit,
-    onLoginSuccess: (User) -> Unit,
+    authNavigator: AuthNavigator,
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
@@ -34,7 +34,8 @@ fun AuthRoute(
     LaunchedEffect(viewModel) {
         viewModel.navigationEvents.collect { event ->
             when (event) {
-                is AuthNavigationEvent.LoginSuccess -> onLoginSuccess(event.user)
+                is AuthNavigationEvent.LoginSuccess -> authNavigator.navigateToMainApp()
+                is AuthNavigationEvent.RegisterSuccess -> authNavigator.navigateToMainApp()
             }
         }
     }
@@ -42,8 +43,8 @@ fun AuthRoute(
     LoginScreen(
         uiState = uiState,
         onAction = viewModel::onAction,
-        onRegisterClick = onRegisterClick,
-        onForgotPasswordClick = onForgotPasswordClick,
+        onRegisterClick = authNavigator::navigateToRegister,
+        onForgotPasswordClick = authNavigator::navigateToForgotPassword,
         modifier = modifier
     )
 }
@@ -182,8 +183,10 @@ class DefaultAuthFormValidator @Inject constructor() : AuthFormValidator {
 }
 
 // Navigation events (one-time events)
+// These are internal to the feature and trigger navigation via AuthNavigator
 sealed interface AuthNavigationEvent {
-    data class LoginSuccess(val user: User) : AuthNavigationEvent
+    data object LoginSuccess : AuthNavigationEvent
+    data object RegisterSuccess : AuthNavigationEvent
 }
 
 @HiltViewModel
@@ -262,7 +265,8 @@ class AuthViewModel @Inject constructor(
             
             loginUseCase(currentState.email, currentState.password).fold(
                 onSuccess = { user -> 
-                    _navigationEvents.emit(AuthNavigationEvent.LoginSuccess(user))
+                    // Emit navigation event - AuthRoute will call authNavigator.navigateToMainApp()
+                    _navigationEvents.emit(AuthNavigationEvent.LoginSuccess)
                 },
                 onFailure = { error ->
                     _uiState.update { 
