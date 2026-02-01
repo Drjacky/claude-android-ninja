@@ -1,6 +1,6 @@
 # Gradle & Build Configuration
 
-Build system patterns following our modern Android multi-module architecture with Navigation3, Jetpack Compose, and convention plugins.
+Build system patterns following our modern Android multi-module architecture with Navigation3, Jetpack Compose, KSP, and convention plugins.
 
 ## Table of Contents
 1. [Project Structure](#project-structure)
@@ -20,6 +20,11 @@ Project structure, module layout, and naming conventions are defined in
 
 The version catalog source of truth lives in `templates/libs.versions.toml.template`.
 Use it to generate or update `gradle/libs.versions.toml` for each project.
+
+Key points:
+- **KSP over kapt**: This SKILL uses KSP for annotation processing (2x faster than kapt)
+- **Kotlin Compose Plugin**: Compose compiler is managed via `kotlin-compose` plugin (Kotlin 2.0+)
+- **Bundles**: Use `unit-test` and `android-test` bundles for consistent testing dependencies
 
 ## Convention Plugins
 
@@ -41,8 +46,9 @@ java {
 dependencies {
     compileOnly(libs.android.gradlePlugin)
     compileOnly(libs.kotlin.gradlePlugin)
-    compileOnly(libs.hilt.gradlePlugin)
+    compileOnly(libs.kotlin.composeGradlePlugin)
     compileOnly(libs.ksp.gradlePlugin)
+    compileOnly(libs.hilt.gradlePlugin)
     compileOnly(libs.plugin.detekt)
 }
 
@@ -87,9 +93,9 @@ gradlePlugin {
 import com.android.build.api.dsl.CommonExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.provideDelegate
-import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
+import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 
 /**
@@ -98,11 +104,13 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 internal fun Project.configureAndroidCommon(
     commonExtension: CommonExtension<*, *, *, *, *, *>
 ) {
+    val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+    
     commonExtension.apply {
-        compileSdk = libs.findVersion("compileSdk").get().toInt()
+        compileSdk = libs.findVersion("compileSdk").get().toString().toInt()
 
         defaultConfig {
-            minSdk = libs.findVersion("minSdk").get().toInt()
+            minSdk = libs.findVersion("minSdk").get().toString().toInt()
             testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         }
 
@@ -125,7 +133,25 @@ internal fun Project.configureAndroidCommon(
     }
 
     dependencies {
-        add("coreLibraryDesugaring", libs.findLibrary("android-desugar-jdk-libs").get())
+        add("coreLibraryDesugaring", libs.findLibrary("android.desugar.jdk.libs").get())
+    }
+}
+
+/**
+ * Configure common Android dependencies
+ */
+internal fun Project.configureAndroidDependencies() {
+    val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+    
+    dependencies {
+        // Common Android dependencies
+        add("implementation", libs.findLibrary("androidx-core-ktx").get())
+        add("implementation", libs.findLibrary("kotlinx-coroutines-android").get())
+        
+        // Testing
+        add("testImplementation", libs.findLibrary("junit").get())
+        add("androidTestImplementation", libs.findLibrary("androidx-junit").get())
+        add("androidTestImplementation", libs.findLibrary("androidx-espresso-core").get())
     }
 }
 
@@ -146,15 +172,19 @@ package com.example.convention
 import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.getByType
 
 class AndroidApplicationConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
+            val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+            
             pluginManager.apply {
                 apply("com.android.application")
                 apply("org.jetbrains.kotlin.android")
-                apply("kotlin-kapt")
+                apply(libs.findPlugin("ksp").get().get().pluginId)
                 apply("com.google.dagger.hilt.android")
             }
 
@@ -162,7 +192,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 configureAndroidCommon(this)
                 
                 defaultConfig {
-                    targetSdk = libs.findVersion("targetSdk").get().toInt()
+                    targetSdk = libs.findVersion("targetSdk").get().toString().toInt()
                     versionCode = 1
                     versionName = "1.0"
                 }
@@ -199,11 +229,15 @@ package com.example.convention
 import com.android.build.api.dsl.LibraryExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.getByType
 
 class AndroidLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
+            val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+            
             pluginManager.apply {
                 apply("com.android.library")
                 apply("org.jetbrains.kotlin.android")
@@ -211,7 +245,7 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
 
             extensions.configure<LibraryExtension> {
                 configureAndroidCommon(this)
-                defaultConfig.targetSdk = libs.findVersion("targetSdk").get().toInt()
+                defaultConfig.targetSdk = libs.findVersion("targetSdk").get().toString().toInt()
                 
                 buildTypes {
                     release {
@@ -235,11 +269,16 @@ package com.example.convention
 import com.android.build.api.dsl.LibraryExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.getByType
 
 class AndroidFeatureConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
+            val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+            
             pluginManager.apply {
                 apply("com.example.android.library")
                 apply("com.example.android.compose")
@@ -258,20 +297,20 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 add("implementation", project(":core:ui"))
                 
                 // AndroidX
-                add("implementation", libs.findLibrary("androidx.lifecycle.runtime.compose").get())
-                add("implementation", libs.findLibrary("androidx.lifecycle.viewmodel.compose").get())
-                add("implementation", libs.findLibrary("androidx.activity.compose").get())
+                add("implementation", libs.findLibrary("androidx-lifecycle-runtime-compose").get())
+                add("implementation", libs.findLibrary("androidx-lifecycle-viewmodel-compose").get())
+                add("implementation", libs.findLibrary("androidx-activity-compose").get())
                 
                 // Navigation3
-                add("implementation", libs.bundles.navigation3)
+                add("implementation", libs.findBundle("navigation3").get())
                 
                 // DI
-                add("implementation", libs.findLibrary("hilt.android").get())
-                add("kapt", libs.findLibrary("hilt.android.compiler").get())
+                add("implementation", libs.findLibrary("hilt-android").get())
+                add("ksp", libs.findLibrary("hilt-compiler").get())
                 
                 // Testing
-                add("testImplementation", libs.bundles.testing)
-                add("androidTestImplementation", libs.bundles.compose.testing)
+                add("testImplementation", libs.findBundle("unit-test").get())
+                add("androidTestImplementation", libs.findBundle("android-test").get())
             }
         }
     }
@@ -287,13 +326,19 @@ package com.example.convention
 import com.android.build.api.dsl.CommonExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.getByType
 
 class AndroidComposeConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
-            pluginManager.apply("com.android.library")
+            val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+            
+            pluginManager.apply {
+                apply("com.android.library")
+                apply(libs.findPlugin("kotlin-compose").get().get().pluginId)
+            }
             
             val extension = extensions.getByType<CommonExtension<*, *, *, *, *, *>>()
             configureAndroidCompose(extension)
@@ -304,26 +349,27 @@ class AndroidComposeConventionPlugin : Plugin<Project> {
 internal fun Project.configureAndroidCompose(
     commonExtension: CommonExtension<*, *, *, *, *, *>
 ) {
+    val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+    
     commonExtension.apply {
         buildFeatures {
             compose = true
         }
-
-        composeOptions {
-            kotlinCompilerExtensionVersion = libs.findVersion("composeCompiler").get().toString()
-        }
+        
+        // Compose compiler is configured via kotlin-compose plugin
+        // No manual composeOptions needed with Kotlin 2.0+
     }
 
     dependencies {
         // Compose BOM
-        val composeBom = libs.findLibrary("androidx.compose.bom").get()
+        val composeBom = libs.findLibrary("androidx-compose-bom").get()
         add("implementation", platform(composeBom))
         add("androidTestImplementation", platform(composeBom))
         
         // Compose dependencies
-        add("implementation", libs.bundles.compose)
-        add("debugImplementation", libs.findLibrary("androidx.compose.ui.tooling").get())
-        add("debugImplementation", libs.findLibrary("androidx.compose.ui.test.manifest").get())
+        add("implementation", libs.findBundle("compose").get())
+        add("debugImplementation", libs.findLibrary("androidx-compose-ui-tooling").get())
+        add("debugImplementation", libs.findLibrary("androidx-compose-ui-test-manifest").get())
     }
 }
 ```
@@ -336,21 +382,25 @@ package com.example.convention
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.getByType
 
 class AndroidHiltConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
+            val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+            
             pluginManager.apply {
-                apply("kotlin-kapt")
+                apply(libs.findPlugin("ksp").get().get().pluginId)
                 apply("com.google.dagger.hilt.android")
             }
 
             dependencies {
-                add("implementation", libs.findLibrary("hilt.android").get())
-                add("kapt", libs.findLibrary("hilt.android.compiler").get())
-                add("androidTestImplementation", libs.findLibrary("hilt.android.testing").get())
-                add("kaptAndroidTest", libs.findLibrary("hilt.android.compiler").get())
+                add("implementation", libs.findLibrary("hilt-android").get())
+                add("ksp", libs.findLibrary("hilt-compiler").get())
+                add("androidTestImplementation", libs.findLibrary("hilt-android-testing").get())
+                add("kspAndroidTest", libs.findLibrary("hilt-compiler").get())
             }
         }
     }
@@ -363,37 +413,36 @@ class AndroidHiltConventionPlugin : Plugin<Project> {
 ```kotlin
 package com.example.convention
 
+import androidx.room.gradle.RoomExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.getByType
 
 class AndroidRoomConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
+            val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+            
             pluginManager.apply {
-                apply("kotlin-kapt")
+                apply(libs.findPlugin("ksp").get().get().pluginId)
+                apply("androidx.room")
+            }
+            
+            extensions.configure<RoomExtension> {
+                // Generate Kotlin code instead of Java
+                schemaDirectory("$projectDir/schemas")
             }
 
             dependencies {
-                add("implementation", libs.findLibrary("room.runtime").get())
-                add("implementation", libs.findLibrary("room.ktx").get())
-                add("kapt", libs.findLibrary("room.compiler").get())
-                add("testImplementation", libs.findLibrary("room.testing").get())
+                add("implementation", libs.findLibrary("room-runtime").get())
+                add("implementation", libs.findLibrary("room-ktx").get())
+                add("ksp", libs.findLibrary("room-compiler").get())
+                add("testImplementation", libs.findLibrary("room-testing").get())
             }
         }
-    }
-}
-
-private fun Project.configureAndroidDependencies() {
-    dependencies {
-        // Common Android dependencies
-        add("implementation", libs.findLibrary("androidx.core.ktx").get())
-        add("implementation", libs.findLibrary("kotlinx.coroutines.android").get())
-        
-        // Testing
-        add("testImplementation", libs.findLibrary("junit").get())
-        add("androidTestImplementation", libs.findLibrary("androidx.test.ext.junit").get())
-        add("androidTestImplementation", libs.findLibrary("androidx.test.espresso.core").get())
     }
 }
 ```
@@ -417,7 +466,7 @@ import org.gradle.kotlin.dsl.withType
 class DetektConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) = with(target) {
         val libs = rootProject.extensions.getByType<VersionCatalogsExtension>().named("libs")
-        val detektPluginId = libs.findPlugin("detekt").get().pluginId
+        val detektPluginId = libs.findPlugin("detekt").get().get().pluginId
 
         pluginManager.apply(detektPluginId)
 
@@ -456,6 +505,7 @@ plugins {
     id("com.example.android.application")
     id("com.example.android.compose")
     id("com.example.android.hilt")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -491,11 +541,6 @@ android {
             isDebuggable = false
         }
     }
-    
-    // Enable view binding if needed
-    buildFeatures {
-        viewBinding = true
-    }
 }
 
 dependencies {
@@ -517,20 +562,16 @@ dependencies {
     // Navigation3 for adaptive UI
     implementation(libs.bundles.navigation3)
     
-    // Compose runtime optimizations
-    implementation(libs.findLibrary("androidx.compose.runtime").get())
-    implementation(libs.findLibrary("androidx.compose.runtime.livedata").get())
-    
     // Splash screen
-    implementation(libs.findLibrary("androidx.core.splashscreen").get())
+    implementation(libs.androidx.core.splashscreen)
     
     // WorkManager for background tasks
-    implementation(libs.findLibrary("androidx.work.runtime.ktx").get())
+    implementation(libs.androidx.work.runtime.ktx)
     
     // Testing
     testImplementation(project(":core:testing"))
-    testImplementation(libs.bundles.testing)
-    androidTestImplementation(libs.bundles.compose.testing)
+    testImplementation(libs.bundles.unit.test)
+    androidTestImplementation(libs.bundles.android.test)
 }
 ```
 
@@ -540,8 +581,7 @@ dependencies {
 ```kotlin
 plugins {
     id("com.example.android.feature")
-    id("com.example.android.compose")
-    id("com.example.android.hilt")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -554,13 +594,13 @@ dependencies {
     implementation(project(":core:ui"))
     
     // Feature-specific dependencies
-    implementation(libs.findLibrary("androidx.constraintlayout.compose").get())
-    implementation(libs.findLibrary("coil.compose").get())
+    implementation(libs.androidx.constraintlayout.compose)
+    implementation(libs.coil.compose)
     
     // Testing
     testImplementation(project(":core:testing"))
-    testImplementation(libs.bundles.testing)
-    androidTestImplementation(libs.bundles.compose.testing)
+    testImplementation(libs.bundles.unit.test)
+    androidTestImplementation(libs.bundles.android.test)
 }
 ```
 
@@ -569,34 +609,27 @@ dependencies {
 `core/domain/build.gradle.kts`:
 ```kotlin
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.serialization")
+    id("java-library")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
 }
 
-android {
-    namespace = "com.example.core.domain"
-    
-    // Domain module should be pure Kotlin
-    compileSdk = libs.findVersion("compileSdk").get().toInt()
-    
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 dependencies {
     // Pure Kotlin dependencies only
-    implementation(libs.findLibrary("kotlinx.coroutines.core").get())
-    implementation(libs.findLibrary("kotlinx.serialization.json").get())
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization)
+    implementation(libs.kotlinx.collections.immutable)
+    
+    // DI
+    implementation(libs.java.inject)
     
     // Testing
-    testImplementation(libs.bundles.testing)
+    testImplementation(libs.bundles.unit.test)
 }
 ```
 
@@ -607,7 +640,7 @@ dependencies {
 plugins {
     id("com.example.android.library")
     id("com.example.android.hilt")
-    id("com.example.android.room")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -624,16 +657,16 @@ dependencies {
     implementation(project(":core:datastore"))
     
     // Data serialization
-    implementation(libs.findLibrary("kotlinx.serialization.json").get())
-    implementation(libs.findLibrary("retrofit.kotlinx.serialization").get())
+    implementation(libs.kotlinx.serialization)
+    implementation(libs.retrofit2.kotlinx.serialization.converter)
     
     // Paging if needed
-    implementation(libs.findLibrary("androidx.paging.runtime").get())
-    implementation(libs.findLibrary("androidx.paging.compose").get())
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
     
     // Testing
     testImplementation(project(":core:testing"))
-    testImplementation(libs.bundles.testing)
+    testImplementation(libs.bundles.unit.test)
 }
 ```
 
@@ -658,11 +691,63 @@ dependencies {
     implementation(libs.bundles.compose)
     
     // Image loading
-    implementation(libs.findLibrary("coil.compose").get())
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     
     // Testing
-    testImplementation(libs.bundles.testing)
-    androidTestImplementation(libs.bundles.compose.testing)
+    testImplementation(libs.bundles.unit.test)
+    androidTestImplementation(libs.bundles.android.test)
+}
+```
+
+### Core Network Module
+
+`core/network/build.gradle.kts`:
+```kotlin
+plugins {
+    id("com.example.android.library")
+    id("com.example.android.hilt")
+    alias(libs.plugins.kotlin.serialization)
+}
+
+android {
+    namespace = "com.example.core.network"
+}
+
+dependencies {
+    implementation(project(":core:domain"))
+    
+    // Networking
+    implementation(libs.retrofit2)
+    implementation(libs.retrofit2.kotlinx.serialization.converter)
+    implementation(libs.okhttp3.logging.interceptor)
+    implementation(libs.kotlinx.serialization)
+    
+    // Testing
+    testImplementation(libs.bundles.unit.test)
+}
+```
+
+### Core Database Module
+
+`core/database/build.gradle.kts`:
+```kotlin
+plugins {
+    id("com.example.android.library")
+    id("com.example.android.room")
+    id("com.example.android.hilt")
+}
+
+android {
+    namespace = "com.example.core.database"
+}
+
+dependencies {
+    implementation(project(":core:domain"))
+    
+    // Room (configured by convention plugin)
+    // Testing
+    testImplementation(libs.bundles.unit.test)
 }
 ```
 
@@ -673,13 +758,13 @@ Create a dedicated `:benchmark` test module for macrobenchmark performance testi
 `benchmark/build.gradle.kts`:
 ```kotlin
 plugins {
-    id("com.android.test")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.android.test)
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
     namespace = "com.example.benchmark"
-    compileSdk = libs.findVersion("compileSdk").get().toInt()
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     targetProjectPath = ":app"
     testBuildType = "benchmark"
@@ -778,19 +863,25 @@ org.gradle.parallel=true
 org.gradle.caching=true
 org.gradle.configureondemand=true
 org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
-org.gradle.unsafe.configuration-cache=true
+
+# Configuration cache (Gradle 8.1+)
+org.gradle.configuration-cache=true
 org.gradle.configuration-cache.problems=warn
 
 # Android build optimization
 android.enableBuildCache=true
 android.useAndroidX=true
-android.enableJetifier=true
+android.enableJetifier=false
 kotlin.incremental=true
 kotlin.caching.enabled=true
 
 # Module metadata
 android.defaults.buildfeatures.buildconfig=true
 android.nonTransitiveRClass=true
+
+# KSP optimization
+ksp.incremental=true
+ksp.incremental.log=false
 ```
 
 ### Proguard Rules for Release Builds
@@ -811,9 +902,30 @@ android.nonTransitiveRClass=true
 -keep class com.example.di.** { *; }
 -keep class * extends dagger.hilt.android.internal.legacy.AggregatedElement { *; }
 
+# Keep kotlinx-serialization
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.AnnotationsKt
+-keepclassmembers class kotlinx.serialization.json.** {
+    *** Companion;
+}
+-keepclasseswithmembers class kotlinx.serialization.json.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# Keep Retrofit
+-keepattributes Signature, InnerClasses, EnclosingMethod
+-keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
+-keepattributes AnnotationDefault
+-keepclassmembers,allowshrinking,allowobfuscation interface * {
+    @retrofit2.http.* <methods>;
+}
+
 # Generic rules
 -dontwarn kotlinx.coroutines.**
 -dontwarn javax.annotation.**
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
 ```
 
 ## Build Performance
@@ -836,8 +948,16 @@ buildscript {
 
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
-    id("com.diffplug.spotless") version "6.23.3" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.22" apply false
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.android.test) apply false
+    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.hilt) apply false
+    alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.spotless) apply false
 }
 
 allprojects {
@@ -845,30 +965,30 @@ allprojects {
         google()
         mavenCentral()
     }
-    
-    // Apply spotless formatting
-    apply(plugin = "com.diffplug.spotless")
-    
-    configure<com.diffplug.gradle.spotless.SpotlessExtension> {
-        kotlin {
-            target("**/*.kt")
-            targetExclude("**/build/**")
-            ktlint("1.0.1")
-                .editorConfigOverride(
-                    mapOf(
-                        "indent_size" to "4",
-                        "continuation_indent_size" to "4",
-                        "max_line_length" to "120",
-                        "disabled_rules" to "no-wildcard-imports"
-                    )
+}
+
+// Apply spotless formatting to root project
+plugins.apply(libs.plugins.spotless.get().pluginId)
+
+configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+    kotlin {
+        target("**/*.kt")
+        targetExclude("**/build/**")
+        ktlint(libs.versions.ktlint.get())
+            .editorConfigOverride(
+                mapOf(
+                    "indent_size" to "4",
+                    "continuation_indent_size" to "4",
+                    "max_line_length" to "120",
+                    "disabled_rules" to "no-wildcard-imports"
                 )
-            licenseHeaderFile(rootProject.file("spotless/copyright.kt"))
-        }
-        
-        kotlinGradle {
-            target("**/*.gradle.kts")
-            ktlint("1.0.1")
-        }
+            )
+        licenseHeaderFile(rootProject.file("spotless/copyright.kt"))
+    }
+    
+    kotlinGradle {
+        target("**/*.gradle.kts")
+        ktlint(libs.versions.ktlint.get())
     }
 }
 ```
@@ -889,23 +1009,7 @@ gradle.settingsEvaluated {
         remote<HttpBuildCache> {
             isEnabled = false // Set to true for CI/CD shared cache
             url = uri("https://example.com/cache/")
-            push = true
-        }
-    }
-    
-    // Configure all projects
-    for (project in projects) {
-        project.configure<org.gradle.api.Project> {
-            tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-                kotlinOptions {
-                    allWarningsAsErrors = false
-                    freeCompilerArgs = freeCompilerArgs + listOf(
-                        "-Xcontext-receivers",
-                        "-Xjvm-default=all",
-                        "-opt-in=kotlin.ExperimentalStdlibApi"
-                    )
-                }
-            }
+            isPush = true
         }
     }
 }
@@ -915,9 +1019,51 @@ gradle.settingsEvaluated {
 
 1. **Use Version Catalog**: Centralize dependency versions for consistency
 2. **Convention Plugins**: Extract common build logic to avoid duplication
-3. **Type-safe Project Accessors**: Enable for better IDE support
-4. **Build Caching**: Configure local and remote caches for faster builds
-5. **Modular Builds**: Use our strict dependency rules for clean architecture
-6. **Progressive Enhancement**: Start simple, add flavors and optimizations as needed
-7. **CI/CD Ready**: Ensure build configuration works well with CI systems
-8. **Profile Builds**: Use `./gradlew assembleDebug --profile` to identify bottlenecks
+3. **KSP over kapt**: 2x faster annotation processing (see `references/dependencies.md`)
+4. **Type-safe Project Accessors**: Enable for better IDE support
+5. **Build Caching**: Configure local and remote caches for faster builds
+6. **Modular Builds**: Use our strict dependency rules for clean architecture
+7. **Progressive Enhancement**: Start simple, add flavors and optimizations as needed
+8. **CI/CD Ready**: Ensure build configuration works well with CI systems
+9. **Profile Builds**: Use `./gradlew assembleDebug --profile` to identify bottlenecks
+10. **Compose-First**: No View binding or legacy View system support
+
+## Common Gradle Commands
+
+```bash
+# Clean build
+./gradlew clean
+
+# Build debug APK
+./gradlew assembleDebug
+
+# Build release APK
+./gradlew assembleRelease
+
+# Run unit tests
+./gradlew test
+
+# Run instrumented tests
+./gradlew connectedAndroidTest
+
+# Run detekt
+./gradlew detekt
+
+# Run spotless format check
+./gradlew spotlessCheck
+
+# Apply spotless formatting
+./gradlew spotlessApply
+
+# Generate dependency report
+./gradlew dependencies
+
+# Profile build
+./gradlew assembleDebug --profile
+
+# Build with configuration cache
+./gradlew assembleDebug --configuration-cache
+
+# Build all variants
+./gradlew assemble
+```

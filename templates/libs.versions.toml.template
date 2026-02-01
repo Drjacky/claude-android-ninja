@@ -2,6 +2,7 @@
 [versions]
 agp = "8.13.0"
 kotlin = "2.2.21"
+ksp = "2.2.21-1.0.32"
 compose-bom = "2025.10.01"
 firebase-bom = "34.0.0"
 hilt = "2.50"
@@ -132,14 +133,16 @@ android-test = [
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
+android-test = { id = "com.android.test", version.ref = "agp" }
 compose-stability-analyzer = { id = "com.github.skydoves.compose.stability.analyzer", version.ref = "composeStabilityAnalyzer" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-sentry-android = { id = "io.sentry.android.gradle", version.ref = "sentryPlugin" }
-sentry-kotlin-compiler = { id = "io.sentry.kotlin.compiler.gradle", version.ref = "sentryPlugin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
+sentry-android = { id = "io.sentry.android.gradle", version.ref = "sentryPlugin" }
+sentry-kotlin-compiler = { id = "io.sentry.kotlin.compiler.gradle", version.ref = "sentryPlugin" }
+spotless = { id = "com.diffplug.spotless", version = "6.25.0" }
