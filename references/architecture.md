@@ -380,11 +380,13 @@ class ValidateRegistrationUseCase @Inject constructor() {
 
 ```kotlin
 // core/domain/repository/AuthRepository.kt
+// ✅ @Stable: Interface contract guarantees observable changes
+@Stable
 interface AuthRepository {
     suspend fun login(email: String, password: String): Result<AuthToken>
     suspend fun register(user: User): Result<Unit>
     suspend fun resetPassword(email: String): Result<Unit>
-    fun observeAuthState(): Flow<AuthState>
+    fun observeAuthState(): Flow<AuthState> // Flow emissions are observable
     fun observeAuthEvents(): Flow<AuthEvent>
     suspend fun refreshSession(): Result<Unit>
 }
@@ -433,14 +435,6 @@ sealed class ValidationError : Exception() {
     data object PasswordTooWeak : ValidationError()
     data object PasswordMismatch : ValidationError()
 }
-
-// ✅ @Stable: Interface contract guarantees observable changes
-@Stable
-interface AuthRepository {
-    suspend fun login(email: String, password: String): Result<AuthToken>
-    fun observeAuthState(): Flow<AuthState> // Flow emissions are observable
-}
-```
 ```
 
 ## Presentation Layer
