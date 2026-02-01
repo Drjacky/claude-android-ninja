@@ -460,18 +460,18 @@ class FirebaseCrashReporter @Inject constructor(
 
 // core/data - Decorator (adds logging)
 class LoggingCrashReporter(
-    private val delegate: CrashReporter,
+    crashReporter: CrashReporter, // No private - delegated only
     private val logger: Logger
-) : CrashReporter by delegate {
+) : CrashReporter by crashReporter {
     override fun recordException(throwable: Throwable, context: Map<String, Any>) {
         logger.d("Recording exception: ${throwable.message}")
-        delegate.recordException(throwable, context)
+        super.recordException(throwable, context)
     }
 }
 
 // core/data - Another decorator (adds privacy scrubbing)
 class PrivacyAwareCrashReporter(
-    private val crashReporter: CrashReporter
+    crashReporter: CrashReporter // No private - delegated only
 ) : CrashReporter by crashReporter {
     override fun recordException(throwable: Throwable, context: Map<String, Any>) {
         val scrubbedContext = context.filterKeys { it !in SENSITIVE_KEYS }

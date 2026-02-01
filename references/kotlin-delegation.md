@@ -36,7 +36,7 @@ class ConsoleLogger : Logger {
 
 class ExampleViewModel(
     private val savedStateHandle: SavedStateHandle,
-    logger: Logger
+    logger: Logger // No private - delegated only
 ) : ViewModel(), Logger by logger {
     fun runAction() {
         log("Action started")

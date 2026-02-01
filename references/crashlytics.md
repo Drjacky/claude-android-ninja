@@ -277,8 +277,8 @@ class FirebaseCrashlyticsStateLogger @Inject constructor(
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    crashReporter: CrashReporter,
-    logger: CrashlyticsStateLogger
+    crashReporter: CrashReporter, // No private - delegated only
+    logger: CrashlyticsStateLogger // No private - delegated only
 ) : ViewModel(), 
     CrashReporter by crashReporter,
     CrashlyticsStateLogger by logger {
@@ -452,7 +452,7 @@ Track failed API calls to understand network-related crashes.
 ```kotlin
 // In OkHttp interceptor or repository layer
 class AuthRepository @Inject constructor(
-    crashReporter: CrashReporter
+    crashReporter: CrashReporter // No private - delegated only
 ) : CrashReporter by crashReporter {
     suspend fun login(email: String, password: String): Result<AuthToken> {
         return try {
@@ -491,7 +491,7 @@ Add a debug-only method to test crash reporting:
 ```kotlin
 @HiltViewModel
 class DebugViewModel @Inject constructor(
-    crashReporter: CrashReporter
+    crashReporter: CrashReporter // No private - delegated only
 ) : ViewModel(), CrashReporter by crashReporter {
     
     // Only available in debug builds
@@ -584,7 +584,7 @@ Implement scrubbing in your `CrashReporter` wrapper:
 
 ```kotlin
 class PrivacyAwareCrashReporter @Inject constructor(
-    crashReporter: CrashReporter
+    crashReporter: CrashReporter // No private - delegated only
 ) : CrashReporter by crashReporter {
     
     private val emailRegex = Regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")
