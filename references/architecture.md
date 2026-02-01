@@ -392,10 +392,12 @@ interface AuthRepository {
 
 ### Domain Models
 
-Domain models should be annotated with `@Immutable` for Compose stability (see `references/compose-patterns.md`).
+Domain models should be annotated with `@Immutable` for Compose stability. Use `@Immutable` for deeply immutable types (all `val` properties), and `@Stable` for mutable types with observable changes (see `references/compose-patterns.md` for detailed guidance).
 
 ```kotlin
 // core/domain/model/
+
+// ✅ @Immutable: Deeply immutable data
 @Immutable
 data class User(
     val id: String,
@@ -431,6 +433,14 @@ sealed class ValidationError : Exception() {
     data object PasswordTooWeak : ValidationError()
     data object PasswordMismatch : ValidationError()
 }
+
+// ✅ @Stable: Interface contract guarantees observable changes
+@Stable
+interface AuthRepository {
+    suspend fun login(email: String, password: String): Result<AuthToken>
+    fun observeAuthState(): Flow<AuthState> // Flow emissions are observable
+}
+```
 ```
 
 ## Presentation Layer
