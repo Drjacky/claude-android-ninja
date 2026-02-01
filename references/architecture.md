@@ -92,7 +92,7 @@ Four-layer architecture with strict module separation and unidirectional data fl
 2. **Unidirectional data flow**: Events flow down, data flows up
 3. **Reactive streams**: Use Kotlin Flow/StateFlow for all data exposure
 4. **Modular by feature**: Each feature is self-contained with clear boundaries
-5. **Testable by design**: Use interfaces and test doubles, no mocking libraries
+5. **Testable by design**: Use interfaces and fakes for testing; MockK only for framework classes in app module (see `references/testing.md`)
 6. **Layer separation**: Strict separation between Presentation, Domain, Data, and UI layers
 7. **Dependency direction**: Features depend on Core modules, not on other features
 8. **Navigation coordination**: App module coordinates navigation between features
@@ -112,35 +112,58 @@ See the full module layout and naming conventions in `references/modularization.
 
 ### Repository Pattern
 
-```kotlin
-// core/domain - Repository interface (contract)
-interface AuthRepository {
-    suspend fun login(email: String, password: String): Result<AuthToken>
-    suspend fun register(user: User): Result<Unit>
-    suspend fun resetPassword(email: String): Result<Unit>
-    fun observeAuthState(): Flow<AuthState>
-    fun observeAuthEvents(): Flow<AuthEvent>
-    suspend fun refreshSession(): Result<Unit>
-}
+The repository interface is defined in `core/domain` (see [Repository Interface Pattern](#repository-interface-pattern) in Domain Layer section).
 
+```kotlin
 // core/data - Repository implementation
 internal class AuthRepositoryImpl @Inject constructor(
     private val localDataSource: AuthLocalDataSource,
     private val remoteDataSource: AuthRemoteDataSource,
-    private val authMapper: AuthMapper
+    private val authMapper: AuthMapper,
+    private val crashReporter: CrashReporter
 ) : AuthRepository {
 
-    override suspend fun login(email: String, password: String): Result<AuthToken> = runCatching {
-        val response = remoteDataSource.login(email, password)
-        localDataSource.saveAuthToken(response.token)
-        localDataSource.saveUser(authMapper.toEntity(response.user))
-        response.token
-    }
+    override suspend fun login(email: String, password: String): Result<AuthToken> =
+        try {
+            val response = remoteDataSource.login(email, password)
+            localDataSource.saveAuthToken(response.token)
+            localDataSource.saveUser(authMapper.toEntity(response.user))
+            Result.success(response.token)
+        } catch (e: IOException) {
+            crashReporter.recordException(e, mapOf("action" to "login"))
+            Result.failure(AuthError.NetworkError("No internet connection", e))
+        } catch (e: HttpException) {
+            when (e.code()) {
+                401 -> Result.failure(AuthError.InvalidCredentials("Invalid email or password"))
+                else -> {
+                    crashReporter.recordException(e, mapOf("action" to "login", "code" to e.code()))
+                    Result.failure(AuthError.ServerError("Server error", e))
+                }
+            }
+        } catch (e: Exception) {
+            crashReporter.recordException(e, mapOf("action" to "login"))
+            Result.failure(AuthError.UnknownError("Unexpected error", e))
+        }
 
-    override suspend fun register(user: User): Result<Unit> = runCatching {
-        remoteDataSource.register(authMapper.toNetwork(user))
-        Unit
-    }
+    override suspend fun register(user: User): Result<Unit> =
+        try {
+            remoteDataSource.register(authMapper.toNetwork(user))
+            Result.success(Unit)
+        } catch (e: IOException) {
+            crashReporter.recordException(e, mapOf("action" to "register"))
+            Result.failure(AuthError.NetworkError("No internet connection", e))
+        } catch (e: HttpException) {
+            when (e.code()) {
+                409 -> Result.failure(AuthError.UserAlreadyExists("Email already registered"))
+                else -> {
+                    crashReporter.recordException(e, mapOf("action" to "register", "code" to e.code()))
+                    Result.failure(AuthError.ServerError("Server error", e))
+                }
+            }
+        } catch (e: Exception) {
+            crashReporter.recordException(e, mapOf("action" to "register"))
+            Result.failure(AuthError.UnknownError("Unexpected error", e))
+        }
 
     override suspend fun resetPassword(email: String): Result<Unit> =
         remoteDataSource.resetPassword(email)
@@ -155,7 +178,6 @@ internal class AuthRepositoryImpl @Inject constructor(
                     AuthState.Unauthenticated
                 }
             }
-            .catch { e -> emit(AuthState.Error(e.message ?: "Unknown error")) }
 
     override fun observeAuthEvents(): Flow<AuthEvent> =
         localDataSource.observeAuthEvents()
@@ -175,24 +197,32 @@ internal class AuthRepositoryImpl @Inject constructor(
 
 ### Model Mapping Strategy
 
+Use mappers when transformations add business logic, not for simple 1:1 field mappings.
+
 ```kotlin
 // core/data/mapping/AuthMapper.kt
-class AuthMapper @Inject constructor() {
+class AuthMapper @Inject constructor(
+    private val dateFormatter: DateFormatter
+) {
     
-    // Entity → Domain
+    // Entity → Domain (with date formatting)
     fun toDomain(entity: UserEntity?): User = User(
         id = entity?.id.orEmpty(),
         email = entity?.email.orEmpty(),
         name = entity?.name.orEmpty(),
-        profileImage = entity?.profileImage
+        profileImage = entity?.profileImage,
+        memberSince = entity?.createdAt?.let { dateFormatter.formatMemberSince(it) } ?: "Unknown",
+        lastActive = entity?.lastActiveAt?.let { dateFormatter.formatRelativeTime(it) } ?: "Never"
     )
     
-    // Network → Entity
+    // Network → Entity (with timestamp normalization)
     fun toEntity(user: NetworkUser): UserEntity = UserEntity(
         id = user.id,
-        email = user.email,
-        name = user.name,
-        profileImage = user.profileImage
+        email = user.email.lowercase().trim(), // Normalize email
+        name = user.name.trim(),
+        profileImage = user.profileImage,
+        createdAt = user.createdAt,
+        lastActiveAt = System.currentTimeMillis() // Track local access time
     )
     
     // Domain → Network (for register/update)
@@ -204,6 +234,21 @@ class AuthMapper @Inject constructor() {
     )
 }
 ```
+
+### Domain-Specific Error Types
+
+```kotlin
+// core/domain/error/AuthError.kt
+sealed class AuthError(message: String, cause: Throwable? = null) : Exception(message, cause) {
+    class NetworkError(message: String, cause: Throwable? = null) : AuthError(message, cause)
+    class InvalidCredentials(message: String) : AuthError(message)
+    class UserAlreadyExists(message: String) : AuthError(message)
+    class ServerError(message: String, cause: Throwable? = null) : AuthError(message, cause)
+    class UnknownError(message: String, cause: Throwable? = null) : AuthError(message, cause)
+}
+```
+
+For crash reporting integration, see `references/crashlytics.md`.
 
 ### Data Synchronization
 
@@ -217,11 +262,15 @@ class AuthSessionWorker @AssistedInject constructor(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        runCatching {
-            authRepository.refreshSession()
-        }.fold(
+        authRepository.refreshSession().fold(
             onSuccess = { Result.success() },
-            onFailure = { Result.retry() }
+            onFailure = { error ->
+                when (error) {
+                    is AuthError.NetworkError -> Result.retry()
+                    is AuthError.ServerError -> if (runAttemptCount < 3) Result.retry() else Result.failure()
+                    else -> Result.failure()
+                }
+            }
         )
     }
 }
@@ -236,39 +285,94 @@ class AuthSessionWorker @AssistedInject constructor(
 - Combine and transform data from multiple repositories
 - **Optional but recommended** for complex applications
 
-### Use Case Pattern
+### Dependency Injection Setup
 
 ```kotlin
-// core/domain/usecase/LoginUseCase.kt
+// core/data/di/DataModule.kt
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class DataModule {
+    
+    @Binds
+    @Singleton
+    abstract fun bindAuthRepository(
+        impl: AuthRepositoryImpl
+    ): AuthRepository
+    
+    @Binds
+    @Singleton
+    abstract fun bindUserRepository(
+        impl: UserRepositoryImpl
+    ): UserRepository
+}
+```
+
+### Use Case Pattern
+
+Use cases are **optional** but recommended when:
+1. Combining data from multiple repositories
+2. Complex business logic that shouldn't be in ViewModels
+3. Reusable operations across multiple features
+
+**Simple pass-through use cases add unnecessary boilerplate.** ViewModels can call repositories directly for simple operations.
+
+```kotlin
+// ❌ Unnecessary use case (simple pass-through)
 class LoginUseCase @Inject constructor(
     private val authRepository: AuthRepository
 ) {
     suspend operator fun invoke(email: String, password: String): Result<AuthToken> =
-        authRepository.login(email, password)
+        authRepository.login(email, password) // No added value
 }
 
-// core/domain/usecase/RegisterUseCase.kt
-class RegisterUseCase @Inject constructor(
-    private val authRepository: AuthRepository
+// ✅ Valuable use case (combines multiple repositories)
+class GetUserProfileWithStatsUseCase @Inject constructor(
+    private val userRepository: UserRepository,
+    private val activityRepository: ActivityRepository,
+    private val achievementRepository: AchievementRepository
 ) {
-    suspend operator fun invoke(user: User): Result<Unit> =
-        authRepository.register(user)
+    operator fun invoke(userId: String): Flow<UserProfileWithStats> = combine(
+        userRepository.observeUser(userId),
+        activityRepository.observeActivityCount(userId),
+        achievementRepository.observeAchievements(userId)
+    ) { user, activityCount, achievements ->
+        UserProfileWithStats(
+            user = user,
+            totalActivities = activityCount,
+            achievements = achievements,
+            completionRate = calculateCompletionRate(activityCount, achievements)
+        )
+    }
+    
+    private fun calculateCompletionRate(activities: Int, achievements: List<Achievement>): Float {
+        if (activities == 0) return 0f
+        val completed = achievements.count { it.isCompleted }
+        return (completed.toFloat() / activities) * 100
+    }
 }
 
-// core/domain/usecase/ObserveAuthStateUseCase.kt
-class ObserveAuthStateUseCase @Inject constructor(
-    private val authRepository: AuthRepository
-) {
-    operator fun invoke(): Flow<AuthState> =
-        authRepository.observeAuthState()
-}
-
-// core/domain/usecase/ResetPasswordUseCase.kt
-class ResetPasswordUseCase @Inject constructor(
-    private val authRepository: AuthRepository
-) {
-    suspend operator fun invoke(email: String): Result<Unit> =
-        authRepository.resetPassword(email)
+// ✅ Valuable use case (complex validation logic)
+class ValidateRegistrationUseCase @Inject constructor() {
+    operator fun invoke(email: String, password: String, confirmPassword: String): Result<Unit> {
+        if (!email.matches(EMAIL_REGEX)) {
+            return Result.failure(ValidationError.InvalidEmail)
+        }
+        if (password.length < 8) {
+            return Result.failure(ValidationError.PasswordTooShort)
+        }
+        if (password != confirmPassword) {
+            return Result.failure(ValidationError.PasswordMismatch)
+        }
+        if (!password.matches(PASSWORD_STRENGTH_REGEX)) {
+            return Result.failure(ValidationError.PasswordTooWeak)
+        }
+        return Result.success(Unit)
+    }
+    
+    companion object {
+        private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+        private val PASSWORD_STRENGTH_REGEX = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$")
+    }
 }
 ```
 
@@ -288,8 +392,11 @@ interface AuthRepository {
 
 ### Domain Models
 
+Domain models should be annotated with `@Immutable` for Compose stability (see `references/compose-patterns.md`).
+
 ```kotlin
 // core/domain/model/
+@Immutable
 data class User(
     val id: String,
     val email: String,
@@ -297,11 +404,13 @@ data class User(
     val profileImage: String? = null
 )
 
+@Immutable
 data class AuthToken(
     val value: String,
     val user: User
 )
 
+@Immutable
 sealed class AuthState {
     data object Loading : AuthState()
     data object Unauthenticated : AuthState()
@@ -309,10 +418,18 @@ sealed class AuthState {
     data class Error(val message: String) : AuthState()
 }
 
+@Immutable
 sealed class AuthEvent {
     data class SessionRefreshed(val timestamp: Instant) : AuthEvent()
     data class SessionExpired(val reason: String) : AuthEvent()
     data class Error(val message: String, val retryable: Boolean) : AuthEvent()
+}
+
+sealed class ValidationError : Exception() {
+    data object InvalidEmail : ValidationError()
+    data object PasswordTooShort : ValidationError()
+    data object PasswordTooWeak : ValidationError()
+    data object PasswordMismatch : ValidationError()
 }
 ```
 
@@ -353,7 +470,7 @@ Implementation examples for `AppNavigation`, `AuthDestination`, `AuthNavigator`,
 - Building responsive UIs for phones, tablets, foldables, or desktop
 - Need automatic navigation adaptation with `NavigationSuiteScaffold`
 - Want Material 3 adaptive navigation patterns and list-detail layouts
-- **Important**: Navigation3 is currently in beta (1.4.0-beta01), suitable for production but expect minor API changes
+- **Important**: Navigation3 is in active development; check current stability status before production use
 
 ### Key Benefits of Navigation3 Architecture:
 
