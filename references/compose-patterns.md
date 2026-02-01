@@ -830,12 +830,132 @@ fun LoginScreenAllStatesPreview(
 
 ## Performance Optimization
 
-### Stability, Immutability, and Persistent Collections
-Compose can skip recomposition when inputs are stable. Annotate value types with `@Immutable` only when they are
-deeply immutable, and use `@Stable` only when all mutations are observable by Compose. 
-Apply stability annotations deliberately and only when recomposition is a proven performance concern.
-For collections held in state, prefer persistent collections to enable structural sharing, so unchanged items and
-structure are reused and unaffected composables are not unnecessarily invalidated.
+### Stability Annotations: `@Immutable` vs `@Stable`
+
+Compose can skip recomposition when inputs are stable. Use these annotations to help Compose's compiler understand stability contracts:
+
+#### When to Use `@Immutable`
+
+Use `@Immutable` when a type is **deeply immutable**: all properties are `val`, and all property types are primitives or also immutable. Once created, the object never changes.
+
+```kotlin
+// ✅ Correct: All properties are val and immutable
+@Immutable
+data class User(
+    val id: String,
+    val name: String,
+    val email: String,
+    val profileUrl: String?
+)
+
+// ✅ Correct: Nested types are also immutable
+@Immutable
+data class AuthState(
+    val user: User?, // User is @Immutable
+    val isLoading: Boolean,
+    val error: String?
+)
+
+// ✅ Correct: Sealed class with immutable children
+@Immutable
+sealed interface UiState {
+    data object Loading : UiState
+    data class Success(val data: String) : UiState
+    data class Error(val message: String) : UiState
+}
+
+// ❌ Wrong: Contains mutable property
+@Immutable // This is a lie!
+data class MutableUser(
+    val id: String,
+    var name: String // var makes this mutable
+)
+
+// ❌ Wrong: Contains mutable collection
+@Immutable // This is a lie!
+data class UserList(
+    val users: MutableList<User> // Mutable collection
+)
+```
+
+#### When to Use `@Stable`
+
+Use `@Stable` when a type has **observable mutations**: it may be mutable, but Compose will be notified of all changes (e.g., via `mutableStateOf`, `StateFlow`, or MutableState).
+
+```kotlin
+// ✅ Correct: Mutable but observable by Compose
+@Stable
+class AuthFormState {
+    var email by mutableStateOf("")
+        private set
+    
+    var password by mutableStateOf("")
+        private set
+    
+    var isLoading by mutableStateOf(false)
+        private set
+    
+    fun updateEmail(value: String) {
+        email = value
+    }
+    
+    fun updatePassword(value: String) {
+        password = value
+    }
+    
+    fun setLoading(loading: Boolean) {
+        isLoading = loading
+    }
+}
+
+// ✅ Correct: Wraps StateFlow (observable)
+@Stable
+class SearchRepository @Inject constructor(
+    private val api: SearchApi
+) {
+    private val _results = MutableStateFlow<List<SearchResult>>(emptyList())
+    val results: StateFlow<List<SearchResult>> = _results.asStateFlow()
+    
+    suspend fun search(query: String) {
+        _results.value = api.search(query)
+    }
+}
+
+// ✅ Correct: Interface can be marked @Stable if implementations guarantee stability
+@Stable
+interface CrashReporter {
+    fun log(message: String)
+    fun recordException(throwable: Throwable)
+}
+
+// ❌ Wrong: Mutable and NOT observable by Compose
+@Stable // This is a lie!
+class BadFormState {
+    var email: String = "" // No mutableStateOf - Compose won't see changes!
+    var password: String = ""
+}
+
+// ❌ Wrong: Truly immutable, should use @Immutable instead
+@Stable // Use @Immutable instead
+data class Config(
+    val apiUrl: String,
+    val timeout: Int
+)
+```
+
+#### Decision Matrix
+
+| Type Characteristics           | Annotation   | Example                                             |
+|--------------------------------|--------------|-----------------------------------------------------|
+| All `val`, deeply immutable    | `@Immutable` | `data class User(val id: String, val name: String)` |
+| Mutable with `mutableStateOf`  | `@Stable`    | `var count by mutableStateOf(0)`                    |
+| Mutable with `StateFlow`       | `@Stable`    | `val state: StateFlow<T>`                           |
+| Interface with stable contract | `@Stable`    | `interface Repository`                              |
+| Regular mutable class          | **None**     | Let Compose treat as unstable                       |
+
+#### Persistent Collections for Performance
+
+For collections held in state, prefer persistent collections to enable structural sharing, so unchanged items and structure are reused and unaffected composables are not unnecessarily invalidated.
 
 ```kotlin
 import kotlinx.collections.immutable.PersistentList
@@ -856,7 +976,7 @@ class AuthEventsViewModel @Inject constructor(
     val events: StateFlow<PersistentList<AuthEventUi>> = _events.asStateFlow()
 
     fun onEventAdded(event: AuthEventUi) {
-        _events.update { it.add(event) }
+        _events.update { it.add(event) } // Structural sharing - only new item allocated
     }
 
     fun onEventsLoaded(events: List<AuthEventUi>) {
@@ -864,6 +984,16 @@ class AuthEventsViewModel @Inject constructor(
     }
 }
 ```
+
+#### Key Rules
+
+1. **Don't guess**: Only add annotations when you have **proven performance issues** (use Compose Compiler reports)
+2. **Don't lie**: Never annotate a type as `@Immutable` or `@Stable` unless it truly meets the contract
+3. **Domain models**: Always `@Immutable` (from `core/domain`)
+4. **UI models**: Usually `@Immutable` (display-only data)
+5. **ViewModels**: Never annotate (already stable via Hilt/Compose integration)
+6. **Repositories**: Mark interface `@Stable` if implementations guarantee stability
+7. **Form state classes**: Use `@Stable` with `mutableStateOf` properties
 
 ### Lazy Composition
 
