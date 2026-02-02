@@ -26,8 +26,8 @@ dependencyResolutionManagement {
         }
         mavenCentral()
 
-        // Add any custom repositories here
-        maven { url = uri("https://jitpack.io") }
+        // Uncomment if using libraries from JitPack
+        // maven { url = uri("https://jitpack.io") }
     }
 
     versionCatalogs {
@@ -40,8 +40,14 @@ dependencyResolutionManagement {
 rootProject.name = "{{PROJECT_NAME}}"
 
 // Enable modern Gradle features
+// Note: Type-safe project accessors can slow incremental builds in large projects
+// but provide better IDE support. Remove if build performance degrades.
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
-enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
+
+// Also configure in gradle.properties:
+// org.gradle.configuration-cache=true
+// org.gradle.caching=true
+// org.gradle.parallel=true
 
 // App module - Navigation coordination, DI setup, app entry point
 include(":app")
