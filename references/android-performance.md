@@ -81,6 +81,95 @@ Results are generated per device:
 
 Use these in CI to detect regressions and track changes over time.
 
+### Startup Performance Metrics (TTID & TTFD)
+
+Android provides two key metrics for measuring app startup performance:
+
+#### Time to Initial Display (TTID)
+The time until the first frame is drawn. This is automatically measured by the system and reported in Logcat.
+
+#### Time to Full Display (TTFD)
+The time until your app is fully interactive with all critical content loaded. You must explicitly call `reportFullyDrawn()` to measure this.
+
+#### ReportDrawn APIs (Compose)
+
+Use `androidx.activity.compose` APIs to declaratively report when your Compose UI is ready:
+
+```kotlin
+@Composable
+fun UserListRoute(
+    viewModel: UserListViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    // Report fully drawn when data is loaded and UI is ready
+    ReportDrawnWhen { uiState is UserListUiState.Success }
+    
+    UserListScreen(uiState = uiState)
+}
+```
+
+**Available APIs:**
+
+1. **ReportDrawn()** - Reports immediately (use when no async loading needed)
+```kotlin
+@Composable
+fun StaticScreen() {
+    ReportDrawn()  // Screen is immediately ready
+    Text("Welcome")
+}
+```
+
+2. **ReportDrawnWhen(predicate)** - Reports when condition is true
+```kotlin
+@Composable
+fun DataScreen(viewModel: DataViewModel) {
+    val isDataLoaded by viewModel.isDataLoaded.collectAsStateWithLifecycle()
+    
+    ReportDrawnWhen { isDataLoaded }
+    
+    if (isDataLoaded) {
+        DataContent()
+    } else {
+        LoadingIndicator()
+    }
+}
+```
+
+3. **ReportDrawnAfter { }** - Reports after suspending block completes
+```kotlin
+@Composable
+fun AsyncScreen() {
+    ReportDrawnAfter {
+        // Suspend until critical data is ready
+        awaitCriticalData()
+    }
+    
+    ScreenContent()
+}
+```
+
+#### Best Practices
+
+- **Call once per screen**: Multiple `ReportDrawnWhen` calls become no-ops after the first reports
+- **Handle error states**: Report even on errors to avoid blocking metrics
+```kotlin
+ReportDrawnWhen { 
+    uiState is UserListUiState.Success || uiState is UserListUiState.Error 
+}
+```
+- **Don't wait for everything**: Report when the primary content is visible, not when all images/ads load
+- **Test with Macrobenchmark**: Combine with `StartupTimingMetric()` to measure TTFD in benchmarks
+
+#### Viewing TTFD in Logcat
+
+After calling `reportFullyDrawn()` (or via ReportDrawn APIs), look for:
+```
+ActivityTaskManager: Fully drawn com.example.app/.MainActivity: +850ms
+```
+
+This metric is crucial for understanding real user experience beyond initial frame rendering.
+
 ### Baseline Profiles
 
 Baseline Profiles improve app startup and runtime performance by pre-compiling critical code paths. They are automatically generated and included in release builds.
