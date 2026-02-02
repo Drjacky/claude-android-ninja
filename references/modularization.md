@@ -502,39 +502,24 @@ fun AppNavigation(
 }
 ```
 
-**Icon Resources**: Download Material Symbols using the Iconify API or Google Fonts:
+**Icon Resources**: See `references/android-graphics.md` for complete guidance on:
+- Material Symbols icons (download via Iconify API or Google Fonts)
+- ImageVector patterns for programmatic icons
+- Custom drawing with Canvas
+- Performance optimizations
 
-**Option 1: Using Iconify API (Recommended for automation)**
-```bash
-# Download icon as SVG using curl
+**Quick example:**
+```kotlin
+// Download icon
 curl -o app/src/main/res/drawable/ic_lock.xml \
   "https://api.iconify.design/material-symbols:lock.svg?download=true"
 
-curl -o app/src/main/res/drawable/ic_person.xml \
-  "https://api.iconify.design/material-symbols:person.svg?download=true"
-
-curl -o app/src/main/res/drawable/ic_settings.xml \
-  "https://api.iconify.design/material-symbols:settings.svg?download=true"
-```
-
-**Option 2: Using Google Fonts Material Symbols**
-1. Go to https://fonts.google.com/icons
-2. Search for icon (e.g., "lock", "person", "settings")
-3. Click icon → Download (downloads SVG)
-4. Convert SVG to Android Vector Drawable:
-   - Use Android Studio: Right-click `res/drawable` → New → Vector Asset → Local file
-   - Or use online converter: https://svg2vector.com/
-5. Place resulting XML in `app/src/main/res/drawable/`
-
-**Usage in code:**
-```kotlin
+// Usage
 Icon(
     painter = painterResource(R.drawable.ic_lock),
     contentDescription = stringResource(R.string.lock_icon)
 )
 ```
-
-**Note**: The deprecated `Icons.Default.*` from `androidx.compose.material.icons` should not be used as it's no longer maintained and increases build time significantly.
 
 **Analytics Integration**: Inject `Analytics` interface (from `references/crashlytics.md`) instead of using Firebase directly. This provides abstraction for crash reporting and analytics.
 
