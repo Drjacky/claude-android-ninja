@@ -193,18 +193,18 @@ val CircleIcon: ImageVector = ImageVector.Builder(
 
 ### PathData Commands Reference
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `moveTo(x, y)` | Move pen without drawing | `moveTo(10f, 10f)` |
-| `lineTo(x, y)` | Draw line to point | `lineTo(20f, 20f)` |
-| `horizontalLineTo(x)` | Horizontal line | `horizontalLineTo(50f)` |
-| `verticalLineTo(y)` | Vertical line | `verticalLineTo(50f)` |
-| `curveTo(...)` | Cubic Bézier curve (absolute) | `curveTo(10f, 20f, 30f, 40f, 50f, 60f)` |
-| `curveToRelative(...)` | Cubic Bézier curve (relative) | `curveToRelative(10f, 20f, 30f, 40f, 50f, 60f)` |
-| `reflectiveCurveTo(...)` | Smooth curve continuation | `reflectiveCurveTo(30f, 40f, 50f, 60f)` |
-| `quadTo(...)` | Quadratic Bézier curve | `quadTo(30f, 20f, 50f, 40f)` |
-| `arcTo(...)` | Elliptical arc | `arcTo(10f, 10f, 0f, false, true, 20f, 20f)` |
-| `close()` | Close path to start | `close()` |
+| Command                  | Description                   | Example                                         |
+|--------------------------|-------------------------------|-------------------------------------------------|
+| `moveTo(x, y)`           | Move pen without drawing      | `moveTo(10f, 10f)`                              |
+| `lineTo(x, y)`           | Draw line to point            | `lineTo(20f, 20f)`                              |
+| `horizontalLineTo(x)`    | Horizontal line               | `horizontalLineTo(50f)`                         |
+| `verticalLineTo(y)`      | Vertical line                 | `verticalLineTo(50f)`                           |
+| `curveTo(...)`           | Cubic Bézier curve (absolute) | `curveTo(10f, 20f, 30f, 40f, 50f, 60f)`         |
+| `curveToRelative(...)`   | Cubic Bézier curve (relative) | `curveToRelative(10f, 20f, 30f, 40f, 50f, 60f)` |
+| `reflectiveCurveTo(...)` | Smooth curve continuation     | `reflectiveCurveTo(30f, 40f, 50f, 60f)`         |
+| `quadTo(...)`            | Quadratic Bézier curve        | `quadTo(30f, 20f, 50f, 40f)`                    |
+| `arcTo(...)`             | Elliptical arc                | `arcTo(10f, 10f, 0f, false, true, 20f, 20f)`    |
+| `close()`                | Close path to start           | `close()`                                       |
 
 ### Dynamic Icon Generation
 
@@ -644,6 +644,347 @@ Canvas(modifier = Modifier.size(200.dp)) {
     )
 }
 ```
+
+**Common Blend Modes:**
+- `BlendMode.Screen` - Additive blending for glow effects
+- `BlendMode.Multiply` - Darkening/shadow effects  
+- `BlendMode.SrcAtop` - Mask content to layer below
+- `BlendMode.Plus` - Additive color (brightening)
+- `BlendMode.Overlay` - Combination of multiply and screen
+- `BlendMode.Lighten` - Keep lighter pixels
+- `BlendMode.Darken` - Keep darker pixels
+
+### Glow Effects with Radial Gradients
+
+Create dynamic glow effects using radial gradients and `BlendMode.Screen`:
+
+```kotlin
+@Composable
+fun GlowEffect(
+    glowColor: Color,
+    glowIntensity: Float = 0.6f,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier.fillMaxSize()) {
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val radius = size.minDimension / 2f
+        
+        // Outer glow
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    glowColor.copy(alpha = 0.6f * glowIntensity),
+                    glowColor.copy(alpha = 0.2f * glowIntensity),
+                    Color.Transparent
+                ),
+                center = center,
+                radius = radius * 1.2f
+            ),
+            radius = radius * 1.5f,
+            center = center,
+            blendMode = BlendMode.Screen // Additive blending for glow
+        )
+        
+        // Inner highlight
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    Color.White.copy(alpha = 0.1f * glowIntensity),
+                    Color.Transparent
+                ),
+                center = center,
+                radius = radius * 0.5f
+            ),
+            radius = radius * 0.8f,
+            center = center,
+            blendMode = BlendMode.Screen
+        )
+    }
+}
+```
+
+### Animated Pulsing Glow
+
+Combine infinite animation with glow effects:
+
+```kotlin
+@Composable
+fun PulsingGlow(
+    glowColor: Color,
+    modifier: Modifier = Modifier
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "glow_pulse")
+    val pulseIntensity by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.9f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse"
+    )
+    
+    Canvas(modifier = modifier.fillMaxSize()) {
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val baseRadius = size.minDimension / 2f
+        val animatedRadius = baseRadius * (1f + 0.2f * pulseIntensity)
+        
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    glowColor.copy(alpha = 0.6f * pulseIntensity),
+                    glowColor.copy(alpha = 0.2f * pulseIntensity),
+                    Color.Transparent
+                ),
+                center = center,
+                radius = animatedRadius
+            ),
+            radius = animatedRadius * 1.2f,
+            center = center,
+            blendMode = BlendMode.Screen
+        )
+    }
+}
+```
+
+### Multi-Color Glow Pattern
+
+Position multiple colored glows in a circular arrangement:
+
+```kotlin
+@Composable
+fun MultiColorGlow(
+    colors: List<Color>,
+    pulseIntensity: Float,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier.fillMaxSize()) {
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val radius = size.minDimension / 2f
+        val spread = radius * 0.3f
+        
+        colors.forEachIndexed { index, color ->
+            // Position glows in a circle using trigonometry
+            val angle = 2f * Math.PI.toFloat() * index / colors.size
+            val colorCenter = Offset(
+                center.x + cos(angle) * radius * 0.2f,
+                center.y + sin(angle) * radius * 0.2f
+            )
+            
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        color.copy(alpha = 0.6f * pulseIntensity),
+                        color.copy(alpha = 0.2f * pulseIntensity),
+                        Color.Transparent
+                    ),
+                    center = colorCenter,
+                    radius = radius * 0.6f
+                ),
+                radius = radius * 0.8f,
+                center = colorCenter,
+                blendMode = BlendMode.Screen
+            )
+        }
+        
+        // Overall white glow overlay
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    Color.White.copy(alpha = 0.05f * pulseIntensity),
+                    Color.Transparent
+                ),
+                center = center,
+                radius = radius * 0.8f
+            ),
+            radius = radius * 1.2f,
+            center = center,
+            blendMode = BlendMode.Screen
+        )
+    }
+}
+```
+
+### Color Extraction from Images
+
+Use Android Palette API to extract colors from images:
+
+```kotlin
+import androidx.palette.graphics.Palette
+import android.graphics.Bitmap
+
+/**
+ * Extracts vibrant color from a bitmap
+ */
+fun extractVibrantColor(bitmap: Bitmap, isDark: Boolean = true): Color {
+    // Convert hardware bitmap to software bitmap if needed
+    val softwareBitmap = if (bitmap.config == Bitmap.Config.HARDWARE) {
+        bitmap.copy(Bitmap.Config.ARGB_8888, false)
+    } else {
+        bitmap
+    }
+
+    val palette = Palette.from(softwareBitmap).generate()
+
+    // Prefer vibrant swatches for dynamic colors
+    val vibrantSwatch = if (isDark) {
+        palette.darkVibrantSwatch
+            ?: palette.vibrantSwatch
+            ?: palette.dominantSwatch
+    } else {
+        palette.lightVibrantSwatch
+            ?: palette.vibrantSwatch
+            ?: palette.dominantSwatch
+    }
+
+    return if (vibrantSwatch != null) {
+        Color(vibrantSwatch.rgb)
+    } else {
+        Color(0xFF6B6B6B) // Fallback
+    }
+}
+
+/**
+ * Extract colors from different regions of the image
+ */
+fun extractMultipleColorsFromRegions(
+    bitmap: Bitmap,
+    numberOfRegions: Int
+): List<Color> {
+    val colors = mutableListOf<Color>()
+    
+    // Define regions based on grid layout
+    val regions = when (numberOfRegions) {
+        4 -> listOf(
+            android.graphics.Rect(0, 0, bitmap.width / 2, bitmap.height / 2), // Top-left
+            android.graphics.Rect(bitmap.width / 2, 0, bitmap.width, bitmap.height / 2), // Top-right
+            android.graphics.Rect(0, bitmap.height / 2, bitmap.width / 2, bitmap.height), // Bottom-left
+            android.graphics.Rect(bitmap.width / 2, bitmap.height / 2, bitmap.width, bitmap.height) // Bottom-right
+        )
+        6 -> listOf(
+            android.graphics.Rect(0, 0, bitmap.width / 2, bitmap.height / 3), // Top-left
+            android.graphics.Rect(bitmap.width / 2, 0, bitmap.width, bitmap.height / 3), // Top-right
+            android.graphics.Rect(0, bitmap.height / 3, bitmap.width / 2, 2 * bitmap.height / 3), // Middle-left
+            android.graphics.Rect(bitmap.width / 2, bitmap.height / 3, bitmap.width, 2 * bitmap.height / 3), // Middle-right
+            android.graphics.Rect(0, 2 * bitmap.height / 3, bitmap.width / 2, bitmap.height), // Bottom-left
+            android.graphics.Rect(bitmap.width / 2, 2 * bitmap.height / 3, bitmap.width, bitmap.height) // Bottom-right
+        )
+        else -> listOf(android.graphics.Rect(0, 0, bitmap.width, bitmap.height))
+    }
+    
+    regions.forEach { region ->
+        val subBitmap = Bitmap.createBitmap(
+            bitmap,
+            region.left,
+            region.top,
+            region.width(),
+            region.height()
+        )
+        colors.add(extractVibrantColor(subBitmap))
+        subBitmap.recycle()
+    }
+    
+    return colors.distinct()
+}
+```
+
+### Dynamic Size Tracking
+
+Get composable size for drawing calculations:
+
+```kotlin
+@Composable
+fun DynamicSizeCanvas() {
+    var containerSize by remember { mutableStateOf<Size?>(null) }
+    
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onGloballyPositioned { coordinates ->
+                containerSize = Size(
+                    coordinates.size.width.toFloat(),
+                    coordinates.size.height.toFloat()
+                )
+            }
+    ) {
+        containerSize?.let { size ->
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                // Use size for calculations
+                val center = Offset(size.width / 2f, size.height / 2f)
+                val radius = minOf(size.width, size.height) / 2f
+                
+                drawCircle(
+                    color = Color.Blue,
+                    radius = radius,
+                    center = center
+                )
+            }
+        }
+    }
+}
+```
+
+### Image Loading with Coil3
+
+Load images and extract colors:
+
+```kotlin
+import coil3.ImageLoader
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.request.allowHardware
+
+suspend fun loadImageAndExtractColor(
+    context: Context,
+    imageUrl: String
+): Color? {
+    return try {
+        val imageLoader = ImageLoader(context)
+        val request = ImageRequest.Builder(context)
+            .data(imageUrl)
+            .allowHardware(false) // Required for Palette API
+            .build()
+
+        val result = imageLoader.execute(request)
+        if (result is SuccessResult) {
+            val drawable = result.image.asDrawable(context.resources)
+            val bitmap = drawable.toBitmap()
+            extractVibrantColor(bitmap)
+        } else {
+            null
+        }
+    } catch (e: Exception) {
+        null
+    }
+}
+
+@Composable
+fun ImageWithExtractedGlow(imageUrl: String) {
+    val context = LocalContext.current
+    var glowColor by remember(imageUrl) { mutableStateOf<Color?>(null) }
+    
+    LaunchedEffect(imageUrl) {
+        glowColor = loadImageAndExtractColor(context, imageUrl)
+    }
+    
+    Box {
+        // Glow effect using extracted color
+        glowColor?.let { color ->
+            PulsingGlow(glowColor = color, modifier = Modifier.matchParentSize())
+        }
+        
+        // Image on top
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+```
+
+### Blend Modes
 
 ### Performance: drawWithCache vs drawBehind
 
