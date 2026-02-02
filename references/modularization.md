@@ -521,14 +521,10 @@ curl -o app/src/main/res/drawable/ic_settings.xml \
 1. Go to https://fonts.google.com/icons
 2. Search for icon (e.g., "lock", "person", "settings")
 3. Click icon → Download (downloads SVG)
-4. Convert SVG to Android Vector Drawable using Android Studio:
-   - Right-click `res/drawable` → New → Vector Asset → Local file
-   - Or use https://svg2vector.com/
+4. Convert SVG to Android Vector Drawable:
+   - Use Android Studio: Right-click `res/drawable` → New → Vector Asset → Local file
+   - Or use online converter: https://svg2vector.com/
 5. Place resulting XML in `app/src/main/res/drawable/`
-
-**Option 3: Using Android Studio Plugin**
-- Install "Material Symbols" plugin by Abhimanyu14
-- Tools → Material Symbols → Search and download directly
 
 **Usage in code:**
 ```kotlin
