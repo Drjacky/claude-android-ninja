@@ -6,35 +6,44 @@
 
 This repository is an **Agent Skill** package for Android development with Kotlin and Jetpack Compose.  
 It provides a structured set of instructions, templates, and references that help agents build
-production‑quality Android apps consistently and efficiently.
+production-quality Android apps consistently and efficiently.
 
 Learn more about the Agent Skills format here: [agentskills.io](https://agentskills.io/home)
 
 📦 **Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-android-ninja-skill-md)**
 
 ## 🎯 What This Skill Covers
-- Modular Android architecture (feature‑first, core modules, strict dependencies)
-- Domain/Data/UI layering patterns with auth‑focused examples
+- Modular Android architecture (feature-first, core modules, strict dependencies)
+- Domain/Data/UI layering patterns with auth-focused examples
 - Jetpack Compose patterns, state management, and adaptive UI
 - Navigation3 guidance and navigation coordination
-- Gradle/build conventions and version catalog usage
-- Testing practices with test doubles and Google Truth
+- Material Symbols icons, graphics, and custom drawing with Canvas
+- Gradle/build conventions, version catalog usage, and KSP migration
+- Testing practices with fakes, Hilt testing, and Room testing
+- Coroutines patterns, structured concurrency, and Flow
+- Kotlin delegation patterns and composition over inheritance
 - Dependency management rules and templates
+- Crash reporting with provider-agnostic interfaces (Firebase/Sentry)
+- Runtime permissions with Compose patterns
+- Performance benchmarking (Macrobenchmark, Microbenchmark, Baseline Profiles)
+- StrictMode guardrails and Compose compiler stability diagnostics
+- Code quality with Detekt and Compose rules
 
 ## 📂 Key Files
 - `SKILL.md` - entry point and workflow decision tree
 - `references/architecture.md` - architecture principles, data/domain layers, and flows
-- `references/modularization.md` - module structure and navigation wiring
+- `references/modularization.md` - module structure and Navigation3 wiring
 - `references/compose-patterns.md` - Compose UI patterns and best practices
 - `references/kotlin-patterns.md` - Kotlin best practices (must-read for Kotlin code)
 - `references/coroutines-patterns.md` - coroutines best practices and patterns
 - `references/gradle-setup.md` - build logic, conventions, and build files
-- `references/code-quality.md` - Detekt setup and code quality rules
+- `references/testing.md` - testing patterns with fakes, Hilt, Room, and Navigation3
+- `references/android-graphics.md` - Material Symbols icons, Canvas drawing, and Palette API
 - `references/android-permissions.md` - runtime permissions and best practices
 - `references/kotlin-delegation.md` - delegation patterns and composition guidance
 - `references/crashlytics.md` - crash reporting with modular provider swaps
 - `references/android-strictmode.md` - StrictMode guardrails and Compose stability
-- `references/testing.md` - testing patterns and examples
+- `references/code-quality.md` - Detekt setup and code quality rules
 - `references/dependencies.md` - dependency rules and version catalog guidance
 - `references/android-performance.md` - benchmarking and performance checks
 - `references/design-patterns.md` - Android-focused design patterns
@@ -44,12 +53,18 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 
 ## 🔧 Scope
 This skill is focused on Android app development using:
-- Kotlin
-- Jetpack Compose
-- Navigation3
-- Material 3
-- Hilt
-- Room
+- **Kotlin** (with coroutines, Flow, and kotlinx-datetime)
+- **Jetpack Compose** (Material 3 with Material Symbols icons)
+- **Navigation3** (type-safe routing)
+- **Material 3**
+- **Hilt** (dependency injection)
+- **Room** (database with KSP)
+- **Retrofit** + **OkHttp** (networking)
+- **Coil3** (image loading)
+- **Firebase Crashlytics** / **Sentry** (crash reporting)
+- **Macrobenchmark** / **Microbenchmark** (performance testing)
+- **Detekt** + **Compose Rules** (code quality)
+- **Google Truth** + **Turbine** (testing assertions)
 
 ## 📥 Installation
 
@@ -63,7 +78,7 @@ Clone or download this repo, then place it in Claude’s skills folder and refre
 └── templates/
 ```
 
-If you prefer project‑local skills, use `.claude/skills/` inside your project.
+If you prefer project-local skills, use `.claude/skills/` inside your project.
 
 ### 2️⃣ OpenSkills CLI
 [OpenSkills](https://github.com/numman-ali/openskills) can install any skill repo and generate the AGENTS/skills metadata for multiple agents.
