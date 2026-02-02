@@ -157,72 +157,27 @@ class AuthViewModel @Inject constructor(
 
 ### Overriding Delegated Methods
 
+For the `CrashReporter` interface definition and implementations (`FirebaseCrashReporter`, `SentryCrashReporter`, `PrivacyAwareCrashReporter`), see `references/crashlytics.md` → "Provider-Agnostic Interface" and "Data Scrubbing (Privacy/GDPR)" sections.
+
+Example of overriding delegated methods:
+
 ```kotlin
-interface CrashReporter {
-    fun setUserId(id: String?)
-    fun setUserProperty(key: String, value: String)
-    fun log(message: String)
-    fun recordException(throwable: Throwable, context: Map<String, String> = emptyMap())
-}
-
-class FirebaseCrashReporter @Inject constructor(
-    private val crashlytics: FirebaseCrashlytics
-) : CrashReporter {
-    override fun setUserId(id: String?) {
-        crashlytics.setUserId(id ?: "")
-    }
-
-    override fun setUserProperty(key: String, value: String) {
-        crashlytics.setCustomKey(key, value)
-    }
-
-    override fun log(message: String) {
-        crashlytics.log(message)
-    }
-
-    override fun recordException(
-        throwable: Throwable,
-        context: Map<String, String>
-    ) {
-        context.forEach { (key, value) ->
-            crashlytics.setCustomKey(key, value)
-        }
-        crashlytics.recordException(throwable)
-    }
-}
-
 // Decorator pattern with delegation
+// (Full CrashReporter interface in references/crashlytics.md → "Provider-Agnostic Interface")
 class PrivacyAwareCrashReporter(
     crashReporter: CrashReporter // No private - delegated only
 ) : CrashReporter by crashReporter {
-    
-    private val emailRegex = Regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")
-    private val sensitiveKeys = setOf("password", "token", "secret", "key", "auth")
     
     // Override to add custom behavior
     override fun recordException(
         throwable: Throwable,
         context: Map<String, String>
     ) {
-        // Scrub context
-        val scrubbedContext = context.filterKeys { key ->
-            !sensitiveKeys.any { key.contains(it, ignoreCase = true) }
-        }.mapValues { (_, value) ->
-            value.replace(emailRegex, "[REDACTED_EMAIL]")
-        }
-        
-        // Scrub exception message
-        val scrubbedException = if (throwable.message?.contains(emailRegex) == true) {
-            Exception(
-                throwable.message?.replace(emailRegex, "[REDACTED_EMAIL]"),
-                throwable.cause
-            )
-        } else {
-            throwable
-        }
+        // Custom pre-processing (scrub sensitive data)
+        val scrubbedContext = scrubbingLogic(context)
         
         // Call delegated implementation
-        super.recordException(scrubbedException, scrubbedContext)
+        super.recordException(throwable, scrubbedContext)
     }
     
     // Other methods (setUserId, setUserProperty, log) are fully delegated
@@ -465,6 +420,8 @@ class SettingsViewModel @Inject constructor(
 
 ### Complex Real-World Example
 
+**Note**: For `CrashReporter` interface and implementation details, see `references/crashlytics.md` → "Provider-Agnostic Interface" and "Implementation Examples" sections.
+
 ```kotlin
 // Interfaces for different concerns
 interface Logger {
@@ -472,12 +429,8 @@ interface Logger {
     fun logError(message: String, throwable: Throwable)
 }
 
-interface CrashReporter {
-    fun setUserId(id: String?)
-    fun setUserProperty(key: String, value: String)
-    fun log(message: String)
-    fun recordException(throwable: Throwable, context: Map<String, String> = emptyMap())
-}
+// CrashReporter interface definition in references/crashlytics.md → "Provider-Agnostic Interface"
+// interface CrashReporter { ... }
 
 interface Analytics {
     fun trackEvent(name: String, properties: Map<String, Any> = emptyMap())
@@ -562,6 +515,8 @@ class AuthViewModel @Inject constructor(
 
 ### Creating Test Fakes
 
+**Note**: For `CrashReporter` interface, see `references/crashlytics.md` → "Provider-Agnostic Interface".
+
 ```kotlin
 // Test fakes for delegated interfaces
 class FakeLogger : Logger {
@@ -577,6 +532,7 @@ class FakeLogger : Logger {
     }
 }
 
+// Test fake for CrashReporter (interface in references/crashlytics.md → "Provider-Agnostic Interface")
 class FakeCrashReporter : CrashReporter {
     var userId: String? = null
     val properties = mutableMapOf<String, String>()
@@ -703,10 +659,10 @@ fun `login records crash on failure`() = runTest {
 
 ## Related References
 
+- **Crash Reporting**: For `CrashReporter` interface and implementations, see `references/crashlytics.md`
 - **Design Patterns**: See `references/design-patterns.md` for Decorator pattern with delegation
 - **ViewModel Patterns**: Use with ViewModel patterns in `references/compose-patterns.md`
 - **Architecture**: Fits into our layered architecture in `references/architecture.md`
-- **Crash Reporting**: Real-world delegation examples in `references/crashlytics.md`
 
 ## Sources
 
