@@ -117,7 +117,7 @@ coroutines:
   GlobalCoroutineUsage:
     active: false
   RedundantSuspendModifier:
-    active: false
+    active: true
 
 empty-blocks:
   active: true
@@ -365,8 +365,10 @@ style:
         reason: 'Forbidden STOPSHIP todo marker in comment, please address the problem before shipping the code.'
     allowedPatterns: ""
   ForbiddenImport:
-    active: false
-    imports: [ '' ]
+    active: true
+    imports:
+      - 'androidx.lifecycle.LiveData'  # Use StateFlow instead (see references/coroutines-patterns.md)
+      - 'androidx.lifecycle.MutableLiveData'
     forbiddenPatterns: ""
   ForbiddenMethodCall:
     active: false
