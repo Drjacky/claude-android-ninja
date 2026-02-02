@@ -32,7 +32,9 @@ Entry point that brings everything together with Navigation3 adaptive navigation
 **Contains**:
 - `MainActivity` with `NavigationSuiteScaffold`
 - `AppNavigation` composable with `windowAdaptiveInfo`
-- `NavHost` with all feature graphs
+- `NavigationState` and `Navigator` for state management
+- `entryProvider` with all feature destinations
+- `NavDisplay` to render current destination
 - `Navigator` implementations for feature coordination
 - Hilt DI setup and component
 
@@ -55,9 +57,9 @@ feature-auth/
 │   │   │   │   └── AuthActions.kt     # User actions
 │   │   │   └── components/            # Smaller UI components
 │   │   ├── navigation/                # Navigation Layer
-│   │   │   ├── AuthDestination.kt     # Feature routes
+│   │   │   ├── AuthDestination.kt     # Feature routes (@Immutable NavKey)
 │   │   │   ├── AuthNavigator.kt       # Navigation interface
-│   │   │   └── AuthGraph.kt           # NavGraphBuilder extension
+│   │   │   └── AuthGraph.kt           # EntryProviderScope extension
 │   │   └── domain/                    # Optional: Feature-specific domain
 │   │       ├── repository/
 │   │       └── usecase/
@@ -285,26 +287,23 @@ include(":feature-auth")
 **Step 4: Create navigation components**
 ```kotlin
 // feature-auth/navigation/AuthDestination.kt
-sealed class AuthDestination(val route: String) {
-    object Login : AuthDestination("auth/login")
-    object Register : AuthDestination("auth/register")
-    object ForgotPassword : AuthDestination("auth/forgot_password")
+import androidx.compose.runtime.Immutable
+import androidx.navigation3.runtime.NavKey
+import kotlinx.serialization.Serializable
+
+@Immutable
+sealed interface AuthDestination : NavKey {
+    @Serializable
+    data object Login : AuthDestination
     
-    object Profile : AuthDestination("auth/profile/{userId}") {
-        fun createRoute(userId: String) = "auth/profile/$userId"
-    }
+    @Serializable
+    data object Register : AuthDestination
     
-    companion object {
-        fun fromRoute(route: String?): AuthDestination? {
-            return when {
-                route?.startsWith("auth/profile/") == true -> Profile
-                route == Login.route -> Login
-                route == Register.route -> Register
-                route == ForgotPassword.route -> ForgotPassword
-                else -> null
-            }
-        }
-    }
+    @Serializable
+    data object ForgotPassword : AuthDestination
+    
+    @Serializable
+    data class Profile(val userId: String) : AuthDestination
 }
 
 // feature-auth/navigation/AuthNavigator.kt
@@ -317,11 +316,13 @@ interface AuthNavigator {
 }
 
 // feature-auth/navigation/AuthGraph.kt
-fun NavGraphBuilder.authGraph(
-    authNavigator: AuthNavigator,
-    startDestination: String = AuthDestination.Login.route
+import androidx.navigation3.runtime.EntryProviderScope
+import androidx.navigation3.runtime.NavKey
+
+fun EntryProviderScope<NavKey>.authGraph(
+    authNavigator: AuthNavigator
 ) {
-    composable(route = AuthDestination.Login.route) {
+    entry<AuthDestination.Login> {
         LoginScreen(
             onLoginSuccess = { user ->
                 authNavigator.navigateToMainApp()
@@ -335,7 +336,7 @@ fun NavGraphBuilder.authGraph(
         )
     }
     
-    composable(route = AuthDestination.Register.route) {
+    entry<AuthDestination.Register> {
         RegisterScreen(
             onRegisterSuccess = { user ->
                 authNavigator.navigateToMainApp()
@@ -346,11 +347,20 @@ fun NavGraphBuilder.authGraph(
         )
     }
     
-    composable(route = AuthDestination.ForgotPassword.route) {
+    entry<AuthDestination.ForgotPassword> {
         ForgotPasswordScreen(
             onResetSuccess = {
                 authNavigator.navigateBack()
             },
+            onNavigateBack = {
+                authNavigator.navigateBack()
+            }
+        )
+    }
+    
+    entry<AuthDestination.Profile> { key ->
+        ProfileScreen(
+            userId = key.userId,
             onNavigateBack = {
                 authNavigator.navigateBack()
             }
@@ -383,91 +393,154 @@ For detailed patterns and examples, see the Domain Layer section in
 Use the App module build file template in `references/gradle-setup.md`.
 It includes feature/core module wiring, Navigation3, and DI configuration.
 
-**Step 2: Create app navigation**
+**Step 2: Create navigation state and navigator**
+
+Create `NavigationState.kt` and `Navigator.kt` for managing app navigation state.
+See Navigation Coordination section below for complete implementation.
+
+**Step 3: Create app navigation**
 ```kotlin
 // app/src/main/kotlin/com/example/app/navigation/AppNavigation.kt
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.ui.NavDisplay
+import kotlinx.serialization.Serializable
+
+@Immutable
+sealed interface TopLevelRoute : NavKey {
+    @Serializable data object Auth : TopLevelRoute
+    @Serializable data object Profile : TopLevelRoute
+    @Serializable data object Settings : TopLevelRoute
+}
+
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun AppNavigation() {
-    val navController = rememberNavController()
+fun AppNavigation(
+    analytics: Analytics
+) {
     val windowAdaptiveInfo = currentWindowAdaptiveInfo()
-    val navigationSuiteScaffoldState = rememberNavigationSuiteScaffoldState()
-    val backStackEntry by navController.currentBackStackEntryAsState()
-    val analytics = Firebase.analytics
     
-    LaunchedEffect(backStackEntry) {
-        val route = backStackEntry?.destination?.route ?: return@LaunchedEffect
-        analytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW) {
-            param(FirebaseAnalytics.Param.SCREEN_NAME, route)
-            param(FirebaseAnalytics.Param.SCREEN_CLASS, "MainActivity")
+    // Create navigation state (survives config changes and process death)
+    val navigationState = rememberNavigationState(
+        startRoute = TopLevelRoute.Auth,
+        topLevelRoutes = setOf(
+            TopLevelRoute.Auth,
+            TopLevelRoute.Profile,
+            TopLevelRoute.Settings
+        )
+    )
+    
+    val navigator = remember(navigationState) { Navigator(navigationState) }
+    
+    // Track screen views for analytics/crashlytics
+    LaunchedEffect(navigationState.topLevelRoute) {
+        val currentStack = navigationState.backStacks[navigationState.topLevelRoute]
+        val currentRoute = currentStack?.last()
+        currentRoute?.let { route ->
+            analytics.logScreenView(
+                screenName = route::class.simpleName ?: "Unknown",
+                screenClass = "MainActivity"
+            )
         }
     }
     
     // Create navigator implementations
-    val authNavigator = remember {
+    val authNavigator = remember(navigator) {
         object : AuthNavigator {
-            override fun navigateToRegister() = navController.navigate("auth/register")
-            override fun navigateToForgotPassword() = navController.navigate("auth/forgot_password")
-            override fun navigateBack() = navController.popBackStack()
-            override fun navigateToProfile(userId: String) = navController.navigate("profile/$userId")
-            override fun navigateToMainApp() {
-                navController.navigate("main") {
-                    popUpTo("auth") { inclusive = true }
-                }
-            }
+            override fun navigateToRegister() = navigator.navigate(AuthDestination.Register)
+            override fun navigateToForgotPassword() = navigator.navigate(AuthDestination.ForgotPassword)
+            override fun navigateBack() = navigator.goBack()
+            override fun navigateToProfile(userId: String) = navigator.navigate(AuthDestination.Profile(userId))
+            override fun navigateToMainApp() = navigator.navigate(TopLevelRoute.Profile)
         }
     }
     
+    // Define all app destinations
+    val entryProvider = entryProvider {
+        authGraph(authNavigator)
+        profileGraph()
+        settingsGraph()
+    }
+    
     NavigationSuiteScaffold(
-        state = navigationSuiteScaffoldState,
         windowAdaptiveInfo = windowAdaptiveInfo,
         navigationSuiteItems = {
             item(
-                icon = Icons.Default.Lock,
-                label = "Auth",
-                selected = navController.currentDestination?.route?.startsWith("auth") == true,
-                onClick = { navController.navigate("auth") }
+                icon = { Icon(painterResource(R.drawable.ic_lock), contentDescription = null) },
+                label = { Text("Auth") },
+                selected = navigationState.topLevelRoute == TopLevelRoute.Auth,
+                onClick = { navigator.navigate(TopLevelRoute.Auth) }
             )
             item(
-                icon = Icons.Default.Person,
-                label = "Profile",
-                selected = navController.currentDestination?.route?.startsWith("profile") == true,
-                onClick = { navController.navigate("profile") }
+                icon = { Icon(painterResource(R.drawable.ic_person), contentDescription = null) },
+                label = { Text("Profile") },
+                selected = navigationState.topLevelRoute == TopLevelRoute.Profile,
+                onClick = { navigator.navigate(TopLevelRoute.Profile) }
             )
             item(
-                icon = Icons.Default.Settings,
-                label = "Settings",
-                selected = navController.currentDestination?.route?.startsWith("settings") == true,
-                onClick = { navController.navigate("settings") }
+                icon = { Icon(painterResource(R.drawable.ic_settings), contentDescription = null) },
+                label = { Text("Settings") },
+                selected = navigationState.topLevelRoute == TopLevelRoute.Settings,
+                onClick = { navigator.navigate(TopLevelRoute.Settings) }
             )
         }
     ) {
-        NavHost(
-            navController = navController,
-            startDestination = "auth",
+        NavDisplay(
+            entries = navigationState.toEntries(entryProvider),
+            onBack = { navigator.goBack() },
             modifier = Modifier.fillMaxSize()
-        ) {
-            authGraph(authNavigator)
-            profileGraph()
-            settingsGraph()
-            
-            composable("main") {
-                MainAppScreen(
-                    onLogout = {
-                        navController.navigate("auth") {
-                            popUpTo("main") { inclusive = true }
-                        }
-                    }
-                )
-            }
-        }
+        )
     }
 }
 ```
 
-This app-level screen tracking is optional and typically used to provide Firebase Crashlytics
-breadcrumbs or analytics screen views. Sentry handles screen tracking via its plugin.
-For more details, see `references/crashlytics.md`.
+**Icon Resources**: Download Material Symbols using the Iconify API or Google Fonts:
+
+**Option 1: Using Iconify API (Recommended for automation)**
+```bash
+# Download icon as SVG using curl
+curl -o app/src/main/res/drawable/ic_lock.xml \
+  "https://api.iconify.design/material-symbols:lock.svg?download=true"
+
+curl -o app/src/main/res/drawable/ic_person.xml \
+  "https://api.iconify.design/material-symbols:person.svg?download=true"
+
+curl -o app/src/main/res/drawable/ic_settings.xml \
+  "https://api.iconify.design/material-symbols:settings.svg?download=true"
+```
+
+**Option 2: Using Google Fonts Material Symbols**
+1. Go to https://fonts.google.com/icons
+2. Search for icon (e.g., "lock", "person", "settings")
+3. Click icon → Download (downloads SVG)
+4. Convert SVG to Android Vector Drawable using Android Studio:
+   - Right-click `res/drawable` → New → Vector Asset → Local file
+   - Or use https://svg2vector.com/
+5. Place resulting XML in `app/src/main/res/drawable/`
+
+**Option 3: Using Android Studio Plugin**
+- Install "Material Symbols" plugin by Abhimanyu14
+- Tools → Material Symbols → Search and download directly
+
+**Usage in code:**
+```kotlin
+Icon(
+    painter = painterResource(R.drawable.ic_lock),
+    contentDescription = stringResource(R.string.lock_icon)
+)
+```
+
+**Note**: The deprecated `Icons.Default.*` from `androidx.compose.material.icons` should not be used as it's no longer maintained and increases build time significantly.
+
+**Analytics Integration**: Inject `Analytics` interface (from `references/crashlytics.md`) instead of using Firebase directly. This provides abstraction for crash reporting and analytics.
 
 ## Navigation Coordination
 
@@ -475,16 +548,129 @@ For more details, see `references/crashlytics.md`.
 
 1. **Feature Independence**: Features define `Navigator` interfaces
 2. **Central Coordination**: App module implements all navigators
-3. **Type-Safe Routes**: Sealed `Destination` classes with `createRoute()` functions
-4. **Adaptive Navigation**: `NavigationSuiteScaffold` adapts based on `windowAdaptiveInfo`
+3. **Type-Safe Routes**: Routes implement `NavKey` with `@Serializable` and `@Immutable`
+4. **Explicit State Management**: `NavigationState` + `Navigator` manage navigation state
+5. **Adaptive Navigation**: `NavigationSuiteScaffold` adapts based on `windowAdaptiveInfo`
 
 ### Navigation Flow
 
 For end-to-end flow diagrams (UI → data → navigation), see the Complete Architecture
 Flow section in `references/architecture.md`.
 
-### Example: Auth Feature Navigation
+### Navigation 3 State Management
 
+Navigation 3 uses explicit state management with Unidirectional Data Flow:
+
+**1. NavigationState** - Holds current route and back stacks:
+```kotlin
+// Copy this into NavigationState.kt in your app module
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSerializable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.rememberDecoratedNavEntries
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.runtime.serialization.NavKeySerializer
+import androidx.savedstate.compose.serialization.serializers.MutableStateSerializer
+
+@Composable
+fun rememberNavigationState(
+    startRoute: NavKey,
+    topLevelRoutes: Set<NavKey>
+): NavigationState {
+    val topLevelRoute = rememberSerializable(
+        startRoute, topLevelRoutes,
+        serializer = MutableStateSerializer(NavKeySerializer())
+    ) {
+        mutableStateOf(startRoute)
+    }
+
+    val backStacks = topLevelRoutes.associateWith { key -> rememberNavBackStack(key) }
+
+    return remember(startRoute, topLevelRoutes) {
+        NavigationState(
+            startRoute = startRoute,
+            topLevelRoute = topLevelRoute,
+            backStacks = backStacks
+        )
+    }
+}
+
+class NavigationState(
+    val startRoute: NavKey,
+    topLevelRoute: MutableState<NavKey>,
+    val backStacks: Map<NavKey, NavBackStack<NavKey>>
+) {
+    var topLevelRoute: NavKey by topLevelRoute
+    val stacksInUse: List<NavKey>
+        get() = if (topLevelRoute == startRoute) {
+            listOf(startRoute)
+        } else {
+            listOf(startRoute, topLevelRoute)
+        }
+}
+
+@Composable
+fun NavigationState.toEntries(
+    entryProvider: (NavKey) -> NavEntry<NavKey>
+): SnapshotStateList<NavEntry<NavKey>> {
+    val decoratedEntries = backStacks.mapValues { (_, stack) ->
+        val decorators = listOf(
+            rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
+        )
+        rememberDecoratedNavEntries(
+            backStack = stack,
+            entryDecorators = decorators,
+            entryProvider = entryProvider
+        )
+    }
+
+    return stacksInUse
+        .flatMap { decoratedEntries[it] ?: emptyList() }
+        .toMutableStateList()
+}
+```
+
+**2. Navigator** - Modifies navigation state:
+```kotlin
+// Copy this into Navigator.kt in your app module
+import androidx.navigation3.runtime.NavKey
+
+class Navigator(val state: NavigationState) {
+    fun navigate(route: NavKey) {
+        if (route in state.backStacks.keys) {
+            // This is a top level route, just switch to it.
+            state.topLevelRoute = route
+        } else {
+            state.backStacks[state.topLevelRoute]?.add(route)
+        }
+    }
+
+    fun goBack() {
+        val currentStack = state.backStacks[state.topLevelRoute] ?:
+            error("Stack for ${state.topLevelRoute} not found")
+        val currentRoute = currentStack.last()
+
+        // If we're at the base of the current route, go back to the start route stack.
+        if (currentRoute == state.topLevelRoute) {
+            state.topLevelRoute = state.startRoute
+        } else {
+            currentStack.removeLastOrNull()
+        }
+    }
+}
+```
+
+**3. Feature Navigator Interface**:
 ```kotlin
 // feature-auth/navigation/AuthNavigator.kt
 interface AuthNavigator {
@@ -496,16 +682,20 @@ interface AuthNavigator {
 }
 
 // In App module implementation:
-val authNavigator = remember {
+val authNavigator = remember(navigator) {
     object : AuthNavigator {
-        override fun navigateToRegister() = navController.navigate("auth/register")
-        override fun navigateToForgotPassword() = navController.navigate("auth/forgot_password")
-        override fun navigateBack() = navController.popBackStack()
-        override fun navigateToProfile(userId: String) = navController.navigate("profile/$userId")
-        override fun navigateToMainApp() = navController.navigate("main")
+        override fun navigateToRegister() = navigator.navigate(AuthDestination.Register)
+        override fun navigateToForgotPassword() = navigator.navigate(AuthDestination.ForgotPassword)
+        override fun navigateBack() = navigator.goBack()
+        override fun navigateToProfile(userId: String) = navigator.navigate(AuthDestination.Profile(userId))
+        override fun navigateToMainApp() = navigator.navigate(TopLevelRoute.Profile)
     }
 }
 ```
+
+**Architecture principles:** These classes follow Unidirectional Data Flow:
+- The `Navigator` handles navigation events and updates `NavigationState`
+- The UI (provided by `NavDisplay`) observes `NavigationState` and reacts to changes
 
 ## Build Configuration
 
