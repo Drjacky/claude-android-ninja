@@ -20,6 +20,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Coroutines best practices                            | [coroutines-patterns.md](references/coroutines-patterns.md) |
 | Gradle & build configuration                         | [gradle-setup.md](references/gradle-setup.md)               |
 | Testing approach                                     | [testing.md](references/testing.md)                         |
+| Icons, graphics, and custom drawing                  | [android-graphics.md](references/android-graphics.md)       |
 | Runtime permissions                                  | [android-permissions.md](references/android-permissions.md) |
 | Kotlin delegation patterns                           | [kotlin-delegation.md](references/kotlin-delegation.md)     |
 | Crash reporting                                      | [crashlytics.md](references/crashlytics.md)                 |
@@ -102,3 +103,74 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Measuring performance regressions or startup/jank?**
 → Use [android-performance.md](references/android-performance.md) for Macrobenchmark setup and commands  
 → Keep benchmark module aligned with `benchmark` build type in [gradle-setup.md](references/gradle-setup.md)  
+
+**Adding icons, images, or custom graphics?**
+→ Use [android-graphics.md](references/android-graphics.md) for Material Symbols icons and custom drawing  
+→ Download icons via Iconify API or Google Fonts (avoid deprecated `Icons.Default.*` library)  
+→ Use `Modifier.drawWithContent`, `drawBehind`, or `drawWithCache` for custom graphics  
+
+**Implementing custom UI effects (glow, shadows, gradients)?**
+→ Check [android-graphics.md](references/android-graphics.md) for Canvas drawing, BlendMode, and Palette API patterns  
+→ Use `rememberInfiniteTransition` for animated effects  
+
+**Working with images and color extraction?**
+→ Use [android-graphics.md](references/android-graphics.md) for Palette API and Coil3 integration  
+→ Extract colors from images for dynamic theming  
+
+**Implementing complex coroutine flows or background work?**
+→ Follow [coroutines-patterns.md](references/coroutines-patterns.md) for structured concurrency patterns  
+→ Use appropriate dispatchers (IO, Default, Main) and proper cancellation handling  
+→ Prefer `StateFlow`/`SharedFlow` over channels for state management  
+
+**Need to share behavior across multiple classes?**
+→ Use [kotlin-delegation.md](references/kotlin-delegation.md) for interface delegation patterns  
+→ Avoid base classes; prefer composition with delegated interfaces  
+→ Examples: Analytics, FormValidator, CrashReporter  
+
+**Refactoring existing code or improving architecture?**
+→ Review [architecture.md](references/architecture.md) for layer responsibilities  
+→ Check [design-patterns.md](references/design-patterns.md) for applicable patterns  
+→ Follow [kotlin-patterns.md](references/kotlin-patterns.md) for Kotlin-specific improvements  
+→ Ensure compliance with [modularization.md](references/modularization.md) dependency rules  
+
+**Debugging performance issues or memory leaks?**
+→ Enable [android-strictmode.md](references/android-strictmode.md) for development builds  
+→ Use [android-performance.md](references/android-performance.md) for profiling and benchmarking  
+→ Check [coroutines-patterns.md](references/coroutines-patterns.md) for coroutine cancellation patterns  
+
+**Setting up CI/CD or code quality checks?**
+→ Use [code-quality.md](references/code-quality.md) for Detekt baseline and CI integration  
+→ Use [gradle-setup.md](references/gradle-setup.md) for build cache and convention plugins  
+→ Use [testing.md](references/testing.md) for test organization and coverage  
+
+**Handling sensitive data or privacy concerns?**
+→ Follow [crashlytics.md](references/crashlytics.md) for data scrubbing patterns  
+→ Use [android-permissions.md](references/android-permissions.md) for proper permission justification  
+→ Check [android-strictmode.md](references/android-strictmode.md) for detecting cleartext network traffic  
+
+**Migrating legacy code (LiveData, Fragments, etc.)?**
+→ Replace LiveData with StateFlow using [coroutines-patterns.md](references/coroutines-patterns.md)  
+→ Replace Fragments with Compose screens using [compose-patterns.md](references/compose-patterns.md)  
+→ Update navigation to Navigation3 using [modularization.md](references/modularization.md)  
+→ Follow [architecture.md](references/architecture.md) for modern MVVM patterns  
+
+**Optimizing Compose recomposition or stability?**
+→ Use [compose-patterns.md](references/compose-patterns.md) for `@Immutable`/`@Stable` annotations  
+→ Check [gradle-setup.md](references/gradle-setup.md) for Compose Compiler metrics and stability reports  
+→ Use [kotlin-patterns.md](references/kotlin-patterns.md) for immutable data structures  
+
+**Working with databases (Room)?**
+→ Define DAOs and entities in `core/database` per [modularization.md](references/modularization.md)  
+→ Use [testing.md](references/testing.md) for in-memory database testing and migration tests  
+→ Follow [architecture.md](references/architecture.md) for repository patterns with Room  
+
+**Implementing network calls (Retrofit)?**
+→ Define API interfaces in `core/network` per [modularization.md](references/modularization.md)  
+→ Use [architecture.md](references/architecture.md) for RemoteDataSource patterns  
+→ Follow [dependencies.md](references/dependencies.md) for Retrofit, OkHttp, and serialization setup  
+→ Handle errors with generic `Result<T>` from [kotlin-patterns.md](references/kotlin-patterns.md)  
+
+**Creating custom lint rules or code checks?**
+→ Use [code-quality.md](references/code-quality.md) for Detekt custom rules  
+→ Follow [gradle-setup.md](references/gradle-setup.md) for convention plugin setup  
+→ Check [android-strictmode.md](references/android-strictmode.md) for runtime checks
