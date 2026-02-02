@@ -78,7 +78,7 @@ Shared library code used across features with strict dependency direction.
 | `core:datastore` | Proto DataStore preferences                     | None                                                | `AuthPreferencesDataSource`                                                            |
 | `core:common`    | Shared utilities, extensions                    | None                                                | `AppDispatchers`, `ResultExtensions`                                                   |
 | `core:ui`        | Reusable UI components, themes, base ViewModels | `core:domain` (optional)                            | `AuthForm`, `AuthTheme`, `BaseViewModel`                                               |
-| `core:testing`   | Test utilities, test doubles                    | Depends on module being tested                      | `TestDispatcherRule`, `TestAuthRepository`                                             |
+| `core:testing`   | Test utilities, test doubles                    | Depends on module being tested                      | `TestDispatcherRule`, `FakeAuthRepository`                                             |
 
 ## Module Structure
 

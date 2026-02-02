@@ -357,20 +357,18 @@ fun LoginScreen(
 
 // app - Implementation (Bridge)
 class AppAuthNavigator(
-    private val navController: NavController
+    private val navigator: Navigator
 ) : AuthNavigator {
     override fun navigateToHome() {
-        navController.navigate("home") {
-            popUpTo("auth") { inclusive = true }
-        }
+        navigator.navigate(TopLevelRoute.Home)
     }
-    
+
     override fun navigateToRegister() {
-        navController.navigate("auth/register")
+        navigator.navigate(AuthDestination.Register)
     }
-    
+
     override fun navigateBack() {
-        navController.popBackStack()
+        navigator.goBack()
     }
 }
 ```
@@ -385,36 +383,38 @@ class AppAuthNavigator(
 sealed interface NavigationItem {
     val id: String
     val label: String
-    val icon: ImageVector
+    val iconRes: Int
 }
 
 // Leaf node
+@Immutable
 data class NavScreen(
     override val id: String,
     override val label: String,
-    override val icon: ImageVector,
+    override val iconRes: Int,
     val route: String
 ) : NavigationItem
 
 // Composite node
+@Immutable
 data class NavGroup(
     override val id: String,
     override val label: String,
-    override val icon: ImageVector,
+    override val iconRes: Int,
     val children: List<NavigationItem>
 ) : NavigationItem
 
 // Usage
 val navigationTree = listOf(
-    NavScreen("home", "Home", Icons.Default.Home, "home"),
+    NavScreen("home", "Home", R.drawable.ic_home, "home"),
     NavGroup(
         "settings",
         "Settings",
-        Icons.Default.Settings,
+        R.drawable.ic_settings,
         children = listOf(
-            NavScreen("profile", "Profile", Icons.Default.Person, "settings/profile"),
-            NavScreen("privacy", "Privacy", Icons.Default.Lock, "settings/privacy"),
-            NavScreen("about", "About", Icons.Default.Info, "settings/about")
+            NavScreen("profile", "Profile", R.drawable.ic_person, "settings/profile"),
+            NavScreen("privacy", "Privacy", R.drawable.ic_lock, "settings/privacy"),
+            NavScreen("about", "About", R.drawable.ic_info, "settings/about")
         )
     )
 )
@@ -439,7 +439,7 @@ fun NavigationMenu(items: List<NavigationItem>) {
 - **Notes**: Keep decorators small and composable.
 
 ```kotlin
-// core/domain - Base interface
+// core/domain - Base interface (see references/crashlytics.md → "Provider-Agnostic Interface")
 interface CrashReporter {
     fun recordException(throwable: Throwable, context: Map<String, Any> = emptyMap())
     fun log(message: String)
@@ -595,27 +595,23 @@ class AuthRepositoryImpl @Inject constructor(
 - **Notes**: Avoid recreating heavy objects inside composables.
 
 ```kotlin
-// core/ui - Flyweight factory
-object IconCache {
-    private val cache = mutableMapOf<String, ImageVector>()
-    
-    fun getIcon(name: String): ImageVector =
-        cache.getOrPut(name) {
-            when (name) {
-                "home" -> Icons.Default.Home
-                "profile" -> Icons.Default.Person
-                "settings" -> Icons.Default.Settings
-                else -> Icons.Default.QuestionMark
-            }
+// core/ui - Icon resource management
+object IconResources {
+    fun getIconRes(name: String): Int =
+        when (name) {
+            "home" -> R.drawable.ic_home
+            "profile" -> R.drawable.ic_person
+            "settings" -> R.drawable.ic_settings
+            else -> R.drawable.ic_question_mark
         }
 }
 
 // Usage in Composable
 @Composable
 fun NavigationItem(iconName: String, label: String) {
-    val icon = remember(iconName) { IconCache.getIcon(iconName) } // Reused, not recreated
+    val iconRes = remember(iconName) { IconResources.getIconRes(iconName) }
     
-    Icon(imageVector = icon, contentDescription = label)
+    Icon(painter = painterResource(iconRes), contentDescription = label)
     Text(text = label)
 }
 
@@ -976,42 +972,36 @@ class DatabaseCursor(private val cursor: Cursor) : Iterator<User> {
 - **Notes**: Keeps features independent of each other. See `references/modularization.md`.
 
 ```kotlin
-// app - Mediator coordinates feature navigation
+// app - Mediator coordinates feature navigation using Navigation3
 class AppNavigationMediator @Inject constructor(
-    private val navController: NavController
+    private val navigator: Navigator
 ) : AuthNavigator, ProfileNavigator, SettingsNavigator {
     
     // AuthNavigator implementation
     override fun navigateToHome() {
-        navController.navigate("home") {
-            popUpTo("auth") { inclusive = true }
-        }
+        navigator.navigate(TopLevelRoute.Home)
     }
     
     override fun navigateToProfile() {
-        navController.navigate("profile")
+        navigator.navigate(TopLevelRoute.Profile)
     }
     
     // ProfileNavigator implementation
     override fun navigateToSettings() {
-        navController.navigate("settings")
+        navigator.navigate(TopLevelRoute.Settings)
     }
     
     override fun navigateToAuth() {
-        navController.navigate("auth") {
-            popUpTo(0) { inclusive = true }
-        }
+        navigator.navigate(TopLevelRoute.Auth)
     }
     
     // SettingsNavigator implementation
     override fun navigateBack() {
-        navController.popBackStack()
+        navigator.goBack()
     }
     
     override fun logout() {
-        navController.navigate("auth") {
-            popUpTo(0) { inclusive = true }
-        }
+        navigator.navigate(TopLevelRoute.Auth)
     }
 }
 
@@ -1683,9 +1673,9 @@ class ProfileViewModel @Inject constructor(
 ) : ViewModel()
 
 // app - Mediator
-class AppNavigator(private val navController: NavController) : ProfileNavigator, AuthNavigator {
+class AppNavigator(private val navigator: Navigator) : ProfileNavigator, AuthNavigator {
     override fun navigateToAuth() {
-        navController.navigate("auth")
+        navigator.navigate(TopLevelRoute.Auth)
     }
 }
 ```

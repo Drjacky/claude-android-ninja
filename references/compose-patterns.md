@@ -922,6 +922,7 @@ class SearchRepository @Inject constructor(
 }
 
 // ✅ Correct: Interface can be marked @Stable if implementations guarantee stability
+// See references/crashlytics.md → "Provider-Agnostic Interface" for full implementation
 @Stable
 interface CrashReporter {
     fun log(message: String)

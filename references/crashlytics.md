@@ -231,24 +231,39 @@ See the centralized navigation setup in `references/modularization.md`.
 
 ```kotlin
 @Composable
-fun AppNavigation() {
-    val navController = rememberNavController()
-    val analytics = Firebase.analytics
-    val backStackEntry by navController.currentBackStackEntryAsState()
+fun AppNavigation(
+    analytics: Analytics // Injected via Hilt
+) {
+    val navigationState = rememberNavigationState(
+        startRoute = TopLevelRoute.Auth,
+        topLevelRoutes = setOf(
+            TopLevelRoute.Auth,
+            TopLevelRoute.Profile,
+            TopLevelRoute.Settings
+        )
+    )
 
-    LaunchedEffect(backStackEntry) {
-        val route = backStackEntry?.destination?.route ?: return@LaunchedEffect
-        analytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW) {
-            param(FirebaseAnalytics.Param.SCREEN_NAME, route)
-            param(FirebaseAnalytics.Param.SCREEN_CLASS, "MainActivity")
+    LaunchedEffect(navigationState.topLevelRoute) {
+        val currentStack = navigationState.backStacks[navigationState.topLevelRoute]
+        val currentRoute = currentStack?.last()
+        currentRoute?.let { route ->
+            analytics.logScreenView(
+                screenName = route::class.simpleName ?: "Unknown",
+                screenClass = "MainActivity"
+            )
         }
     }
 
-    NavHost(navController, startDestination = "auth/login") {
-        composable("auth/login") { AuthLoginScreen() }
-        composable("auth/forgot-password") { ForgotPasswordScreen() }
-        composable("auth/profile") { AuthProfileScreen() }
+    val entryProvider = entryProvider {
+        authGraph(/* navigator */)
+        profileGraph(/* navigator */)
+        settingsGraph(/* navigator */)
     }
+
+    NavDisplay(
+        entries = navigationState.toEntries(entryProvider),
+        onBack = { navigator.goBack() }
+    )
 }
 ```
 
