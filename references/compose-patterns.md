@@ -381,6 +381,140 @@ Key points:
 - Use `repeatOnLifecycle` for multiple flows or complex scoped operations
 - Both prevent leaked collectors and wasted background work during lifecycle changes
 
+### Handling System Back Button
+
+Use `BackHandler` from `androidx.activity.compose` to intercept system back button presses in Compose:
+
+```kotlin
+@Composable
+fun ImageDetailScreen(
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var isZoomed by remember { mutableStateOf(false) }
+    
+    // Intercept back press when zoomed - exits zoom mode instead of screen
+    BackHandler(enabled = isZoomed) {
+        isZoomed = false
+    }
+    
+    Column(modifier = modifier) {
+        IconButton(onClick = onBackClick) {
+            Icon(painterResource(R.drawable.ic_back), "Back")
+        }
+        
+        ZoomableImage(
+            isZoomed = isZoomed,
+            onZoomChange = { isZoomed = it }
+        )
+    }
+}
+```
+
+**Common Use Cases:**
+
+1. **Unsaved Changes Warning**
+```kotlin
+@Composable
+fun FormScreen(
+    viewModel: FormViewModel,
+    onNavigateBack: () -> Unit
+) {
+    val hasUnsavedChanges by viewModel.hasUnsavedChanges.collectAsStateWithLifecycle()
+    var showExitDialog by remember { mutableStateOf(false) }
+    
+    BackHandler(enabled = hasUnsavedChanges) {
+        showExitDialog = true
+    }
+    
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("Unsaved Changes") },
+            text = { Text("Are you sure you want to exit without saving?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.discardChanges()
+                    onNavigateBack()
+                }) {
+                    Text("Discard")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+    
+    FormContent(viewModel = viewModel)
+}
+```
+
+2. **Multi-Step Flow Navigation**
+```kotlin
+@Composable
+fun OnboardingScreen(
+    onComplete: () -> Unit,
+    onCancel: () -> Unit
+) {
+    var currentStep by remember { mutableStateOf(0) }
+    
+    // Navigate to previous step on back press, exit on first step
+    BackHandler {
+        if (currentStep > 0) {
+            currentStep--
+        } else {
+            onCancel()
+        }
+    }
+    
+    when (currentStep) {
+        0 -> WelcomeStep(onNext = { currentStep++ })
+        1 -> PermissionsStep(onNext = { currentStep++ }, onBack = { currentStep-- })
+        2 -> PreferencesStep(onNext = onComplete, onBack = { currentStep-- })
+    }
+}
+```
+
+3. **Bottom Sheet or Modal State**
+```kotlin
+@Composable
+fun ScreenWithSheet(
+    onNavigateBack: () -> Unit
+) {
+    var showBottomSheet by remember { mutableStateOf(false) }
+    
+    // Close bottom sheet on back press instead of exiting screen
+    BackHandler(enabled = showBottomSheet) {
+        showBottomSheet = false
+    }
+    
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = { showBottomSheet = true }) {
+                Icon(painterResource(R.drawable.ic_filter), "Filter")
+            }
+        }
+    ) { padding ->
+        ContentList(modifier = Modifier.padding(padding))
+        
+        if (showBottomSheet) {
+            ModalBottomSheet(onDismissRequest = { showBottomSheet = false }) {
+                FilterContent()
+            }
+        }
+    }
+}
+```
+
+**Key Points:**
+- **Nested handlers**: Innermost enabled `BackHandler` takes precedence
+- **Conditional interception**: Use `enabled` parameter to control when back is intercepted
+- **Lifecycle-aware**: Automatically cleaned up when composable leaves composition
+- **Don't block permanently**: Always provide a way to exit the screen eventually
+
 ## Component Patterns
 
 ### Stateless, Reusable Components
