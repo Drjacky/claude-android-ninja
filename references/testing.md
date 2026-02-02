@@ -632,13 +632,13 @@ fun `session refresh happens after 30 minutes`() = runTest {
     sessionRefresher.startPeriodicRefresh()
     
     // Fast-forward 30 minutes
-    advanceTimeBy(30 * 60 * 1000L)
+    advanceTimeBy(30.minutes)
     
     // Assert
     assertThat(testAuthStore.refreshCallCount).isEqualTo(1)
     
     // Fast-forward another 30 minutes
-    advanceTimeBy(30 * 60 * 1000L)
+    advanceTimeBy(30.minutes)
     
     // Assert second refresh
     assertThat(testAuthStore.refreshCallCount).isEqualTo(2)
@@ -653,7 +653,7 @@ Test `withTimeout` and `withTimeoutOrNull` behavior using virtual time.
 @Test
 fun `biometric authentication times out after 30 seconds`() = runTest {
     // Arrange
-    val slowBiometricSdk = FakeBiometricSdk(responseDelayMs = 40_000L)
+    val slowBiometricSdk = FakeBiometricSdk(responseDelay = 40.seconds)
     val repository = BiometricAuthRepository(
         biometricSdk = slowBiometricSdk,
         ioDispatcher = UnconfinedTestDispatcher(testScheduler)
@@ -663,7 +663,7 @@ fun `biometric authentication times out after 30 seconds`() = runTest {
     val result = repository.authenticate()
     
     // Fast-forward past the timeout
-    advanceTimeBy(35_000L)
+    advanceTimeBy(35.seconds)
     
     // Assert - should return null due to timeout
     assertThat(result).isNull()
@@ -682,7 +682,7 @@ fun `printer returns timeout result when operation hangs`() = runTest {
     val resultDeferred = async { repository.print(testDocument) }
     
     // Fast-forward past the 60s timeout
-    advanceTimeBy(65_000L)
+    advanceTimeBy(65.seconds)
     val result = resultDeferred.await()
     
     // Assert
@@ -757,11 +757,11 @@ fun `session refresh flow emits at correct intervals`() = runTest {
         assertThat(awaitItem()).isNotNull()
         
         // Advance 30 minutes
-        advanceTimeBy(30 * 60 * 1000L)
+        advanceTimeBy(30.minutes)
         assertThat(awaitItem()).isNotNull()
         
         // Advance another 30 minutes
-        advanceTimeBy(30 * 60 * 1000L)
+        advanceTimeBy(30.minutes)
         assertThat(awaitItem()).isNotNull()
         
         cancelAndIgnoreRemainingEvents()

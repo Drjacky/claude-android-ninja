@@ -5,6 +5,8 @@ to apply. If a topic is large, it lives in a dedicated reference and is linked h
 
 This guide focuses on intermediate and advanced Kotlin patterns. Basic language features (data classes, null safety, scope functions like `let`/`apply`/`run`) are assumed knowledge.
 
+**Note**: All time-related examples use Kotlin Duration API (`kotlin.time.Duration`) and `kotlinx.datetime.Clock` for type-safe, readable time operations.
+
 ## Table of Contents
 1. [Delegation (Composition over Inheritance)](#delegation-composition-over-inheritance)
 2. [Collection APIs](#collection-apis)
@@ -167,10 +169,9 @@ inline fun <reified T> parseJson(json: String): T {
 val user: User = parseJson(jsonString)
 val token: AuthToken = parseJson(tokenJson)
 
-// ✅ Type-safe Fragment/Activity retrieval
-inline fun <reified T : Fragment> FragmentManager.findFragmentByType(): T? {
-    return fragments.firstOrNull { it is T } as? T
-}
+// ✅ Type-safe navigation argument retrieval
+inline fun <reified T> SavedStateHandle.getOrNull(key: String): T? =
+    get<T>(key)
 
 // ✅ Type-safe Retrofit service creation wrapper
 inline fun <reified T> Retrofit.create(): T {
@@ -228,7 +229,7 @@ Add domain-specific behavior to existing types without inheritance.
 ```kotlin
 // Domain logic extensions
 fun User.isActive(): Boolean = 
-    isVerified && lastActiveAt > System.currentTimeMillis() - 30.days.inWholeMilliseconds
+    isVerified && lastActiveAt > Clock.System.now().minus(30.days).toEpochMilliseconds()
 
 fun User.displayName(): String = 
     name.ifEmpty { email.substringBefore("@") }
@@ -238,23 +239,23 @@ fun List<User>.filterActive(): List<User> =
 
 // UI formatting extensions
 fun Long.toRelativeTime(): String {
-    val now = System.currentTimeMillis()
-    val diff = now - this
+    val now = Clock.System.now().toEpochMilliseconds()
+    val diff = (now - this).milliseconds
     
     return when {
-        diff < 60_000 -> "Just now"
-        diff < 3600_000 -> "${diff / 60_000}m ago"
-        diff < 86400_000 -> "${diff / 3600_000}h ago"
-        else -> "${diff / 86400_000}d ago"
+        diff < 1.minutes -> "Just now"
+        diff < 1.hours -> "${diff.inWholeMinutes}m ago"
+        diff < 1.days -> "${diff.inWholeHours}h ago"
+        else -> "${diff.inWholeDays}d ago"
     }
 }
 
 // Flow extensions
-fun <T> Flow<T>.throttle(periodMillis: Long): Flow<T> = flow {
+fun <T> Flow<T>.throttle(period: Duration): Flow<T> = flow {
     var lastEmitTime = 0L
     collect { value ->
-        val currentTime = System.currentTimeMillis()
-        if (currentTime - lastEmitTime >= periodMillis) {
+        val currentTime = Clock.System.now().toEpochMilliseconds()
+        if (currentTime - lastEmitTime >= period.inWholeMilliseconds) {
             lastEmitTime = currentTime
             emit(value)
         }
@@ -309,20 +310,21 @@ val email = Email("user@example.com")
 userRepository.getUser(userId) // ✅ Correct
 userRepository.getUser(email) // ❌ Compile error - type safety!
 
-// ✅ Type-safe measurements
+// ✅ Type-safe domain values
 @JvmInline
-value class Milliseconds(val value: Long)
-
-@JvmInline
-value class Seconds(val value: Long) {
-    fun toMillis(): Milliseconds = Milliseconds(value * 1000)
+value class Temperature(val celsius: Double) {
+    fun toFahrenheit(): Double = celsius * 9.0 / 5.0 + 32.0
 }
 
-fun setTimeout(duration: Milliseconds) {
-    // ...
+@JvmInline
+value class Distance(val meters: Double) {
+    fun toKilometers(): Double = meters / 1000.0
 }
 
-setTimeout(Seconds(5).toMillis()) // Type-safe conversion
+fun displayTemperature(temp: Temperature): String =
+    "${temp.celsius}°C (${temp.toFahrenheit()}°F)"
+
+displayTemperature(Temperature(25.0))
 ```
 
 **When to Use:**
@@ -397,7 +399,7 @@ fun processLargeFile(file: File): List<String> =
 // ✅ Constants in companion object
 class AuthConfig {
     companion object {
-        const val SESSION_TIMEOUT_MS = 30 * 60 * 1000L
+        val SESSION_TIMEOUT = 30.minutes
         const val MAX_LOGIN_ATTEMPTS = 3
         val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
     }
@@ -437,16 +439,14 @@ val user = User.create("test@example.com", "Test User").getOrThrow()
 
 ```kotlin
 // ✅ Top-level for pure utility functions
-fun formatDuration(millis: Long): String {
-    val seconds = millis / 1000
-    return "$seconds seconds"
-}
+fun formatDuration(duration: Duration): String =
+    "${duration.inWholeSeconds} seconds"
 
 // ✅ Companion object for type-related constants/factories
 class Session {
     companion object {
-        const val DEFAULT_TIMEOUT_MS = 30_000L
-        fun create(userId: String): Session = Session(userId, System.currentTimeMillis())
+        val DEFAULT_TIMEOUT = 30.seconds
+        fun create(userId: String): Session = Session(userId, Clock.System.now().toEpochMilliseconds())
     }
 }
 ```
@@ -549,17 +549,18 @@ Use `inline` for higher-order functions to eliminate lambda overhead:
 
 ```kotlin
 // ✅ Inline higher-order function
-inline fun <T> measureTime(block: () -> T): Pair<T, Long> {
-    val start = System.currentTimeMillis()
+inline fun <T> measureTime(block: () -> T): Pair<T, Duration> {
+    val start = Clock.System.now()
     val result = block()
-    val elapsed = System.currentTimeMillis() - start
+    val elapsed = Clock.System.now() - start
     return result to elapsed
 }
 
 // Usage (no lambda allocation)
-val (user, time) = measureTime {
+val (user, elapsed) = measureTime {
     repository.getUser()
 }
+println("Took ${elapsed.inWholeMilliseconds}ms")
 
 // ✅ Inline for DSL builders
 inline fun buildUser(init: UserBuilder.() -> Unit): User {
@@ -580,7 +581,7 @@ val user = buildUser {
 Retain type information at runtime with `reified`:
 
 ```kotlin
-// ✅ Generic Activity/Fragment start
+// ✅ Generic Activity start
 inline fun <reified T : Activity> Context.startActivity() {
     startActivity(Intent(this, T::class.java))
 }
@@ -588,9 +589,10 @@ inline fun <reified T : Activity> Context.startActivity() {
 // Usage
 context.startActivity<MainActivity>() // Type-safe!
 
-// ✅ Generic ViewModel retrieval
-inline fun <reified T : ViewModel> Fragment.viewModel(): Lazy<T> {
-    return viewModels<T>()
+// ✅ Generic ViewModel retrieval with Hilt
+@Composable
+inline fun <reified T : ViewModel> hiltViewModel(): T {
+    return androidx.hilt.navigation.compose.hiltViewModel()
 }
 
 // ✅ Type-safe navigation arguments
@@ -703,12 +705,12 @@ Use generics in suspend functions for reusable async patterns:
 // ✅ Generic retry logic
 suspend fun <T> retryWithBackoff(
     maxAttempts: Int = 3,
-    initialDelayMs: Long = 1000,
-    maxDelayMs: Long = 10000,
+    initialDelay: Duration = 1.seconds,
+    maxDelay: Duration = 10.seconds,
     factor: Double = 2.0,
     block: suspend () -> T
 ): Result<T> {
-    var currentDelay = initialDelayMs
+    var currentDelay = initialDelay
     var lastException: Exception? = null
     
     repeat(maxAttempts) { attempt ->
@@ -718,7 +720,7 @@ suspend fun <T> retryWithBackoff(
             lastException = e
             if (attempt < maxAttempts - 1) {
                 delay(currentDelay)
-                currentDelay = (currentDelay * factor).toLong().coerceAtMost(maxDelayMs)
+                currentDelay = (currentDelay * factor).coerceAtMost(maxDelay)
             }
         }
     }
@@ -733,11 +735,11 @@ suspend fun login(email: String, password: String): Result<AuthToken> =
     }
 
 // ✅ Generic resource management
-suspend fun <T> withTimeout(
-    timeoutMs: Long,
+suspend fun <T> withTimeoutResult(
+    timeout: Duration,
     block: suspend () -> T
 ): Result<T> = runCatching {
-    withTimeout(timeoutMs) {
+    withTimeout(timeout) {
         block()
     }
 }

@@ -117,7 +117,7 @@ internal fun Project.configureAndroidCommon(
         compileOptions {
             sourceCompatibility = JavaVersion.VERSION_17
             targetCompatibility = JavaVersion.VERSION_17
-            isCoreLibraryDesugaringEnabled = true
+            isCoreLibraryDesugaringEnabled = true // Required for API < 26 (java.time, Duration API)
         }
 
         kotlinOptions {
@@ -133,7 +133,7 @@ internal fun Project.configureAndroidCommon(
     }
 
     dependencies {
-        add("coreLibraryDesugaring", libs.findLibrary("android.desugar.jdk.libs").get())
+        add("coreLibraryDesugaring", libs.findLibrary("androidx.core.desugaring").get())
     }
 }
 
@@ -624,6 +624,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization)
     implementation(libs.kotlinx.collections.immutable)
+    implementation(libs.kotlinx.datetime) // For Clock.System and Duration API
     
     // DI
     implementation(libs.java.inject)

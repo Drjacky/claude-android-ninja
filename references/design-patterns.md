@@ -827,7 +827,7 @@ class RetryInterceptor @Inject constructor() : Interceptor {
     
     companion object {
         private const val MAX_RETRIES = 3
-        private const val RETRY_DELAY_MS = 1000L
+        private val RETRY_DELAY = 1.seconds
     }
 }
 
@@ -1031,7 +1031,7 @@ data class AuthFormMemento(
     val email: String,
     val password: String,
     val rememberMe: Boolean,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = Clock.System.now().toEpochMilliseconds()
 )
 
 // feature/auth - Originator (creates and restores mementos)

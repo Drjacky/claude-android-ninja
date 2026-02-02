@@ -222,7 +222,7 @@ class AuthMapper @Inject constructor(
         name = user.name.trim(),
         profileImage = user.profileImage,
         createdAt = user.createdAt,
-        lastActiveAt = System.currentTimeMillis() // Track local access time
+        lastActiveAt = Clock.System.now().toEpochMilliseconds() // Track local access time
     )
     
     // Domain → Network (for register/update)

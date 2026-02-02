@@ -187,7 +187,7 @@ class AuthViewModel @Inject constructor(
     val authSession: StateFlow<AuthSession?> = authSessionFlow
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000),
+            started = SharingStarted.WhileSubscribed(stopTimeout = 5.seconds),
             initialValue = null
         )
 }
