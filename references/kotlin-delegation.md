@@ -159,19 +159,35 @@ class AuthViewModel @Inject constructor(
 
 ```kotlin
 interface CrashReporter {
-    fun recordException(throwable: Throwable, context: Map<String, Any> = emptyMap())
+    fun setUserId(id: String?)
+    fun setUserProperty(key: String, value: String)
     fun log(message: String)
+    fun recordException(throwable: Throwable, context: Map<String, String> = emptyMap())
 }
 
 class FirebaseCrashReporter @Inject constructor(
     private val crashlytics: FirebaseCrashlytics
 ) : CrashReporter {
-    override fun recordException(throwable: Throwable, context: Map<String, Any>) {
-        crashlytics.recordException(throwable)
+    override fun setUserId(id: String?) {
+        crashlytics.setUserId(id ?: "")
     }
-    
+
+    override fun setUserProperty(key: String, value: String) {
+        crashlytics.setCustomKey(key, value)
+    }
+
     override fun log(message: String) {
         crashlytics.log(message)
+    }
+
+    override fun recordException(
+        throwable: Throwable,
+        context: Map<String, String>
+    ) {
+        context.forEach { (key, value) ->
+            crashlytics.setCustomKey(key, value)
+        }
+        crashlytics.recordException(throwable)
     }
 }
 
@@ -184,17 +200,32 @@ class PrivacyAwareCrashReporter(
     private val sensitiveKeys = setOf("password", "token", "secret", "key", "auth")
     
     // Override to add custom behavior
-    override fun recordException(throwable: Throwable, context: Map<String, Any>) {
-        // Custom pre-processing
+    override fun recordException(
+        throwable: Throwable,
+        context: Map<String, String>
+    ) {
+        // Scrub context
         val scrubbedContext = context.filterKeys { key ->
             !sensitiveKeys.any { key.contains(it, ignoreCase = true) }
+        }.mapValues { (_, value) ->
+            value.replace(emailRegex, "[REDACTED_EMAIL]")
+        }
+        
+        // Scrub exception message
+        val scrubbedException = if (throwable.message?.contains(emailRegex) == true) {
+            Exception(
+                throwable.message?.replace(emailRegex, "[REDACTED_EMAIL]"),
+                throwable.cause
+            )
+        } else {
+            throwable
         }
         
         // Call delegated implementation
-        super.recordException(throwable, scrubbedContext)
+        super.recordException(scrubbedException, scrubbedContext)
     }
     
-    // log() is not overridden, so it's fully delegated
+    // Other methods (setUserId, setUserProperty, log) are fully delegated
 }
 ```
 
@@ -442,7 +473,10 @@ interface Logger {
 }
 
 interface CrashReporter {
-    fun recordException(throwable: Throwable, context: Map<String, Any> = emptyMap())
+    fun setUserId(id: String?)
+    fun setUserProperty(key: String, value: String)
+    fun log(message: String)
+    fun recordException(throwable: Throwable, context: Map<String, String> = emptyMap())
 }
 
 interface Analytics {
@@ -493,6 +527,10 @@ class AuthViewModel @Inject constructor(
             // Logging (delegated)
             log("Login attempt started for: $email")
             
+            // Set user context (delegated)
+            setUserId(email)
+            setUserProperty("login_method", "email")
+            
             // Analytics (delegated)
             trackEvent("login_attempt", mapOf("method" to "email"))
             
@@ -508,7 +546,8 @@ class AuthViewModel @Inject constructor(
                     logError("Login failed", error)
                     recordException(error, mapOf( // Crash reporting (delegated)
                         "screen" to "login",
-                        "action" to "login_clicked"
+                        "action" to "login_clicked",
+                        "email_domain" to email.substringAfter("@")
                     ))
                     trackEvent("login_failure", mapOf("error" to error.message.orEmpty()))
                     _uiState.update { it.copy(isLoading = false, error = error.message) }
@@ -535,6 +574,29 @@ class FakeLogger : Logger {
     
     override fun logError(message: String, throwable: Throwable) {
         errors.add(message to throwable)
+    }
+}
+
+class FakeCrashReporter : CrashReporter {
+    var userId: String? = null
+    val properties = mutableMapOf<String, String>()
+    val logMessages = mutableListOf<String>()
+    val exceptions = mutableListOf<Pair<Throwable, Map<String, String>>>()
+    
+    override fun setUserId(id: String?) {
+        userId = id
+    }
+    
+    override fun setUserProperty(key: String, value: String) {
+        properties[key] = value
+    }
+    
+    override fun log(message: String) {
+        logMessages.add(message)
+    }
+    
+    override fun recordException(throwable: Throwable, context: Map<String, String>) {
+        exceptions.add(throwable to context)
     }
 }
 
@@ -609,6 +671,11 @@ fun `login records crash on failure`() = runTest {
     // Verify crash was reported via delegation
     assertThat(fakeCrashReporter.exceptions).hasSize(1)
     assertThat(fakeCrashReporter.exceptions[0].second).containsEntry("screen", "login")
+    assertThat(fakeCrashReporter.exceptions[0].second).containsEntry("email_domain", "example.com")
+    
+    // Verify user context was set
+    assertThat(fakeCrashReporter.userId).isEqualTo("test@example.com")
+    assertThat(fakeCrashReporter.properties).containsEntry("login_method", "email")
 }
 ```
 
