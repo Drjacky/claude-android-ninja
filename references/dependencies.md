@@ -266,12 +266,8 @@ For manual rules, add to `proguard-rules.pro` in the module.
 3. **Add to `libs.versions.toml`:**
 
 ```toml
-[versions]
-ktor = "3.0.3"
-
-[libraries]
-ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
-ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktor" }
+libs.ktor.client.core
+libs.ktor.client.android
 ```
 
 4. **Use in `build.gradle.kts`:**

@@ -191,8 +191,8 @@ Use the Gradle plugin and Firebase BoM. The separate `-ktx` artifact is no longe
 ```kotlin
 // build.gradle.kts (project-level)
 plugins {
-    id("com.google.gms.google-services") version "4.4.2" apply false
-    id("com.google.firebase.crashlytics") version "3.0.6" apply false
+    alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.firebase.crashlytics) apply false
 }
 ```
 
@@ -201,8 +201,8 @@ plugins {
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 dependencies {
@@ -361,8 +361,8 @@ The Firebase Crashlytics Gradle plugin automatically uploads mapping files durin
 ```kotlin
 // app/build.gradle.kts
 plugins {
-    id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 android {

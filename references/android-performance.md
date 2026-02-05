@@ -186,9 +186,9 @@ Create a `:baselineprofile` test module using pure Gradle configuration (no GUI 
 `baselineprofile/build.gradle.kts`:
 ```kotlin
 plugins {
-    id("com.android.test")
-    id("org.jetbrains.kotlin.android")
-    id("androidx.baselineprofile")
+    alias(libs.plugins.android.test)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 android {
@@ -228,7 +228,7 @@ Update `app/build.gradle.kts`:
 ```kotlin
 plugins {
     id("com.example.android.application")
-    id("androidx.baselineprofile")
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 dependencies {
