@@ -771,7 +771,7 @@ android {
     testBuildType = "benchmark"
 
     defaultConfig {
-        minSdk = 23
+        minSdk = libs.findVersion("minSdk").get().toString().toInt()
         testInstrumentationRunner = "androidx.benchmark.junit4.AndroidBenchmarkRunner"
     }
 }

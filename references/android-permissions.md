@@ -222,28 +222,46 @@ fun NotificationSettingsScreen(
 
 Photo Picker avoids permission requests entirely. Use this instead of requesting media permissions when possible.
 
+**Note:** Photo Picker requires API 33+. For API 24-32, use the legacy media permission approach (READ_EXTERNAL_STORAGE).
+
 ```kotlin
 @Composable
 fun PhotoPickerScreen(
     onPhotoSelected: (Uri) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        uri?.let { onPhotoSelected(it) }
-    }
-    
-    Button(
-        onClick = {
-            launcher.launch(
-                PickVisualMediaRequest(
-                    mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly
-                )
-            )
+    // Photo Picker requires API 33+ (Android 13+)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val launcher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickVisualMedia()
+        ) { uri ->
+            uri?.let { onPhotoSelected(it) }
         }
-    ) {
-        Text("Choose Photo")
+        
+        Button(
+            onClick = {
+                launcher.launch(
+                    PickVisualMediaRequest(
+                        mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly
+                    )
+                )
+            }
+        ) {
+            Text("Choose Photo")
+        }
+    } else {
+        // Fallback for API < 33: Use legacy image picker with READ_EXTERNAL_STORAGE permission
+        val launcher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent()
+        ) { uri ->
+            uri?.let { onPhotoSelected(it) }
+        }
+        
+        Button(
+            onClick = { launcher.launch("image/*") }
+        ) {
+            Text("Choose Photo")
+        }
     }
 }
 
@@ -254,24 +272,42 @@ fun MultiPhotoPickerScreen(
     maxItems: Int = 10,
     modifier: Modifier = Modifier
 ) {
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems)
-    ) { uris ->
-        if (uris.isNotEmpty()) {
-            onPhotosSelected(uris)
+    // Photo Picker requires API 33+ (Android 13+)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val launcher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems)
+        ) { uris ->
+            if (uris.isNotEmpty()) {
+                onPhotosSelected(uris)
+            }
         }
-    }
-    
-    Button(
-        onClick = {
-            launcher.launch(
-                PickVisualMediaRequest(
-                    mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly
+        
+        Button(
+            onClick = {
+                launcher.launch(
+                    PickVisualMediaRequest(
+                        mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly
+                    )
                 )
-            )
+            }
+        ) {
+            Text("Choose Photos")
         }
-    ) {
-        Text("Choose Photos")
+    } else {
+        // Fallback for API < 33: Use legacy multiple files picker
+        val launcher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenMultipleDocuments()
+        ) { uris ->
+            if (uris.isNotEmpty()) {
+                onPhotosSelected(uris)
+            }
+        }
+        
+        Button(
+            onClick = { launcher.launch(arrayOf("image/*")) }
+        ) {
+            Text("Choose Photos")
+        }
     }
 }
 ```
