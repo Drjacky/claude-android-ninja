@@ -17,6 +17,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - Domain/Data/UI layering patterns with auth-focused examples
 - Jetpack Compose patterns, state management, and adaptive UI
 - Navigation3 guidance and navigation coordination
+- Accessibility support (TalkBack, semantic properties, WCAG compliance)
 - Material Symbols icons, graphics, and custom drawing with Canvas
 - Gradle/build conventions, version catalog usage, and KSP migration
 - Testing practices with fakes, Hilt testing, and Room testing
@@ -34,6 +35,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `references/architecture.md` - architecture principles, data/domain layers, and flows
 - `references/modularization.md` - module structure and Navigation3 wiring
 - `references/compose-patterns.md` - Compose UI patterns and best practices
+- `references/android-accessibility.md` - accessibility, TalkBack, semantic properties, WCAG
 - `references/kotlin-patterns.md` - Kotlin best practices (must-read for Kotlin code)
 - `references/coroutines-patterns.md` - coroutines best practices and patterns
 - `references/gradle-setup.md` - build logic, conventions, and build files

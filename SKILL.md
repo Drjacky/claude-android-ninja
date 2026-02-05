@@ -11,24 +11,25 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 ## Quick Reference
 
-| Task                                                 | Reference File                                              |
-|------------------------------------------------------|-------------------------------------------------------------|
-| Project structure & modules                          | [modularization.md](references/modularization.md)           |
-| Architecture layers (Presentation, Domain, Data, UI) | [architecture.md](references/architecture.md)               |
-| Jetpack Compose patterns                             | [compose-patterns.md](references/compose-patterns.md)       |
-| Kotlin best practices                                | [kotlin-patterns.md](references/kotlin-patterns.md)         |
-| Coroutines best practices                            | [coroutines-patterns.md](references/coroutines-patterns.md) |
-| Gradle & build configuration                         | [gradle-setup.md](references/gradle-setup.md)               |
-| Testing approach                                     | [testing.md](references/testing.md)                         |
-| Icons, graphics, and custom drawing                  | [android-graphics.md](references/android-graphics.md)       |
-| Runtime permissions                                  | [android-permissions.md](references/android-permissions.md) |
-| Kotlin delegation patterns                           | [kotlin-delegation.md](references/kotlin-delegation.md)     |
-| Crash reporting                                      | [crashlytics.md](references/crashlytics.md)                 |
-| StrictMode guardrails                                | [android-strictmode.md](references/android-strictmode.md)   |
-| Multi-module dependencies                            | [dependencies.md](references/dependencies.md)               |
-| Code quality (Detekt)                                | [code-quality.md](references/code-quality.md)               |
-| Design patterns                                      | [design-patterns.md](references/design-patterns.md)         |
-| Android performance benchmarking                     | [android-performance.md](references/android-performance.md) |
+| Task                                                 | Reference File                                                  |
+|------------------------------------------------------|-----------------------------------------------------------------|
+| Project structure & modules                          | [modularization.md](references/modularization.md)               |
+| Architecture layers (Presentation, Domain, Data, UI) | [architecture.md](references/architecture.md)                   |
+| Jetpack Compose patterns                             | [compose-patterns.md](references/compose-patterns.md)           |
+| Accessibility & TalkBack support                     | [android-accessibility.md](references/android-accessibility.md) |
+| Kotlin best practices                                | [kotlin-patterns.md](references/kotlin-patterns.md)             |
+| Coroutines best practices                            | [coroutines-patterns.md](references/coroutines-patterns.md)     |
+| Gradle & build configuration                         | [gradle-setup.md](references/gradle-setup.md)                   |
+| Testing approach                                     | [testing.md](references/testing.md)                             |
+| Icons, graphics, and custom drawing                  | [android-graphics.md](references/android-graphics.md)           |
+| Runtime permissions                                  | [android-permissions.md](references/android-permissions.md)     |
+| Kotlin delegation patterns                           | [kotlin-delegation.md](references/kotlin-delegation.md)         |
+| Crash reporting                                      | [crashlytics.md](references/crashlytics.md)                     |
+| StrictMode guardrails                                | [android-strictmode.md](references/android-strictmode.md)       |
+| Multi-module dependencies                            | [dependencies.md](references/dependencies.md)                   |
+| Code quality (Detekt)                                | [code-quality.md](references/code-quality.md)                   |
+| Design patterns                                      | [design-patterns.md](references/design-patterns.md)             |
+| Android performance benchmarking                     | [android-performance.md](references/android-performance.md)     |
 
 ## Workflow Decision Tree
 
@@ -109,9 +110,15 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Download icons via Iconify API or Google Fonts (avoid deprecated `Icons.Default.*` library)  
 → Use `Modifier.drawWithContent`, `drawBehind`, or `drawWithCache` for custom graphics  
 
-**Implementing custom UI effects (glow, shadows, gradients)?**
+**Creating custom UI effects (glow, shadows, gradients)?**
 → Check [android-graphics.md](references/android-graphics.md) for Canvas drawing, BlendMode, and Palette API patterns  
 → Use `rememberInfiniteTransition` for animated effects  
+
+**Ensuring accessibility compliance (TalkBack, touch targets, color contrast)?**
+→ Follow [android-accessibility.md](references/android-accessibility.md) for semantic properties and WCAG guidelines  
+→ Provide `contentDescription` for all icons and images  
+→ Ensure 48dp × 48dp minimum touch targets  
+→ Test with TalkBack and Accessibility Scanner  
 
 **Working with images and color extraction?**
 → Use [android-graphics.md](references/android-graphics.md) for Palette API and Coil3 integration  
