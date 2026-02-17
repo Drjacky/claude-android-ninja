@@ -66,6 +66,8 @@ Prefer Photo Picker when possible to avoid permission requests entirely.
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 ```
 
+**Note:** See `references/android-notifications.md` for notification implementation patterns, channels, and foreground services.
+
 ### Location (Runtime)
 
 ```xml

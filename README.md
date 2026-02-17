@@ -18,6 +18,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - Jetpack Compose patterns, state management, and adaptive UI
 - Navigation3 guidance and navigation coordination
 - Accessibility support (TalkBack, semantic properties, WCAG compliance)
+- Notifications (channels, styles, actions, foreground services, API 24-35)
 - Material Symbols icons, graphics, and custom drawing with Canvas
 - Gradle/build conventions, version catalog usage, and KSP migration
 - Testing practices with fakes, Hilt testing, and Room testing
@@ -36,6 +37,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `references/modularization.md` - module structure and Navigation3 wiring
 - `references/compose-patterns.md` - Compose UI patterns and best practices
 - `references/android-accessibility.md` - accessibility, TalkBack, semantic properties, WCAG
+- `references/android-notifications.md` - notifications, channels, styles, foreground services
 - `references/kotlin-patterns.md` - Kotlin best practices (must-read for Kotlin code)
 - `references/coroutines-patterns.md` - coroutines best practices and patterns
 - `references/gradle-setup.md` - build logic, conventions, and build files

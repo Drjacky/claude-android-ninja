@@ -17,6 +17,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Architecture layers (Presentation, Domain, Data, UI) | [architecture.md](references/architecture.md)                   |
 | Jetpack Compose patterns                             | [compose-patterns.md](references/compose-patterns.md)           |
 | Accessibility & TalkBack support                     | [android-accessibility.md](references/android-accessibility.md) |
+| Notifications & foreground services                  | [android-notifications.md](references/android-notifications.md) |
 | Kotlin best practices                                | [kotlin-patterns.md](references/kotlin-patterns.md)             |
 | Coroutines best practices                            | [coroutines-patterns.md](references/coroutines-patterns.md)     |
 | Gradle & build configuration                         | [gradle-setup.md](references/gradle-setup.md)                   |
@@ -84,6 +85,11 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Handling runtime permissions?**
 → Follow [android-permissions.md](references/android-permissions.md) for manifest declarations and Compose permission patterns  
 → Request permissions contextually and handle "Don't ask again" flows  
+
+**Showing notifications or foreground services?**
+→ Use [android-notifications.md](references/android-notifications.md) for notification channels, styles, actions, and foreground services  
+→ Check POST_NOTIFICATIONS permission on API 33+ before showing notifications  
+→ Create notification channels at app startup (required for API 26+)  
 
 **Sharing logic across ViewModels or avoiding base classes?**
 → Use delegation via interfaces as described in [kotlin-delegation.md](references/kotlin-delegation.md)  
