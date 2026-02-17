@@ -5,6 +5,8 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 
 **Accessibility:** All UI components must be accessible. See `references/android-accessibility.md` for semantic properties, touch targets, and TalkBack support.
 
+**Theming:** Use Material 3 theming with semantic color roles and typography. See `references/android-theming.md` for theme setup, dynamic colors, and dark/light mode.
+
 ## Table of Contents
 1. [Screen Architecture](#screen-architecture)
 2. [State Management](#state-management)

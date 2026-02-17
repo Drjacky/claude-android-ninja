@@ -18,6 +18,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Jetpack Compose patterns                             | [compose-patterns.md](references/compose-patterns.md)           |
 | Accessibility & TalkBack support                     | [android-accessibility.md](references/android-accessibility.md) |
 | Notifications & foreground services                  | [android-notifications.md](references/android-notifications.md) |
+| Material 3 theming & dynamic colors                  | [android-theming.md](references/android-theming.md)             |
 | Kotlin best practices                                | [kotlin-patterns.md](references/kotlin-patterns.md)             |
 | Coroutines best practices                            | [coroutines-patterns.md](references/coroutines-patterns.md)     |
 | Gradle & build configuration                         | [gradle-setup.md](references/gradle-setup.md)                   |
@@ -59,9 +60,16 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Building UI screens/components?**
 → Read [compose-patterns.md](references/compose-patterns.md)
+→ Use [android-theming.md](references/android-theming.md) for Material 3 colors, typography, and shapes  
 → **Always** align Kotlin code with [kotlin-patterns.md](references/kotlin-patterns.md)  
 → Create Screen + ViewModel + UiState in the feature module  
 → Use shared components from `core/ui` when possible
+
+**Setting up app theme (colors, typography, shapes)?**
+→ Follow [android-theming.md](references/android-theming.md) for Material 3 theming and dynamic colors  
+→ Use semantic color roles from `MaterialTheme.colorScheme` (never hardcoded colors)  
+→ Support light/dark themes with user preference toggle  
+→ Enable dynamic color (Material You) for API 31+  
 
 **Writing any Kotlin code?**
 → **Always** follow [kotlin-patterns.md](references/kotlin-patterns.md)  

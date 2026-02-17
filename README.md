@@ -16,6 +16,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - Modular Android architecture (feature-first, core modules, strict dependencies)
 - Domain/Data/UI layering patterns with auth-focused examples
 - Jetpack Compose patterns, state management, and adaptive UI
+- Material 3 theming (dynamic colors, typography, shapes, dark/light mode)
 - Navigation3 guidance and navigation coordination
 - Accessibility support (TalkBack, semantic properties, WCAG compliance)
 - Notifications (channels, styles, actions, foreground services, API 24-35)
@@ -36,6 +37,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `references/architecture.md` - architecture principles, data/domain layers, and flows
 - `references/modularization.md` - module structure and Navigation3 wiring
 - `references/compose-patterns.md` - Compose UI patterns and best practices
+- `references/android-theming.md` - Material 3 theming, colors, typography, shapes
 - `references/android-accessibility.md` - accessibility, TalkBack, semantic properties, WCAG
 - `references/android-notifications.md` - notifications, channels, styles, foreground services
 - `references/kotlin-patterns.md` - Kotlin best practices (must-read for Kotlin code)
