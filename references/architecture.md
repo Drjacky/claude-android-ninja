@@ -3,6 +3,8 @@
 Based on Google's official Android architecture guidance with modern Jetpack Compose, Navigation3, and our modular best practices.
 All Kotlin code in this architecture must align with `references/kotlin-patterns.md`.
 
+**Data Synchronization:** For offline-first patterns, sync strategies, and conflict resolution, see `references/android-data-sync.md`.
+
 ## Table of Contents
 1. [Architecture Overview](#architecture-overview)
 2. [Architecture Principles](#architecture-principles)

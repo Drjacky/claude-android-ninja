@@ -4,6 +4,8 @@
 Use coroutines in a testable, lifecycle-aware way. Highlights from Android guidance:
 https://developer.android.com/kotlin/coroutines/coroutines-best-practices
 
+**Data Synchronization:** For retry mechanisms with exponential backoff and background sync patterns, see `references/android-data-sync.md`.
+
 ### Inject Dispatchers (Avoid Hardcoding)
 Inject `CoroutineDispatcher` (or a small wrapper) so production and test behavior are consistent.
 

@@ -18,6 +18,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Jetpack Compose patterns                             | [compose-patterns.md](references/compose-patterns.md)           |
 | Accessibility & TalkBack support                     | [android-accessibility.md](references/android-accessibility.md) |
 | Notifications & foreground services                  | [android-notifications.md](references/android-notifications.md) |
+| Data sync & offline-first patterns                   | [android-data-sync.md](references/android-data-sync.md)         |
 | Material 3 theming & dynamic colors                  | [android-theming.md](references/android-theming.md)             |
 | Kotlin best practices                                | [kotlin-patterns.md](references/kotlin-patterns.md)             |
 | Coroutines best practices                            | [coroutines-patterns.md](references/coroutines-patterns.md)     |
@@ -80,6 +81,12 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Create Repository interfaces in `core/domain`
 → Implement Repository in `core/data`
 → Create DataSource + DAO in `core/data`
+
+**Implementing offline-first or data synchronization?**
+→ Follow [android-data-sync.md](references/android-data-sync.md) for sync strategies, conflict resolution, and cache invalidation  
+→ Use Room as single source of truth with sync metadata (syncStatus, lastModified)  
+→ Schedule background sync with WorkManager  
+→ Monitor network state before syncing  
 
 **Setting up navigation?**
 → Follow Navigation Coordination in [modularization.md](references/modularization.md)  

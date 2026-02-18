@@ -4,6 +4,8 @@ This guide maps classic design patterns to practical Android usage while staying
 our architecture (`references/architecture.md`), modularization rules (`references/modularization.md`), and Compose-first code.
 Use this when designing new features, modules, pure business logic, or shared utilities.
 
+**Data Synchronization:** For cache patterns, conflict resolution, and sync strategies, see `references/android-data-sync.md`.
+
 ## Table of Contents
 1. [Principles for This Codebase](#principles-for-this-codebase)
 2. [Architectural Patterns](#architectural-patterns)

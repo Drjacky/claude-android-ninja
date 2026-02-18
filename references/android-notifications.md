@@ -4,7 +4,9 @@ Modern notification patterns following Material Design 3 guidelines with proper 
 
 All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 
-**Related guides:** See `references/android-permissions.md` for POST_NOTIFICATIONS permission handling.
+**Related guides:** 
+- See `references/android-permissions.md` for POST_NOTIFICATIONS permission handling
+- See `references/android-data-sync.md` for WorkManager background sync patterns
 
 ## Table of Contents
 
