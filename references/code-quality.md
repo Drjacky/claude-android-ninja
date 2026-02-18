@@ -34,15 +34,14 @@ Key features:
 
 ### Build Logic Registration
 
-Register the plugin in `build-logic/convention/build.gradle.kts`:
+The Detekt plugin is already registered in the build script available at `templates/convention/build.gradle.kts`. 
+
+When you copy the build script to your project's `build-logic/convention/build.gradle.kts`, the Detekt plugin registration is included:
+
 ```kotlin
-gradlePlugin {
-    plugins {
-        register("detekt") {
-            id = "app.detekt"
-            implementationClass = "DetektConventionPlugin"
-        }
-    }
+register("detekt") {
+    id = "app.detekt"
+    implementationClass = "DetektConventionPlugin"
 }
 ```
 

@@ -165,7 +165,7 @@ All convention plugin implementations are available in `templates/convention/`:
 - `AndroidInstrumentationTest.kt` - Test optimization
 - `PrintApksTask.kt` - APK path printing
 
-See `templates/convention/README.md` for detailed setup instructions and `templates/convention/QUICK_REFERENCE.md` for usage examples.
+See `templates/convention/QUICK_REFERENCE.md` for detailed setup instructions and usage examples.
 
 ## Module Build Files
 
@@ -475,7 +475,7 @@ plugins {
 Module `build.gradle.kts` (typically app or feature modules):
 ```kotlin
 plugins {
-    id("com.example.android.application")
+    alias(libs.plugins.app.android.application)
     alias(libs.plugins.compose.stability.analyzer)
 }
 
