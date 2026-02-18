@@ -12,23 +12,23 @@ This directory contains Gradle convention plugins for consistent build configura
 
 ## Plugin Mapping Table
 
-| Plugin ID | File | Purpose | Common Apply To |
-|-----------|------|---------|-----------------|
-| `app.android.application` | `AndroidApplicationConventionPlugin.kt` | Root app module config | `:app` |
-| `app.android.application.compose` | `AndroidApplicationComposeConventionPlugin.kt` | Compose for app | `:app` |
-| `app.android.application.baseline` | `AndroidApplicationBaselineProfileConventionPlugin.kt` | Baseline profiles | `:app` |
-| `app.android.library` | `AndroidLibraryConventionPlugin.kt` | Android library | `:core:*`, `:feature:*` |
-| `app.android.library.compose` | `AndroidLibraryComposeConventionPlugin.kt` | Compose for library | UI libraries |
-| `app.android.feature` | `AndroidFeatureConventionPlugin.kt` | Feature module | `:feature:auth`, etc. |
-| `app.android.test` | `AndroidTestConventionPlugin.kt` | Test-only module | `:benchmark` |
-| `app.android.room` | `AndroidRoomConventionPlugin.kt` | Room database | Modules with DB |
-| `app.android.lint` | `AndroidLintConventionPlugin.kt` | Lint analysis | All Android modules |
-| `app.hilt` | `HiltConventionPlugin.kt` | Hilt DI | All modules |
-| `app.detekt` | `DetektConventionPlugin.kt` | Detekt analysis | All modules |
-| `app.spotless` | `SpotlessConventionPlugin.kt` | Code formatting | All modules |
-| `app.jvm.library` | `JvmLibraryConventionPlugin.kt` | Pure Kotlin lib | `:core:model` |
-| `app.kotlin.serialization` | `KotlinSerializationConventionPlugin.kt` | JSON serialization | Network/data modules |
-| `app.firebase` | `FirebaseConventionPlugin.kt` | Firebase | `:app` |
+| Plugin ID                          | File                                                   | Purpose                | Common Apply To         |
+|------------------------------------|--------------------------------------------------------|------------------------|-------------------------|
+| `app.android.application`          | `AndroidApplicationConventionPlugin.kt`                | Root app module config | `:app`                  |
+| `app.android.application.compose`  | `AndroidApplicationComposeConventionPlugin.kt`         | Compose for app        | `:app`                  |
+| `app.android.application.baseline` | `AndroidApplicationBaselineProfileConventionPlugin.kt` | Baseline profiles      | `:app`                  |
+| `app.android.library`              | `AndroidLibraryConventionPlugin.kt`                    | Android library        | `:core:*`, `:feature:*` |
+| `app.android.library.compose`      | `AndroidLibraryComposeConventionPlugin.kt`             | Compose for library    | UI libraries            |
+| `app.android.feature`              | `AndroidFeatureConventionPlugin.kt`                    | Feature module         | `:feature:auth`, etc.   |
+| `app.android.test`                 | `AndroidTestConventionPlugin.kt`                       | Test-only module       | `:benchmark`            |
+| `app.android.room`                 | `AndroidRoomConventionPlugin.kt`                       | Room database          | Modules with DB         |
+| `app.android.lint`                 | `AndroidLintConventionPlugin.kt`                       | Lint analysis          | All Android modules     |
+| `app.hilt`                         | `HiltConventionPlugin.kt`                              | Hilt DI                | All modules             |
+| `app.detekt`                       | `DetektConventionPlugin.kt`                            | Detekt analysis        | All modules             |
+| `app.spotless`                     | `SpotlessConventionPlugin.kt`                          | Code formatting        | All modules             |
+| `app.jvm.library`                  | `JvmLibraryConventionPlugin.kt`                        | Pure Kotlin lib        | `:core:model`           |
+| `app.kotlin.serialization`         | `KotlinSerializationConventionPlugin.kt`               | JSON serialization     | Network/data modules    |
+| `app.firebase`                     | `FirebaseConventionPlugin.kt`                          | Firebase               | `:app`                  |
 
 ## Common Plugin Combinations
 
@@ -224,14 +224,14 @@ com.example.core.model.*
 
 ## Configuration Files
 
-| File | Purpose |
-|------|---------|
-| `KotlinAndroid.kt` | Common Kotlin/Android config (SDK, Java 17, desugaring, opt-ins) |
-| `AndroidCompose.kt` | Compose configuration (BOM, metrics, stability) |
-| `ProjectExtensions.kt` | Version catalog access (`Project.libs`) |
-| `GradleManagedDevices.kt` | Emulator configuration for tests (Pixel 6, Pixel 8) |
-| `AndroidInstrumentationTest.kt` | Disable unnecessary Android tests |
-| `PrintApksTask.kt` | Task to print APK paths |
+| File                            | Purpose                                                          |
+|---------------------------------|------------------------------------------------------------------|
+| `KotlinAndroid.kt`              | Common Kotlin/Android config (SDK, Java 17, desugaring, opt-ins) |
+| `AndroidCompose.kt`             | Compose configuration (BOM, metrics, stability)                  |
+| `ProjectExtensions.kt`          | Version catalog access (`Project.libs`)                          |
+| `GradleManagedDevices.kt`       | Emulator configuration for tests (Pixel 6, Pixel 8)              |
+| `AndroidInstrumentationTest.kt` | Disable unnecessary Android tests                                |
+| `PrintApksTask.kt`              | Task to print APK paths                                          |
 
 ## Version Catalog Entries (libs.versions.toml)
 
@@ -260,15 +260,15 @@ Reports will be generated in:
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Plugin not found | Check `includeBuild("build-logic")` in root `settings.gradle.kts` |
-| Version catalog not accessible | Verify `build-logic/settings.gradle.kts` references correct path |
+| Issue                           | Solution                                                                     |
+|---------------------------------|------------------------------------------------------------------------------|
+| Plugin not found                | Check `includeBuild("build-logic")` in root `settings.gradle.kts`            |
+| Version catalog not accessible  | Verify `build-logic/settings.gradle.kts` references correct path             |
 | Type resolution fails in Detekt | Stop Gradle daemon, clean build, ensure Android/Kotlin plugins applied first |
-| Resource prefix errors | Verify module path follows convention (`:feature:auth` → `feature_auth_`) |
-| Compose metrics not generated | Add flags to `gradle.properties` and enable in individual modules |
-| Hilt compiler errors | Ensure KSP is applied before Hilt plugin |
-| Room schemas not found | Check `$projectDir/schemas/` directory exists |
+| Resource prefix errors          | Verify module path follows convention (`:feature:auth` → `feature_auth_`)    |
+| Compose metrics not generated   | Add flags to `gradle.properties` and enable in individual modules            |
+| Hilt compiler errors            | Ensure KSP is applied before Hilt plugin                                     |
+| Room schemas not found          | Check `$projectDir/schemas/` directory exists                                |
 
 ## Migration Checklist
 .
