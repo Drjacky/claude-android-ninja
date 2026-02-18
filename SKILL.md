@@ -39,6 +39,10 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Creating a new project?**
 → Start with `templates/settings.gradle.kts.template` for settings and module includes  
 → Start with `templates/libs.versions.toml.template` for the version catalog  
+→ Copy all files from `templates/convention/` to `build-logic/convention/src/main/kotlin/`  
+→ Create `build-logic/settings.gradle.kts` (see `templates/convention/README.md`)  
+→ Add `includeBuild("build-logic")` to root `settings.gradle.kts`  
+→ Add plugin entries to `gradle/libs.versions.toml` (see `templates/convention/QUICK_REFERENCE.md`)  
 → Read [modularization.md](references/modularization.md) for structure and module types  
 → Use [gradle-setup.md](references/gradle-setup.md) for build files and build logic  
 

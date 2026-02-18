@@ -114,19 +114,25 @@ core/
 build-logic/            # Convention plugins for consistent builds
 ├── convention/
 │   ├── src/main/kotlin/
-│   │   ├── AndroidApplicationConventionPlugin.kt # App module
-│   │   ├── AndroidLibraryConventionPlugin.kt     # Core library modules
-│   │   ├── AndroidFeatureConventionPlugin.kt     # Feature modules
-│   │   ├── AndroidApplicationComposeConventionPlugin.kt     # Compose for app
-│   │   ├── AndroidLibraryComposeConventionPlugin.kt         # Compose for libraries
-│   │   ├── HiltConventionPlugin.kt               # Hilt setup
-│   │   ├── AndroidRoomConventionPlugin.kt        # Room setup
-│   │   ├── DetektConventionPlugin.kt             # Detekt setup
-│   │   ├── SpotlessConventionPlugin.kt           # Code formatting
-│   │   ├── ... (see templates/convention/ for all plugins)
-│   │   ├── KotlinAndroid.kt                      # Common Kotlin/Android config
-│   │   ├── AndroidCompose.kt                     # Compose configuration
-│   │   └── ... (configuration files)
+│   │   ├── AndroidApplicationConventionPlugin.kt
+│   │   ├── AndroidApplicationComposeConventionPlugin.kt
+│   │   ├── AndroidApplicationBaselineProfileConventionPlugin.kt
+│   │   ├── AndroidLibraryConventionPlugin.kt
+│   │   ├── AndroidLibraryComposeConventionPlugin.kt
+│   │   ├── AndroidFeatureConventionPlugin.kt
+│   │   ├── AndroidTestConventionPlugin.kt
+│   │   ├── AndroidRoomConventionPlugin.kt
+│   │   ├── AndroidLintConventionPlugin.kt
+│   │   ├── HiltConventionPlugin.kt
+│   │   ├── DetektConventionPlugin.kt
+│   │   ├── SpotlessConventionPlugin.kt
+│   │   ├── JvmLibraryConventionPlugin.kt
+│   │   ├── KotlinSerializationConventionPlugin.kt
+│   │   ├── FirebaseConventionPlugin.kt
+│   │   ├── ... (configuration files)
+│   │   ├── KotlinAndroid.kt
+│   │   ├── AndroidCompose.kt
+│   │   └── ... (other configuration files)
 │   └── build.gradle.kts
 ```
 
