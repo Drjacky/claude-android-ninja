@@ -29,7 +29,7 @@ Key points:
 ## Convention Plugins
 
 **Complete Convention Plugin Implementation**: All plugin source files are available in `templates/convention/` including:
-- All 17 convention plugins (`.kt` files)
+- All 18 convention plugins (`.kt` files)
 - Configuration files in `config/` subdirectory (KotlinAndroid.kt, AndroidCompose.kt, Jacoco.kt, etc.)
 - Build script (`build.gradle.kts`)
 - Setup guide and quick reference (`QUICK_REFERENCE.md`)
@@ -159,7 +159,8 @@ All convention plugin implementations are available in `templates/convention/`:
 **Other Plugins:**
 - `JvmLibraryConventionPlugin.kt` - Pure Kotlin libraries
 - `KotlinSerializationConventionPlugin.kt` - JSON serialization
-- `FirebaseConventionPlugin.kt` - Firebase integration
+- `FirebaseConventionPlugin.kt` - Firebase Crashlytics integration
+- `SentryConventionPlugin.kt` - Sentry crash reporting integration
 
 **Configuration Files (in config/ subdirectory):**
 - `config/KotlinAndroid.kt` - Common Kotlin/Android setup

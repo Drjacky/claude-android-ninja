@@ -60,7 +60,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `templates/detekt.yml.template` - Detekt static analysis configuration
 - `templates/libs.versions.toml.template` - Version catalog with all dependencies
 - `templates/settings.gradle.kts.template` - Project settings with repositories
-- `templates/convention/` - Convention plugin implementations (17 plugins + 7 config files)
+- `templates/convention/` - Convention plugin implementations (18 plugins + 7 config files)
 
 ## 🔧 Scope
 This skill is focused on Android app development using:

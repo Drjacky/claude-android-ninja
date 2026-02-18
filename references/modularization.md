@@ -111,34 +111,35 @@ core/
   ├── common/           # Shared utilities, extensions
   └── testing/          # Test utilities, test doubles
 build-logic/            # Convention plugins for consistent builds
-├── convention/
-│   ├── src/main/kotlin/
-│   │   ├── AndroidApplicationConventionPlugin.kt
-│   │   ├── AndroidApplicationComposeConventionPlugin.kt
-│   │   ├── AndroidApplicationBaselineProfileConventionPlugin.kt
-│   │   ├── AndroidApplicationJacocoConventionPlugin.kt
-│   │   ├── AndroidLibraryConventionPlugin.kt
-│   │   ├── AndroidLibraryComposeConventionPlugin.kt
-│   │   ├── AndroidLibraryJacocoConventionPlugin.kt
-│   │   ├── AndroidFeatureConventionPlugin.kt
-│   │   ├── AndroidTestConventionPlugin.kt
-│   │   ├── AndroidRoomConventionPlugin.kt
-│   │   ├── AndroidLintConventionPlugin.kt
-│   │   ├── HiltConventionPlugin.kt
-│   │   ├── DetektConventionPlugin.kt
-│   │   ├── SpotlessConventionPlugin.kt
-│   │   ├── JvmLibraryConventionPlugin.kt
-│   │   ├── KotlinSerializationConventionPlugin.kt
-│   │   ├── FirebaseConventionPlugin.kt
-│   │   └── config/                           # Configuration utilities
-│   │       ├── KotlinAndroid.kt
-│   │       ├── AndroidCompose.kt
-│   │       ├── ProjectExtensions.kt
-│   │       ├── GradleManagedDevices.kt
-│   │       ├── AndroidInstrumentationTest.kt
-│   │       ├── PrintApksTask.kt
-│   │       └── Jacoco.kt
-│   └── build.gradle.kts
+        ├── convention/
+        │   ├── src/main/kotlin/
+        │   │   ├── AndroidApplicationConventionPlugin.kt
+        │   │   ├── AndroidApplicationComposeConventionPlugin.kt
+        │   │   ├── AndroidApplicationBaselineProfileConventionPlugin.kt
+        │   │   ├── AndroidApplicationJacocoConventionPlugin.kt
+        │   │   ├── AndroidLibraryConventionPlugin.kt
+        │   │   ├── AndroidLibraryComposeConventionPlugin.kt
+        │   │   ├── AndroidLibraryJacocoConventionPlugin.kt
+        │   │   ├── AndroidFeatureConventionPlugin.kt
+        │   │   ├── AndroidTestConventionPlugin.kt
+        │   │   ├── AndroidRoomConventionPlugin.kt
+        │   │   ├── AndroidLintConventionPlugin.kt
+        │   │   ├── HiltConventionPlugin.kt
+        │   │   ├── DetektConventionPlugin.kt
+        │   │   ├── SpotlessConventionPlugin.kt
+        │   │   ├── JvmLibraryConventionPlugin.kt
+        │   │   ├── KotlinSerializationConventionPlugin.kt
+        │   │   ├── FirebaseConventionPlugin.kt
+        │   │   ├── SentryConventionPlugin.kt
+        │   │   └── config/
+        │   │       ├── KotlinAndroid.kt
+        │   │       ├── AndroidCompose.kt
+        │   │       ├── ProjectExtensions.kt
+        │   │       ├── GradleManagedDevices.kt
+        │   │       ├── AndroidInstrumentationTest.kt
+        │   │       ├── PrintApksTask.kt
+        │   │       └── Jacoco.kt
+        │   └── build.gradle.kts
 ```
 
 ### Feature Module Structure

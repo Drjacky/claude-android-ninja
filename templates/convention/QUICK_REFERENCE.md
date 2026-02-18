@@ -30,7 +30,8 @@ This directory contains Gradle convention plugins for consistent build configura
 | `app.spotless`                      | `SpotlessConventionPlugin.kt`                           | Code formatting              | All modules                      |
 | `app.jvm.library`                   | `JvmLibraryConventionPlugin.kt`                         | Pure Kotlin lib              | `:core:model`                    |
 | `app.kotlin.serialization`          | `KotlinSerializationConventionPlugin.kt`                | JSON serialization           | Network/data modules             |
-| `app.firebase`                      | `FirebaseConventionPlugin.kt`                           | Firebase                     | `:app`                           |
+| `app.firebase`                      | `FirebaseConventionPlugin.kt`                           | Firebase Crashlytics         | `:app`                           |
+| `app.sentry`                        | `SentryConventionPlugin.kt`                             | Sentry crash reporting       | `:app`                           |
 
 ## Common Plugin Combinations
 
@@ -42,7 +43,8 @@ plugins {
     alias(libs.plugins.app.hilt)
     alias(libs.plugins.app.detekt)
     alias(libs.plugins.app.spotless)
-    alias(libs.plugins.app.firebase) // if using Firebase
+    alias(libs.plugins.app.firebase) // if using Firebase Crashlytics
+    alias(libs.plugins.app.sentry) // OR if using Sentry (not both)
     alias(libs.plugins.app.android.application.jacoco) // if code coverage needed
 }
 ```
@@ -226,6 +228,15 @@ com.example.core.model.*
 - Firebase BOM dependency
 - Crashlytics and Analytics libraries
 - Crashlytics configuration (native symbols, debug builds)
+
+### Sentry Plugin
+- Sentry Android Gradle plugin
+- Sentry Kotlin Compiler plugin (automatic @Composable tagging)
+- Sentry Android SDK
+- Sentry Compose integration
+- Automatic mapping file upload and source context
+
+**Note:** Use either `app.firebase` OR `app.sentry`, not both (unless implementing dual reporting).
 
 ### JaCoCo Plugins (Code Coverage)
 - JaCoCo plugin + version configuration
