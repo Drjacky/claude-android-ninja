@@ -209,4 +209,5 @@ app-firebase = { id = "app.firebase" }
 app-hilt = { id = "app.hilt" }
 app-jvm-library = { id = "app.jvm.library" }
 app-kotlin-serialization = { id = "app.kotlin.serialization" }
+app-sentry = { id = "app.sentry" }
 app-spotless = { id = "app.spotless" }

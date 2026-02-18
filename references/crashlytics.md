@@ -88,22 +88,39 @@ class SentryCrashReporter @Inject constructor() : CrashReporter {
 }
 ```
 
-## Sentry Setup (Plugin + Compose)
+## Sentry Setup (Convention Plugin + Compose)
 
-Use the Gradle plugin for setup; it auto-adds the core SDK and configures uploads.
+Use the Sentry convention plugin for automatic setup. It applies the Gradle plugins, adds the Sentry SDK, and configures Compose integration.
 
 ```kotlin
 // app/build.gradle.kts
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.app.android.application)
+    alias(libs.plugins.app.android.application.compose)
+    alias(libs.plugins.app.hilt)
+    alias(libs.plugins.app.sentry)
+}
+```
+
+The `app.sentry` convention plugin (from `templates/convention/SentryConventionPlugin.kt`) automatically:
+- Applies `io.sentry.android.gradle` plugin (auto-adds core SDK, uploads mapping files)
+- Applies `io.sentry.kotlin.compiler.gradle` plugin (automatic @Composable tagging)
+- Adds `sentry-android` dependency
+- Adds `sentry-compose-android` dependency for Jetpack Compose integration
+
+**Manual setup (if not using convention plugin):**
+
+```kotlin
+plugins {
+    alias(libs.plugins.app.android.application)
+    alias(libs.plugins.app.android.application.compose)
     alias(libs.plugins.sentry.android)
     alias(libs.plugins.sentry.kotlin.compiler)
 }
 
 dependencies {
+    implementation(libs.sentry.android)
     implementation(libs.sentry.compose.android)
-    // The Sentry plugin automatically adds the core SDK.
 }
 ```
 
@@ -184,17 +201,9 @@ fun AuthProfileScreen(userId: String) {
 }
 ```
 
-## Firebase Crashlytics Setup (Plugin + Compose)
+## Firebase Crashlytics Setup (Convention Plugin + Compose)
 
-Use the Gradle plugin and Firebase BoM. The separate `-ktx` artifact is no longer required.
-
-```kotlin
-// build.gradle.kts (project-level)
-plugins {
-    alias(libs.plugins.google.services) apply false
-    alias(libs.plugins.firebase.crashlytics) apply false
-}
-```
+Use the Firebase convention plugin for automatic setup. The separate `-ktx` artifact is no longer required with the Firebase BoM.
 
 ```kotlin
 // app/build.gradle.kts
@@ -206,7 +215,37 @@ plugins {
 }
 ```
 
-The `app.firebase` convention plugin (from `templates/convention/FirebaseConventionPlugin.kt`) automatically applies the Google Services and Firebase Crashlytics plugins, and adds the Firebase BOM with Crashlytics and Analytics dependencies.
+The `app.firebase` convention plugin (from `templates/convention/FirebaseConventionPlugin.kt`) automatically:
+- Applies `com.google.gms.google-services` plugin
+- Applies `com.google.firebase.crashlytics` plugin
+- Adds Firebase BoM dependency (version managed centrally)
+- Adds `firebase-analytics` and `firebase-crashlytics` libraries
+- Configures native symbol uploads and debug build settings
+
+**Manual setup (if not using convention plugin):**
+
+```kotlin
+// build.gradle.kts (project-level)
+plugins {
+    alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.firebase.crashlytics) apply false
+}
+
+// app/build.gradle.kts
+plugins {
+    alias(libs.plugins.app.android.application)
+    alias(libs.plugins.app.android.application.compose)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
+}
+
+dependencies {
+    val bom = libs.firebase.bom
+    implementation(platform(bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
+}
+```
 
 ### Application Initialization (Firebase)
 
@@ -322,7 +361,9 @@ viewModelScope.launch(crashHandler) {
 
 ## Wiring in the App Module
 
-Use DI bindings to switch providers without changing feature code:
+Use DI bindings to switch providers without changing feature code.
+
+### Using Firebase Crashlytics
 
 ```kotlin
 @Module
@@ -332,10 +373,42 @@ abstract class CrashReporterModule {
     abstract fun bindCrashReporter(
         impl: FirebaseCrashReporter
     ): CrashReporter
+    
+    @Provides
+    @Singleton
+    fun provideFirebaseCrashlytics(): FirebaseCrashlytics =
+        FirebaseCrashlytics.getInstance()
 }
 ```
 
-Swap to Sentry by binding `SentryCrashReporter` instead.
+Apply the Firebase convention plugin in `app/build.gradle.kts`:
+```kotlin
+plugins {
+    alias(libs.plugins.app.firebase)
+}
+```
+
+### Using Sentry
+
+```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class CrashReporterModule {
+    @Binds
+    abstract fun bindCrashReporter(
+        impl: SentryCrashReporter
+    ): CrashReporter
+}
+```
+
+Apply the Sentry convention plugin in `app/build.gradle.kts`:
+```kotlin
+plugins {
+    alias(libs.plugins.app.sentry)
+}
+```
+
+**Switching providers:** Simply change the binding and convention plugin. Feature modules remain unchanged.
 
 ## Best Practices
 

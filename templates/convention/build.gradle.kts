@@ -99,5 +99,9 @@ gradlePlugin {
             id = "app.firebase"
             implementationClass = "FirebaseConventionPlugin"
         }
+        register("sentry") {
+            id = "app.sentry"
+            implementationClass = "SentryConventionPlugin"
+        }
     }
 }
