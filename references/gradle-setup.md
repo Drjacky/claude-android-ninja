@@ -28,6 +28,15 @@ Key points:
 
 ## Convention Plugins
 
+**Complete Convention Plugin Implementation**: All plugin source files are available in `templates/convention/` including:
+- All 15 convention plugins (`.kt` files)
+- Configuration files (KotlinAndroid.kt, AndroidCompose.kt, etc.)
+- Build script (`build.gradle.kts`)
+- Setup guide (`README.md`)
+- Quick reference (`QUICK_REFERENCE.md`)
+
+Copy these files to `build-logic/convention/src/main/kotlin/` in your project.
+
 ### Build Logic Setup
 
 `build-logic/convention/build.gradle.kts`:
@@ -43,457 +52,121 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
 dependencies {
     compileOnly(libs.android.gradlePlugin)
     compileOnly(libs.kotlin.gradlePlugin)
     compileOnly(libs.kotlin.composeGradlePlugin)
     compileOnly(libs.ksp.gradlePlugin)
-    compileOnly(libs.hilt.gradlePlugin)
+    compileOnly(libs.room.gradlePlugin)
     compileOnly(libs.plugin.detekt)
 }
 
 gradlePlugin {
     plugins {
         register("androidApplication") {
-            id = "com.example.android.application"
-            implementationClass = "com.example.convention.AndroidApplicationConventionPlugin"
+            id = "app.android.application"
+            implementationClass = "AndroidApplicationConventionPlugin"
+        }
+        register("androidApplicationCompose") {
+            id = "app.android.application.compose"
+            implementationClass = "AndroidApplicationComposeConventionPlugin"
+        }
+        register("androidApplicationBaselineProfile") {
+            id = "app.android.application.baseline"
+            implementationClass = "AndroidApplicationBaselineProfileConventionPlugin"
         }
         register("androidLibrary") {
-            id = "com.example.android.library"
-            implementationClass = "com.example.convention.AndroidLibraryConventionPlugin"
+            id = "app.android.library"
+            implementationClass = "AndroidLibraryConventionPlugin"
+        }
+        register("androidLibraryCompose") {
+            id = "app.android.library.compose"
+            implementationClass = "AndroidLibraryComposeConventionPlugin"
         }
         register("androidFeature") {
-            id = "com.example.android.feature"
-            implementationClass = "com.example.convention.AndroidFeatureConventionPlugin"
+            id = "app.android.feature"
+            implementationClass = "AndroidFeatureConventionPlugin"
         }
-        register("androidCompose") {
-            id = "com.example.android.compose"
-            implementationClass = "com.example.convention.AndroidComposeConventionPlugin"
-        }
-        register("androidHilt") {
-            id = "com.example.android.hilt"
-            implementationClass = "com.example.convention.AndroidHiltConventionPlugin"
+        register("androidTest") {
+            id = "app.android.test"
+            implementationClass = "AndroidTestConventionPlugin"
         }
         register("androidRoom") {
-            id = "com.example.android.room"
-            implementationClass = "com.example.convention.AndroidRoomConventionPlugin"
+            id = "app.android.room"
+            implementationClass = "AndroidRoomConventionPlugin"
         }
-        register("androidDetekt") {
-            id = "com.example.android.detekt"
-            implementationClass = "com.example.convention.DetektConventionPlugin"
+        register("androidLint") {
+            id = "app.android.lint"
+            implementationClass = "AndroidLintConventionPlugin"
         }
-    }
-}
-```
-
-### Shared Configuration
-
-`build-logic/convention/src/main/kotlin/com/example/convention/AndroidConvention.kt`:
-```kotlin
-import com.android.build.api.dsl.CommonExtension
-import org.gradle.api.JavaVersion
-import org.gradle.api.Project
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.getByType
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
-
-/**
- * Configure base Kotlin Android options for all modules
- */
-internal fun Project.configureAndroidCommon(
-    commonExtension: CommonExtension<*, *, *, *, *, *>
-) {
-    val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
-    
-    commonExtension.apply {
-        compileSdk = libs.findVersion("compileSdk").get().toString().toInt()
-
-        defaultConfig {
-            minSdk = libs.findVersion("minSdk").get().toString().toInt()
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        register("hilt") {
+            id = "app.hilt"
+            implementationClass = "HiltConventionPlugin"
         }
-
-        compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-            isCoreLibraryDesugaringEnabled = true // Required for API < 26 (java.time, Duration API)
+        register("detekt") {
+            id = "app.detekt"
+            implementationClass = "DetektConventionPlugin"
         }
-
-        kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_17.toString()
-            freeCompilerArgs = freeCompilerArgs + listOf(
-                "-opt-in=kotlin.RequiresOptIn",
-                "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-                "-opt-in=androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi",
-                "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
-            )
+        register("spotless") {
+            id = "app.spotless"
+            implementationClass = "SpotlessConventionPlugin"
         }
-    }
-
-    dependencies {
-        add("coreLibraryDesugaring", libs.findLibrary("androidx.core.desugaring").get())
-    }
-}
-
-/**
- * Configure common Android dependencies
- */
-internal fun Project.configureAndroidDependencies() {
-    val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
-    
-    dependencies {
-        // Common Android dependencies
-        add("implementation", libs.findLibrary("androidx-core-ktx").get())
-        add("implementation", libs.findLibrary("kotlinx-coroutines-android").get())
-        
-        // Testing
-        add("testImplementation", libs.findLibrary("junit").get())
-        add("androidTestImplementation", libs.findLibrary("androidx-junit").get())
-        add("androidTestImplementation", libs.findLibrary("androidx-espresso-core").get())
-    }
-}
-
-/**
- * Configure Kotlin options
- */
-private fun CommonExtension<*, *, *, *, *, *>.kotlinOptions(block: KotlinJvmOptions.() -> Unit) {
-    (this as ExtensionAware).extensions.configure<KotlinJvmOptions>("kotlinOptions", block)
-}
-```
-
-### Application Convention Plugin
-
-`build-logic/convention/src/main/kotlin/com/example/convention/AndroidApplicationConventionPlugin.kt`:
-```kotlin
-package com.example.convention
-
-import com.android.build.api.dsl.ApplicationExtension
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.configure
-import org.gradle.kotlin.dsl.getByType
-
-class AndroidApplicationConventionPlugin : Plugin<Project> {
-    override fun apply(target: Project) {
-        with(target) {
-            val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
-            
-            pluginManager.apply {
-                apply("com.android.application")
-                apply("org.jetbrains.kotlin.android")
-                apply(libs.findPlugin("ksp").get().get().pluginId)
-                apply("com.google.dagger.hilt.android")
-            }
-
-            extensions.configure<ApplicationExtension> {
-                configureAndroidCommon(this)
-                
-                defaultConfig {
-                    targetSdk = libs.findVersion("targetSdk").get().toString().toInt()
-                    versionCode = 1
-                    versionName = "1.0"
-                }
-                
-                buildTypes {
-                    release {
-                        isMinifyEnabled = true
-                        proguardFiles(
-                            getDefaultProguardFile("proguard-android-optimize.txt"),
-                            "proguard-rules.pro"
-                        )
-                    }
-                }
-                
-                packaging {
-                    resources {
-                        excludes += "/META-INF/{AL2.0,LGPL2.1}"
-                    }
-                }
-            }
-            
-            configureAndroidDependencies()
+        register("jvmLibrary") {
+            id = "app.jvm.library"
+            implementationClass = "JvmLibraryConventionPlugin"
+        }
+        register("kotlinSerialization") {
+            id = "app.kotlin.serialization"
+            implementationClass = "KotlinSerializationConventionPlugin"
+        }
+        register("firebase") {
+            id = "app.firebase"
+            implementationClass = "FirebaseConventionPlugin"
         }
     }
 }
 ```
 
-### Library Convention Plugin
+### Convention Plugin Files
 
-`build-logic/convention/src/main/kotlin/com/example/convention/AndroidLibraryConventionPlugin.kt`:
-```kotlin
-package com.example.convention
+All convention plugin implementations are available in `templates/convention/`:
 
-import com.android.build.api.dsl.LibraryExtension
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.configure
-import org.gradle.kotlin.dsl.getByType
+**Core Plugins:**
+- `AndroidApplicationConventionPlugin.kt` - Root app module configuration
+- `AndroidLibraryConventionPlugin.kt` - Android library modules
+- `AndroidFeatureConventionPlugin.kt` - Feature modules with UI + ViewModel
+- `AndroidTestConventionPlugin.kt` - Test-only modules
 
-class AndroidLibraryConventionPlugin : Plugin<Project> {
-    override fun apply(target: Project) {
-        with(target) {
-            val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
-            
-            pluginManager.apply {
-                apply("com.android.library")
-                apply("org.jetbrains.kotlin.android")
-            }
+**Compose & Build Plugins:**
+- `AndroidApplicationComposeConventionPlugin.kt` - Compose for application
+- `AndroidLibraryComposeConventionPlugin.kt` - Compose for libraries
+- `AndroidApplicationBaselineProfileConventionPlugin.kt` - Baseline profiles
+- `AndroidRoomConventionPlugin.kt` - Room database
+- `AndroidLintConventionPlugin.kt` - Android Lint configuration
 
-            extensions.configure<LibraryExtension> {
-                configureAndroidCommon(this)
-                defaultConfig.targetSdk = libs.findVersion("targetSdk").get().toString().toInt()
-                
-                buildTypes {
-                    release {
-                        isMinifyEnabled = false
-                    }
-                }
-            }
-            
-            configureAndroidDependencies()
-        }
-    }
-}
-```
+**Tooling Plugins:**
+- `HiltConventionPlugin.kt` - Hilt dependency injection
+- `DetektConventionPlugin.kt` - Static analysis
+- `SpotlessConventionPlugin.kt` - Code formatting
+- `JvmLibraryConventionPlugin.kt` - Pure Kotlin libraries
+- `KotlinSerializationConventionPlugin.kt` - JSON serialization
+- `FirebaseConventionPlugin.kt` - Firebase integration
 
-### Feature Convention Plugin
+**Configuration Files:**
+- `KotlinAndroid.kt` - Common Kotlin/Android setup
+- `AndroidCompose.kt` - Compose configuration
+- `ProjectExtensions.kt` - Version catalog access
+- `GradleManagedDevices.kt` - Emulator configuration
+- `AndroidInstrumentationTest.kt` - Test optimization
+- `PrintApksTask.kt` - APK path printing
 
-`build-logic/convention/src/main/kotlin/com/example/convention/AndroidFeatureConventionPlugin.kt`:
-```kotlin
-package com.example.convention
-
-import com.android.build.api.dsl.LibraryExtension
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.configure
-import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.getByType
-
-class AndroidFeatureConventionPlugin : Plugin<Project> {
-    override fun apply(target: Project) {
-        with(target) {
-            val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
-            
-            pluginManager.apply {
-                apply("com.example.android.library")
-                apply("com.example.android.compose")
-                apply("com.example.android.hilt")
-            }
-
-            extensions.configure<LibraryExtension> {
-                defaultConfig {
-                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                }
-            }
-
-            dependencies {
-                // Core dependencies for all features
-                add("implementation", project(":core:domain"))
-                add("implementation", project(":core:ui"))
-                
-                // AndroidX
-                add("implementation", libs.findLibrary("androidx-lifecycle-runtime-compose").get())
-                add("implementation", libs.findLibrary("androidx-lifecycle-viewmodel-compose").get())
-                add("implementation", libs.findLibrary("androidx-activity-compose").get())
-                
-                // Navigation3
-                add("implementation", libs.findBundle("navigation3").get())
-                
-                // DI
-                add("implementation", libs.findLibrary("hilt-android").get())
-                add("ksp", libs.findLibrary("hilt-compiler").get())
-                
-                // Testing
-                add("testImplementation", libs.findBundle("unit-test").get())
-                add("androidTestImplementation", libs.findBundle("android-test").get())
-            }
-        }
-    }
-}
-```
-
-### Compose Convention Plugin
-
-`build-logic/convention/src/main/kotlin/com/example/convention/AndroidComposeConventionPlugin.kt`:
-```kotlin
-package com.example.convention
-
-import com.android.build.api.dsl.CommonExtension
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.getByType
-
-class AndroidComposeConventionPlugin : Plugin<Project> {
-    override fun apply(target: Project) {
-        with(target) {
-            val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
-            
-            pluginManager.apply {
-                apply("com.android.library")
-                apply(libs.findPlugin("kotlin-compose").get().get().pluginId)
-            }
-            
-            val extension = extensions.getByType<CommonExtension<*, *, *, *, *, *>>()
-            configureAndroidCompose(extension)
-        }
-    }
-}
-
-internal fun Project.configureAndroidCompose(
-    commonExtension: CommonExtension<*, *, *, *, *, *>
-) {
-    val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
-    
-    commonExtension.apply {
-        buildFeatures {
-            compose = true
-        }
-        
-        // Compose compiler is configured via kotlin-compose plugin
-        // No manual composeOptions needed with Kotlin 2.0+
-    }
-
-    dependencies {
-        // Compose BOM
-        val composeBom = libs.findLibrary("androidx-compose-bom").get()
-        add("implementation", platform(composeBom))
-        add("androidTestImplementation", platform(composeBom))
-        
-        // Compose dependencies
-        add("implementation", libs.findBundle("compose").get())
-        add("debugImplementation", libs.findLibrary("androidx-compose-ui-tooling").get())
-        add("debugImplementation", libs.findLibrary("androidx-compose-ui-test-manifest").get())
-    }
-}
-```
-
-### Hilt Convention Plugin
-
-`build-logic/convention/src/main/kotlin/com/example/convention/AndroidHiltConventionPlugin.kt`:
-```kotlin
-package com.example.convention
-
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.getByType
-
-class AndroidHiltConventionPlugin : Plugin<Project> {
-    override fun apply(target: Project) {
-        with(target) {
-            val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
-            
-            pluginManager.apply {
-                apply(libs.findPlugin("ksp").get().get().pluginId)
-                apply("com.google.dagger.hilt.android")
-            }
-
-            dependencies {
-                add("implementation", libs.findLibrary("hilt-android").get())
-                add("ksp", libs.findLibrary("hilt-compiler").get())
-                add("androidTestImplementation", libs.findLibrary("hilt-android-testing").get())
-                add("kspAndroidTest", libs.findLibrary("hilt-compiler").get())
-            }
-        }
-    }
-}
-```
-
-### Room Convention Plugin
-
-`build-logic/convention/src/main/kotlin/com/example/convention/AndroidRoomConventionPlugin.kt`:
-```kotlin
-package com.example.convention
-
-import androidx.room.gradle.RoomExtension
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.configure
-import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.getByType
-
-class AndroidRoomConventionPlugin : Plugin<Project> {
-    override fun apply(target: Project) {
-        with(target) {
-            val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
-            
-            pluginManager.apply {
-                apply(libs.findPlugin("ksp").get().get().pluginId)
-                apply("androidx.room")
-            }
-            
-            extensions.configure<RoomExtension> {
-                // Generate Kotlin code instead of Java
-                schemaDirectory("$projectDir/schemas")
-            }
-
-            dependencies {
-                add("implementation", libs.findLibrary("room-runtime").get())
-                add("implementation", libs.findLibrary("room-ktx").get())
-                add("ksp", libs.findLibrary("room-compiler").get())
-                add("testImplementation", libs.findLibrary("room-testing").get())
-            }
-        }
-    }
-}
-```
-
-### Detekt Convention Plugin
-
-`build-logic/convention/src/main/kotlin/com/example/convention/DetektConventionPlugin.kt`:
-```kotlin
-package com.example.convention
-
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.extensions.DetektExtension
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.configure
-import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.getByType
-import org.gradle.kotlin.dsl.withType
-
-class DetektConventionPlugin : Plugin<Project> {
-    override fun apply(target: Project) = with(target) {
-        val libs = rootProject.extensions.getByType<VersionCatalogsExtension>().named("libs")
-        val detektPluginId = libs.findPlugin("detekt").get().get().pluginId
-
-        pluginManager.apply(detektPluginId)
-
-        dependencies {
-            add("detektPlugins", libs.findLibrary("compose-rules-detekt").get())
-        }
-
-        extensions.configure<DetektExtension> {
-            buildUponDefaultConfig = true
-            basePath = rootProject.projectDir.absolutePath
-            parallel = true
-
-            val rootConfig = rootProject.file("plugins/detekt.yml")
-            val moduleConfig = file("detekt.yml")
-            if (moduleConfig.exists()) {
-                config.setFrom(moduleConfig, rootConfig)
-            } else {
-                config.setFrom(rootConfig)
-            }
-        }
-
-        tasks.withType<Detekt>().configureEach {
-            jvmTarget = "17"
-        }
-    }
-}
-```
+See `templates/convention/README.md` for detailed setup instructions and `templates/convention/QUICK_REFERENCE.md` for usage examples.
 
 ## Module Build Files
 
@@ -502,9 +175,11 @@ class DetektConventionPlugin : Plugin<Project> {
 `app/build.gradle.kts`:
 ```kotlin
 plugins {
-    id("com.example.android.application")
-    id("com.example.android.compose")
-    id("com.example.android.hilt")
+    alias(libs.plugins.app.android.application)
+    alias(libs.plugins.app.android.application.compose)
+    alias(libs.plugins.app.hilt)
+    alias(libs.plugins.app.detekt)
+    alias(libs.plugins.app.spotless)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -580,7 +255,9 @@ dependencies {
 `feature-auth/build.gradle.kts`:
 ```kotlin
 plugins {
-    id("com.example.android.feature")
+    alias(libs.plugins.app.android.feature)
+    alias(libs.plugins.app.detekt)
+    alias(libs.plugins.app.spotless)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -609,14 +286,9 @@ dependencies {
 `core/domain/build.gradle.kts`:
 ```kotlin
 plugins {
-    id("java-library")
-    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.app.jvm.library)
+    alias(libs.plugins.app.detekt)
     alias(libs.plugins.kotlin.serialization)
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
 }
 
 dependencies {
@@ -639,8 +311,9 @@ dependencies {
 `core/data/build.gradle.kts`:
 ```kotlin
 plugins {
-    id("com.example.android.library")
-    id("com.example.android.hilt")
+    alias(libs.plugins.app.android.library)
+    alias(libs.plugins.app.hilt)
+    alias(libs.plugins.app.detekt)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -676,8 +349,9 @@ dependencies {
 `core/ui/build.gradle.kts`:
 ```kotlin
 plugins {
-    id("com.example.android.library")
-    id("com.example.android.compose")
+    alias(libs.plugins.app.android.library)
+    alias(libs.plugins.app.android.library.compose)
+    alias(libs.plugins.app.detekt)
 }
 
 android {
@@ -706,8 +380,9 @@ dependencies {
 `core/network/build.gradle.kts`:
 ```kotlin
 plugins {
-    id("com.example.android.library")
-    id("com.example.android.hilt")
+    alias(libs.plugins.app.android.library)
+    alias(libs.plugins.app.hilt)
+    alias(libs.plugins.app.detekt)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -734,9 +409,10 @@ dependencies {
 `core/database/build.gradle.kts`:
 ```kotlin
 plugins {
-    id("com.example.android.library")
-    id("com.example.android.room")
-    id("com.example.android.hilt")
+    alias(libs.plugins.app.android.library)
+    alias(libs.plugins.app.android.room)
+    alias(libs.plugins.app.hilt)
+    alias(libs.plugins.app.detekt)
 }
 
 android {

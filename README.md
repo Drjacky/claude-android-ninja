@@ -55,6 +55,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `references/dependencies.md` - dependency rules and version catalog guidance
 - `references/android-performance.md` - benchmarking and performance checks
 - `references/design-patterns.md` - Android-focused design patterns
+- `templates/convention/` - 15 convention plugins + configuration files (copy to `build-logic/`)
 - `templates/detekt.yml.template` - Detekt rules baseline
 - `templates/libs.versions.toml.template` - version catalog source of truth
 - `templates/settings.gradle.kts.template` - Gradle settings source of truth
@@ -75,6 +76,22 @@ This skill is focused on Android app development using:
 - **Google Truth** + **Turbine** (testing assertions)
 
 ## 📥 Installation
+
+### Convention Plugins Setup
+
+This skill includes 15 production-ready Gradle convention plugins in `templates/convention/`:
+- All plugin source files (`.kt`)
+- Configuration files (`KotlinAndroid.kt`, `AndroidCompose.kt`, etc.)
+- Build script (`build.gradle.kts`)
+- Setup guide (`README.md`)
+- Quick reference (`QUICK_REFERENCE.md`)
+
+**To use:**
+1. Copy all files from `templates/convention/` to `build-logic/convention/src/main/kotlin/` in your project
+2. Create `build-logic/settings.gradle.kts` (see `templates/convention/README.md`)
+3. Add `includeBuild("build-logic")` to root `settings.gradle.kts`
+4. Add plugin entries to `gradle/libs.versions.toml` (see `templates/convention/QUICK_REFERENCE.md`)
+5. Apply plugins in modules using `alias(libs.plugins.app.android.application)` etc.
 
 ### 1️⃣ Claude Code (manual)
 Clone or download this repo, then place it in Claude’s skills folder and refresh skills.

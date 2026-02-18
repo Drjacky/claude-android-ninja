@@ -19,94 +19,39 @@ Use `templates/detekt.yml.template` as the baseline rules file; copy it to
 a local `detekt.yml` override).
 
 ## Detekt Convention Plugin (Build Logic)
-Create `build-logic/convention/src/main/kotlin/com/example/convention/DetektConventionPlugin.kt`:
-```kotlin
-package com.example.convention
 
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-import io.gitlab.arturbosch.detekt.extensions.DetektExtension
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.plugins.JavaPluginExtension
-import org.gradle.kotlin.dsl.configure
-import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.getByType
-import org.gradle.kotlin.dsl.withType
-import org.gradle.api.artifacts.VersionCatalogsExtension
+The `DetektConventionPlugin` is available in `templates/convention/DetektConventionPlugin.kt`.
 
-class DetektConventionPlugin : Plugin<Project> {
-    override fun apply(target: Project) = with(target) {
-        val libs = rootProject.extensions.getByType<VersionCatalogsExtension>().named("libs")
-        val detektPluginId = libs.findPlugin("detekt").get().pluginId
+Copy it to `build-logic/convention/src/main/kotlin/DetektConventionPlugin.kt` in your project.
 
-        pluginManager.apply(detektPluginId)
-
-        dependencies {
-            // Compose ruleset for Jetpack Compose best practices.
-            add("detektPlugins", libs.findLibrary("compose-rules-detekt").get())
-        }
-
-        extensions.configure<DetektExtension> {
-            buildUponDefaultConfig = true
-            basePath = rootProject.projectDir.absolutePath
-            parallel = true
-
-            val rootConfig = rootProject.file("plugins/detekt.yml")
-            val moduleConfig = file("detekt.yml")
-            if (moduleConfig.exists()) {
-                config.setFrom(moduleConfig, rootConfig)
-            } else {
-                config.setFrom(rootConfig)
-            }
-
-            // Use per-module baselines (not shared)
-            val moduleBaseline = file("detekt-baseline.xml")
-            if (moduleBaseline.exists()) {
-                baseline = moduleBaseline
-            }
-        }
-
-        // Enable type resolution and set consistent JDK target.
-        tasks.withType<Detekt>().configureEach {
-            jvmTarget = "17"
-            
-            // Enable type resolution for Android modules
-            // This is critical for accurate Compose/Android analysis
-            reports {
-                html.required.set(true)
-                xml.required.set(true)
-                txt.required.set(false)
-                sarif.required.set(true)
-            }
-        }
-        
-        // Configure baseline task
-        tasks.withType<DetektCreateBaselineTask>().configureEach {
-            jvmTarget = "17"
-        }
-    }
-}
-```
+Key features:
+- Applies Detekt plugin from version catalog
+- Adds Compose rules automatically
+- Configures central config file (`config/detekt.yml`)
+- Supports module-specific overrides
+- Enables type resolution for Android modules
+- Generates XML, HTML, and SARIF reports
 
 ### Build Logic Registration
+
 Register the plugin in `build-logic/convention/build.gradle.kts`:
 ```kotlin
 gradlePlugin {
     plugins {
-        register("androidDetekt") {
-            id = "com.example.android.detekt"
-            implementationClass = "com.example.convention.DetektConventionPlugin"
+        register("detekt") {
+            id = "app.detekt"
+            implementationClass = "DetektConventionPlugin"
         }
     }
 }
 ```
 
 ## Apply in Modules
+
 Apply the convention plugin in every module:
 ```kotlin
 plugins {
-    id("com.example.android.detekt")
+    alias(libs.plugins.app.detekt)
 }
 ```
 

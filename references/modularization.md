@@ -12,6 +12,16 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 6. [Navigation Coordination](#navigation-coordination)
 7. [Build Configuration](#build-configuration)
 
+## Build Configuration
+
+Convention plugin definitions and examples live in:
+- `templates/convention/` - All plugin source files (.kt)
+- `references/gradle-setup.md` - Detailed build configuration patterns
+- `templates/convention/README.md` - Setup instructions
+- `templates/convention/QUICK_REFERENCE.md` - Quick lookup and examples
+
+Copy plugin files from `templates/convention/` to `build-logic/convention/src/main/kotlin/` in your project.
+
 ## Benefits
 
 - **Scalability**: Changes in one module don't cascade to others
@@ -107,9 +117,16 @@ build-logic/            # Convention plugins for consistent builds
 │   │   ├── AndroidApplicationConventionPlugin.kt # App module
 │   │   ├── AndroidLibraryConventionPlugin.kt     # Core library modules
 │   │   ├── AndroidFeatureConventionPlugin.kt     # Feature modules
-│   │   ├── AndroidComposeConventionPlugin.kt     # Compose setup
-│   │   ├── AndroidHiltConventionPlugin.kt        # Hilt setup
-│   │   └── AndroidRoomConventionPlugin.kt        # Room setup
+│   │   ├── AndroidApplicationComposeConventionPlugin.kt     # Compose for app
+│   │   ├── AndroidLibraryComposeConventionPlugin.kt         # Compose for libraries
+│   │   ├── HiltConventionPlugin.kt               # Hilt setup
+│   │   ├── AndroidRoomConventionPlugin.kt        # Room setup
+│   │   ├── DetektConventionPlugin.kt             # Detekt setup
+│   │   ├── SpotlessConventionPlugin.kt           # Code formatting
+│   │   ├── ... (see templates/convention/ for all plugins)
+│   │   ├── KotlinAndroid.kt                      # Common Kotlin/Android config
+│   │   ├── AndroidCompose.kt                     # Compose configuration
+│   │   └── ... (configuration files)
 │   └── build.gradle.kts
 ```
 

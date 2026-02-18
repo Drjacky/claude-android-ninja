@@ -44,7 +44,8 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Configuring Gradle/build files?**
 → Use [gradle-setup.md](references/gradle-setup.md) for module `build.gradle.kts` patterns  
-→ Keep convention plugins and build logic in `build-logic/` as described in [gradle-setup.md](references/gradle-setup.md)  
+→ Copy convention plugins from `templates/convention/` to `build-logic/` in your project  
+→ See `templates/convention/README.md` for setup instructions and `templates/convention/QUICK_REFERENCE.md` for examples  
 
 **Setting up code quality / Detekt?**
 → Use [code-quality.md](references/code-quality.md) for Detekt convention plugin setup  
