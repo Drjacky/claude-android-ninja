@@ -12,23 +12,25 @@ This directory contains Gradle convention plugins for consistent build configura
 
 ## Plugin Mapping Table
 
-| Plugin ID                          | File                                                   | Purpose                | Common Apply To         |
-|------------------------------------|--------------------------------------------------------|------------------------|-------------------------|
-| `app.android.application`          | `AndroidApplicationConventionPlugin.kt`                | Root app module config | `:app`                  |
-| `app.android.application.compose`  | `AndroidApplicationComposeConventionPlugin.kt`         | Compose for app        | `:app`                  |
-| `app.android.application.baseline` | `AndroidApplicationBaselineProfileConventionPlugin.kt` | Baseline profiles      | `:app`                  |
-| `app.android.library`              | `AndroidLibraryConventionPlugin.kt`                    | Android library        | `:core:*`, `:feature:*` |
-| `app.android.library.compose`      | `AndroidLibraryComposeConventionPlugin.kt`             | Compose for library    | UI libraries            |
-| `app.android.feature`              | `AndroidFeatureConventionPlugin.kt`                    | Feature module         | `:feature:auth`, etc.   |
-| `app.android.test`                 | `AndroidTestConventionPlugin.kt`                       | Test-only module       | `:benchmark`            |
-| `app.android.room`                 | `AndroidRoomConventionPlugin.kt`                       | Room database          | Modules with DB         |
-| `app.android.lint`                 | `AndroidLintConventionPlugin.kt`                       | Lint analysis          | All Android modules     |
-| `app.hilt`                         | `HiltConventionPlugin.kt`                              | Hilt DI                | All modules             |
-| `app.detekt`                       | `DetektConventionPlugin.kt`                            | Detekt analysis        | All modules             |
-| `app.spotless`                     | `SpotlessConventionPlugin.kt`                          | Code formatting        | All modules             |
-| `app.jvm.library`                  | `JvmLibraryConventionPlugin.kt`                        | Pure Kotlin lib        | `:core:model`           |
-| `app.kotlin.serialization`         | `KotlinSerializationConventionPlugin.kt`               | JSON serialization     | Network/data modules    |
-| `app.firebase`                     | `FirebaseConventionPlugin.kt`                          | Firebase               | `:app`                  |
+| Plugin ID                           | File                                                    | Purpose                      | Common Apply To                  |
+|-------------------------------------|---------------------------------------------------------|------------------------------|----------------------------------|
+| `app.android.application`           | `AndroidApplicationConventionPlugin.kt`                 | Root app module config       | `:app`                           |
+| `app.android.application.compose`   | `AndroidApplicationComposeConventionPlugin.kt`          | Compose for app              | `:app`                           |
+| `app.android.application.baseline`  | `AndroidApplicationBaselineProfileConventionPlugin.kt`  | Baseline profiles            | `:app`                           |
+| `app.android.application.jacoco`    | `AndroidApplicationJacocoConventionPlugin.kt`           | Code coverage for app        | `:app` (when coverage needed)    |
+| `app.android.library`               | `AndroidLibraryConventionPlugin.kt`                     | Android library              | `:core:*`, `:feature:*`          |
+| `app.android.library.compose`       | `AndroidLibraryComposeConventionPlugin.kt`              | Compose for library          | UI libraries                     |
+| `app.android.library.jacoco`        | `AndroidLibraryJacocoConventionPlugin.kt`               | Code coverage for library    | Libraries (when coverage needed) |
+| `app.android.feature`               | `AndroidFeatureConventionPlugin.kt`                     | Feature module               | `:feature:auth`, etc.            |
+| `app.android.test`                  | `AndroidTestConventionPlugin.kt`                        | Test-only module             | `:benchmark`                     |
+| `app.android.room`                  | `AndroidRoomConventionPlugin.kt`                        | Room database                | Modules with DB                  |
+| `app.android.lint`                  | `AndroidLintConventionPlugin.kt`                        | Lint analysis                | All Android modules              |
+| `app.hilt`                          | `HiltConventionPlugin.kt`                               | Hilt DI                      | All modules                      |
+| `app.detekt`                        | `DetektConventionPlugin.kt`                             | Detekt analysis              | All modules                      |
+| `app.spotless`                      | `SpotlessConventionPlugin.kt`                           | Code formatting              | All modules                      |
+| `app.jvm.library`                   | `JvmLibraryConventionPlugin.kt`                         | Pure Kotlin lib              | `:core:model`                    |
+| `app.kotlin.serialization`          | `KotlinSerializationConventionPlugin.kt`                | JSON serialization           | Network/data modules             |
+| `app.firebase`                      | `FirebaseConventionPlugin.kt`                           | Firebase                     | `:app`                           |
 
 ## Common Plugin Combinations
 
@@ -41,6 +43,7 @@ plugins {
     alias(libs.plugins.app.detekt)
     alias(libs.plugins.app.spotless)
     alias(libs.plugins.app.firebase) // if using Firebase
+    alias(libs.plugins.app.android.application.jacoco) // if code coverage needed
 }
 ```
 
@@ -61,6 +64,7 @@ plugins {
     alias(libs.plugins.app.android.room)
     alias(libs.plugins.app.kotlin.serialization)
     alias(libs.plugins.app.detekt)
+    alias(libs.plugins.app.android.library.jacoco) // if code coverage needed
 }
 ```
 
@@ -222,6 +226,26 @@ com.example.core.model.*
 - Firebase BOM dependency
 - Crashlytics and Analytics libraries
 - Crashlytics configuration (native symbols, debug builds)
+
+### JaCoCo Plugins (Code Coverage)
+- JaCoCo plugin + version configuration
+- Combined coverage reports (unit + instrumented tests)
+- Exclusions for generated code (Hilt, R files, BuildConfig)
+- XML and HTML reports
+- Compatible with Robolectric
+- Task: `create{Variant}CombinedCoverageReport`
+
+**Usage:**
+```bash
+# Run tests first
+./gradlew testDebugUnitTest
+./gradlew connectedDebugAndroidTest
+
+# Generate coverage report
+./gradlew createDebugCombinedCoverageReport
+
+# Reports at: build/reports/jacoco/createDebugCombinedCoverageReport/
+```
 
 ## Configuration Files
 

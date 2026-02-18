@@ -21,6 +21,7 @@ firebase-bom = "34.0.0"
 firebaseCrashlyticsPlugin = "3.0.6"
 googleServices = "4.4.2"
 hilt = "2.50"
+jacoco = "0.8.12"
 javaxInjectVersion = "1"
 junit = "4.13.2"
 junitVersion = "1.3.0"
@@ -195,9 +196,11 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 app-android-application = { id = "app.android.application" }
 app-android-application-baseline = { id = "app.android.application.baseline" }
 app-android-application-compose = { id = "app.android.application.compose" }
+app-android-application-jacoco = { id = "app.android.application.jacoco" }
 app-android-feature = { id = "app.android.feature" }
 app-android-library = { id = "app.android.library" }
 app-android-library-compose = { id = "app.android.library.compose" }
+app-android-library-jacoco = { id = "app.android.library.jacoco" }
 app-android-lint = { id = "app.android.lint" }
 app-android-room = { id = "app.android.room" }
 app-android-test = { id = "app.android.test" }

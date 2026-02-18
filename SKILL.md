@@ -31,6 +31,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | StrictMode guardrails                                | [android-strictmode.md](references/android-strictmode.md)       |
 | Multi-module dependencies                            | [dependencies.md](references/dependencies.md)                   |
 | Code quality (Detekt)                                | [code-quality.md](references/code-quality.md)                   |
+| Code coverage (JaCoCo)                               | [android-code-coverage.md](references/android-code-coverage.md) |
 | Design patterns                                      | [design-patterns.md](references/design-patterns.md)             |
 | Android performance benchmarking                     | [android-performance.md](references/android-performance.md)     |
 
@@ -207,3 +208,8 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Use [code-quality.md](references/code-quality.md) for Detekt custom rules  
 → Follow [gradle-setup.md](references/gradle-setup.md) for convention plugin setup  
 → Check [android-strictmode.md](references/android-strictmode.md) for runtime checks
+
+**Need code coverage reporting?**
+→ Use [android-code-coverage.md](references/android-code-coverage.md) for JaCoCo setup  
+→ Follow [testing.md](references/testing.md) for test strategies  
+→ Check [gradle-setup.md](references/gradle-setup.md) for convention plugin integration

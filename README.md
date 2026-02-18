@@ -55,10 +55,10 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `references/dependencies.md` - dependency rules and version catalog guidance
 - `references/android-performance.md` - benchmarking and performance checks
 - `references/design-patterns.md` - Android-focused design patterns
-- `templates/convention/` - 15 convention plugins + configuration files (copy to `build-logic/`)
-- `templates/detekt.yml.template` - Detekt rules baseline
-- `templates/libs.versions.toml.template` - version catalog source of truth
-- `templates/settings.gradle.kts.template` - Gradle settings source of truth
+- `templates/detekt.yml.template` - Detekt static analysis configuration
+- `templates/libs.versions.toml.template` - Version catalog with all dependencies
+- `templates/settings.gradle.kts.template` - Project settings with repositories
+- `templates/convention/` - Convention plugin implementations (17 plugins + 7 config files)
 
 ## 🔧 Scope
 This skill is focused on Android app development using:

@@ -43,6 +43,10 @@ gradlePlugin {
             id = "app.android.application.baseline"
             implementationClass = "AndroidApplicationBaselineProfileConventionPlugin"
         }
+        register("androidApplicationJacoco") {
+            id = "app.android.application.jacoco"
+            implementationClass = "AndroidApplicationJacocoConventionPlugin"
+        }
         register("androidLibrary") {
             id = "app.android.library"
             implementationClass = "AndroidLibraryConventionPlugin"
@@ -50,6 +54,10 @@ gradlePlugin {
         register("androidLibraryCompose") {
             id = "app.android.library.compose"
             implementationClass = "AndroidLibraryComposeConventionPlugin"
+        }
+        register("androidLibraryJacoco") {
+            id = "app.android.library.jacoco"
+            implementationClass = "AndroidLibraryJacocoConventionPlugin"
         }
         register("androidFeature") {
             id = "app.android.feature"

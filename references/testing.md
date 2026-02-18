@@ -1825,3 +1825,10 @@ object TestData {
 8. **In-Memory Database**: Use Room's in-memory database for DAO tests
 9. **SavedStateHandle**: Test navigation arguments and process death scenarios
 10. **Turbine for Flow**: Use Turbine for testing multiple Flow emissions over time
+## Related Guides
+
+- [Architecture Guide](architecture.md) - Repository patterns and testing layers
+- [Modularization Guide](modularization.md) - Multi-module testing strategies
+- [Code Coverage Guide](android-code-coverage.md) - JaCoCo setup and CI integration
+- [Android Testing Docs](https://developer.android.com/training/testing) - Official testing documentation
+- [Hilt Testing](https://developer.android.com/training/dependency-injection/hilt-testing) - Official Hilt testing guide

@@ -116,8 +116,10 @@ build-logic/            # Convention plugins for consistent builds
 │   │   ├── AndroidApplicationConventionPlugin.kt
 │   │   ├── AndroidApplicationComposeConventionPlugin.kt
 │   │   ├── AndroidApplicationBaselineProfileConventionPlugin.kt
+│   │   ├── AndroidApplicationJacocoConventionPlugin.kt
 │   │   ├── AndroidLibraryConventionPlugin.kt
 │   │   ├── AndroidLibraryComposeConventionPlugin.kt
+│   │   ├── AndroidLibraryJacocoConventionPlugin.kt
 │   │   ├── AndroidFeatureConventionPlugin.kt
 │   │   ├── AndroidTestConventionPlugin.kt
 │   │   ├── AndroidRoomConventionPlugin.kt
@@ -134,7 +136,8 @@ build-logic/            # Convention plugins for consistent builds
 │   │       ├── ProjectExtensions.kt
 │   │       ├── GradleManagedDevices.kt
 │   │       ├── AndroidInstrumentationTest.kt
-│   │       └── PrintApksTask.kt
+│   │       ├── PrintApksTask.kt
+│   │       └── Jacoco.kt
 │   └── build.gradle.kts
 ```
 

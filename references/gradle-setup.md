@@ -29,8 +29,8 @@ Key points:
 ## Convention Plugins
 
 **Complete Convention Plugin Implementation**: All plugin source files are available in `templates/convention/` including:
-- All 15 convention plugins (`.kt` files)
-- Configuration files in `config/` subdirectory (KotlinAndroid.kt, AndroidCompose.kt, etc.)
+- All 17 convention plugins (`.kt` files)
+- Configuration files in `config/` subdirectory (KotlinAndroid.kt, AndroidCompose.kt, Jacoco.kt, etc.)
 - Build script (`build.gradle.kts`)
 - Setup guide and quick reference (`QUICK_REFERENCE.md`)
 
@@ -149,10 +149,14 @@ All convention plugin implementations are available in `templates/convention/`:
 - `AndroidRoomConventionPlugin.kt` - Room database
 - `AndroidLintConventionPlugin.kt` - Android Lint configuration
 
-**Tooling Plugins:**
+**Testing & Quality Plugins:**
+- `AndroidApplicationJacocoConventionPlugin.kt` - Code coverage for apps
+- `AndroidLibraryJacocoConventionPlugin.kt` - Code coverage for libraries
 - `HiltConventionPlugin.kt` - Hilt dependency injection
 - `DetektConventionPlugin.kt` - Static analysis
 - `SpotlessConventionPlugin.kt` - Code formatting
+
+**Other Plugins:**
 - `JvmLibraryConventionPlugin.kt` - Pure Kotlin libraries
 - `KotlinSerializationConventionPlugin.kt` - JSON serialization
 - `FirebaseConventionPlugin.kt` - Firebase integration
@@ -164,6 +168,7 @@ All convention plugin implementations are available in `templates/convention/`:
 - `config/GradleManagedDevices.kt` - Emulator configuration
 - `config/AndroidInstrumentationTest.kt` - Test optimization
 - `config/PrintApksTask.kt` - APK path printing
+- `config/Jacoco.kt` - Code coverage configuration
 
 See `templates/convention/QUICK_REFERENCE.md` for detailed setup instructions and usage examples.
 
