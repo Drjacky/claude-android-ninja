@@ -227,14 +227,18 @@ baselineProfile {
 Update `app/build.gradle.kts`:
 ```kotlin
 plugins {
-    id("com.example.android.application")
-    alias(libs.plugins.androidx.baselineprofile)
+    alias(libs.plugins.app.android.application)
+    alias(libs.plugins.app.android.application.compose)
+    alias(libs.plugins.app.android.application.baseline)
+    alias(libs.plugins.app.hilt)
 }
 
 dependencies {
     baselineProfile(project(":baselineprofile"))
 }
 ```
+
+The `app.android.application.baseline` convention plugin (from `templates/convention/AndroidApplicationBaselineProfileConventionPlugin.kt`) automatically applies the `androidx.baselineprofile` plugin and configures it for your app module.
 
 #### Define the Baseline Profile Generator
 

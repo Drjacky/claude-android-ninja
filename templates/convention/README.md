@@ -10,33 +10,33 @@ Convention plugins encapsulate common build configuration to reduce duplication 
 
 ### Android Plugins
 
-| Plugin ID | Purpose | Apply To |
-|-----------|---------|----------|
-| `app.android.application` | Android application configuration | `:app` module |
-| `app.android.application.compose` | Compose for application | `:app` with Compose UI |
-| `app.android.application.baseline` | Baseline profiles | `:app` for performance |
-| `app.android.library` | Android library configuration | Library modules (`:core:*`, `:feature:*`) |
-| `app.android.library.compose` | Compose for library | Libraries with Compose UI |
-| `app.android.feature` | Feature module (UI + ViewModel) | `:feature:*` modules |
-| `app.android.test` | Android test module | `:benchmark`, `:baselineprofile` |
-| `app.android.room` | Room database | Modules using Room |
-| `app.android.lint` | Android Lint configuration | All Android modules |
+| Plugin ID                          | Purpose                           | Apply To                                  |
+|------------------------------------|-----------------------------------|-------------------------------------------|
+| `app.android.application`          | Android application configuration | `:app` module                             |
+| `app.android.application.compose`  | Compose for application           | `:app` with Compose UI                    |
+| `app.android.application.baseline` | Baseline profiles                 | `:app` for performance                    |
+| `app.android.library`              | Android library configuration     | Library modules (`:core:*`, `:feature:*`) |
+| `app.android.library.compose`      | Compose for library               | Libraries with Compose UI                 |
+| `app.android.feature`              | Feature module (UI + ViewModel)   | `:feature:*` modules                      |
+| `app.android.test`                 | Android test module               | `:benchmark`, `:baselineprofile`          |
+| `app.android.room`                 | Room database                     | Modules using Room                        |
+| `app.android.lint`                 | Android Lint configuration        | All Android modules                       |
 
 ### Kotlin Plugins
 
-| Plugin ID | Purpose | Apply To |
-|-----------|---------|----------|
-| `app.jvm.library` | Pure Kotlin/JVM library | `:core:model`, utility modules |
-| `app.kotlin.serialization` | kotlinx-serialization | Modules needing JSON |
+| Plugin ID                  | Purpose                 | Apply To                       |
+|----------------------------|-------------------------|--------------------------------|
+| `app.jvm.library`          | Pure Kotlin/JVM library | `:core:model`, utility modules |
+| `app.kotlin.serialization` | kotlinx-serialization   | Modules needing JSON           |
 
 ### Quality & Tooling Plugins
 
-| Plugin ID | Purpose | Apply To |
-|-----------|---------|----------|
-| `app.hilt` | Hilt dependency injection | All modules using Hilt |
-| `app.detekt` | Detekt static analysis | All modules |
-| `app.spotless` | Code formatting (ktlint) | All modules |
-| `app.firebase` | Firebase (Crashlytics, Analytics) | `:app` module |
+| Plugin ID      | Purpose                           | Apply To               |
+|----------------|-----------------------------------|------------------------|
+| `app.hilt`     | Hilt dependency injection         | All modules using Hilt |
+| `app.detekt`   | Detekt static analysis            | All modules            |
+| `app.spotless` | Code formatting (ktlint)          | All modules            |
+| `app.firebase` | Firebase (Crashlytics, Analytics) | `:app` module          |
 
 ## Usage Examples
 

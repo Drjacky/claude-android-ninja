@@ -199,18 +199,14 @@ plugins {
 ```kotlin
 // app/build.gradle.kts
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.google.services)
-    alias(libs.plugins.firebase.crashlytics)
-}
-
-dependencies {
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.crashlytics)
-    implementation(libs.firebase.analytics) // Breadcrumbs + screen tracking
+    alias(libs.plugins.app.android.application)
+    alias(libs.plugins.app.android.application.compose)
+    alias(libs.plugins.app.hilt)
+    alias(libs.plugins.app.firebase)
 }
 ```
+
+The `app.firebase` convention plugin (from `templates/convention/FirebaseConventionPlugin.kt`) automatically applies the Google Services and Firebase Crashlytics plugins, and adds the Firebase BOM with Crashlytics and Analytics dependencies.
 
 ### Application Initialization (Firebase)
 
