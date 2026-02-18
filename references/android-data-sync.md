@@ -1700,12 +1700,12 @@ fun `syncState reflects WorkInfo state`() = runTest {
 
 ### Conflict Resolution Strategy Selection
 
-| Scenario | Strategy | Reason |
-|----------|----------|--------|
-| User preferences | Client wins | User's device is authoritative |
-| Shared documents | Last write wins | Simple, works for most cases |
-| Collaborative editing | Manual resolution | Preserve both versions |
-| Server-managed data | Server wins | Server is authoritative |
+| Scenario              | Strategy          | Reason                         |
+|-----------------------|-------------------|--------------------------------|
+| User preferences      | Client wins       | User's device is authoritative |
+| Shared documents      | Last write wins   | Simple, works for most cases   |
+| Collaborative editing | Manual resolution | Preserve both versions         |
+| Server-managed data   | Server wins       | Server is authoritative        |
 
 ### Performance Considerations
 
