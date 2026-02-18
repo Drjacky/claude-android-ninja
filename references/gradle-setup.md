@@ -32,8 +32,7 @@ Key points:
 - All 15 convention plugins (`.kt` files)
 - Configuration files (KotlinAndroid.kt, AndroidCompose.kt, etc.)
 - Build script (`build.gradle.kts`)
-- Setup guide (`README.md`)
-- Quick reference (`QUICK_REFERENCE.md`)
+- Setup guide and quick reference (`QUICK_REFERENCE.md`)
 
 Copy these files to `build-logic/convention/src/main/kotlin/` in your project.
 

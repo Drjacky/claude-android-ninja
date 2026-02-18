@@ -1,4 +1,14 @@
-# Convention Plugins Quick Reference
+# Convention Plugins - Setup & Reference
+
+This directory contains Gradle convention plugins for consistent build configuration across modules. Convention plugins encapsulate common build configuration to reduce duplication and ensure consistency.
+
+## Table of Contents
+1. [Plugin Mapping](#plugin-mapping-table)
+2. [Common Plugin Combinations](#common-plugin-combinations)
+3. [Setup Instructions](#setup-instructions)
+4. [What Each Plugin Provides](#what-each-plugin-provides)
+5. [Version Catalog Requirements](#version-catalog-entries-libsversiontoml)
+6. [Troubleshooting](#troubleshooting)
 
 ## Plugin Mapping Table
 
@@ -73,105 +83,173 @@ plugins {
 }
 ```
 
-## Configuration Files
+## Setup Instructions
 
-| File | Purpose |
-|------|---------|
-| `KotlinAndroid.kt` | Common Kotlin/Android config (SDK, Java 17, desugaring) |
-| `AndroidCompose.kt` | Compose configuration (BOM, metrics, stability) |
-| `ProjectExtensions.kt` | Version catalog access (`Project.libs`) |
-| `GradleManagedDevices.kt` | Emulator configuration for tests |
-| `AndroidInstrumentationTest.kt` | Disable unnecessary Android tests |
-| `PrintApksTask.kt` | Task to print APK paths |
+### 1. Copy Convention Plugins
 
-## What Gets Configured
+Copy all `.kt` files from this directory to:
+```
+build-logic/convention/src/main/kotlin/
+```
 
-### By `AndroidApplicationConventionPlugin`
-- `compileSdk`, `minSdk`, `targetSdk` (from version catalog)
-- Java 17 + Kotlin JVM target 17
-- Core library desugaring (for API < 26)
-- Kotlin compiler opt-ins
+### 2. Create build-logic Structure
+
+```
+build-logic/
+├── convention/
+│   ├── build.gradle.kts (from build.gradle.kts in this folder)
+│   └── src/main/kotlin/
+│       ├── AndroidApplicationConventionPlugin.kt
+│       ├── AndroidLibraryConventionPlugin.kt
+│       ├── ... (all other .kt files)
+│       ├── KotlinAndroid.kt
+│       ├── AndroidCompose.kt
+│       └── ... (all configuration files)
+└── settings.gradle.kts
+```
+
+### 3. Create build-logic/settings.gradle.kts
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    versionCatalogs {
+        create("libs") {
+            from(files("../gradle/libs.versions.toml"))
+        }
+    }
+}
+
+rootProject.name = "build-logic"
+include(":convention")
+```
+
+### 4. Include in Root settings.gradle.kts
+
+```kotlin
+pluginManagement {
+    includeBuild("build-logic")
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+```
+
+### 5. Register Plugins in Version Catalog
+
+Add to `gradle/libs.versions.toml`:
+
+```toml
+[plugins]
+# Convention plugins
+app-android-application = { id = "app.android.application", version = "unspecified" }
+app-android-application-compose = { id = "app.android.application.compose", version = "unspecified" }
+app-android-application-baseline = { id = "app.android.application.baseline", version = "unspecified" }
+app-android-library = { id = "app.android.library", version = "unspecified" }
+app-android-library-compose = { id = "app.android.library.compose", version = "unspecified" }
+app-android-feature = { id = "app.android.feature", version = "unspecified" }
+app-android-test = { id = "app.android.test", version = "unspecified" }
+app-android-room = { id = "app.android.room", version = "unspecified" }
+app-android-lint = { id = "app.android.lint", version = "unspecified" }
+app-hilt = { id = "app.hilt", version = "unspecified" }
+app-detekt = { id = "app.detekt", version = "unspecified" }
+app-spotless = { id = "app.spotless", version = "unspecified" }
+app-jvm-library = { id = "app.jvm.library", version = "unspecified" }
+app-kotlin-serialization = { id = "app.kotlin.serialization", version = "unspecified" }
+app-firebase = { id = "app.firebase", version = "unspecified" }
+```
+
+### 6. Create Detekt Configuration
+
+Create `config/detekt.yml` in project root (copy from `templates/detekt.yml.template`).
+
+### 7. Create Compose Stability Configuration (Optional)
+
+Create `compose_compiler_config.conf` in project root:
+
+```
+// Classes that should be considered stable for Compose
+com.example.core.model.*
+```
+
+## What Each Plugin Provides
+
+### Android Application Plugin
+- Kotlin Android configuration (compileSdk, minSdk, Java 17)
 - Test instrumentation runner
 - Gradle managed devices (Pixel 6 API 31, Pixel 8 API 34)
-- Lint (XML + SARIF reports)
+- Lint configuration
+- Core library desugaring (for API < 26)
 - Print APKs task
 
-### By `AndroidLibraryConventionPlugin`
-- Everything from application plugin +
-- Resource prefix based on module path (e.g., `feature_auth_`)
+### Android Library Plugin
+- Same as application + resource prefix based on module path (e.g., `feature_auth_`)
 - Disables Android tests for modules without `src/androidTest/`
-- Standard test dependencies (JUnit, kotlin-test)
+- Standard testing dependencies (JUnit, kotlin-test)
 
-### By `AndroidFeatureConventionPlugin`
-- Applies `app.android.library` + `app.android.library.compose` + `app.hilt`
-- Auto-adds dependencies:
-  - `:core:ui`, `:core:domain`, `:core:data`
-  - Lifecycle (ViewModel + runtime-compose)
-  - Navigation3 (runtime + compose)
-
-### By Compose Plugins
+### Compose Plugins
 - Compose compiler plugin
-- Compose BOM (all Compose versions aligned)
+- Compose BOM dependency (all Compose versions aligned)
 - UI tooling (preview + debug)
 - Compiler metrics/reports (if enabled via gradle.properties)
 - Stability configuration (from `compose_compiler_config.conf`)
 
-### By `HiltConventionPlugin`
-- Hilt plugin + KSP
-- Hilt runtime + compiler
-- Test dependencies (hilt-android-testing)
-- KSP for all variants (main, test, androidTest)
+### Feature Plugin
+- Android library + Compose + Hilt
+- Auto-adds dependencies: `:core:ui`, `:core:domain`, `:core:data`
+- Lifecycle (ViewModel + runtime-compose)
+- Navigation3 (runtime + compose)
+- Managed devices
 
-### By `DetektConventionPlugin`
-- Detekt plugin
-- Compose rules for Detekt
+### Room Plugin
+- Room plugin + KSP
+- Room runtime + KTX
+- Room compiler (KSP)
+- Schema directory for migrations
+
+### Hilt Plugin
+- Hilt Android + KSP compiler
+- Test dependencies (hilt-android-testing)
+- KSP for test variants (main, test, androidTest)
+
+### Detekt Plugin
+- Detekt plugin + Compose rules
 - Central config (`config/detekt.yml`)
-- Module overrides (optional `detekt.yml` in module)
+- Module-specific overrides (optional `detekt.yml`)
 - Baseline support (`detekt-baseline.xml`)
 - Type resolution enabled
 - XML, HTML, SARIF reports
 
-## Project Structure
+### Spotless Plugin
+- ktlint for Kotlin formatting
+- Format .kts files
+- Format XML (for Android modules)
+- Trim trailing whitespace
+- Ensure newline at end of file
 
-```
-project-root/
-├── build-logic/
-│   ├── convention/
-│   │   ├── build.gradle.kts
-│   │   └── src/main/kotlin/
-│   │       ├── AndroidApplicationConventionPlugin.kt
-│   │       ├── AndroidLibraryConventionPlugin.kt
-│   │       ├── ... (all convention plugins)
-│   │       ├── KotlinAndroid.kt
-│   │       ├── AndroidCompose.kt
-│   │       └── ... (all config files)
-│   └── settings.gradle.kts
-├── config/
-│   └── detekt.yml (from templates/detekt.yml.template)
-├── compose_compiler_config.conf (optional)
-├── gradle/
-│   └── libs.versions.toml
-└── settings.gradle.kts (includes build-logic)
-```
+### Firebase Plugin
+- Google Services plugin
+- Firebase Crashlytics plugin
+- Firebase BOM dependency
+- Crashlytics and Analytics libraries
+- Crashlytics configuration (native symbols, debug builds)
 
-## Required Files
+## Configuration Files
 
-1. **config/detekt.yml** - Copy from `templates/detekt.yml.template`
-2. **compose_compiler_config.conf** (optional) - For Compose stability
-3. **build-logic/settings.gradle.kts** - Must reference version catalog
-
-## gradle.properties Flags
-
-```properties
-# Enable Compose compiler metrics
-enableComposeCompilerMetrics=true
-# Enable Compose compiler reports
-enableComposeCompilerReports=true
-```
-
-Reports will be generated in:
-- `build/compose-metrics/`
-- `build/compose-reports/`
+| File | Purpose |
+|------|---------|
+| `KotlinAndroid.kt` | Common Kotlin/Android config (SDK, Java 17, desugaring, opt-ins) |
+| `AndroidCompose.kt` | Compose configuration (BOM, metrics, stability) |
+| `ProjectExtensions.kt` | Version catalog access (`Project.libs`) |
+| `GradleManagedDevices.kt` | Emulator configuration for tests (Pixel 6, Pixel 8) |
+| `AndroidInstrumentationTest.kt` | Disable unnecessary Android tests |
+| `PrintApksTask.kt` | Task to print APK paths |
 
 ## Version Catalog Entries (libs.versions.toml)
 
@@ -201,21 +279,26 @@ room-gradlePlugin = { group = "androidx.room", name = "room-gradle-plugin", vers
 plugin-detekt = { group = "io.gitlab.arturbosch.detekt", name = "detekt-gradle-plugin", version.ref = "detekt" }
 ```
 
-Required plugins (for module build files):
-```toml
-[plugins]
-app-android-application = { id = "app.android.application", version = "unspecified" }
-app-android-application-compose = { id = "app.android.application.compose", version = "unspecified" }
-app-android-library = { id = "app.android.library", version = "unspecified" }
-app-android-library-compose = { id = "app.android.library.compose", version = "unspecified" }
-app-android-feature = { id = "app.android.feature", version = "unspecified" }
-app-android-room = { id = "app.android.room", version = "unspecified" }
-app-hilt = { id = "app.hilt", version = "unspecified" }
-app-detekt = { id = "app.detekt", version = "unspecified" }
-app-spotless = { id = "app.spotless", version = "unspecified" }
-app-jvm-library = { id = "app.jvm.library", version = "unspecified" }
-app-kotlin-serialization = { id = "app.kotlin.serialization", version = "unspecified" }
+## gradle.properties Flags
+
+```properties
+# Enable Compose compiler metrics
+enableComposeCompilerMetrics=true
+# Enable Compose compiler reports
+enableComposeCompilerReports=true
 ```
+
+Reports will be generated in:
+- `build/compose-metrics/`
+- `build/compose-reports/`
+
+## Benefits
+
+1. **Consistency**: All modules use the same configuration
+2. **Maintainability**: Update configuration in one place
+3. **Readability**: Module build files are concise and focused
+4. **Type Safety**: Kotlin DSL with IDE support
+5. **Reusability**: Share configurations across projects
 
 ## Troubleshooting
 
@@ -243,3 +326,9 @@ app-kotlin-serialization = { id = "app.kotlin.serialization", version = "unspeci
 - [ ] Test build with `./gradlew build`
 - [ ] Verify Detekt with `./gradlew detekt`
 - [ ] Verify tests with `./gradlew test`
+
+## References
+
+- [Sharing build logic (Gradle docs)](https://docs.gradle.org/current/userguide/sharing_build_logic_between_subprojects.html)
+- [Now in Android - Convention plugins](https://github.com/android/nowinandroid/tree/main/build-logic)
+- [Version catalogs (Gradle docs)](https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog)

@@ -17,8 +17,7 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 Convention plugin definitions and examples live in:
 - `templates/convention/` - All plugin source files (.kt)
 - `references/gradle-setup.md` - Detailed build configuration patterns
-- `templates/convention/README.md` - Setup instructions
-- `templates/convention/QUICK_REFERENCE.md` - Quick lookup and examples
+- `templates/convention/QUICK_REFERENCE.md` - Setup instructions and examples
 
 Copy plugin files from `templates/convention/` to `build-logic/convention/src/main/kotlin/` in your project.
 
