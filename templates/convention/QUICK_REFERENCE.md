@@ -143,27 +143,9 @@ pluginManagement {
 
 ### 5. Register Plugins in Version Catalog
 
-Add to `gradle/libs.versions.toml`:
+Convention plugin entries are already defined in `templates/libs.versions.toml.template` under the `[plugins]` section (look for the "Convention plugins" comment).
 
-```toml
-[plugins]
-# Convention plugins
-app-android-application = { id = "app.android.application", version = "unspecified" }
-app-android-application-compose = { id = "app.android.application.compose", version = "unspecified" }
-app-android-application-baseline = { id = "app.android.application.baseline", version = "unspecified" }
-app-android-library = { id = "app.android.library", version = "unspecified" }
-app-android-library-compose = { id = "app.android.library.compose", version = "unspecified" }
-app-android-feature = { id = "app.android.feature", version = "unspecified" }
-app-android-test = { id = "app.android.test", version = "unspecified" }
-app-android-room = { id = "app.android.room", version = "unspecified" }
-app-android-lint = { id = "app.android.lint", version = "unspecified" }
-app-hilt = { id = "app.hilt", version = "unspecified" }
-app-detekt = { id = "app.detekt", version = "unspecified" }
-app-spotless = { id = "app.spotless", version = "unspecified" }
-app-jvm-library = { id = "app.jvm.library", version = "unspecified" }
-app-kotlin-serialization = { id = "app.kotlin.serialization", version = "unspecified" }
-app-firebase = { id = "app.firebase", version = "unspecified" }
-```
+Copy the entire `[plugins]` section from the template to your project's `gradle/libs.versions.toml`.
 
 ### 6. Create Detekt Configuration
 
@@ -253,31 +235,29 @@ com.example.core.model.*
 
 ## Version Catalog Entries (libs.versions.toml)
 
-Required versions:
+All required versions, libraries, and plugin entries are defined in `templates/libs.versions.toml.template`.
+
+**Key sections to copy to your project's `gradle/libs.versions.toml`:**
+
+### Required SDK Versions
 ```toml
 [versions]
 compileSdk = "35"
 minSdk = "24"
 targetSdk = "35"
-agp = "8.13.0"
-kotlin = "2.2.21"
-ksp = "2.2.21-1.0.32"
-hilt = "2.50"
-room = "2.6.1"
-detekt = "2.0.0-alpha.1"
-ktlint = "13.1.0"
 ```
 
-Required libraries (for build-logic):
-```toml
-[libraries]
-android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
-kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
-kotlin-composeGradlePlugin = { group = "org.jetbrains.kotlin", name = "compose-compiler-gradle-plugin", version.ref = "kotlin" }
-ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
-room-gradlePlugin = { group = "androidx.room", name = "room-gradle-plugin", version.ref = "room" }
-plugin-detekt = { group = "io.gitlab.arturbosch.detekt", name = "detekt-gradle-plugin", version.ref = "detekt" }
-```
+### Required for build-logic (Gradle plugin dependencies)
+All Gradle plugin dependencies are already defined in the `[libraries]` section of the template:
+- `android-gradlePlugin`
+- `kotlin-gradlePlugin`
+- `kotlin-composeGradlePlugin`
+- `ksp-gradlePlugin`
+- `room-gradlePlugin`
+- `plugin-detekt`
+
+### Convention Plugin Entries
+All convention plugin entries are already defined in the `[plugins]` section of the template under the "Convention plugins" comment.
 
 ## gradle.properties Flags
 
@@ -313,7 +293,7 @@ Reports will be generated in:
 | Room schemas not found | Check `$projectDir/schemas/` directory exists |
 
 ## Migration Checklist
-
+.
 - [ ] Copy all `.kt` files to `build-logic/convention/src/main/kotlin/`
 - [ ] Create `build-logic/convention/build.gradle.kts`
 - [ ] Create `build-logic/settings.gradle.kts`
