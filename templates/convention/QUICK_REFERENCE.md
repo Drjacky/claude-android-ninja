@@ -235,29 +235,7 @@ com.example.core.model.*
 
 ## Version Catalog Entries (libs.versions.toml)
 
-All required versions, libraries, and plugin entries are defined in `templates/libs.versions.toml.template`.
-
-**Key sections to copy to your project's `gradle/libs.versions.toml`:**
-
-### Required SDK Versions
-```toml
-[versions]
-compileSdk = "35"
-minSdk = "24"
-targetSdk = "35"
-```
-
-### Required for build-logic (Gradle plugin dependencies)
-All Gradle plugin dependencies are already defined in the `[libraries]` section of the template:
-- `android-gradlePlugin`
-- `kotlin-gradlePlugin`
-- `kotlin-composeGradlePlugin`
-- `ksp-gradlePlugin`
-- `room-gradlePlugin`
-- `plugin-detekt`
-
-### Convention Plugin Entries
-All convention plugin entries are already defined in the `[plugins]` section of the template under the "Convention plugins" comment.
+All required versions, libraries, and plugin entries are defined in `templates/libs.versions.toml.template`. Copy the entire file to your project's `gradle/libs.versions.toml` or merge the relevant sections if you have an existing version catalog.
 
 ## gradle.properties Flags
 
@@ -294,13 +272,15 @@ Reports will be generated in:
 
 ## Migration Checklist
 .
+## Setup Checklist
+
 - [ ] Copy all `.kt` files to `build-logic/convention/src/main/kotlin/`
-- [ ] Create `build-logic/convention/build.gradle.kts`
-- [ ] Create `build-logic/settings.gradle.kts`
+- [ ] Add `build-logic/convention/build.gradle.kts` (from build.gradle.kts in this folder)
+- [ ] Add `build-logic/settings.gradle.kts` (see step 3 above)
 - [ ] Update root `settings.gradle.kts` with `includeBuild("build-logic")`
 - [ ] Copy `detekt.yml.template` to `config/detekt.yml`
-- [ ] Add version catalog entries for plugins
-- [ ] Add version catalog entries for Gradle plugin dependencies
+- [ ] Add convention plugin entries to `gradle/libs.versions.toml` (from template)
+- [ ] Ensure Gradle plugin dependencies are in `gradle/libs.versions.toml` (from template)
 - [ ] Update module build files to use convention plugins
 - [ ] Remove duplicated configuration from modules
 - [ ] Test build with `./gradlew build`
