@@ -31,6 +31,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - Runtime permissions with Compose patterns
 - Performance benchmarking (Macrobenchmark, Microbenchmark, Baseline Profiles)
 - StrictMode guardrails and Compose compiler stability diagnostics
+- Code coverage with JaCoCo (unit + instrumented tests)
 - Code quality with Detekt and Compose rules
 
 ## 📂 Key Files
@@ -51,6 +52,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `references/kotlin-delegation.md` - delegation patterns and composition guidance
 - `references/crashlytics.md` - crash reporting with modular provider swaps
 - `references/android-strictmode.md` - StrictMode guardrails and Compose stability
+- `references/android-code-coverage.md` - JaCoCo code coverage setup and CI integration
 - `references/code-quality.md` - Detekt setup and code quality rules
 - `references/dependencies.md` - dependency rules and version catalog guidance
 - `references/android-performance.md` - benchmarking and performance checks
