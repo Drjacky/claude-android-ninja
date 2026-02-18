@@ -18,6 +18,11 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 - [Cache Invalidation](#cache-invalidation)
 - [Retry Mechanisms](#retry-mechanisms)
 - [WorkManager Integration](#workmanager-integration)
+  - [Work Constraints](#work-constraints)
+  - [Work Chaining](#work-chaining)
+  - [Passing Data Between Workers](#passing-data-between-workers)
+  - [Progress Updates](#progress-updates)
+  - [Testing WorkManager](#testing-workmanager)
 - [Repository Pattern for Sync](#repository-pattern-for-sync)
 - [Architecture Integration](#architecture-integration)
 - [Testing](#testing)
@@ -1102,6 +1107,574 @@ class MyApplication : Application() {
     }
 }
 ```
+
+### Work Constraints
+
+WorkManager supports various constraints to control when work executes:
+
+```kotlin
+fun scheduleSmartSync() {
+    val constraints = Constraints.Builder()
+        // Network constraints
+        .setRequiredNetworkType(NetworkType.CONNECTED) // Any network
+        // .setRequiredNetworkType(NetworkType.UNMETERED) // WiFi only
+        // .setRequiredNetworkType(NetworkType.NOT_ROAMING) // No roaming
+        
+        // Battery constraints
+        .setRequiresBatteryNotLow(true) // Battery above critical level
+        // .setRequiresCharging(true) // Device charging (API 23+)
+        
+        // Storage constraint
+        .setRequiresStorageNotLow(true) // Sufficient storage space
+        
+        // Device state (API 23+)
+        // .setRequiresDeviceIdle(true) // Device idle (for heavy operations)
+        
+        .build()
+
+    val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+        .setConstraints(constraints)
+        .build()
+
+    workManager.enqueue(syncRequest)
+}
+```
+
+### Work Chaining
+
+Chain multiple work requests for sequential or parallel execution:
+
+#### Sequential Work Chain
+
+```kotlin
+fun scheduleFullDataSync() {
+    // Step 1: Clean up old data
+    val cleanupWork = OneTimeWorkRequestBuilder<CleanupWorker>()
+        .build()
+
+    // Step 2: Download new data
+    val downloadWork = OneTimeWorkRequestBuilder<DownloadWorker>()
+        .build()
+
+    // Step 3: Process downloaded data
+    val processWork = OneTimeWorkRequestBuilder<ProcessWorker>()
+        .build()
+
+    // Chain: cleanup → download → process
+    workManager
+        .beginUniqueWork(
+            "full_sync",
+            ExistingWorkPolicy.REPLACE,
+            cleanupWork
+        )
+        .then(downloadWork)
+        .then(processWork)
+        .enqueue()
+}
+```
+
+#### Parallel Work with Join
+
+```kotlin
+fun syncAllDataTypes() {
+    // Sync different data types in parallel
+    val syncTasks = OneTimeWorkRequestBuilder<TaskSyncWorker>().build()
+    val syncProjects = OneTimeWorkRequestBuilder<ProjectSyncWorker>().build()
+    val syncUsers = OneTimeWorkRequestBuilder<UserSyncWorker>().build()
+
+    // Final work after all complete
+    val notifyComplete = OneTimeWorkRequestBuilder<NotifyCompleteWorker>().build()
+
+    // Run tasks, projects, users in parallel, then notify
+    workManager
+        .beginWith(listOf(syncTasks, syncProjects, syncUsers))
+        .then(notifyComplete)
+        .enqueue()
+}
+```
+
+#### Complex Chain with Fan-Out/Fan-In
+
+```kotlin
+fun syncWithBackupAndCleanup() {
+    // Initial work
+    val prepareWork = OneTimeWorkRequestBuilder<PrepareWorker>().build()
+
+    // Parallel operations after prepare
+    val syncWork = OneTimeWorkRequestBuilder<SyncWorker>().build()
+    val backupWork = OneTimeWorkRequestBuilder<BackupWorker>().build()
+
+    // Final cleanup after both complete
+    val cleanupWork = OneTimeWorkRequestBuilder<CleanupWorker>().build()
+
+    workManager
+        .beginWith(prepareWork)
+        .then(listOf(syncWork, backupWork)) // Fan out
+        .then(cleanupWork) // Fan in
+        .enqueue()
+}
+```
+
+### Passing Data Between Workers
+
+Use `Data` to pass information between chained workers:
+
+```kotlin
+// First worker outputs data
+@HiltWorker
+class DownloadWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val dataApi: DataApi
+) : CoroutineWorker(context, params) {
+
+    override suspend fun doWork(): Result {
+        return try {
+            val data = dataApi.downloadData()
+            
+            // Output data for next worker
+            val outputData = Data.Builder()
+                .putInt("downloaded_count", data.size)
+                .putString("download_timestamp", Clock.System.now().toString())
+                .putStringArray("item_ids", data.map { it.id }.toTypedArray())
+                .build()
+
+            Result.success(outputData)
+        } catch (e: Exception) {
+            Result.retry()
+        }
+    }
+}
+
+// Second worker reads input data
+@HiltWorker
+class ProcessWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val processor: DataProcessor
+) : CoroutineWorker(context, params) {
+
+    override suspend fun doWork(): Result {
+        // Read data from previous worker
+        val itemCount = inputData.getInt("downloaded_count", 0)
+        val timestamp = inputData.getString("download_timestamp")
+        val itemIds = inputData.getStringArray("item_ids")
+
+        if (itemIds == null || itemIds.isEmpty()) {
+            return Result.failure()
+        }
+
+        return try {
+            processor.processItems(itemIds.toList())
+            Result.success()
+        } catch (e: Exception) {
+            Result.retry()
+        }
+    }
+}
+```
+
+### Progress Updates
+
+Report progress for long-running operations:
+
+```kotlin
+@HiltWorker
+class LargeDataSyncWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val taskRepository: TaskRepository
+) : CoroutineWorker(context, params) {
+
+    override suspend fun doWork(): Result {
+        val tasks = taskRepository.getPendingSync()
+        val totalTasks = tasks.size
+
+        if (totalTasks == 0) {
+            return Result.success()
+        }
+
+        // Use setForeground for expedited work (API 31+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            setForeground(createForegroundInfo())
+        }
+
+        tasks.forEachIndexed { index, task ->
+            try {
+                taskRepository.syncTask(task)
+                
+                // Update progress
+                val progress = ((index + 1) * 100) / totalTasks
+                setProgress(
+                    Data.Builder()
+                        .putInt("progress", progress)
+                        .putInt("synced", index + 1)
+                        .putInt("total", totalTasks)
+                        .build()
+                )
+            } catch (e: Exception) {
+                // Continue with next task
+            }
+        }
+
+        return Result.success()
+    }
+
+    private fun createForegroundInfo(): ForegroundInfo {
+        val notification = NotificationCompat.Builder(
+            applicationContext,
+            NotificationChannels.CHANNEL_FOREGROUND_SERVICE
+        )
+            .setSmallIcon(R.drawable.ic_sync)
+            .setContentTitle("Syncing data")
+            .setOngoing(true)
+            .build()
+
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ForegroundInfo(
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            )
+        } else {
+            ForegroundInfo(NOTIFICATION_ID, notification)
+        }
+    }
+
+    companion object {
+        private const val NOTIFICATION_ID = 2001
+    }
+}
+
+// Observe progress in ViewModel
+val syncProgress: StateFlow<SyncProgress> = workManager
+    .getWorkInfoByIdFlow(workId)
+    .map { workInfo ->
+        val progress = workInfo?.progress?.getInt("progress", 0) ?: 0
+        val synced = workInfo?.progress?.getInt("synced", 0) ?: 0
+        val total = workInfo?.progress?.getInt("total", 0) ?: 0
+        
+        SyncProgress(
+            percentage = progress,
+            itemsSynced = synced,
+            totalItems = total
+        )
+    }
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = SyncProgress(0, 0, 0)
+    )
+```
+
+### Observing Work Status
+
+Monitor work state and handle completion:
+
+```kotlin
+// Observe single work request
+fun observeWorkStatus(workId: UUID): Flow<WorkInfo?> {
+    return workManager.getWorkInfoByIdFlow(workId)
+}
+
+// Observe unique work by name
+fun observeSyncWork(): Flow<WorkInfo?> {
+    return workManager.getWorkInfosForUniqueWorkFlow("sync_now")
+        .map { workInfos -> workInfos.firstOrNull() }
+}
+
+// Observe work by tag
+fun observeTaggedWork(tag: String): Flow<List<WorkInfo>> {
+    return workManager.getWorkInfosByTagFlow(tag)
+}
+
+// Use in ViewModel
+val syncState: StateFlow<SyncState> = syncCoordinator.observeSyncStatus()
+    .map { workInfo ->
+        when (workInfo?.state) {
+            WorkInfo.State.ENQUEUED -> SyncState.Pending
+            WorkInfo.State.RUNNING -> SyncState.Syncing
+            WorkInfo.State.SUCCEEDED -> SyncState.Success
+            WorkInfo.State.FAILED -> {
+                val error = workInfo.outputData.getString("error") ?: "Unknown error"
+                SyncState.Error(error)
+            }
+            WorkInfo.State.BLOCKED -> SyncState.Blocked
+            WorkInfo.State.CANCELLED -> SyncState.Cancelled
+            else -> SyncState.Idle
+        }
+    }
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = SyncState.Idle
+    )
+```
+
+### Expedited Work (API 31+)
+
+For time-sensitive operations that need to run immediately:
+
+```kotlin
+fun scheduleExpeditedSync() {
+    val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+        .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+        .setConstraints(
+            Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+        )
+        .build()
+
+    workManager.enqueue(syncRequest)
+}
+```
+
+### Testing WorkManager
+
+#### Testing with TestDriver
+
+```kotlin
+// core/sync/SyncWorkerTest.kt
+@RunWith(AndroidJUnit4::class)
+class SyncWorkerTest {
+    private lateinit var context: Context
+    private lateinit var workManager: WorkManager
+    private lateinit var testDriver: TestDriver
+
+    @Before
+    fun setup() {
+        context = ApplicationProvider.getApplicationContext()
+        
+        // Initialize WorkManager for tests
+        val config = Configuration.Builder()
+            .setMinimumLoggingLevel(Log.DEBUG)
+            .setExecutor(SynchronousExecutor())
+            .build()
+        
+        WorkManagerTestInitHelper.initializeTestWorkManager(context, config)
+        
+        workManager = WorkManager.getInstance(context)
+        testDriver = WorkManagerTestInitHelper.getTestDriver(context)!!
+    }
+
+    @Test
+    fun syncWorker_successfulSync_returnsSuccess() = runTest {
+        // Setup
+        val fakeRepository = FakeTaskRepository()
+        fakeRepository.setTasks(listOf(
+            Task("1", "Task 1", null, TaskStatus.TODO)
+        ))
+
+        // Create work request
+        val request = OneTimeWorkRequestBuilder<SyncWorker>()
+            .build()
+
+        // Enqueue work
+        workManager.enqueue(request).result.get()
+
+        // Simulate constraints met
+        testDriver.setAllConstraintsMet(request.id)
+
+        // Wait for work to complete
+        val workInfo = workManager.getWorkInfoById(request.id).get()
+
+        // Assert
+        assertThat(workInfo.state).isEqualTo(WorkInfo.State.SUCCEEDED)
+    }
+
+    @Test
+    fun syncWorker_noNetwork_retriesWork() = runTest {
+        val fakeNetworkMonitor = FakeNetworkMonitor()
+        fakeNetworkMonitor.setConnected(false)
+
+        val request = OneTimeWorkRequestBuilder<SyncWorker>()
+            .build()
+
+        workManager.enqueue(request).result.get()
+        testDriver.setAllConstraintsMet(request.id)
+
+        val workInfo = workManager.getWorkInfoById(request.id).get()
+
+        assertThat(workInfo.state).isEqualTo(WorkInfo.State.ENQUEUED)
+        assertThat(workInfo.runAttemptCount).isGreaterThan(0)
+    }
+
+    @Test
+    fun syncWorker_updatesProgress() = runTest {
+        val request = OneTimeWorkRequestBuilder<LargeDataSyncWorker>()
+            .build()
+
+        workManager.enqueue(request).result.get()
+        testDriver.setAllConstraintsMet(request.id)
+
+        // Collect progress updates
+        val progressValues = mutableListOf<Int>()
+        
+        workManager.getWorkInfoByIdFlow(request.id)
+            .take(5)
+            .collect { workInfo ->
+                workInfo?.progress?.getInt("progress", -1)?.let {
+                    if (it >= 0) progressValues.add(it)
+                }
+            }
+
+        assertThat(progressValues).isNotEmpty()
+        assertThat(progressValues.last()).isEqualTo(100)
+    }
+}
+```
+
+#### Testing Work Chains
+
+```kotlin
+@Test
+fun workChain_executesSequentially() = runTest {
+    val cleanup = OneTimeWorkRequestBuilder<CleanupWorker>().build()
+    val download = OneTimeWorkRequestBuilder<DownloadWorker>().build()
+    val process = OneTimeWorkRequestBuilder<ProcessWorker>().build()
+
+    // Enqueue chain
+    workManager
+        .beginWith(cleanup)
+        .then(download)
+        .then(process)
+        .enqueue()
+        .result
+        .get()
+
+    // Drive all constraints
+    testDriver.setAllConstraintsMet(cleanup.id)
+    testDriver.setAllConstraintsMet(download.id)
+    testDriver.setAllConstraintsMet(process.id)
+
+    // Verify execution order
+    val cleanupInfo = workManager.getWorkInfoById(cleanup.id).get()
+    val downloadInfo = workManager.getWorkInfoById(download.id).get()
+    val processInfo = workManager.getWorkInfoById(process.id).get()
+
+    assertThat(cleanupInfo.state).isEqualTo(WorkInfo.State.SUCCEEDED)
+    assertThat(downloadInfo.state).isEqualTo(WorkInfo.State.SUCCEEDED)
+    assertThat(processInfo.state).isEqualTo(WorkInfo.State.SUCCEEDED)
+}
+
+@Test
+fun workChain_failureStopsChain() = runTest {
+    val fakeDownloader = FakeDownloader()
+    fakeDownloader.setShouldFail(true)
+
+    val download = OneTimeWorkRequestBuilder<DownloadWorker>().build()
+    val process = OneTimeWorkRequestBuilder<ProcessWorker>().build()
+
+    workManager
+        .beginWith(download)
+        .then(process)
+        .enqueue()
+        .result
+        .get()
+
+    testDriver.setAllConstraintsMet(download.id)
+
+    val downloadInfo = workManager.getWorkInfoById(download.id).get()
+    val processInfo = workManager.getWorkInfoById(process.id).get()
+
+    // Download failed, so process should be cancelled
+    assertThat(downloadInfo.state).isEqualTo(WorkInfo.State.FAILED)
+    assertThat(processInfo.state).isEqualTo(WorkInfo.State.CANCELLED)
+}
+```
+
+#### Fake SyncCoordinator
+
+```kotlin
+// core/testing/FakeSyncCoordinator.kt
+class FakeSyncCoordinator : SyncCoordinator {
+    private val _workInfoFlow = MutableStateFlow<WorkInfo?>(null)
+    
+    var syncScheduled = false
+        private set
+    
+    var periodicSyncScheduled = false
+        private set
+    
+    var syncCancelled = false
+        private set
+
+    override fun scheduleSyncNow() {
+        syncScheduled = true
+        _workInfoFlow.value = createWorkInfo(WorkInfo.State.ENQUEUED)
+    }
+
+    override fun schedulePeriodicSync() {
+        periodicSyncScheduled = true
+    }
+
+    override fun cancelSync() {
+        syncCancelled = true
+        _workInfoFlow.value = createWorkInfo(WorkInfo.State.CANCELLED)
+    }
+
+    fun observeSyncStatus(): Flow<WorkInfo?> = _workInfoFlow.asStateFlow()
+
+    fun setWorkState(state: WorkInfo.State) {
+        _workInfoFlow.value = createWorkInfo(state)
+    }
+
+    private fun createWorkInfo(state: WorkInfo.State): WorkInfo {
+        // Create a mock WorkInfo for testing
+        return mock<WorkInfo>().apply {
+            whenever(this.state).thenReturn(state)
+        }
+    }
+
+    fun reset() {
+        syncScheduled = false
+        periodicSyncScheduled = false
+        syncCancelled = false
+        _workInfoFlow.value = null
+    }
+}
+```
+
+### WorkManager Best Practices
+
+#### ✅ Do
+
+1. **Use unique work names** for sync operations to prevent duplicates
+2. **Set appropriate constraints** to respect user's battery and data
+3. **Handle backoff** for transient failures
+4. **Use expedited work** (API 31+) for time-sensitive operations
+5. **Report progress** for long-running work
+6. **Chain work** for complex multi-step operations
+7. **Pass data** between workers using `Data.Builder()`
+8. **Observe work status** in ViewModel, not composables
+9. **Test with TestDriver** to simulate constraint changes
+10. **Cancel work** when no longer needed
+
+#### ❌ Don't
+
+1. **Don't use WorkManager for immediate execution** - use coroutines instead
+2. **Don't store large data in Worker input/output** - max 10KB per Data object
+3. **Don't rely on Worker lifecycle** - work can be interrupted and restarted
+4. **Don't use periodic work with flex < 15 minutes** - system constraint
+5. **Don't forget to cancel periodic work** when feature is disabled
+6. **Don't chain too many workers** - prefer batching in single worker
+7. **Don't use expedited work unnecessarily** - limited quota
+8. **Don't block main thread** in Worker - use CoroutineWorker
+9. **Don't assume work will run immediately** - constraints must be met
+10. **Don't use WorkManager for UI updates** - use StateFlow/LiveData
+
+### Work Constraints Comparison
+
+| Constraint | Use Case | Example |
+|------------|----------|---------|
+| `NetworkType.CONNECTED` | Any data sync | General API calls |
+| `NetworkType.UNMETERED` | Large downloads | Media sync, backups |
+| `NetworkType.NOT_ROAMING` | Cost-sensitive ops | International users |
+| `requiresBatteryNotLow` | Background sync | Periodic updates |
+| `requiresCharging` | Heavy operations | Database cleanup, indexing |
+| `requiresStorageNotLow` | Downloads | Media, cache management |
+| `requiresDeviceIdle` | Very heavy ops | Full database rebuild |
 
 ## Repository Pattern for Sync
 
