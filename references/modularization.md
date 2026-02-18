@@ -128,10 +128,13 @@ build-logic/            # Convention plugins for consistent builds
 │   │   ├── JvmLibraryConventionPlugin.kt
 │   │   ├── KotlinSerializationConventionPlugin.kt
 │   │   ├── FirebaseConventionPlugin.kt
-│   │   ├── ... (configuration files)
-│   │   ├── KotlinAndroid.kt
-│   │   ├── AndroidCompose.kt
-│   │   └── ... (other configuration files)
+│   │   └── config/                           # Configuration utilities
+│   │       ├── KotlinAndroid.kt
+│   │       ├── AndroidCompose.kt
+│   │       ├── ProjectExtensions.kt
+│   │       ├── GradleManagedDevices.kt
+│   │       ├── AndroidInstrumentationTest.kt
+│   │       └── PrintApksTask.kt
 │   └── build.gradle.kts
 ```
 

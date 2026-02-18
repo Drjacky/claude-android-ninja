@@ -30,7 +30,7 @@ Key points:
 
 **Complete Convention Plugin Implementation**: All plugin source files are available in `templates/convention/` including:
 - All 15 convention plugins (`.kt` files)
-- Configuration files (KotlinAndroid.kt, AndroidCompose.kt, etc.)
+- Configuration files in `config/` subdirectory (KotlinAndroid.kt, AndroidCompose.kt, etc.)
 - Build script (`build.gradle.kts`)
 - Setup guide and quick reference (`QUICK_REFERENCE.md`)
 
@@ -157,13 +157,13 @@ All convention plugin implementations are available in `templates/convention/`:
 - `KotlinSerializationConventionPlugin.kt` - JSON serialization
 - `FirebaseConventionPlugin.kt` - Firebase integration
 
-**Configuration Files:**
-- `KotlinAndroid.kt` - Common Kotlin/Android setup
-- `AndroidCompose.kt` - Compose configuration
-- `ProjectExtensions.kt` - Version catalog access
-- `GradleManagedDevices.kt` - Emulator configuration
-- `AndroidInstrumentationTest.kt` - Test optimization
-- `PrintApksTask.kt` - APK path printing
+**Configuration Files (in config/ subdirectory):**
+- `config/KotlinAndroid.kt` - Common Kotlin/Android setup
+- `config/AndroidCompose.kt` - Compose configuration
+- `config/ProjectExtensions.kt` - Version catalog access
+- `config/GradleManagedDevices.kt` - Emulator configuration
+- `config/AndroidInstrumentationTest.kt` - Test optimization
+- `config/PrintApksTask.kt` - APK path printing
 
 See `templates/convention/QUICK_REFERENCE.md` for detailed setup instructions and usage examples.
 

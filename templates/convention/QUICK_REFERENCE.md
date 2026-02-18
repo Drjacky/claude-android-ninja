@@ -102,9 +102,10 @@ build-logic/
 │       ├── AndroidApplicationConventionPlugin.kt
 │       ├── AndroidLibraryConventionPlugin.kt
 │       ├── ... (all other .kt files)
-│       ├── KotlinAndroid.kt
-│       ├── AndroidCompose.kt
-│       └── ... (all configuration files)
+│       └── config/
+│           ├── KotlinAndroid.kt
+│           ├── AndroidCompose.kt
+│           └── ... (all configuration files)
 └── settings.gradle.kts
 ```
 
@@ -224,14 +225,16 @@ com.example.core.model.*
 
 ## Configuration Files
 
-| File                            | Purpose                                                          |
-|---------------------------------|------------------------------------------------------------------|
-| `KotlinAndroid.kt`              | Common Kotlin/Android config (SDK, Java 17, desugaring, opt-ins) |
-| `AndroidCompose.kt`             | Compose configuration (BOM, metrics, stability)                  |
-| `ProjectExtensions.kt`          | Version catalog access (`Project.libs`)                          |
-| `GradleManagedDevices.kt`       | Emulator configuration for tests (Pixel 6, Pixel 8)              |
-| `AndroidInstrumentationTest.kt` | Disable unnecessary Android tests                                |
-| `PrintApksTask.kt`              | Task to print APK paths                                          |
+Configuration utilities are located in the `config/` subdirectory:
+
+| File                                   | Purpose                                                          |
+|----------------------------------------|------------------------------------------------------------------|
+| `config/KotlinAndroid.kt`              | Common Kotlin/Android config (SDK, Java 17, desugaring, opt-ins) |
+| `config/AndroidCompose.kt`             | Compose configuration (BOM, metrics, stability)                  |
+| `config/ProjectExtensions.kt`          | Version catalog access (`Project.libs`)                          |
+| `config/GradleManagedDevices.kt`       | Emulator configuration for tests (Pixel 6, Pixel 8)              |
+| `config/AndroidInstrumentationTest.kt` | Disable unnecessary Android tests                                |
+| `config/PrintApksTask.kt`              | Task to print APK paths                                          |
 
 ## Version Catalog Entries (libs.versions.toml)
 
