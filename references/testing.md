@@ -17,6 +17,7 @@ and Google Truth for assertions.
 11. [UI Tests](#ui-tests)
 12. [Performance Benchmarks](#performance-benchmarks)
 13. [Test Utilities](#test-utilities)
+14. [Localization Testing](#localization-testing)
 
 ## Testing Philosophy
 
@@ -1825,10 +1826,24 @@ object TestData {
 8. **In-Memory Database**: Use Room's in-memory database for DAO tests
 9. **SavedStateHandle**: Test navigation arguments and process death scenarios
 10. **Turbine for Flow**: Use Turbine for testing multiple Flow emissions over time
+
+## Localization Testing
+
+For testing internationalization and localization (i18n/l10n), including:
+- Testing different locales and languages
+- Testing plurals and quantity strings
+- Testing RTL (Right-to-Left) layouts
+- Parameterized tests for multiple locales
+- Screenshot testing for RTL
+- Testing date/time/currency formatting
+
+See [Internationalization & Localization Guide](android-i18n.md#testing-localization) for detailed examples and strategies.
+
 ## Related Guides
 
 - [Architecture Guide](architecture.md) - Repository patterns and testing layers
 - [Modularization Guide](modularization.md) - Multi-module testing strategies
 - [Code Coverage Guide](android-code-coverage.md) - JaCoCo setup and CI integration
+- [Internationalization & Localization Guide](android-i18n.md) - Localization testing strategies
 - [Android Testing Docs](https://developer.android.com/training/testing) - Official testing documentation
 - [Hilt Testing](https://developer.android.com/training/dependency-injection/hilt-testing) - Official Hilt testing guide
