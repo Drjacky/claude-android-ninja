@@ -7,6 +7,8 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 
 **Theming:** Use Material 3 theming with semantic color roles and typography. See `references/android-theming.md` for theme setup, dynamic colors, and dark/light mode.
 
+**Internationalization:** Use string resources for all text. See `references/android-i18n.md` for localization, RTL support, and plurals.
+
 ## Table of Contents
 1. [Screen Architecture](#screen-architecture)
 2. [State Management](#state-management)
@@ -1278,3 +1280,12 @@ fun AuthEventCard(
 ```
 
 **Key takeaway:** Start simple. Only optimize if profiling shows actual performance issues. Premature optimization adds complexity without benefit.
+## Related Guides
+
+- [Architecture Guide](architecture.md) - ViewModel patterns and state management
+- [Modularization Guide](modularization.md) - Feature modules and navigation
+- [Android Accessibility](android-accessibility.md) - Semantic properties and TalkBack support
+- [Android Theming](android-theming.md) - Material 3 theming, dynamic colors, typography
+- [Android i18n](android-i18n.md) - Localization, RTL support, and string resources
+- [Kotlin Patterns](kotlin-patterns.md) - Immutability and data class usage
+- [Testing Guide](testing.md) - UI testing with Compose

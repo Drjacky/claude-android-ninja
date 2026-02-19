@@ -19,6 +19,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - Material 3 theming (dynamic colors, typography, shapes, dark/light mode)
 - Navigation3 guidance and navigation coordination
 - Accessibility support (TalkBack, semantic properties, WCAG compliance)
+- Internationalization & localization (i18n/l10n, RTL support, plurals)
 - Notifications (channels, styles, actions, foreground services, API 24-35)
 - Data synchronization & offline-first (sync strategies, conflict resolution, cache invalidation)
 - Material Symbols icons, graphics, and custom drawing with Canvas
@@ -41,6 +42,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `references/compose-patterns.md` - Compose UI patterns and best practices
 - `references/android-theming.md` - Material 3 theming, colors, typography, shapes
 - `references/android-accessibility.md` - accessibility, TalkBack, semantic properties, WCAG
+- `references/android-i18n.md` - internationalization, localization, RTL support, plurals
 - `references/android-notifications.md` - notifications, channels, styles, foreground services
 - `references/android-data-sync.md` - offline-first, sync strategies, conflict resolution
 - `references/kotlin-patterns.md` - Kotlin best practices (must-read for Kotlin code)

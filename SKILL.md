@@ -24,6 +24,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Coroutines best practices                            | [coroutines-patterns.md](references/coroutines-patterns.md)     |
 | Gradle & build configuration                         | [gradle-setup.md](references/gradle-setup.md)                   |
 | Testing approach                                     | [testing.md](references/testing.md)                             |
+| Internationalization & localization                  | [android-i18n.md](references/android-i18n.md)                   |
 | Icons, graphics, and custom drawing                  | [android-graphics.md](references/android-graphics.md)           |
 | Runtime permissions                                  | [android-permissions.md](references/android-permissions.md)     |
 | Kotlin delegation patterns                           | [kotlin-delegation.md](references/kotlin-delegation.md)         |
@@ -197,6 +198,11 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Define DAOs and entities in `core/database` per [modularization.md](references/modularization.md)  
 → Use [testing.md](references/testing.md) for in-memory database testing and migration tests  
 → Follow [architecture.md](references/architecture.md) for repository patterns with Room  
+
+**Need internationalization/localization (i18n/l10n)?**
+→ Use [android-i18n.md](references/android-i18n.md) for string resources, plurals, and RTL support  
+→ Follow [compose-patterns.md](references/compose-patterns.md) for RTL-aware Compose layouts  
+→ Use [testing.md](references/testing.md) for locale-specific testing  
 
 **Implementing network calls (Retrofit)?**
 → Define API interfaces in `core/network` per [modularization.md](references/modularization.md)  
