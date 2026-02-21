@@ -974,6 +974,21 @@ fun LoginScreenAllStatesPreview(
 
 Compose can skip recomposition when inputs are stable. Use these annotations to help Compose's compiler understand stability contracts:
 
+**Important:** `@Immutable` and `@Stable` come from `androidx.compose.runtime`. To use them in domain models:
+- **Option 1**: Make your domain module depend on `androidx.compose.runtime` (it's a Kotlin-only library, no Android dependencies):
+  ```kotlin
+  // core/domain/build.gradle.kts
+  plugins {
+      alias(libs.plugins.app.android.library)  // or app.jvm.library
+  }
+  
+  dependencies {
+      implementation(platform(libs.androidx.compose.bom))
+      implementation(libs.androidx.compose.runtime)  // For @Immutable/@Stable
+  }
+  ```
+- **Option 2**: Only annotate UI-layer models (e.g., `UserUi` in feature modules) and use a stability configuration file for domain models (see [android-strictmode.md](android-strictmode.md#compose-stability-guardrails))
+
 #### When to Use `@Immutable`
 
 Use `@Immutable` when a type is **deeply immutable**: all properties are `val`, and all property types are primitives or also immutable. Once created, the object never changes.
