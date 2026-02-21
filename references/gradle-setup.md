@@ -566,6 +566,56 @@ ksp.incremental=true
 ksp.incremental.log=false
 ```
 
+### Non-Transitive R Classes
+
+With `android.nonTransitiveRClass=true`, each module generates its own R class containing **only its own resources**. This improves build performance but requires explicit imports when accessing resources from other modules.
+
+**Key implications:**
+
+1. **Each module has its own R class** with its full package name:
+   ```kotlin
+   // In :feature:products module
+   com.example.feature.products.R
+   
+   // In :core:ui module
+   com.example.core.ui.R
+   ```
+
+2. **Unqualified `R` may not resolve** if your file is in a sub-package:
+   ```kotlin
+   // File: feature/products/presentation/detail/ProductDetailView.kt
+   // Package: com.example.feature.products.presentation.detail
+   
+   // This may fail:
+   stringResource(R.string.product_title) // ❌ Unresolved reference
+   
+   // Fix: Import the module's R class explicitly
+   import com.example.feature.products.R
+   stringResource(R.string.product_title) // ✅ Works
+   ```
+
+3. **Cross-module resources require import aliases**:
+   ```kotlin
+   // Accessing strings from core:ui in feature:products
+   import com.example.core.ui.R as CoreUiR
+   
+   @Composable
+   fun ErrorMessage() {
+       Text(stringResource(CoreUiR.string.error_unknown))
+       Text(stringResource(CoreUiR.string.error_network))
+   }
+   ```
+
+4. **Fully qualified references** (alternative to imports):
+   ```kotlin
+   Text(stringResource(com.example.core.ui.R.string.loading))
+   ```
+
+**Best practices:**
+- Use import aliases (`as CoreUiR`) for readability when accessing multiple resources from another module
+- Group cross-module resource imports at the top of the file
+- See [android-i18n.md](android-i18n.md#string-resource-ownership) for guidance on which module should own which strings
+
 ### Proguard Rules for Release Builds
 
 `app/proguard-rules.pro`:
