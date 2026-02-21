@@ -554,6 +554,110 @@ Icon(
 
 ## Navigation Coordination
 
+### Navigation 3 Quick Start
+
+Navigation 3 uses type-safe data classes as navigation keys. Here's a minimal example:
+
+#### 1. Define Destinations (Feature Module)
+
+```kotlin
+// feature/products/navigation/ProductsDestination.kt
+import kotlinx.serialization.Serializable
+import androidx.navigation3.runtime.NavKey
+
+@Serializable
+sealed interface ProductsDestination : NavKey {
+    @Serializable
+    data class ProductsList(val categoryId: String) : ProductsDestination
+    
+    @Serializable
+    data class ProductDetail(val productId: String) : ProductsDestination
+}
+```
+
+#### 2. Define Navigator Interface (Feature Module)
+
+```kotlin
+// feature/products/navigation/ProductsNavigator.kt
+interface ProductsNavigator {
+    fun navigateToDetail(productId: String)
+    fun navigateBack()
+}
+```
+
+#### 3. Use in Route Composable (Feature Module)
+
+```kotlin
+// feature/products/presentation/ProductsRoute.kt
+@Composable
+fun ProductsRoute(
+    categoryId: String,
+    navigator: ProductsNavigator,
+    viewModel: ProductsViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    ProductsListScreen(
+        state = uiState,
+        onProductClick = { productId ->
+            navigator.navigateToDetail(productId)
+        },
+        onBackClick = navigator::navigateBack
+    )
+}
+```
+
+#### 4. Register in App Module
+
+```kotlin
+// app/navigation/AppNavigation.kt
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.NavDisplay
+import androidx.navigation3.runtime.rememberNavBackStack
+
+@Composable
+fun AppNavigation() {
+    val backStack = rememberNavBackStack(
+        startDestination = ProductsDestination.ProductsList(categoryId = "all")
+    )
+    
+    // Implement navigator
+    val productsNavigator = remember {
+        object : ProductsNavigator {
+            override fun navigateToDetail(productId: String) {
+                backStack.push(ProductsDestination.ProductDetail(productId))
+            }
+            override fun navigateBack() {
+                backStack.pop()
+            }
+        }
+    }
+    
+    // Define routes
+    NavDisplay(backStack = backStack) {
+        entry<ProductsDestination.ProductsList> { key ->
+            ProductsRoute(
+                categoryId = key.categoryId,
+                navigator = productsNavigator
+            )
+        }
+        
+        entry<ProductsDestination.ProductDetail> { key ->
+            ProductDetailRoute(
+                productId = key.productId,
+                navigator = productsNavigator
+            )
+        }
+    }
+}
+```
+
+**Key Points:**
+- Routes are `@Serializable` data classes (type-safe, saved across process death)
+- Feature modules define `Navigator` interfaces (no navigation logic)
+- App module implements `Navigator` and registers all routes
+- Use `rememberNavBackStack()` for simple navigation or `rememberNavigationState()` for multi-stack (bottom nav)
+
 ### Key Principles
 
 1. **Feature Independence**: Features define `Navigator` interfaces
