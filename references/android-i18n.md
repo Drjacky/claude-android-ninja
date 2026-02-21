@@ -534,6 +534,68 @@ fun DayPicker() {
 }
 ```
 
+## String Resource Ownership
+
+With `android.nonTransitiveRClass=true`, each module has its own R class containing only its own resources. Organize string resources by module responsibility:
+
+### Module Organization
+
+- **`core:common`** or **`core:domain`**: Generic error messages, result states used across multiple features
+  ```xml
+  <!-- core/common/src/main/res/values/strings.xml -->
+  <string name="error_unknown">Unknown error occurred</string>
+  <string name="error_network">Network connection failed</string>
+  <string name="error_timeout">Request timed out</string>
+  <string name="loading">Loading...</string>
+  ```
+
+- **`core:ui`**: Shared UI component labels, accessibility descriptions, common actions
+  ```xml
+  <!-- core/ui/src/main/res/values/strings.xml -->
+  <string name="action_back">Back</string>
+  <string name="action_close">Close</string>
+  <string name="action_save">Save</string>
+  <string name="theme_light">Light</string>
+  <string name="theme_dark">Dark</string>
+  <string name="cd_loading">Loading content</string>
+  ```
+
+- **`feature:xxx`**: Feature-specific strings (screen titles, labels, messages unique to that feature)
+  ```xml
+  <!-- feature/products/src/main/res/values/strings.xml -->
+  <string name="products_title">Products</string>
+  <string name="product_detail_title">Product Details</string>
+  <string name="products_empty">No products available</string>
+  <string name="product_add_to_cart">Add to Cart</string>
+  ```
+
+### Cross-Module Resource Access
+
+When a feature needs to reference resources from another module:
+
+```kotlin
+// feature/products/presentation/ProductsListView.kt
+import com.example.core.ui.R as CoreUiR
+import com.example.feature.products.R
+
+@Composable
+fun ProductsListView(state: ProductsUiState) {
+    when (state) {
+        is Loading -> Text(stringResource(CoreUiR.string.loading))
+        is Empty -> Text(stringResource(R.string.products_empty))
+        is Error -> Text(stringResource(CoreUiR.string.error_unknown))
+        is Success -> ProductsList(state.products)
+    }
+}
+```
+
+**Best practices:**
+- **Never duplicate strings** across modules, even if they have the same text
+- Use import aliases (`as CoreUiR`) for clarity when accessing cross-module resources
+- If multiple features need the same string, move it to `core:common` or `core:ui`
+- Feature modules should depend on `core:ui` for shared UI strings
+- See [gradle-setup.md](gradle-setup.md#non-transitive-r-classes) for technical details on non-transitive R classes
+
 ## Architecture Integration
 
 ### Repository Layer
