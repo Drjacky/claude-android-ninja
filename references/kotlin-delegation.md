@@ -648,6 +648,96 @@ fun `login records crash on failure`() = runTest {
 - **Prefer DI for delegates**: Inject delegates via Hilt; avoid manual construction.
 - **Document delegation intent**: Add comments explaining why delegation is used.
 
+### Auditing Existing Base Classes
+
+When migrating from inheritance-based patterns to delegation, audit base classes for dead code:
+
+**Common dead code in base classes:**
+
+1. **Methods never overridden or called by subclasses**
+   ```kotlin
+   // BaseViewModel.kt
+   abstract class BaseViewModel : ViewModel() {
+       // ❌ Dead code: No subclass ever uses this
+       protected fun handleFailure(throwable: Throwable) {
+           _failure.emit(throwable)
+       }
+       
+       private val _failure = MutableSharedFlow<Throwable>()
+       val failure: SharedFlow<Throwable> = _failure.asSharedFlow()
+   }
+   ```
+   **Fix:** Delete unused methods and their associated state. If no subclass collects `failure`, remove it entirely.
+
+2. **`@Inject` fields never accessed**
+   ```kotlin
+   // Application class or BaseViewModel
+   class MyApplication : Application() {
+       @Inject lateinit var resources: Resources  // ❌ Never used
+       @Inject lateinit var crashReporter: CrashReporter  // ✅ Used in subclasses
+   }
+   ```
+   **Fix:** Remove unused `@Inject` fields. They compile fine but add unnecessary dependencies.
+
+3. **Channels/Flows never collected by UI**
+   ```kotlin
+   // BaseViewModel.kt
+   abstract class BaseViewModel : ViewModel() {
+       private val _failure = MutableSharedFlow<Throwable>()
+       val failure: SharedFlow<Throwable> = _failure.asSharedFlow()  // ❌ No screen collects this
+   }
+   ```
+   **Fix:** Search codebase for `.collect` or `collectAsStateWithLifecycle()` on this flow. If none exist, delete it.
+
+4. **Methods only used in removed code**
+   ```kotlin
+   // BaseViewModel.kt
+   abstract class BaseViewModel : ViewModel() {
+       // ❌ Only called by handleFailure(), which is also unused
+       protected fun logError(throwable: Throwable) {
+           crashReporter.recordException(throwable)
+       }
+   }
+   ```
+   **Fix:** Delete transitively unused methods. Trace back from public APIs.
+
+**Audit process:**
+1. **Find all subclasses**: Search for `: BaseViewModel` or `: BaseClass`
+2. **Check method usage**: For each method in the base class, verify it's called by at least one subclass
+3. **Check field access**: For each field/property, verify it's accessed by at least one subclass
+4. **Check flow collection**: For each `Flow`/`Channel`, verify UI collects from it
+5. **Delete aggressively**: Dead code in base classes is hard to spot because it compiles fine and appears intentional
+
+**Why this matters:**
+- Base classes centralize dead code, making it invisible to static analysis
+- Unused `@Inject` fields add unnecessary dependencies to every subclass
+- Unused flows/channels consume memory and add complexity
+- Dead code survives refactors because "it might be used somewhere"
+
+**Example audit:**
+```kotlin
+// Before (BaseViewModel with dead code)
+abstract class BaseViewModel : ViewModel() {
+    @Inject lateinit var resources: Resources  // Never used
+    
+    private val _failure = MutableSharedFlow<Throwable>()
+    val failure: SharedFlow<Throwable> = _failure.asSharedFlow()  // Never collected
+    
+    protected fun handleFailure(throwable: Throwable) {  // Never called
+        viewModelScope.launch {
+            _failure.emit(throwable)
+        }
+    }
+}
+
+// After (migrate to delegation, remove dead code)
+class AuthViewModel @Inject constructor(
+    crashReporter: CrashReporter  // Explicit dependency, used via delegation
+) : ViewModel(), CrashReporter by crashReporter {
+    // Dead code eliminated by not using base class
+}
+```
+
 ### Testing
 - **Create simple fakes**: Test fakes should be straightforward, not mocks.
 - **Verify delegated behavior**: Test that delegated methods are called correctly.
