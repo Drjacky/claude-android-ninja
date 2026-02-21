@@ -171,3 +171,137 @@ If the project uses Gradle toolchains, Detekt will resolve the proper JDK automa
 ## Compose Rules
 The Compose detekt ruleset is configured in `templates/detekt.yml.template`. Use that template as-is.
 For compatibility information and latest rules, see: [Compose rules + detekt compatibility](https://mrmans0n.github.io/compose-rules/detekt/)
+
+## Suppressing Violations
+
+### Acceptable Suppressions for Compose
+
+Jetpack Compose composables are declarative UI functions that naturally differ from imperative code. The following suppressions are acceptable when applied to `@Composable` functions:
+
+#### `@Suppress("LongMethod")`
+Composable UI functions declare layout trees and are naturally longer than business logic functions.
+
+```kotlin
+@Suppress("LongMethod")
+@Composable
+fun ProductDetailScreen(
+    product: Product,
+    onAddToCart: () -> Unit,
+    onNavigateBack: () -> Unit
+) {
+    Scaffold(
+        topBar = { /* AppBar with 10+ lines */ },
+        bottomBar = { /* Actions with 10+ lines */ }
+    ) { padding ->
+        LazyColumn(Modifier.padding(padding)) {
+            item { /* Hero image section 15+ lines */ }
+            item { /* Title and price section 10+ lines */ }
+            item { /* Description section 10+ lines */ }
+            item { /* Specifications section 20+ lines */ }
+            item { /* Reviews section 15+ lines */ }
+            // Total: 80+ lines is normal for a detail screen
+        }
+    }
+}
+```
+
+#### `@Suppress("LongParameterList")`
+Route/Screen composables accept ViewModels, callbacks, modifiers, and navigation arguments.
+
+```kotlin
+@Suppress("LongParameterList")
+@Composable
+fun ProductDetailRoute(
+    productId: String,
+    viewModel: ProductDetailViewModel = hiltViewModel(),
+    navigator: ProductNavigator,
+    onAddToCart: (Product) -> Unit,
+    onShareProduct: (Product) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // 6+ parameters is normal for feature entry points
+}
+```
+
+#### `@Suppress("CyclomaticComplexMethod")`
+Composables handling UI state often have multiple `when` branches for different states.
+
+```kotlin
+@Suppress("CyclomaticComplexMethod")
+@Composable
+fun ProductsContent(state: ProductsUiState) {
+    when (state) {
+        is Loading -> LoadingIndicator()
+        is Empty -> EmptyState()
+        is Error -> ErrorMessage(state.message)
+        is Success -> when {
+            state.products.isEmpty() -> EmptyProductsList()
+            state.isFiltered -> FilteredProductsList(state.products, state.filter)
+            else -> ProductsList(state.products)
+        }
+    }
+    // Multiple when branches for UI states is normal
+}
+```
+
+**Placement:** Place `@Suppress` directly above `@Composable`:
+```kotlin
+@Suppress("LongMethod", "CyclomaticComplexMethod")
+@Composable
+fun MyScreen() { /* ... */ }
+```
+
+### Targeted Suppressions
+
+#### `@Suppress` on Catch Parameters
+For `TooGenericExceptionCaught`, place `@Suppress` on the catch parameter for maximum precision:
+
+```kotlin
+try {
+    riskyOperation()
+} catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+    // Sometimes catching Exception is the right choice
+    // (e.g., unknown third-party library exceptions)
+    crashReporter.recordException(e)
+}
+```
+
+This is more precise than suppressing the entire function.
+
+#### File-Level Suppressions
+
+Use `@file:Suppress` when an issue affects the entire file:
+
+```kotlin
+@file:Suppress("MatchingDeclarationName")
+package com.example.ui.view
+
+// File: AnAnimatedComposableExampleView.kt
+// Contains helper enum + main composable
+
+enum class CirclePosition { START, END }
+
+@Composable
+fun AnAnimatedComposableExampleView(...) { /* ... */ }
+```
+
+**When to use:**
+- `MatchingDeclarationName`: File has a primary composable plus supporting types (enums, sealed classes, data classes)
+- `TooManyFunctions`: Composable files with many small helper composables
+- `MagicNumber`: UI files with many layout dimensions
+
+### When NOT to Suppress
+
+Avoid suppressing these without fixing the underlying issue:
+- `ComplexMethod` in ViewModels or business logic → Refactor the code
+- `LongParameterList` in data classes → Consider builder pattern or DSL
+- `TooGenericExceptionCaught` when you can handle specific exceptions → Use specific catches
+- `UnusedPrivateProperty` → Remove the property
+
+## Best Practices
+
+1. **Fix, don't suppress**: Suppressions should be rare. Refactor code instead.
+2. **Justify suppressions**: Add a comment explaining why the suppression is necessary.
+3. **Be specific**: Use targeted suppressions (catch parameters, single functions) over file-level.
+4. **Review suppressions**: Suppressions added "temporarily" tend to become permanent. Review regularly.
+5. **Compose is different**: Accept that Compose composables naturally violate some imperative code rules.
