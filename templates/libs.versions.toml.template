@@ -39,10 +39,10 @@ lifecycleRuntimeKtx = "2.10.0"
 lifecycleViewmodel = "2.10.0"
 lifecycleViewmodelCompose = "2.7.0"
 material3 = "1.4.0"
+materialAdaptive = "1.3.0-alpha08"
 minSdk = "24"
 mockkVersion = "1.14.6"
 mockwebserver = "5.0.0-alpha.14"
-nav3Material = "1.3.0-alpha03"
 navigation3 = "1.4.0-beta01"
 okhttpLogging = "5.3.2"
 paging = "3.3.6"
@@ -69,9 +69,11 @@ androidx-compose-animation = { group = "androidx.compose.animation", name = "ani
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
-androidx-compose-material3-adaptive = { group = "androidx.compose.material3.adaptive", name = "adaptive", version.ref = "nav3Material" }
-androidx-compose-material3-adaptive-navigation-suite = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation-suite", version.ref = "nav3Material" }
-androidx-compose-material3-navigation3 = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation3", version.ref = "nav3Material" }
+androidx-compose-material3-adaptive = { group = "androidx.compose.material3.adaptive", name = "adaptive", version.ref = "materialAdaptive" }
+androidx-compose-material3-adaptive-layout = { group = "androidx.compose.material3.adaptive", name = "adaptive-layout", version.ref = "materialAdaptive" }
+androidx-compose-material3-adaptive-navigation = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation", version.ref = "materialAdaptive" }
+androidx-compose-material3-adaptive-navigation-suite = { group = "androidx.compose.material3", name = "material3-adaptive-navigation-suite", version.ref = "material3" }
+androidx-compose-material3-adaptive-navigation3 = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation3", version.ref = "materialAdaptive" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
@@ -154,7 +156,14 @@ compose = [
 
 navigation3 = [
     "androidx-navigation3-compose",
-    "androidx-compose-material3-navigation3"
+    "androidx-compose-material3-adaptive-navigation3"
+]
+
+adaptive = [
+    "androidx-compose-material3-adaptive",
+    "androidx-compose-material3-adaptive-layout",
+    "androidx-compose-material3-adaptive-navigation",
+    "androidx-compose-material3-adaptive-navigation-suite"
 ]
 
 unit-test = [

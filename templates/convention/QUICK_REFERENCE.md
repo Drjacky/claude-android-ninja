@@ -194,6 +194,7 @@ com.example.core.model.*
 - Auto-adds dependencies: `:core:ui`, `:core:domain`, `:core:data`
 - Lifecycle (ViewModel + runtime-compose)
 - Navigation3 (runtime + compose)
+- Adaptive layouts (adaptive, adaptive-layout, adaptive-navigation, navigation-suite)
 - Managed devices
 
 ### Room Plugin

@@ -39,6 +39,9 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 add("implementation", libs.findLibrary("androidx.navigation3.runtime").get())
                 add("implementation", libs.findLibrary("androidx.navigation3.compose").get())
 
+                // Adaptive layouts (NavigationSuiteScaffold, ListDetailPaneScaffold, SupportingPaneScaffold)
+                libs.findBundle("adaptive").ifPresent { add("implementation", it) }
+
                 // Testing
                 add("androidTestImplementation", libs.findLibrary("androidx.lifecycle.runtime.compose").get())
             }

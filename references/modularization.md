@@ -40,7 +40,7 @@ Entry point that brings everything together with Navigation3 adaptive navigation
 
 **Contains**:
 - `MainActivity` with `NavigationSuiteScaffold`
-- `AppNavigation` composable with `windowAdaptiveInfo`
+- `AppNavigation` composable with `NavigationSuiteScaffold`
 - `NavigationState` and `Navigator` for state management
 - `entryProvider` with all feature destinations
 - `NavDisplay` to render current destination
@@ -430,10 +430,9 @@ See Navigation Coordination section below for complete implementation.
 **Step 3: Create app navigation**
 ```kotlin
 // app/src/main/kotlin/com/example/app/navigation/AppNavigation.kt
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -450,13 +449,10 @@ sealed interface TopLevelRoute : NavKey {
     @Serializable data object Settings : TopLevelRoute
 }
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun AppNavigation(
     analytics: Analytics
 ) {
-    val windowAdaptiveInfo = currentWindowAdaptiveInfo()
-    
     // Create navigation state (survives config changes and process death)
     val navigationState = rememberNavigationState(
         startRoute = TopLevelRoute.Auth,
@@ -499,8 +495,8 @@ fun AppNavigation(
         settingsGraph()
     }
     
+    // NavigationSuiteScaffold auto-switches between bar/rail/drawer based on window size
     NavigationSuiteScaffold(
-        windowAdaptiveInfo = windowAdaptiveInfo,
         navigationSuiteItems = {
             item(
                 icon = { Icon(painterResource(R.drawable.ic_lock), contentDescription = null) },
@@ -664,7 +660,7 @@ fun AppNavigation() {
 2. **Central Coordination**: App module implements all navigators
 3. **Type-Safe Routes**: Routes implement `NavKey` with `@Serializable` and `@Immutable`
 4. **Explicit State Management**: `NavigationState` + `Navigator` manage navigation state
-5. **Adaptive Navigation**: `NavigationSuiteScaffold` adapts based on `windowAdaptiveInfo`
+5. **Adaptive Navigation**: `NavigationSuiteScaffold` auto-switches between bar/rail/drawer based on window size
 
 ### Navigation Flow
 

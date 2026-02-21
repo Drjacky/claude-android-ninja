@@ -499,10 +499,16 @@ Starting with Android 16 (API 36), orientation, resizability, and aspect ratio r
 
 **Build adaptive layouts by default:**
 - Use `WindowSizeClass` to adapt layouts to any screen size
-- Use `NavigationSuiteScaffold` for responsive navigation
-- Use `ListDetailPaneScaffold` for list-detail patterns
+- Use `NavigationSuiteScaffold` for responsive navigation (auto-switches bar/rail/drawer)
+- Use `NavigableListDetailPaneScaffold` for list-detail patterns (built-in nav + predictive back)
+- Use `NavigableSupportingPaneScaffold` for main + supporting content patterns
 - Save and restore UI state properly -- rotation causes activity re-creation
 - Test on tablets, foldables, and desktop windowing modes
+
+**Dependencies** (all included in the `adaptive` bundle):
+```kotlin
+implementation(libs.bundles.adaptive)
+```
 
 ```kotlin
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -829,95 +835,211 @@ fun ErrorContent(
 
 ## Adaptive UI
 
-### Responsive Layouts with Navigation3
+### Adaptive Navigation with NavigationSuiteScaffold
+
+`NavigationSuiteScaffold` automatically switches between bottom navigation bar, navigation rail, and navigation drawer based on `WindowSizeClass`. Do NOT manually branch on window size class -- the scaffold handles it.
 
 ```kotlin
 // app/AdaptiveAppNavigation.kt
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun AdaptiveAppNavigation() {
-    val navController = rememberNavController()
-    val windowAdaptiveInfo = currentWindowAdaptiveInfo()
-    
-    // Choose appropriate scaffold based on screen size
-    when (windowAdaptiveInfo.windowSizeClass.widthSizeClass) {
-        WindowWidthSizeClass.Compact -> {
-            // Mobile: Bottom navigation
-            NavigationSuiteScaffold(
-                state = rememberNavigationSuiteScaffoldState(),
-                windowAdaptiveInfo = windowAdaptiveInfo,
-                navigationSuiteItems = {
-                    // Compact navigation items
-                }
-            ) {
-                // NavHost content
+    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+
+    NavigationSuiteScaffold(
+        navigationSuiteItems = {
+            AppDestinations.entries.forEach { destination ->
+                item(
+                    icon = { Icon(destination.icon, contentDescription = stringResource(destination.contentDescription)) },
+                    label = { Text(stringResource(destination.label)) },
+                    selected = destination == currentDestination,
+                    onClick = { currentDestination = destination }
+                )
             }
         }
-        WindowWidthSizeClass.Medium -> {
-            // Tablet: Navigation rail
-            NavigationSuiteScaffold(
-                state = rememberNavigationSuiteScaffoldState(),
-                windowAdaptiveInfo = windowAdaptiveInfo,
-                navigationSuiteItems = {
-                    // Medium navigation items
-                }
-            ) {
-                // NavHost content
-            }
-        }
-        WindowWidthSizeClass.Expanded -> {
-            // Desktop: Navigation drawer
-            NavigationSuiteScaffold(
-                state = rememberNavigationSuiteScaffoldState(),
-                windowAdaptiveInfo = windowAdaptiveInfo,
-                navigationSuiteItems = {
-                    // Expanded navigation items
-                }
-            ) {
-                // NavHost content
-            }
+    ) {
+        when (currentDestination) {
+            AppDestinations.HOME -> HomeScreen()
+            AppDestinations.FAVORITES -> FavoritesScreen()
+            AppDestinations.SETTINGS -> SettingsScreen()
         }
     }
 }
+
+enum class AppDestinations(
+    @StringRes val label: Int,
+    val icon: ImageVector,
+    @StringRes val contentDescription: Int
+) {
+    HOME(R.string.home, Icons.Default.Home, R.string.home),
+    FAVORITES(R.string.favorites, Icons.Default.Favorite, R.string.favorites),
+    SETTINGS(R.string.settings, Icons.Default.Settings, R.string.settings),
+}
 ```
 
-### List-Detail Layouts for Tablets
+To override the navigation type for specific cases (e.g., permanent drawer on expanded):
+
+```kotlin
+val adaptiveInfo = currentWindowAdaptiveInfo()
+val customNavSuiteType = with(adaptiveInfo) {
+    if (windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_EXPANDED_LOWER_BOUND)) {
+        NavigationSuiteType.NavigationDrawer
+    } else {
+        NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(adaptiveInfo)
+    }
+}
+
+NavigationSuiteScaffold(
+    navigationSuiteItems = { /* ... */ },
+    layoutType = customNavSuiteType,
+) {
+    // Content
+}
+```
+
+### List-Detail Layout (NavigableListDetailPaneScaffold)
+
+Use `NavigableListDetailPaneScaffold` instead of raw `ListDetailPaneScaffold` -- it provides built-in navigation and predictive back handling.
+
+- On expanded screens: list and detail side by side
+- On compact/medium: one pane at a time with navigation between them
 
 ```kotlin
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun AuthSessionListDetailLayout(
-    viewModel: AuthSessionViewModel = hiltViewModel(),
-    windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo()
+    viewModel: AuthSessionViewModel = hiltViewModel()
 ) {
     val authEvents by viewModel.events.collectAsStateWithLifecycle()
-    val selectedEvent by viewModel.selectedEvent.collectAsStateWithLifecycle()
-    val listDetailPaneScaffoldState = rememberListDetailPaneScaffoldState()
-    
-    ListDetailPaneScaffold(
-        state = listDetailPaneScaffoldState,
-        windowAdaptiveInfo = windowAdaptiveInfo,
+    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<AuthEvent>()
+
+    NavigableListDetailPaneScaffold(
+        navigator = scaffoldNavigator,
         listPane = {
-            // List view - session/activity list
-            LazyColumn {
-                items(authEvents) { event ->
-                    AuthEventListItem(
-                        event = event,
-                        onClick = { viewModel.selectEvent(event) }
-                    )
+            AnimatedPane {
+                LazyColumn {
+                    items(authEvents) { event ->
+                        AuthEventListItem(
+                            event = event,
+                            onClick = {
+                                viewModel.selectEvent(event)
+                                scaffoldNavigator.navigateTo(
+                                    ListDetailPaneScaffoldRole.Detail,
+                                    contentKey = event
+                                )
+                            }
+                        )
+                    }
                 }
             }
         },
         detailPane = {
-            // Detail view - shows selected event
-            selectedEvent?.let { event ->
-                AuthEventDetailScreen(
-                    event = event,
-                    onBackClick = { viewModel.clearSelection() }
-                )
+            AnimatedPane {
+                scaffoldNavigator.currentDestination?.contentKey?.let { event ->
+                    AuthEventDetailScreen(event = event)
+                }
             }
         }
     )
+}
+```
+
+For custom back behavior or more control, use `SupportingPaneScaffold` / `ListDetailPaneScaffold` directly with `ThreePaneScaffoldPredictiveBackHandler`:
+
+```kotlin
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Composable
+fun CustomListDetailLayout() {
+    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<String>()
+
+    ThreePaneScaffoldPredictiveBackHandler(
+        navigator = scaffoldNavigator,
+        backBehavior = BackNavigationBehavior.PopUntilScaffoldValueChange
+    )
+
+    ListDetailPaneScaffold(
+        directive = scaffoldNavigator.scaffoldDirective,
+        scaffoldState = scaffoldNavigator.scaffoldState,
+        listPane = {
+            AnimatedPane { /* list content */ }
+        },
+        detailPane = {
+            AnimatedPane { /* detail content */ }
+        }
+    )
+}
+```
+
+### Supporting Pane Layout (NavigableSupportingPaneScaffold)
+
+Use `NavigableSupportingPaneScaffold` to display a main content pane with a contextual supporting pane. The supporting pane shows related info (e.g., similar items, metadata, tools).
+
+- On expanded screens: main and supporting panes side by side
+- On compact/medium: one pane at a time with navigation
+
+```kotlin
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Composable
+fun MovieDetailWithSuggestions(movie: Movie) {
+    val scaffoldNavigator = rememberSupportingPaneScaffoldNavigator()
+    val scope = rememberCoroutineScope()
+
+    NavigableSupportingPaneScaffold(
+        navigator = scaffoldNavigator,
+        mainPane = {
+            AnimatedPane(modifier = Modifier.safeContentPadding()) {
+                MovieDetailContent(
+                    movie = movie,
+                    onShowSuggestions = {
+                        scope.launch {
+                            scaffoldNavigator.navigateTo(SupportingPaneScaffoldRole.Supporting)
+                        }
+                    },
+                    isSupportingPaneVisible = scaffoldNavigator.scaffoldValue[SupportingPaneScaffoldRole.Supporting] != PaneAdaptedValue.Hidden
+                )
+            }
+        },
+        supportingPane = {
+            AnimatedPane(modifier = Modifier.safeContentPadding()) {
+                Column {
+                    if (scaffoldNavigator.scaffoldValue[SupportingPaneScaffoldRole.Supporting] == PaneAdaptedValue.Expanded) {
+                        IconButton(
+                            modifier = Modifier.align(Alignment.End).padding(16.dp),
+                            onClick = {
+                                scope.launch {
+                                    scaffoldNavigator.navigateBack(BackNavigationBehavior.PopUntilScaffoldValueChange)
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Close")
+                        }
+                    }
+                    SimilarMoviesList(movieId = movie.id)
+                }
+            }
+        }
+    )
+}
+```
+
+### Extracting Pane Composables
+
+Extract panes into separate composables using `ThreePaneScaffoldPaneScope` for reusability and testability:
+
+```kotlin
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Composable
+fun ThreePaneScaffoldPaneScope.MainPane(
+    showSupportingButton: Boolean,
+    onNavigateToSupporting: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AnimatedPane(modifier = modifier.safeContentPadding()) {
+        if (showSupportingButton) {
+            Button(onClick = onNavigateToSupporting) {
+                Text("Show details")
+            }
+        }
+    }
 }
 ```
 
@@ -942,15 +1064,10 @@ fun AppTheme(
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
-    
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-        }
-    }
-    
+
+    // Status bar appearance is handled by enableEdgeToEdge() in MainActivity.
+    // Do NOT manually set statusBarColor or isAppearanceLightStatusBars here.
+
     MaterialTheme(
         colorScheme = colorScheme,
         typography = AppTypography,

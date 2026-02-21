@@ -242,6 +242,9 @@ dependencies {
     // Navigation3 for adaptive UI
     implementation(libs.bundles.navigation3)
     
+    // Adaptive layouts (NavigationSuiteScaffold, ListDetailPaneScaffold, SupportingPaneScaffold)
+    implementation(libs.bundles.adaptive)
+    
     // Splash screen
     implementation(libs.androidx.core.splashscreen)
     
