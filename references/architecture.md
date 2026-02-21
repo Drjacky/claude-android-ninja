@@ -281,11 +281,41 @@ class AuthSessionWorker @AssistedInject constructor(
 ## Domain Layer
 
 ### Purpose
-- **Pure Kotlin module** (no Android dependencies)
+- **Pure business logic module** (minimal Android dependencies)
 - Encapsulate complex business logic
 - Remove duplicate logic from ViewModels
 - Combine and transform data from multiple repositories
 - **Optional but recommended** for complex applications
+
+### Module Setup
+
+Domain modules can be either:
+- **Pure JVM/Kotlin modules** (`app.jvm.library`) - No Android dependencies
+- **Android library modules** (`app.android.library`) - If you need `@Immutable`/`@Stable` annotations on domain models
+
+```kotlin
+// Option 1: Pure Kotlin module (no @Immutable annotations)
+// core/domain/build.gradle.kts
+plugins {
+    alias(libs.plugins.app.jvm.library)
+    alias(libs.plugins.app.hilt)
+}
+
+// Option 2: Android library (enables @Immutable for domain models)
+// core/domain/build.gradle.kts
+plugins {
+    alias(libs.plugins.app.android.library)
+    alias(libs.plugins.app.hilt)
+}
+
+dependencies {
+    // Only if using Option 2 and want @Immutable on domain models
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.runtime)  // Kotlin-only, no Android deps
+}
+```
+
+**Note:** `androidx.compose.runtime` is a Kotlin-only library despite the `androidx` namespace. It contains `@Immutable` and `@Stable` annotations used for Compose compiler optimizations. See [compose-patterns.md](compose-patterns.md#stability-annotations-immutable-vs-stable) for details.
 
 ### Dependency Injection Setup
 

@@ -2,7 +2,7 @@
 
 Modern accessibility patterns for Jetpack Compose applications. Following WCAG 2.1 Level AA guidelines and Android accessibility best practices for production apps.
 
-Accessibility is not optional—it's required for Google Play, benefits all users, and is often a legal requirement. Build it in from the start.
+Accessibility is not optional-it's required for Google Play, benefits all users, and is often a legal requirement. Build it in from the start.
 
 ## Table of Contents
 1. [Semantic Properties](#semantic-properties)
