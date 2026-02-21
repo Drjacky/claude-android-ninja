@@ -557,3 +557,168 @@ Important notes:
 - `withTimeout` throws `TimeoutCancellationException` (a subclass of `CancellationException`), which will cancel the coroutine unless caught and handled
 - Wrap `withContext` with timeout, not the other way around, so the timeout covers the full operation including dispatcher switch
 - Use `withTimeoutOrNull` when a null result is acceptable; use `withTimeout` with explicit timeout handling when you need to distinguish timeout from other failures
+
+## Coexisting with RxJava (Legacy Code)
+
+When maintaining projects with both RxJava and Coroutines (migration not planned):
+
+### Use StateFlow for All UI State
+
+Even for RxJava-based ViewModels, expose UI state via `StateFlow` (not `LiveData`):
+
+```kotlin
+@HiltViewModel
+class ProductsViewModel @Inject constructor(
+    private val getProductsUseCase: GetProductsUseCase,  // RxJava-based
+    private val disposables: CompositeDisposable
+) : ViewModel() {
+    
+    private val _uiState = MutableStateFlow<ProductsUiState>(ProductsUiState.Loading)
+    val uiState: StateFlow<ProductsUiState> = _uiState.asStateFlow()
+    
+    fun loadProducts() {
+        getProductsUseCase.execute()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .autoDispose(this)  // Or use disposables.add()
+            .subscribe(
+                { products ->
+                    _uiState.value = ProductsUiState.Success(products)
+                },
+                { error ->
+                    _uiState.value = ProductsUiState.Error(error.message ?: "Unknown error")
+                }
+            )
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        disposables.clear()
+    }
+}
+```
+
+### Compose Collection Remains Consistent
+
+UI code uses `collectAsStateWithLifecycle()` regardless of whether ViewModel uses Coroutines or RxJava:
+
+```kotlin
+@Composable
+fun ProductsRoute(viewModel: ProductsViewModel = hiltViewModel()) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    ProductsScreen(
+        state = uiState,
+        onRetry = viewModel::loadProducts
+    )
+}
+```
+
+### Disposal Management
+
+**Option 1: AutoDispose (recommended for lifecycle-aware disposal)**
+```kotlin
+dependencies {
+    implementation(libs.autodispose.android)
+    implementation(libs.autodispose.android.archcomponents)
+}
+
+class ProductsViewModel : ViewModel(), LifecycleScopeProvider by AndroidLifecycleScopeProvider.from(this) {
+    fun loadProducts() {
+        getProductsUseCase()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .autoDispose(this)
+            .subscribe(...)
+    }
+}
+```
+
+**Option 2: CompositeDisposable (manual management)**
+```kotlin
+class ProductsViewModel : ViewModel() {
+    private val disposables = CompositeDisposable()
+    
+    fun loadProducts() {
+        getProductsUseCase()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(...)
+            .also { disposables.add(it) }
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        disposables.clear()
+    }
+}
+```
+
+### Paging with RxJava
+
+Use `paging-rxjava3` alongside `paging-compose`:
+
+```kotlin
+dependencies {
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
+    implementation(libs.androidx.paging.rxjava3)  // For RxJava sources
+}
+
+class ProductsPagingSource(
+    private val productsApi: ProductsApi  // Returns RxJava observables
+) : RxPagingSource<Int, Product>() {
+    
+    override fun loadSingle(params: LoadParams<Int>): Single<LoadResult<Int, Product>> {
+        val page = params.key ?: 1
+        
+        return productsApi.getProducts(page, params.loadSize)
+            .map { response ->
+                LoadResult.Page(
+                    data = response.products,
+                    prevKey = if (page == 1) null else page - 1,
+                    nextKey = if (response.hasMore) page + 1 else null
+                ) as LoadResult<Int, Product>
+            }
+            .onErrorReturn { error ->
+                LoadResult.Error(error)
+            }
+    }
+    
+    override fun getRefreshKey(state: PagingState<Int, Product>): Int? {
+        return state.anchorPosition?.let { anchorPosition ->
+            state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
+                ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
+        }
+    }
+}
+
+// ViewModel bridges to Flow for Compose
+class ProductsViewModel @Inject constructor(
+    private val productsApi: ProductsApi
+) : ViewModel() {
+    val products: Flow<PagingData<Product>> = Pager(
+        config = PagingConfig(pageSize = 20),
+        pagingSourceFactory = { ProductsPagingSource(productsApi) }
+    ).flow
+        .cachedIn(viewModelScope)
+}
+```
+
+### Best Practices
+
+1. **Unified UI layer**: Always use `StateFlow` for UI state, even when ViewModels use RxJava
+2. **Isolate RxJava**: Keep RxJava usage in data/domain layers, convert to `StateFlow` at ViewModel boundary
+3. **Dispose properly**: Use AutoDispose or `CompositeDisposable` to prevent leaks
+4. **Don't mix in same function**: A function should be either fully Coroutines or fully RxJava, not both
+5. **Prefer Coroutines for new code**: Only use RxJava for existing legacy code that won't be migrated
+
+### Migration Path (When Ready)
+
+When planning RxJava → Coroutines migration:
+1. Start with data layer (repositories)
+2. Then domain layer (use cases)
+3. Finally ViewModels
+4. UI layer already uses `StateFlow.collectAsStateWithLifecycle()`, so no changes needed
+
+See [RxJava to Coroutines migration guide](https://developer.android.com/kotlin/coroutines/coroutines-adv#additional-resources) for detailed migration strategies.
