@@ -11,7 +11,8 @@ All code must align with `references/kotlin-patterns.md` and `references/compose
 4. [Requesting Special Permissions](#requesting-special-permissions)
 5. [Rationale and Don't Ask Again](#rationale-and-dont-ask-again)
 6. [Version-Specific Handling](#version-specific-handling)
-7. [Testing](#testing)
+7. [Android 16 (API 36) Permission Changes](#android-16-api-36-permission-changes)
+8. [Testing](#testing)
 
 ## Where Permissions Live
 
@@ -602,6 +603,89 @@ fun shouldRequestNotificationPermission(context: Context): Boolean {
         ) != PackageManager.PERMISSION_GRANTED
 }
 ```
+
+## Android 16 (API 36) Permission Changes
+
+### Health & Fitness Permissions
+
+Apps targeting API 36 must migrate from `BODY_SENSORS` / `BODY_SENSORS_BACKGROUND` to granular `android.permissions.health` permissions. This affects heart rate, SpO2, and skin temperature sensors.
+
+```xml
+<!-- Before (API 35 and below) -->
+<uses-permission android:name="android.permission.BODY_SENSORS" />
+<uses-permission android:name="android.permission.BODY_SENSORS_BACKGROUND" />
+
+<!-- After (API 36+) -->
+<uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+<uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
+<uses-permission android:name="android.permission.health.READ_SKIN_TEMPERATURE" />
+<uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
+```
+
+**Important:** Mobile apps using these granular health permissions must declare an activity to display the app's privacy policy (same requirement as Health Connect). Failure to provide this rationale will result in the permission being revoked.
+
+```kotlin
+fun buildHealthPermissions(): List<String> = when {
+    Build.VERSION.SDK_INT >= 36 -> listOf(
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_OXYGEN_SATURATION"
+    )
+    else -> listOf(
+        Manifest.permission.BODY_SENSORS
+    )
+}
+```
+
+### Local Network Permission
+
+Android 16 introduces local network access protection. Apps that access devices on the local network (mDNS, SSDP, NsdManager, raw sockets to LAN addresses) will need user permission.
+
+**Current state (API 36 opt-in phase):**
+- Feature is opt-in for testing; enforcement begins in a future release
+- Declare `NEARBY_WIFI_DEVICES` permission for local network access
+- All networking APIs are affected (sockets, OkHttp, Cronet, etc.)
+
+```xml
+<uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
+```
+
+**What is affected:**
+- Outgoing/incoming TCP connections to LAN addresses
+- UDP unicast, multicast, and broadcast to/from LAN
+- mDNS and SSDP service discovery
+- Any traffic to RFC1918 addresses (10.x, 172.16.x, 192.168.x), link-local, and multicast
+
+**Exceptions:**
+- DNS traffic to a local DNS server (port 53)
+- Normal internet traffic is unaffected
+
+```kotlin
+@Composable
+fun LocalNetworkPermissionRequest(
+    onPermissionResult: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        onPermissionResult(isGranted)
+    }
+
+    Button(
+        onClick = {
+            launcher.launch(Manifest.permission.NEARBY_WIFI_DEVICES)
+        },
+        modifier = modifier
+    ) {
+        Text("Grant Network Access")
+    }
+}
+```
+
+### App-Owned Photos Pre-Selection
+
+When targeting API 36, the photo picker pre-selects photos owned by the requesting app. Users can deselect these to revoke access. No code changes are needed, but be aware that users may deselect previously accessible photos.
 
 ## Testing
 

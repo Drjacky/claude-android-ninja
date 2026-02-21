@@ -16,8 +16,9 @@ internal fun configureGradleManagedDevices(
 ) {
     val pixel6Api31 = DeviceConfig("Pixel 6", 31, "aosp")
     val pixel8Api34 = DeviceConfig("Pixel 8", 34, "google")
+    val pixel9Api36 = DeviceConfig("Pixel 9", 36, "google")
 
-    val allDevices = listOf(pixel6Api31, pixel8Api34)
+    val allDevices = listOf(pixel6Api31, pixel8Api34, pixel9Api36)
     val ciDevices = listOf(pixel6Api31)
 
     commonExtension.testOptions.apply {

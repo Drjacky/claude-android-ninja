@@ -387,6 +387,139 @@ Key points:
 - Use `repeatOnLifecycle` for multiple flows or complex scoped operations
 - Both prevent leaked collectors and wasted background work during lifecycle changes
 
+### Edge-to-Edge (Mandatory on API 36)
+
+Starting with Android 16 (API 36), edge-to-edge is mandatory and cannot be opted out of. The `R.attr#windowOptOutEdgeToEdgeEnforcement` attribute is deprecated and disabled. All apps must handle system bar insets properly.
+
+```kotlin
+// app/MainActivity.kt
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        enableEdgeToEdge()
+
+        setContent {
+            AppTheme {
+                Scaffold(
+                    modifier = Modifier.fillMaxSize()
+                ) { innerPadding ->
+                    MainNavigation(
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+            }
+        }
+    }
+}
+```
+
+**Key requirements:**
+- Call `enableEdgeToEdge()` in `onCreate()` before `setContent`
+- Use `Scaffold` which provides `innerPadding` that accounts for system bars
+- Apply `innerPadding` to your content to avoid overlap with status bar and navigation bar
+- For scrollable content, use `Modifier.consumeWindowInsets()` and `Modifier.windowInsetsPadding()`
+- For bottom sheets, FABs, and overlays, use `WindowInsets.navigationBars` or `WindowInsets.ime`
+
+```kotlin
+@Composable
+fun ScrollableContentWithInsets(modifier: Modifier = Modifier) {
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = WindowInsets.systemBars.asPaddingValues()
+    ) {
+        items(100) { index ->
+            Text("Item $index", modifier = Modifier.padding(16.dp))
+        }
+    }
+}
+```
+
+**Do NOT:**
+- Set `fitsSystemWindows` in XML
+- Use `windowOptOutEdgeToEdgeEnforcement` -- it is disabled on API 36
+- Assume the content area excludes system bars
+
+### Predictive Back (Mandatory on API 36)
+
+Starting with Android 16 (API 36), predictive back system animations are enabled by default. `onBackPressed` is no longer called and `KeyEvent.KEYCODE_BACK` is not dispatched.
+
+**Migration requirements:**
+- Use `BackHandler` from `androidx.activity.compose` for all back handling
+- Use `OnBackInvokedCallback` for non-Compose Activity/Fragment code
+- Do **not** set `android:enableOnBackInvokedCallback="false"` as a permanent fix -- this is only a temporary escape hatch
+- Register back callbacks ahead of time so the system can play predictive animations
+
+```kotlin
+// Correct: Use BackHandler (Compose)
+@Composable
+fun MyScreen(onNavigateBack: () -> Unit) {
+    BackHandler {
+        onNavigateBack()
+    }
+    // Screen content
+}
+```
+
+```kotlin
+// Correct: OnBackInvokedCallback (non-Compose, API 33+)
+class MyActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            onBackInvokedDispatcher.registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT
+            ) {
+                handleBack()
+            }
+        }
+    }
+}
+```
+
+**Do NOT:**
+- Override `onBackPressed()` -- it is no longer called on API 36
+- Dispatch `KeyEvent.KEYCODE_BACK` -- it is no longer dispatched
+- Use `android:enableOnBackInvokedCallback="false"` as a permanent solution
+
+### Adaptive Layouts (Mandatory on API 36 for Large Screens)
+
+Starting with Android 16 (API 36), orientation, resizability, and aspect ratio restrictions are ignored on displays with smallest width >= 600dp. Apps fill the entire display window regardless of declared constraints.
+
+**What is ignored on large screens:**
+- `screenOrientation` manifest attribute
+- `resizableActivity="false"`
+- `minAspectRatio` / `maxAspectRatio`
+- `setRequestedOrientation()` / `getRequestedOrientation()`
+
+**Exceptions:**
+- Games (based on `android:appCategory="game"`)
+- Screens smaller than `sw600dp`
+
+**Build adaptive layouts by default:**
+- Use `WindowSizeClass` to adapt layouts to any screen size
+- Use `NavigationSuiteScaffold` for responsive navigation
+- Use `ListDetailPaneScaffold` for list-detail patterns
+- Save and restore UI state properly -- rotation causes activity re-creation
+- Test on tablets, foldables, and desktop windowing modes
+
+```kotlin
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Composable
+fun AdaptiveScreen(
+    windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo()
+) {
+    val isCompact = windowAdaptiveInfo.windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact
+
+    if (isCompact) {
+        CompactLayout()
+    } else {
+        ExpandedLayout()
+    }
+}
+```
+
 ### Handling System Back Button
 
 Use `BackHandler` from `androidx.activity.compose` to intercept system back button presses in Compose:
@@ -814,9 +947,6 @@ fun AppTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            // Use surface color for natural look
-            window.statusBarColor = colorScheme.surface.toArgb()
-            // Light status bar icons for light theme, dark icons for dark theme
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }

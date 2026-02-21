@@ -1,6 +1,6 @@
 # Android Theming
 
-Modern Material Design 3 theming with dynamic colors, custom color schemes, typography scales, shape theming, and dark/light mode switching. Covers API 24-35.
+Modern Material Design 3 theming with dynamic colors, custom color schemes, typography scales, shape theming, and dark/light mode switching. Covers API 24-36.
 
 All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 
@@ -66,6 +66,8 @@ fun AppTheme(
 
 ### Using in MainActivity
 
+Edge-to-edge is mandatory on API 36. Use `Scaffold` which handles system bar insets automatically.
+
 ```kotlin
 // app/MainActivity.kt
 @AndroidEntryPoint
@@ -77,11 +79,12 @@ class MainActivity : ComponentActivity() {
         
         setContent {
             AppTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    MainNavigation()
+                Scaffold(
+                    modifier = Modifier.fillMaxSize()
+                ) { innerPadding ->
+                    MainNavigation(
+                        modifier = Modifier.padding(innerPadding)
+                    )
                 }
             }
         }
@@ -542,6 +545,21 @@ fun ArticleScreen(article: Article) {
     }
 }
 ```
+
+### Android 16 (API 36) Font Changes
+
+Android 16 deprecates and disables the `elegantTextHeight` `TextView` attribute. The "UI fonts" controlled by this API are discontinued. Apps targeting API 36 must ensure layouts render correctly with the default readable font rendering for Arabic, Lao, Myanmar, Tamil, Gujarati, Kannada, Malayalam, Odia, Telugu, and Thai scripts.
+
+**What changed:**
+- In Android 15 (API 35), `elegantTextHeight` defaulted to `true`, replacing compact fonts with more readable ones
+- In Android 16 (API 36), the attribute is ignored entirely -- readable fonts are always used
+- Any layouts that relied on `elegantTextHeight = false` for compact rendering must be adapted
+
+**Action required:**
+- Remove any `elegantTextHeight` attribute usage from XML layouts and styles
+- Do **not** set `elegantTextHeight` programmatically -- it has no effect on API 36
+- Test text rendering for the affected scripts listed above and adjust layout spacing if needed
+- Use Compose `Text` composables with `MaterialTheme.typography` scales (no `elegantTextHeight` concept in Compose)
 
 ### Adding Custom Fonts
 
@@ -1103,6 +1121,8 @@ class SettingsViewModel @Inject constructor(
 
 ### App-Level Theme State
 
+Edge-to-edge is mandatory on API 36. Use `Scaffold` for proper inset handling.
+
 ```kotlin
 // app/MainActivity.kt
 @AndroidEntryPoint
@@ -1119,11 +1139,12 @@ class MainActivity : ComponentActivity() {
                 .collectAsStateWithLifecycle(initialValue = ThemeConfig())
 
             AppTheme(themeConfig = themeConfig) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    MainNavigation()
+                Scaffold(
+                    modifier = Modifier.fillMaxSize()
+                ) { innerPadding ->
+                    MainNavigation(
+                        modifier = Modifier.padding(innerPadding)
+                    )
                 }
             }
         }
@@ -1227,8 +1248,9 @@ fun `theme settings screen shows correct theme selection`() {
 6. **Allow user theme preference** (Light/Dark/System)
 7. **Use shape scales** from `MaterialTheme.shapes` for consistency
 8. **Persist theme preferences** using DataStore (not SharedPreferences)
-9. **Handle edge-to-edge** UI properly with `enableEdgeToEdge()`
+9. **Handle edge-to-edge** UI properly with `enableEdgeToEdge()` and `Scaffold` (mandatory on API 36)
 10. **Test on both themes** to ensure content is readable
+11. **Do not use `elegantTextHeight`** attribute -- it is deprecated and ignored on API 36
 
 ### ❌ Never Do
 

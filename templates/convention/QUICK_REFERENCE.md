@@ -172,7 +172,7 @@ com.example.core.model.*
 ### Android Application Plugin
 - Kotlin Android configuration (compileSdk, minSdk, Java 17)
 - Test instrumentation runner
-- Gradle managed devices (Pixel 6 API 31, Pixel 8 API 34)
+- Gradle managed devices (Pixel 6 API 31, Pixel 8 API 34, Pixel 9 API 36)
 - Lint configuration
 - Core library desugaring (for API < 26)
 - Print APKs task
@@ -267,7 +267,7 @@ Configuration utilities are located in the `config/` subdirectory:
 | `config/KotlinAndroid.kt`              | Common Kotlin/Android config (SDK, Java 17, desugaring, opt-ins) |
 | `config/AndroidCompose.kt`             | Compose configuration (BOM, metrics, stability)                  |
 | `config/ProjectExtensions.kt`          | Version catalog access (`Project.libs`)                          |
-| `config/GradleManagedDevices.kt`       | Emulator configuration for tests (Pixel 6, Pixel 8)              |
+| `config/GradleManagedDevices.kt`       | Emulator configuration for tests (Pixel 6, Pixel 8, Pixel 9)     |
 | `config/AndroidInstrumentationTest.kt` | Disable unnecessary Android tests                                |
 | `config/PrintApksTask.kt`              | Task to print APK paths                                          |
 

@@ -1,6 +1,6 @@
 # Android Notifications
 
-Modern notification patterns following Material Design 3 guidelines with proper channel management, actions, and foreground services. Covers API 24-35 with proper version checks.
+Modern notification patterns following Material Design 3 guidelines with proper channel management, actions, and foreground services. Covers API 24-36 with proper version checks.
 
 All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 
@@ -15,6 +15,7 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 - [Notification Styles](#notification-styles)
 - [Action Buttons](#action-buttons)
 - [Progress Notifications](#progress-notifications)
+- [Progress-Centric Notifications (API 36+)](#progress-centric-notifications-api-36)
 - [Foreground Service Notifications](#foreground-service-notifications)
 - [Notification Manager Interface](#notification-manager-interface)
 - [Architecture Integration](#architecture-integration)
@@ -573,6 +574,58 @@ fun showIndeterminateProgressNotification(
 }
 ```
 
+## Progress-Centric Notifications (API 36+)
+
+Android 16 introduces `Notification.ProgressStyle`, a rich notification style for tracking user-initiated journeys from start to end. Use this for rideshare, delivery, navigation, and any multi-step process.
+
+### ProgressStyle Notification
+
+```kotlin
+fun showProgressStyleNotification(
+    title: String,
+    currentSegmentText: String,
+    notificationId: Int
+) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
+        showProgressNotification(title, 50, notificationId = notificationId)
+        return
+    }
+
+    val progressStyle = Notification.ProgressStyle().apply {
+        addSegment(Notification.ProgressStyle.Segment(500).apply {
+            color = android.graphics.Color.GREEN
+        })
+        addSegment(Notification.ProgressStyle.Segment(1000))
+        addPoint(Notification.ProgressStyle.Point(750).apply {
+            color = android.graphics.Color.RED
+        })
+        progress = 250
+        progressTrackerIcon = Icon.createWithResource(context, R.drawable.ic_car)
+    }
+
+    val notification = Notification.Builder(context, NotificationChannels.CHANNEL_GENERAL)
+        .setSmallIcon(R.drawable.ic_notification)
+        .setContentTitle(title)
+        .setContentText(currentSegmentText)
+        .setStyle(progressStyle)
+        .setOngoing(true)
+        .build()
+
+    NotificationManagerCompat.from(context).notify(notificationId, notification)
+}
+```
+
+**Key concepts:**
+- **Segments**: Divide the journey into phases with optional colors
+- **Points**: Mark milestones along the journey (e.g., pickup, dropoff)
+- **Progress**: Current position along the total journey
+- **Tracker icon**: Visual indicator of the current position
+
+**When to use ProgressStyle vs standard progress:**
+- Use `ProgressStyle` for multi-step user journeys (rideshare, delivery, navigation)
+- Use standard `setProgress()` for simple determinate/indeterminate tasks (downloads, uploads)
+- `ProgressStyle` is only available on API 36+; provide a fallback for older APIs
+
 ## Foreground Service Notifications
 
 Foreground services **require** a notification on all API levels.
@@ -1078,7 +1131,7 @@ fun `startSync shows progress notification`() = runTest {
 5. **Set unique notification IDs** to avoid overwriting notifications
 6. **Use foreground notifications** for long-running operations
 7. **Provide meaningful icons** for small icon, large icon, and action buttons
-8. **Test notifications** on multiple API levels (24, 26, 29, 31, 33, 35)
+8. **Test notifications** on multiple API levels (24, 26, 29, 31, 33, 36)
 9. **Use interfaces** for testability in repositories/ViewModels
 10. **Handle notification permission** gracefully (don't crash if denied)
 

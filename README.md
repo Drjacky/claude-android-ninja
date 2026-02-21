@@ -20,8 +20,8 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - Navigation3 guidance and navigation coordination
 - Accessibility support (TalkBack, semantic properties, WCAG compliance)
 - Internationalization & localization (i18n/l10n, RTL support, plurals)
-- Notifications (channels, styles, actions, foreground services, API 24-35)
-- Data synchronization & offline-first (sync strategies, conflict resolution, cache invalidation)
+- Notifications (channels, styles, actions, foreground services, progress-centric, API 24-36)
+- Data synchronization & offline-first (sync strategies, conflict resolution, cache invalidation, API 24-36)
 - Material Symbols icons, graphics, and custom drawing with Canvas
 - Gradle/build conventions, version catalog usage, and KSP migration
 - Testing practices with fakes, Hilt testing, and Room testing
