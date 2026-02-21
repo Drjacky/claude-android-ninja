@@ -93,21 +93,57 @@ class MyApplication : Application() {
 
 Enable compiler reports + metrics for Compose stability diagnostics.
 
+**Best practice:** Gate metrics/reports behind Gradle properties to avoid generating them during normal builds (they can be large and slow down compilation).
+
 ```kotlin
 // module build.gradle.kts
 composeCompiler {
-    metricsDestination = layout.buildDirectory.dir("compose_metrics")
-    reportsDestination = layout.buildDirectory.dir("compose_reports")
+    // Only generate metrics when explicitly requested
+    val enableMetrics = project.providers
+        .gradleProperty("enableComposeCompilerMetrics")
+        .orNull?.toBoolean() ?: false
+    if (enableMetrics) {
+        metricsDestination = layout.buildDirectory.dir("compose-metrics")
+    }
+    
+    // Only generate reports when explicitly requested
+    val enableReports = project.providers
+        .gradleProperty("enableComposeCompilerReports")
+        .orNull?.toBoolean() ?: false
+    if (enableReports) {
+        reportsDestination = layout.buildDirectory.dir("compose-reports")
+    }
+    
     enableStrongSkippingMode = true
-    stabilityConfigurationFile = rootProject.file("compose-stability.conf")
+    stabilityConfigurationFile = rootProject.file("stability_config.conf")
 }
 ```
 
+**Generating reports:**
+```bash
+# Generate metrics
+./gradlew assembleDebug -PenableComposeCompilerMetrics=true
+
+# Generate reports
+./gradlew assembleDebug -PenableComposeCompilerReports=true
+
+# Generate both
+./gradlew assembleDebug \
+  -PenableComposeCompilerMetrics=true \
+  -PenableComposeCompilerReports=true
+```
+
+Reports will be in `build/compose-metrics/` and `build/compose-reports/` for each module.
+
 ### Stability Configuration File
 
-Create `compose-stability.conf` in your **root project directory** to mark external types as stable.
+Create `stability_config.conf` in your **root project directory** to mark external types as stable.
+
+This follows Google's recommended filename convention (see [Compose Compiler documentation](https://developer.android.com/develop/ui/compose/performance/stability/fix#configuration-file)).
 
 **Why use this?** Third-party libraries or generated code may have immutable types that aren't annotated with `@Stable` or `@Immutable`. Without annotation, Compose treats them as unstable, causing unnecessary recompositions.
+
+`stability_config.conf`:
 
 **Common patterns to include:**
 
