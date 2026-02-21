@@ -17,7 +17,8 @@ and Google Truth for assertions.
 11. [UI Tests](#ui-tests)
 12. [Performance Benchmarks](#performance-benchmarks)
 13. [Test Utilities](#test-utilities)
-14. [Localization Testing](#localization-testing)
+14. [Paging 3 Testing](#paging-3-testing)
+15. [Localization Testing](#localization-testing)
 
 ## Testing Philosophy
 
@@ -1826,6 +1827,164 @@ object TestData {
 8. **In-Memory Database**: Use Room's in-memory database for DAO tests
 9. **SavedStateHandle**: Test navigation arguments and process death scenarios
 10. **Turbine for Flow**: Use Turbine for testing multiple Flow emissions over time
+
+## Paging 3 Testing
+
+### Testing ViewModels with PagingData
+
+When testing ViewModels that expose `PagingData<T>`, use `PagingData.from()` to create test data:
+
+```kotlin
+// core/testing/FakePagingRepository.kt
+class FakeProductRepository : ProductRepository {
+    private val pagingFlow = MutableSharedFlow<PagingData<Product>>(replay = 1)
+    
+    fun emitProducts(products: List<Product>) {
+        pagingFlow.tryEmit(PagingData.from(products))
+    }
+    
+    fun emitError() {
+        // Note: PagingData doesn't directly support error states
+        // Use a separate error flow or Result wrapper
+        pagingFlow.tryEmit(PagingData.empty())
+    }
+    
+    override fun getProducts(query: String): Flow<PagingData<Product>> = pagingFlow
+}
+
+// feature/products/ProductsViewModelTest.kt
+@Test
+fun `when products loaded then state is success`() = runTest {
+    // Given
+    val testProducts = listOf(
+        Product(id = "1", name = "Product 1", price = 10.0),
+        Product(id = "2", name = "Product 2", price = 20.0)
+    )
+    
+    // When
+    fakeRepository.emitProducts(testProducts)
+    advanceUntilIdle()
+    
+    // Then
+    val state = viewModel.uiState.value
+    assertThat(state).isInstanceOf(ProductsUiState.Success::class.java)
+}
+```
+
+### Important: `cachedIn()` Limitations
+
+**Warning:** `cachedIn(viewModelScope)` caches `PagingData` and can swallow exceptions, making error-state testing unreliable.
+
+```kotlin
+// ❌ Problematic for error testing
+class ProductsViewModel @Inject constructor(
+    private val repository: ProductRepository
+) : ViewModel() {
+    val products: Flow<PagingData<Product>> = repository
+        .getProducts()
+        .cachedIn(viewModelScope)  // Caches data, swallows some errors
+}
+```
+
+**Solutions:**
+
+1. **Test error handling via non-paging use cases:**
+   ```kotlin
+   // For error scenarios, use a separate Result-based flow
+   val productsResult: StateFlow<Result<List<Product>>> = repository
+       .getProductsAsList()
+       .catch { emit(Result.failure(it)) }
+       .stateIn(viewModelScope, SharingStarted.Lazily, Result.success(emptyList()))
+   
+   // Test error handling here instead
+   @Test
+   fun `when fetch fails then error state is shown`() = runTest {
+       fakeRepository.emitError(NetworkException())
+       advanceUntilIdle()
+       
+       val result = viewModel.productsResult.value
+       assertThat(result.isFailure).isTrue()
+   }
+   ```
+
+2. **Use separate error/loading states:**
+   ```kotlin
+   class ProductsViewModel @Inject constructor(
+       private val repository: ProductRepository
+   ) : ViewModel() {
+       private val _errorState = MutableStateFlow<String?>(null)
+       val errorState: StateFlow<String?> = _errorState.asStateFlow()
+       
+       val products: Flow<PagingData<Product>> = repository
+           .getProducts()
+           .catch { error ->
+               _errorState.value = error.message
+               emit(PagingData.empty())
+           }
+           .cachedIn(viewModelScope)
+   }
+   
+   @Test
+   fun `when fetch fails then error message is set`() = runTest {
+       fakeRepository.emitError()
+       advanceUntilIdle()
+       
+       assertThat(viewModel.errorState.value).isNotNull()
+   }
+   ```
+
+### Testing with AsyncPagingDataDiffer
+
+For more advanced testing (checking actual loaded items), use `AsyncPagingDataDiffer`:
+
+```kotlin
+@OptIn(ExperimentalCoroutinesApi::class)
+@Test
+fun `paging data contains expected items`() = runTest {
+    val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+    
+    val differ = AsyncPagingDataDiffer(
+        diffCallback = object : DiffUtil.ItemCallback<Product>() {
+            override fun areItemsTheSame(oldItem: Product, newItem: Product) =
+                oldItem.id == newItem.id
+            override fun areContentsTheSame(oldItem: Product, newItem: Product) =
+                oldItem == newItem
+        },
+        updateCallback = object : ListUpdateCallback {
+            override fun onInserted(position: Int, count: Int) {}
+            override fun onRemoved(position: Int, count: Int) {}
+            override fun onMoved(fromPosition: Int, toPosition: Int) {}
+            override fun onChanged(position: Int, count: Int, payload: Any?) {}
+        },
+        workerDispatcher = testDispatcher
+    )
+    
+    val testProducts = listOf(
+        Product(id = "1", name = "Product 1", price = 10.0),
+        Product(id = "2", name = "Product 2", price = 20.0)
+    )
+    
+    fakeRepository.emitProducts(testProducts)
+    
+    viewModel.products.collect { pagingData ->
+        differ.submitData(pagingData)
+    }
+    
+    advanceUntilIdle()
+    
+    assertThat(differ.snapshot().items).hasSize(2)
+    assertThat(differ.snapshot().items[0].id).isEqualTo("1")
+    assertThat(differ.snapshot().items[1].id).isEqualTo("2")
+}
+```
+
+### Best Practices
+
+1. **Keep it simple**: Use `PagingData.from()` for most tests
+2. **Test error handling separately**: Don't rely on PagingData flows for error scenarios
+3. **Use separate state flows**: Combine `PagingData` with `StateFlow<Error>` or `StateFlow<Loading>` for testable error/loading states
+4. **Avoid testing pagination logic**: Focus on ViewModel business logic, not Paging library internals
+5. **Use `advanceUntilIdle()`**: Ensure all coroutines complete before assertions
 
 ## Localization Testing
 
