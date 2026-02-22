@@ -1,6 +1,6 @@
 # Android Notifications
 
-Modern notification patterns following Material Design 3 guidelines with proper channel management, actions, and foreground services. Covers API 24-36 with proper version checks.
+Modern notification patterns following Material Design 3 guidelines with proper channel management, actions, and foreground services.
 
 All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 

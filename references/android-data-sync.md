@@ -1,6 +1,6 @@
 # Android Data Synchronization & Offline-First
 
-Modern data synchronization patterns for offline-first Android apps with conflict resolution, cache invalidation, network monitoring, and retry strategies. Covers API 24-36.
+Modern data synchronization patterns for offline-first Android apps with conflict resolution, cache invalidation, network monitoring, and retry strategies.
 
 All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 

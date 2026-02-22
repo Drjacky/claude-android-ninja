@@ -1,6 +1,6 @@
 # Android Theming
 
-Modern Material Design 3 theming with dynamic colors, custom color schemes, typography scales, shape theming, and dark/light mode switching. Covers API 24-36.
+Modern Material Design 3 theming with dynamic colors, custom color schemes, typography scales, shape theming, and dark/light mode switching.
 
 All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 
