@@ -15,7 +15,8 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 ## 🎯 What This Skill Covers
 - Modular Android architecture (feature-first, core modules, strict dependencies)
 - Domain/Data/UI layering patterns with auth-focused examples
-- Jetpack Compose patterns, state management, and adaptive UI
+- Jetpack Compose patterns, state management, and adaptive UI (NavigationSuiteScaffold, ListDetailPaneScaffold, SupportingPaneScaffold)
+- Edge-to-edge display and predictive back gesture handling
 - Material 3 theming (dynamic colors, typography, shapes, dark/light mode)
 - Navigation3 guidance and navigation coordination
 - Accessibility support (TalkBack, semantic properties, WCAG compliance)
@@ -68,6 +69,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 This skill is focused on Android app development using:
 - **Kotlin** (with coroutines, Flow, and kotlinx-datetime)
 - **Jetpack Compose** (Material 3 with Material Symbols icons)
+- **Material 3 Adaptive** (NavigationSuiteScaffold, adaptive pane scaffolds)
 - **Navigation3** (type-safe routing)
 - **Material 3**
 - **Hilt** (dependency injection)
