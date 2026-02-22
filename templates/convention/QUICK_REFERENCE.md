@@ -170,7 +170,7 @@ com.example.core.model.*
 ## What Each Plugin Provides
 
 ### Android Application Plugin
-- Kotlin Android configuration (compileSdk, minSdk, Java 17)
+- Android configuration with built-in Kotlin (compileSdk, minSdk, Java 17)
 - Test instrumentation runner
 - Gradle managed devices (Pixel 6 API 31, Pixel 8 API 34, Pixel 9 API 36)
 - Lint configuration

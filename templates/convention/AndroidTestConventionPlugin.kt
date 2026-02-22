@@ -2,6 +2,7 @@
  * Convention plugin for Android test modules
  * Configures: Test modules for instrumentation testing
  * Applies to: test modules (e.g., :benchmark, :baselineprofile)
+ * Note: AGP 9+ has built-in Kotlin support, no need for kotlin-android plugin
  */
 
 import com.android.build.api.dsl.TestExtension
@@ -14,7 +15,6 @@ class AndroidTestConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             apply(plugin = "com.android.test")
-            apply(plugin = "org.jetbrains.kotlin.android")
 
             extensions.configure<TestExtension> {
                 configureKotlinAndroid(this)

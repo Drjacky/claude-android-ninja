@@ -56,15 +56,8 @@ class DetektConventionPlugin : Plugin<Project> {
                 md.required.set(false)
             }
             
-            // Enable type resolution for more accurate analysis
-            // (requires configured classpath)
-            if (project.pluginManager.hasPlugin("com.android.library") ||
-                project.pluginManager.hasPlugin("com.android.application")
-            ) {
-                // Android modules get type resolution via AGP
-                classpath.from(extensions.getByType<com.android.build.gradle.api.AndroidBasePlugin>().javaClass)
-            } else if (project.pluginManager.hasPlugin("org.jetbrains.kotlin.jvm")) {
-                // JVM modules get classpath from JavaPluginExtension
+            // JVM modules get classpath from JavaPluginExtension for type resolution
+            if (project.pluginManager.hasPlugin("org.jetbrains.kotlin.jvm")) {
                 val javaExtension = extensions.findByType(JavaPluginExtension::class.java)
                 javaExtension?.let {
                     classpath.from(it.sourceSets.getByName("main").compileClasspath)

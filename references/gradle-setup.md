@@ -1,6 +1,17 @@
 # Gradle & Build Configuration
 
-Build system patterns following our modern Android multi-module architecture with Navigation3, Jetpack Compose, KSP, and convention plugins.
+Build system patterns following our modern Android multi-module architecture with Navigation3, Jetpack Compose, KSP, and convention plugins. Targets **Gradle 9 / AGP 9.0**.
+
+## AGP 9 Key Changes
+
+- **Built-in Kotlin**: AGP 9 has built-in Kotlin support. The `org.jetbrains.kotlin.android` plugin is no longer needed for Android modules. Remove it from all `build.gradle.kts` files and convention plugins.
+- **Compose Compiler**: The `org.jetbrains.kotlin.plugin.compose` plugin is still required for Compose modules.
+- **compileSdk syntax**: Use `compileSdk { version = release(36) }` instead of `compileSdk = 36`.
+- **Gradle Managed Devices**: Use `localDevices { create("name") { ... } }` instead of `devices { maybeCreate("name", ManagedVirtualDevice::class.java).apply { ... } }`. Device groups use `create("ci")` instead of `maybeCreate("ci")`. Reference devices via `localDevices[name]` instead of `devices[name]`.
+- **Removed gradle.properties**: `android.enableBuildCache`, `android.enableJetifier`, `android.defaults.buildfeatures.aidl`, `android.defaults.buildfeatures.renderscript`, `android.defaults.buildfeatures.resvalues`, `android.defaults.buildfeatures.shaders`, and `org.gradle.configuration-cache.problems=warn` are removed.
+- **Type-safe project accessors**: Enabled by default in Gradle 9; `enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")` is no longer needed in `settings.gradle.kts`.
+- **JVM 17 minimum**: Gradle 9 requires JVM 17+ to run.
+- **Legacy API removal**: `BaseExtension`, `applicationVariants.all`, `Convention` type, and `com.android.build.gradle.api.*` legacy APIs are removed. Use `androidComponents` API instead.
 
 ## Table of Contents
 1. [Project Structure](#project-structure)
@@ -444,12 +455,13 @@ Create a dedicated `:benchmark` test module for macrobenchmark performance testi
 ```kotlin
 plugins {
     alias(libs.plugins.android.test)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
     namespace = "com.example.benchmark"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt())
+    }
 
     targetProjectPath = ":app"
     testBuildType = "benchmark"
@@ -549,19 +561,15 @@ org.gradle.caching=true
 org.gradle.configureondemand=true
 org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
 
-# Configuration cache (Gradle 8.1+)
+# Configuration cache
 org.gradle.configuration-cache=true
-org.gradle.configuration-cache.problems=warn
 
 # Android build optimization
-android.enableBuildCache=true
 android.useAndroidX=true
-android.enableJetifier=false
 kotlin.incremental=true
 kotlin.caching.enabled=true
 
 # Module metadata
-android.defaults.buildfeatures.buildconfig=true
 android.nonTransitiveRClass=true
 
 # KSP optimization
@@ -674,32 +682,19 @@ module includes, and repository configuration.
 
 `build.gradle.kts`:
 ```kotlin
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
+// Note: AGP 9+ has built-in Kotlin support, no need for kotlin-android plugin.
+// Repositories are configured in settings.gradle.kts via dependencyResolutionManagement.
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.android.test) apply false
-    alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.hilt) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.spotless) apply false
-}
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
 }
 
 // Apply spotless formatting to root project

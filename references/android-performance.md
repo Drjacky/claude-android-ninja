@@ -187,13 +187,14 @@ Create a `:baselineprofile` test module using pure Gradle configuration (no GUI 
 ```kotlin
 plugins {
     alias(libs.plugins.android.test)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.androidx.baselineprofile)
 }
 
 android {
     namespace = "com.example.baselineprofile"
-    compileSdk = libs.findVersion("compileSdk").get().toInt()
+    compileSdk {
+        version = release(libs.findVersion("compileSdk").get().toInt())
+    }
 
     targetProjectPath = ":app"
 
@@ -202,8 +203,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    testOptions.managedDevices.devices {
-        create<com.android.build.api.dsl.ManagedVirtualDevice>("pixel6Api31") {
+    testOptions.managedDevices.localDevices {
+        create("pixel6Api31") {
             device = "Pixel 6"
             apiLevel = 31
             systemImageSource = "aosp"

@@ -39,10 +39,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "{{PROJECT_NAME}}"
 
-// Enable modern Gradle features
-// Note: Type-safe project accessors can slow incremental builds in large projects
-// but provide better IDE support. Remove if build performance degrades.
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+// Type-safe project accessors are enabled by default in Gradle 9+
 
 // Also configure in gradle.properties:
 // org.gradle.configuration-cache=true

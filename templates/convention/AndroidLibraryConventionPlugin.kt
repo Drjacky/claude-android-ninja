@@ -1,6 +1,7 @@
 /*
  * Convention plugin for Android library modules
- * Configures: Kotlin, Android, Lint, Testing
+ * Configures: Android, Lint, Testing
+ * Note: AGP 9+ has built-in Kotlin support, no need for kotlin-android plugin
  */
 
 import com.android.build.api.dsl.LibraryExtension
@@ -15,7 +16,6 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             apply(plugin = "com.android.library")
-            apply(plugin = "org.jetbrains.kotlin.android")
             apply(plugin = "app.android.lint")
 
             extensions.configure<LibraryExtension> {

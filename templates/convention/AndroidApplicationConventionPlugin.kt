@@ -1,6 +1,7 @@
 /*
  * Convention plugin for Android application modules
- * Configures: Kotlin, Android, Lint, Dependency Guard
+ * Configures: Android, Lint, Dependency Guard
+ * Note: AGP 9+ has built-in Kotlin support, no need for kotlin-android plugin
  */
 
 import com.android.build.api.dsl.ApplicationExtension
@@ -14,7 +15,6 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             apply(plugin = "com.android.application")
-            apply(plugin = "org.jetbrains.kotlin.android")
             apply(plugin = "app.android.lint")
 
             extensions.configure<ApplicationExtension> {

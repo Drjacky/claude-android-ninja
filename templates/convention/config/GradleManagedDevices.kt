@@ -1,10 +1,10 @@
 /*
  * Gradle Managed Devices configuration
  * Configures: Emulator devices for instrumentation tests
+ * Note: AGP 9+ uses localDevices/create instead of devices/maybeCreate
  */
 
 import com.android.build.api.dsl.CommonExtension
-import com.android.build.api.dsl.ManagedVirtualDevice
 import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.invoke
 
@@ -22,11 +22,10 @@ internal fun configureGradleManagedDevices(
     val ciDevices = listOf(pixel6Api31)
 
     commonExtension.testOptions.apply {
-        @Suppress("UnstableApiUsage")
         managedDevices {
-            devices {
+            localDevices {
                 allDevices.forEach { deviceConfig ->
-                    maybeCreate(deviceConfig.taskName, ManagedVirtualDevice::class.java).apply {
+                    create(deviceConfig.taskName) {
                         device = deviceConfig.device
                         apiLevel = deviceConfig.apiLevel
                         systemImageSource = deviceConfig.systemImageSource
@@ -34,9 +33,9 @@ internal fun configureGradleManagedDevices(
                 }
             }
             groups {
-                maybeCreate("ci").apply {
+                create("ci") {
                     ciDevices.forEach { deviceConfig ->
-                        targetDevices.add(devices[deviceConfig.taskName])
+                        targetDevices.add(localDevices[deviceConfig.taskName])
                     }
                 }
             }
