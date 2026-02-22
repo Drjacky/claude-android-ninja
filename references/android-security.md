@@ -417,13 +417,13 @@ class SoftwareEncryption {
 
 ### How They Protect
 
-| Feature | TEE | StrongBox |
-|---------|-----|-----------|
-| Hardware isolation | CPU trust zone | Dedicated chip |
-| Side-channel resistance | Limited | High |
-| Tamper resistance | Software-level | Physical tamper-resistant |
-| Key extraction | Difficult | Near impossible |
-| Availability | Most devices API 24+ | API 28+ (select devices) |
+| Feature                 | TEE                  | StrongBox                 |
+|-------------------------|----------------------|---------------------------|
+| Hardware isolation      | CPU trust zone       | Dedicated chip            |
+| Side-channel resistance | Limited              | High                      |
+| Tamper resistance       | Software-level       | Physical tamper-resistant |
+| Key extraction          | Difficult            | Near impossible           |
+| Availability            | Most devices API 24+ | API 28+ (select devices)  |
 
 ### Using Hardware-Backed Keys
 
@@ -790,12 +790,12 @@ class IntegrityRepository @Inject constructor(
 
 ### Integrity Verdicts
 
-| Verdict | Meaning |
-|---------|---------|
-| `MEETS_DEVICE_INTEGRITY` | Real device with Google Play |
-| `MEETS_BASIC_INTEGRITY` | Device may be rooted but passes basic checks |
-| `MEETS_STRONG_INTEGRITY` | Genuine device, recent security patch, boot verified |
-| `MEETS_VIRTUAL_INTEGRITY` | Running in an emulator recognized by Google Play |
+| Verdict                   | Meaning                                              |
+|---------------------------|------------------------------------------------------|
+| `MEETS_DEVICE_INTEGRITY`  | Real device with Google Play                         |
+| `MEETS_BASIC_INTEGRITY`   | Device may be rooted but passes basic checks         |
+| `MEETS_STRONG_INTEGRITY`  | Genuine device, recent security patch, boot verified |
+| `MEETS_VIRTUAL_INTEGRITY` | Running in an emulator recognized by Google Play     |
 
 ## Root & Emulator Detection
 
@@ -979,11 +979,11 @@ class SecurityChecker @Inject constructor(
 
 Don't crash or block users without good reason. Choose a response based on your app's risk level:
 
-| Risk Level | Rooted Device | Emulator |
-|------------|--------------|----------|
-| **Low** (news app) | Log warning | Allow |
-| **Medium** (e-commerce) | Show warning, log | Block in production |
-| **High** (banking) | Block with explanation | Block |
+| Risk Level              | Rooted Device          | Emulator            |
+|-------------------------|------------------------|---------------------|
+| **Low** (news app)      | Log warning            | Allow               |
+| **Medium** (e-commerce) | Show warning, log      | Block in production |
+| **High** (banking)      | Block with explanation | Block               |
 
 ```kotlin
 @HiltViewModel
