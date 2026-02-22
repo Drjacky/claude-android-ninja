@@ -1,6 +1,7 @@
 /*
  * Kotlin and Android configuration utilities
  * Configures: compileSdk, minSdk, Java version, Kotlin compiler options
+ * Note: AGP 9+ has built-in Kotlin support; compiler options are set via KotlinCompile tasks
  */
 
 import com.android.build.api.dsl.CommonExtension
@@ -10,16 +11,16 @@ import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.kotlin.dsl.assign
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
-import org.jetbrains.kotlin.gradle.dsl.KotlinBaseExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 /**
  * Configure base Kotlin with Android options
  */
 internal fun Project.configureKotlinAndroid(
-    commonExtension: CommonExtension<*, *, *, *, *, *>,
+    commonExtension: CommonExtension,
 ) {
     commonExtension.apply {
         compileSdk {
@@ -37,7 +38,7 @@ internal fun Project.configureKotlinAndroid(
         }
     }
 
-    configureKotlin<KotlinAndroidProjectExtension>()
+    configureKotlinCompileTasks()
 
     dependencies {
         add("coreLibraryDesugaring", libs.findLibrary("androidx.core.desugaring").get())
@@ -57,32 +58,48 @@ internal fun Project.configureKotlinJvm() {
 }
 
 /**
- * Configure base Kotlin options
+ * Configure Kotlin compiler options via KotlinCompile tasks.
+ * Works with AGP 9+ built-in Kotlin where KotlinAndroidProjectExtension is not registered.
  */
-private inline fun <reified T : KotlinBaseExtension> Project.configureKotlin() =
+private fun Project.configureKotlinCompileTasks() {
+    val warningsAsErrors = providers.gradleProperty("warningsAsErrors")
+        .map { it.toBoolean() }
+        .orElse(false)
+
+    tasks.withType<KotlinCompile>().configureEach {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+            allWarningsAsErrors = warningsAsErrors
+            freeCompilerArgs.addAll(
+                "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+                "-opt-in=androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi",
+                "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
+            )
+        }
+    }
+}
+
+/**
+ * Configure Kotlin options for JVM projects via extension
+ */
+private inline fun <reified T : org.jetbrains.kotlin.gradle.dsl.KotlinBaseExtension> Project.configureKotlin() =
     configure<T> {
-        // Treat all Kotlin warnings as errors (disabled by default)
-        // Override by setting warningsAsErrors=true in your ~/.gradle/gradle.properties
         val warningsAsErrors = providers.gradleProperty("warningsAsErrors")
             .map { it.toBoolean() }
             .orElse(false)
 
         when (this) {
-            is KotlinAndroidProjectExtension -> compilerOptions
             is KotlinJvmProjectExtension -> compilerOptions
             else -> TODO("Unsupported project extension $this ${T::class}")
         }.apply {
             jvmTarget = JvmTarget.JVM_17
             allWarningsAsErrors = warningsAsErrors
-            
+
             freeCompilerArgs.addAll(
-                // Enable experimental coroutines APIs, including Flow
                 "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-                // Enable experimental Material3 APIs
                 "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-                // Enable experimental Material3 Adaptive APIs
                 "-opt-in=androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi",
-                // Enable experimental Foundation APIs
                 "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
             )
         }

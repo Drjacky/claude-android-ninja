@@ -235,7 +235,7 @@ dependencies {
 
 // New
 plugins {
-    id("com.google.devtools.ksp") version "2.2.21-1.0.32"
+    id("com.google.devtools.ksp") version "2.2.21-2.0.5"
 }
 
 dependencies {

@@ -56,7 +56,7 @@ private fun String.capitalize() = replaceFirstChar {
  * - Instrumented tests: `./gradlew connectedDebugAndroidTest`
  */
 internal fun Project.configureJacoco(
-    commonExtension: CommonExtension<*, *, *, *, *, *>,
+    commonExtension: CommonExtension,
     androidComponentsExtension: AndroidComponentsExtension<*, *, *>,
 ) {
     // Configure only the debug build

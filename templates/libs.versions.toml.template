@@ -14,13 +14,13 @@ composeStabilityAnalyzer = "0.6.6"
 constraintlayoutCompose = "1.1.1"
 coreKtx = "1.17.0"
 coroutines = "1.10.2"
-desugarJdk = "2.2.0"
+desugarJdk = "2.1.5"
 detekt = "2.0.0-alpha.1"
 espressoCore = "3.7.0"
 firebase-bom = "34.0.0"
 firebaseCrashlyticsPlugin = "3.0.6"
 googleServices = "4.4.2"
-hilt = "2.50"
+hilt = "2.59.2"
 jacoco = "0.8.12"
 javaxInjectVersion = "1"
 junit = "4.13.2"
@@ -30,7 +30,7 @@ kotlinLogging = "7.0.3"
 kotlinxDatetime = "0.7.1"
 kotlinxImmutable = "0.3.8"
 kotlinxSerialization = "1.9.0"
-ksp = "2.2.21-1.0.32"
+ksp = "2.2.21-2.0.5"
 ktlint = "13.1.0"
 ktor = "3.0.3"
 leakcanary = "2.14"
@@ -130,7 +130,7 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockkVersion" }
 mockk-agent-jvm = { module = "io.mockk:mockk-agent-jvm", version.ref = "mockkVersion" }
 mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "mockwebserver" }
 okhttp3-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttpLogging" }
-plugin-detekt = { group = "io.gitlab.arturbosch.detekt", name = "detekt-gradle-plugin", version.ref = "detekt" }
+plugin-detekt = { group = "dev.detekt", name = "detekt-gradle-plugin", version.ref = "detekt" }
 retrofit2 = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit2" }
 retrofit2-kotlinx-serialization-converter = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit2" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }

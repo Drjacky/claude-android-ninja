@@ -8,7 +8,11 @@ Build system patterns following our modern Android multi-module architecture wit
 - **Compose Compiler**: The `org.jetbrains.kotlin.plugin.compose` plugin is still required for Compose modules.
 - **compileSdk syntax**: Use `compileSdk { version = release(36) }` instead of `compileSdk = 36`.
 - **Gradle Managed Devices**: Use `localDevices { create("name") { ... } }` instead of `devices { maybeCreate("name", ManagedVirtualDevice::class.java).apply { ... } }`. Device groups use `create("ci")` instead of `maybeCreate("ci")`. Reference devices via `localDevices[name]` instead of `devices[name]`.
-- **Removed gradle.properties**: `android.enableBuildCache`, `android.enableJetifier`, `android.defaults.buildfeatures.aidl`, `android.defaults.buildfeatures.renderscript`, `android.defaults.buildfeatures.resvalues`, `android.defaults.buildfeatures.shaders`, and `org.gradle.configuration-cache.problems=warn` are removed.
+- **Removed gradle.properties**: `org.gradle.configureondemand`, `android.enableBuildCache`, `android.enableJetifier`, `android.defaults.buildfeatures.aidl`, `android.defaults.buildfeatures.renderscript`, `android.defaults.buildfeatures.resvalues`, `android.defaults.buildfeatures.shaders`, and `org.gradle.configuration-cache.problems=warn` are removed.
+- **CommonExtension**: Type parameters removed; use `CommonExtension` instead of `CommonExtension<*, *, *, *, *, *>`.
+- **KotlinAndroidProjectExtension**: Not registered with built-in Kotlin; configure compiler options via `tasks.withType<KotlinCompile>().configureEach { compilerOptions { ... } }` instead.
+- **Hilt**: Minimum version **2.59.2** required for AGP 9 (older versions access removed `BaseExtension`).
+- **KSP**: Use `2.x` suffix (e.g., `2.2.21-2.0.5`) instead of `1.x` (e.g., `2.2.21-1.0.32`).
 - **Type-safe project accessors**: Enabled by default in Gradle 9; `enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")` is no longer needed in `settings.gradle.kts`.
 - **JVM 17 minimum**: Gradle 9 requires JVM 17+ to run.
 - **Legacy API removal**: `BaseExtension`, `applicationVariants.all`, `Convention` type, and `com.android.build.gradle.api.*` legacy APIs are removed. Use `androidComponents` API instead.
@@ -558,7 +562,6 @@ android {
 # Build performance
 org.gradle.parallel=true
 org.gradle.caching=true
-org.gradle.configureondemand=true
 org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
 
 # Configuration cache

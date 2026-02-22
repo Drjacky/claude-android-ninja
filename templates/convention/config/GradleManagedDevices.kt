@@ -12,7 +12,7 @@ import org.gradle.kotlin.dsl.invoke
  * Configure project for Gradle managed devices
  */
 internal fun configureGradleManagedDevices(
-    commonExtension: CommonExtension<*, *, *, *, *, *>,
+    commonExtension: CommonExtension,
 ) {
     val pixel6Api31 = DeviceConfig("Pixel 6", 31, "aosp")
     val pixel8Api34 = DeviceConfig("Pixel 8", 34, "google")

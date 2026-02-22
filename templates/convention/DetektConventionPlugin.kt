@@ -1,17 +1,17 @@
 /*
  * Convention plugin for Detekt static analysis
  * Configures: Detekt plugin, Compose rules, baseline, type resolution
+ * Note: Detekt 2.0+ uses dev.detekt package and new report names
  */
 
-import io.gitlab.arturbosch.detekt.Detekt
-import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
-import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import dev.detekt.gradle.Detekt
+import dev.detekt.gradle.DetektCreateBaselineTask
+import dev.detekt.gradle.extensions.DetektExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.withType
 
 class DetektConventionPlugin : Plugin<Project> {
@@ -21,7 +21,6 @@ class DetektConventionPlugin : Plugin<Project> {
         pluginManager.apply(detektPluginId)
 
         dependencies {
-            // Compose ruleset for Jetpack Compose best practices
             add("detektPlugins", libs.findLibrary("compose.rules.detekt").get())
         }
 
@@ -30,33 +29,27 @@ class DetektConventionPlugin : Plugin<Project> {
             basePath = rootProject.projectDir.absolutePath
             parallel = true
             
-            // Use central config file
             config.from(rootProject.file("config/detekt.yml"))
             
-            // Allow local overrides
             val moduleConfig = project.file("detekt.yml")
             if (moduleConfig.exists()) {
                 config.from(moduleConfig)
             }
             
-            // Baseline file (optional, per module)
             baseline = project.file("detekt-baseline.xml")
         }
 
-        // Configure Detekt tasks
         tasks.withType<Detekt>().configureEach {
             jvmTarget = "17"
             
-            // XML and HTML reports
             reports {
-                xml.required.set(true)
+                checkstyle.required.set(true)
                 html.required.set(true)
                 txt.required.set(false)
                 sarif.required.set(true)
-                md.required.set(false)
+                markdown.required.set(false)
             }
             
-            // JVM modules get classpath from JavaPluginExtension for type resolution
             if (project.pluginManager.hasPlugin("org.jetbrains.kotlin.jvm")) {
                 val javaExtension = extensions.findByType(JavaPluginExtension::class.java)
                 javaExtension?.let {
@@ -65,7 +58,6 @@ class DetektConventionPlugin : Plugin<Project> {
             }
         }
 
-        // Configure baseline task
         tasks.withType<DetektCreateBaselineTask>().configureEach {
             jvmTarget = "17"
         }
