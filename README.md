@@ -15,9 +15,9 @@ production-quality Android apps consistently and efficiently.
 
 Learn more about the Agent Skills format here: [agentskills.io](https://agentskills.io/home)
 
-📦 **Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-android-ninja-skill-md)**
+Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-android-ninja-skill-md)
 
-## 🎯 What This Skill Covers
+## What This Skill Covers
 - Modular Android architecture (feature-first, core modules, strict dependencies)
 - Domain/Data/UI layering patterns with auth-focused examples
 - Jetpack Compose patterns, state management, and adaptive UI (NavigationSuiteScaffold, ListDetailPaneScaffold, SupportingPaneScaffold)
@@ -41,7 +41,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - Code coverage with JaCoCo (unit + instrumented tests)
 - Code quality with Detekt and Compose rules
 
-## 📂 Key Files
+## Key Files
 - `SKILL.md` - entry point and workflow decision tree
 - `references/architecture.md` - architecture principles, data/domain layers, and flows
 - `references/modularization.md` - module structure and Navigation3 wiring
@@ -70,7 +70,7 @@ Learn more about the Agent Skills format here: [agentskills.io](https://agentski
 - `templates/settings.gradle.kts.template` - Project settings with repositories
 - `templates/convention/` - Convention plugin implementations (18 plugins + 7 config files)
 
-## 🔧 Scope
+## Scope
 This skill is focused on Android app development using:
 - **Kotlin** (with coroutines, Flow, and kotlinx-datetime)
 - **Jetpack Compose** (Material 3 with Material Symbols icons)
@@ -86,10 +86,10 @@ This skill is focused on Android app development using:
 - **Detekt** + **Compose Rules** (code quality)
 - **Google Truth** + **Turbine** (testing assertions)
 
-## 📥 Installation
+## Installation
 
-### 1️⃣ Claude Code (manual)
-Clone or download this repo, then place it in Claude’s skills folder and refresh skills.
+### 1. Claude Code (manual)
+Clone or download this repo, then place it in Claude's skills folder and refresh skills.
 
 ```
 ~/.claude/skills/claude-android-ninja/
@@ -100,7 +100,7 @@ Clone or download this repo, then place it in Claude’s skills folder and refre
 
 If you prefer project-local skills, use `.claude/skills/` inside your project.
 
-### 2️⃣ OpenSkills CLI
+### 2. OpenSkills CLI
 [OpenSkills](https://github.com/numman-ali/openskills) can install any skill repo and generate the AGENTS/skills metadata for multiple agents.
 
 ```bash
@@ -108,20 +108,25 @@ npx openskills install drjacky/claude-android-ninja
 npx openskills sync
 ```
 
+Global install (installs to `~/.claude/skills/`, shared across all projects):
+```bash
+npx openskills install drjacky/claude-android-ninja --global
+```
+
 Optional universal install (shared across agents):
 ```bash
 npx openskills install drjacky/claude-android-ninja --universal
 ```
 
-## 🤝 Contributing
+## Contributing
 
-### 💡 Request Missing Best Practices
+### Request Missing Best Practices
 
 If you need a best practice topic or pattern that's missing from this SKILL, please create a feature request on GitHub. This helps us prioritize what to add next.
 
 [Create a Feature Request](https://github.com/drjacky/claude-android-ninja/issues/new?template=feature_request.md)
 
-### 🐛 Report Issues
+### Report Issues
 
 Found a bug, outdated pattern, or incorrect guidance? Please report it so we can fix it.
 
