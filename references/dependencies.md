@@ -246,12 +246,9 @@ dependencies {
 
 ## ProGuard/R8 Considerations
 
-Some libraries require ProGuard/R8 keep rules:
-- **Room**, **Retrofit**, **kotlinx-serialization**: Require keep rules (usually auto-added)
-- Check library documentation for required rules
-- Convention plugins in this SKILL handle common cases automatically
+Use `templates/proguard-rules.pro.template` as the source of truth for all keep rules. It includes rules for every library in the version catalog (Retrofit, kotlinx-serialization, Room, OkHttp, Hilt, SQLCipher, etc.).
 
-For manual rules, add to `proguard-rules.pro` in the module.
+Copy the template to `app/proguard-rules.pro` and adjust `com.example.*` package names. See [gradle-setup.md](gradle-setup.md#r8--proguard-configuration) for build configuration.
 
 ## Adding a New Dependency
 

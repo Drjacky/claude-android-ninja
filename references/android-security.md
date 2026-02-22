@@ -23,10 +23,10 @@ Security guide for Android apps, aligned with our modular architecture.
 
 Security-related libraries available in the version catalog:
 
-- `androidx-biometric` — BiometricPrompt (fingerprint, face)
-- `androidx-security-crypto` — EncryptedSharedPreferences, EncryptedFile
-- `play-integrity` — Play Integrity API (device/app attestation)
-- `sqlcipher-android` — SQLCipher for encrypted Room databases
+- `androidx-biometric` - BiometricPrompt (fingerprint, face)
+- `androidx-security-crypto` - EncryptedSharedPreferences, EncryptedFile
+- `play-integrity` - Play Integrity API (device/app attestation)
+- `sqlcipher-android` - SQLCipher for encrypted Room databases
 
 Add them to your module as needed, following [dependencies.md → Adding a New Dependency](dependencies.md#adding-a-new-dependency).
 
@@ -1277,32 +1277,15 @@ If JavaScript must be enabled, avoid `addJavascriptInterface()` as it exposes yo
 
 ## ProGuard / R8 Hardening
 
-### Security-Focused ProGuard Rules
+Use `templates/proguard-rules.pro.template` as the source of truth for all keep rules. It includes security-specific sections:
 
-```proguard
-# app/proguard-rules.pro
+- **Log stripping** - removes `Log.v/d/i/w` calls in release builds
+- **Crypto/security class preservation** - keeps `core.data.crypto.**` and `core.data.security.**`
+- **Obfuscation hardening** - `repackageclasses`, `allowaccessmodification`
+- **Crash report readability** - `SourceFile,LineNumberTable` attributes preserved
+- **Mapping file upload** - Firebase and Sentry Gradle plugins handle this automatically
 
-# Remove logging in release builds
--assumenosideeffects class android.util.Log {
-    public static int v(...);
-    public static int d(...);
-    public static int i(...);
-    public static int w(...);
-}
-
-# Keep security-critical classes
--keep class com.example.core.data.crypto.** { *; }
--keep class com.example.core.data.security.** { *; }
-
-# Obfuscate aggressively
--repackageclasses ''
--allowaccessmodification
--overloadaggressively
-
-# Remove debug info
--renamesourcefileattribute SourceFile
--keepattributes SourceFile,LineNumberTable
-```
+See [gradle-setup.md](gradle-setup.md#r8--proguard-configuration) for build configuration and debugging shrunk builds.
 
 ### Manifest Security
 

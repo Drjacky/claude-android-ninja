@@ -419,66 +419,38 @@ plugins {
 - **Quality breadcrumbs**: Focus on user actions and state changes, not internal implementation details.
 - **Upload mapping files**: Ensure ProGuard/R8 mappings are uploaded for symbolicated stack traces.
 
-## ProGuard/R8 Configuration
+## ProGuard/R8 Mapping Upload
 
-Both providers require proper mapping file upload for symbolicated crashes in release builds.
+Both providers require mapping file upload for symbolicated crashes in release builds. See [gradle-setup.md](gradle-setup.md#r8--proguard-configuration) for R8 build configuration and `templates/proguard-rules.pro.template` for all keep rules.
 
 ### Firebase Crashlytics
 
-The Firebase Crashlytics Gradle plugin automatically uploads mapping files during the build process when you use ProGuard or R8:
+The Firebase Crashlytics Gradle plugin automatically uploads mapping files during the build. No additional keep rules needed - apply the convention plugin and enable minification:
 
 ```kotlin
-// app/build.gradle.kts
 plugins {
-    alias(libs.plugins.google.services)
-    alias(libs.plugins.firebase.crashlytics)
-}
-
-android {
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
+    alias(libs.plugins.app.firebase)
 }
 ```
 
-The plugin automatically generates mapping UUIDs and uploads them. No additional keep rules are needed - Firebase SDK handles this automatically.
-
 ### Sentry
 
-Sentry requires the Gradle plugin for automatic mapping upload:
+The Sentry Gradle plugin handles mapping upload automatically. Configure it in the app module:
 
 ```kotlin
-// app/build.gradle.kts
 plugins {
-    alias(libs.plugins.sentry.android)
+    alias(libs.plugins.app.sentry)
 }
 
 sentry {
-    // Generates a JVM (Java, Kotlin, etc.) source bundle and uploads it to Sentry
     includeSourceContext.set(true)
-    
-    // Enable or disable the automatic configuration of ProGuard/R8 for Sentry
-    // When enabled, the Sentry Gradle Plugin will automatically add the necessary keep rules
     autoInstallation.sentryVersion.set(libs.versions.sentry.get())
-    
-    // Upload ProGuard mapping files
     includeProguardMapping.set(true)
     autoUploadProguardMapping.set(true)
-    
-    // Set organization and project from sentry.properties or here
     org.set("your-org")
     projectName.set("your-project")
     authToken.set(System.getenv("SENTRY_AUTH_TOKEN"))
 }
-```
-
-Required ProGuard rules are automatically added by the plugin. For manual configuration, see: https://docs.sentry.io/platforms/android/configuration/releases/#proguard-r8--dexguard
 
 ## Breadcrumb Best Practices
 

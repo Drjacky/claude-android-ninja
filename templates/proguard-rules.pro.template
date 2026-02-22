@@ -1,0 +1,265 @@
+# ==============================================================================
+# ProGuard / R8 Rules Template
+# ==============================================================================
+# Source of truth for all keep rules. Copy to app/proguard-rules.pro and
+# adjust com.example.* package names to match your project.
+#
+# Most AndroidX and Jetpack libraries ship their own consumer rules inside
+# the AAR/JAR - only add manual rules when the library docs say so, or when
+# R8 full-mode requires it.
+# ==============================================================================
+
+
+# ==============================================================================
+# 1. GENERAL / PROJECT-WIDE
+# ==============================================================================
+
+# Keep source file names and line numbers for crash reports
+-renamesourcefileattribute SourceFile
+-keepattributes SourceFile,LineNumberTable
+
+# Remove Android logging in release builds
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+    public static int w(...);
+}
+
+# Obfuscation hardening
+-repackageclasses ''
+-allowaccessmodification
+
+
+# ==============================================================================
+# 2. KOTLIN / COROUTINES
+# ==============================================================================
+# kotlinx-coroutines ships its own rules; these suppress residual warnings.
+
+-dontwarn kotlinx.coroutines.**
+
+
+# ==============================================================================
+# 3. KOTLINX-SERIALIZATION
+# ==============================================================================
+# The library bundles rules since 1.6+, but R8 full-mode may still strip
+# classes that are only referenced via generics (e.g. List<MyModel>).
+
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.AnnotationsKt
+
+# Keep companion objects and serializer() for every @Serializable class
+-if @kotlinx.serialization.Serializable class **
+-keepclassmembers class <1> {
+    static <1>$Companion Companion;
+}
+
+-if @kotlinx.serialization.Serializable class ** {
+    static **$* *;
+}
+-keepclassmembers class <2>$<3> {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# Keep generated serializers
+-if @kotlinx.serialization.Serializable class **
+-keep class <1>$$serializer { *; }
+
+# Keep project data/domain models used with serialization
+-keep class com.example.core.domain.model.** { *; }
+-keepclassmembers class com.example.core.domain.model.** {
+    <fields>;
+}
+
+
+# ==============================================================================
+# 4. RETROFIT
+# ==============================================================================
+# Retrofit uses reflection on generic parameters, annotations, and Proxy.
+# These rules are from the official retrofit2.pro plus R8 full-mode fixes.
+
+-keepattributes Signature, InnerClasses, EnclosingMethod
+-keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
+-keepattributes AnnotationDefault
+
+# Retain service method parameters
+-keepclassmembers,allowshrinking,allowobfuscation interface * {
+    @retrofit2.http.* <methods>;
+}
+
+# R8 full-mode: keep Retrofit interfaces (created via Proxy, invisible to R8)
+-if interface * { @retrofit2.http.* <methods>; }
+-keep,allowobfuscation interface <1>
+
+# Keep inherited service interfaces
+-if interface * { @retrofit2.http.* <methods>; }
+-keep,allowobfuscation interface * extends <1>
+
+# Suspend function continuations (R8 full-mode strips generic signatures)
+-keep,allowoptimization,allowshrinking,allowobfuscation class kotlin.coroutines.Continuation
+
+# Return types referenced only in generic signatures
+-if interface * { @retrofit2.http.* public *** *(...); }
+-keep,allowoptimization,allowshrinking,allowobfuscation class <3>
+
+-keep,allowoptimization,allowshrinking,allowobfuscation class retrofit2.Response
+
+-dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
+-dontwarn javax.annotation.**
+-dontwarn kotlin.Unit
+-dontwarn retrofit2.KotlinExtensions
+-dontwarn retrofit2.KotlinExtensions$*
+
+
+# ==============================================================================
+# 5. OKHTTP
+# ==============================================================================
+# OkHttp 5.x ships its own rules. These suppress residual warnings only.
+
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
+-dontwarn okhttp3.internal.platform.**
+
+
+# ==============================================================================
+# 6. KTOR (if used)
+# ==============================================================================
+
+-dontwarn org.slf4j.**
+-dontwarn io.ktor.**
+
+
+# ==============================================================================
+# 7. ROOM
+# ==============================================================================
+# Room uses codegen (KSP), not reflection - no manual rules needed in most
+# cases. Add these if you reference Room types via reflection or custom logic.
+
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class *
+-dontwarn androidx.room.paging.**
+
+
+# ==============================================================================
+# 8. HILT / DAGGER
+# ==============================================================================
+# Hilt ships its own consumer rules. These are supplemental for edge cases.
+
+-dontwarn dagger.hilt.internal.**
+
+# Keep project-level DI setup (adjust package)
+-keep class com.example.di.** { *; }
+
+
+# ==============================================================================
+# 9. FIREBASE
+# ==============================================================================
+# Firebase SDKs ship their own rules. These ensure readable crash reports.
+
+-keepattributes SourceFile,LineNumberTable
+-keep public class * extends java.lang.Exception
+
+
+# ==============================================================================
+# 10. SENTRY
+# ==============================================================================
+# Sentry Gradle plugin handles mapping uploads automatically.
+# These suppress residual warnings.
+
+-dontwarn io.sentry.android.timber.**
+
+
+# ==============================================================================
+# 11. COIL 3
+# ==============================================================================
+# Coil 3 ships its own rules. Add these only if you hit service-loader issues
+# in non-R8 builds (ProGuard).
+
+# -keep class * extends coil3.util.DecoderServiceLoaderTarget { *; }
+# -keep class * extends coil3.util.FetcherServiceLoaderTarget { *; }
+
+
+# ==============================================================================
+# 12. ANDROIDX SECURITY-CRYPTO (EncryptedSharedPreferences)
+# ==============================================================================
+# Tink (underlying crypto lib) triggers missing-class warnings for error-prone
+# annotations that are compile-time only.
+
+-dontwarn com.google.errorprone.annotations.**
+
+
+# ==============================================================================
+# 13. SQLCIPHER (if used)
+# ==============================================================================
+
+-keep class net.zetetic.database.** { *; }
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+
+# ==============================================================================
+# 14. PLAY INTEGRITY (if used)
+# ==============================================================================
+# The Play Core library ships its own rules. Suppress residual warnings.
+
+-dontwarn com.google.android.play.core.**
+
+
+# ==============================================================================
+# 15. COMPOSE
+# ==============================================================================
+# Compose compiler generates code - no manual rules needed.
+# Keep stability annotations if used on domain models in non-Compose modules.
+
+-keep class androidx.compose.runtime.Immutable
+-keep class androidx.compose.runtime.Stable
+
+
+# ==============================================================================
+# 16. PAGING
+# ==============================================================================
+# Paging ships its own rules.
+
+-dontwarn androidx.paging.**
+
+
+# ==============================================================================
+# 17. SECURITY HARDENING
+# ==============================================================================
+# Keep crypto and security classes that use reflection or JCA providers.
+# Adjust package names to match your project.
+
+-keep class com.example.core.data.crypto.** { *; }
+-keep class com.example.core.data.security.** { *; }
+
+
+# ==============================================================================
+# 18. ENUM / PARCELABLE / SERIALIZABLE
+# ==============================================================================
+
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+
+-keepclassmembers class * implements android.os.Parcelable {
+    public static final ** CREATOR;
+}
+
+
+# ==============================================================================
+# 19. DEBUGGING SHRUNK BUILDS
+# ==============================================================================
+# To diagnose what R8 removes, use these Gradle flags during development:
+#
+#   ./gradlew assembleRelease -Pandroid.enableR8.fullMode=true
+#
+# Check build/outputs/mapping/release/mapping.txt for the full mapping.
+# Use retrace to decode obfuscated stack traces:
+#
+#   retrace mapping.txt stacktrace.txt
+#
+# Upload mapping.txt to Firebase Crashlytics / Sentry for production decoding.
+# Both the Firebase and Sentry Gradle plugins handle this automatically.

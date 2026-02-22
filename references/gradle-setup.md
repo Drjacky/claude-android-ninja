@@ -630,49 +630,45 @@ With `android.nonTransitiveRClass=true`, each module generates its own R class c
 - Group cross-module resource imports at the top of the file
 - See [android-i18n.md](android-i18n.md#string-resource-ownership) for guidance on which module should own which strings
 
-### Proguard Rules for Release Builds
+### R8 / ProGuard Configuration
 
-`app/proguard-rules.pro`:
-```proguard
-# Keep data classes used with serialization
--keep class com.example.core.domain.model.** { *; }
--keepclassmembers class com.example.core.domain.model.** {
-    <fields>;
+R8 is the default code shrinker and obfuscator in AGP. Enable it in release builds:
+
+```kotlin
+buildTypes {
+    release {
+        isMinifyEnabled = true
+        isShrinkResources = true
+        proguardFiles(
+            getDefaultProguardFile("proguard-android-optimize.txt"),
+            "proguard-rules.pro"
+        )
+    }
 }
-
-# Keep Room entities
--keep class * extends androidx.room.Entity { *; }
--keep class * extends androidx.room.Relation { *; }
-
-# Keep Hilt
--keep class com.example.di.** { *; }
--keep class * extends dagger.hilt.android.internal.legacy.AggregatedElement { *; }
-
-# Keep kotlinx-serialization
--keepattributes *Annotation*, InnerClasses
--dontnote kotlinx.serialization.AnnotationsKt
--keepclassmembers class kotlinx.serialization.json.** {
-    *** Companion;
-}
--keepclasseswithmembers class kotlinx.serialization.json.** {
-    kotlinx.serialization.KSerializer serializer(...);
-}
-
-# Keep Retrofit
--keepattributes Signature, InnerClasses, EnclosingMethod
--keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
--keepattributes AnnotationDefault
--keepclassmembers,allowshrinking,allowobfuscation interface * {
-    @retrofit2.http.* <methods>;
-}
-
-# Generic rules
--dontwarn kotlinx.coroutines.**
--dontwarn javax.annotation.**
--dontwarn org.conscrypt.**
--dontwarn org.bouncycastle.**
--dontwarn org.openjsse.**
 ```
+
+Copy `templates/proguard-rules.pro.template` to `app/proguard-rules.pro` and adjust `com.example.*` package names to match your project. The template includes rules for every library in the version catalog.
+
+**Key points:**
+- Most AndroidX/Jetpack libraries ship their own consumer rules inside the AAR - only add manual rules when library docs say so or when R8 full-mode requires it
+- Retrofit requires explicit rules for R8 full-mode (interfaces created via `Proxy` are invisible to R8)
+- `EncryptedSharedPreferences` needs `-dontwarn` for Tink's error-prone annotations
+- SQLCipher native methods must be kept
+- Upload `mapping.txt` to Crashlytics/Sentry for readable stack traces (both Gradle plugins handle this automatically)
+
+**Debugging shrunk builds:**
+
+```bash
+# Build release with full R8 output
+./gradlew assembleRelease
+
+# Decode an obfuscated stack trace
+retrace build/outputs/mapping/release/mapping.txt stacktrace.txt
+```
+
+Check `build/outputs/mapping/release/` for the mapping file after each release build.
+
+See [android-security.md](android-security.md#proguard--r8-hardening) for security-specific hardening rules (log stripping, aggressive obfuscation, manifest settings).
 
 ## Build Performance
 

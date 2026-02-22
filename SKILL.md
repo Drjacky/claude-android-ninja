@@ -46,6 +46,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Create `build-logic/settings.gradle.kts` (see `templates/convention/QUICK_REFERENCE.md`)  
 → Add `includeBuild("build-logic")` to root `settings.gradle.kts`  
 → Add plugin entries to `gradle/libs.versions.toml` (see `templates/convention/QUICK_REFERENCE.md`)  
+→ Copy `templates/proguard-rules.pro.template` to `app/proguard-rules.pro`  
 → Read [modularization.md](references/modularization.md) for structure and module types  
 → Use [gradle-setup.md](references/gradle-setup.md) for build files and build logic  
 
@@ -53,6 +54,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Use [gradle-setup.md](references/gradle-setup.md) for module `build.gradle.kts` patterns  
 → Copy convention plugins from `templates/convention/` to `build-logic/` in your project  
 → See `templates/convention/QUICK_REFERENCE.md` for setup instructions and examples  
+→ Copy `templates/proguard-rules.pro.template` to `app/proguard-rules.pro` for R8 rules  
 
 **Setting up code quality / Detekt?**
 → Use [code-quality.md](references/code-quality.md) for Detekt convention plugin setup  

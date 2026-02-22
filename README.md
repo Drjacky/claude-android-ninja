@@ -67,6 +67,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - `references/dependencies.md` - dependency rules and version catalog guidance
 - `references/android-performance.md` - benchmarking and performance checks
 - `references/design-patterns.md` - Android-focused design patterns
+- `templates/proguard-rules.pro.template` - R8/ProGuard rules for all libraries
 - `templates/detekt.yml.template` - Detekt static analysis configuration
 - `templates/libs.versions.toml.template` - Version catalog with all dependencies
 - `templates/settings.gradle.kts.template` - Project settings with repositories
