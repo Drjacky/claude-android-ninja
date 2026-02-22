@@ -33,6 +33,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Multi-module dependencies                            | [dependencies.md](references/dependencies.md)                   |
 | Code quality (Detekt)                                | [code-quality.md](references/code-quality.md)                   |
 | Code coverage (JaCoCo)                               | [android-code-coverage.md](references/android-code-coverage.md) |
+| Security (encryption, biometrics, pinning)           | [android-security.md](references/android-security.md)           |
 | Design patterns                                      | [design-patterns.md](references/design-patterns.md)             |
 | Android performance benchmarking                     | [android-performance.md](references/android-performance.md)     |
 
@@ -219,3 +220,8 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Use [android-code-coverage.md](references/android-code-coverage.md) for JaCoCo setup  
 → Follow [testing.md](references/testing.md) for test strategies  
 → Check [gradle-setup.md](references/gradle-setup.md) for convention plugin integration
+
+**Implementing security features (encryption, biometrics, pinning)?**
+→ Use [android-security.md](references/android-security.md) for comprehensive security guide  
+→ Follow [android-permissions.md](references/android-permissions.md) for runtime permissions  
+→ Check [crashlytics.md](references/crashlytics.md) for PII scrubbing and data privacy
