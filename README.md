@@ -43,35 +43,35 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Code quality with Detekt and Compose rules
 
 ## Key Files
-- `SKILL.md` - entry point and workflow decision tree
-- `references/architecture.md` - architecture principles, data/domain layers, and flows
-- `references/modularization.md` - module structure and Navigation3 wiring
-- `references/compose-patterns.md` - Compose UI patterns and best practices
-- `references/android-theming.md` - Material 3 theming, colors, typography, shapes
-- `references/android-accessibility.md` - accessibility, TalkBack, semantic properties, WCAG
-- `references/android-i18n.md` - internationalization, localization, RTL support, plurals
-- `references/android-notifications.md` - notifications, channels, styles, foreground services
-- `references/android-data-sync.md` - offline-first, sync strategies, conflict resolution
-- `references/kotlin-patterns.md` - Kotlin best practices (must-read for Kotlin code)
-- `references/coroutines-patterns.md` - coroutines best practices and patterns
-- `references/gradle-setup.md` - build logic, conventions, and build files
-- `references/testing.md` - testing patterns with fakes, Hilt, Room, and Navigation3
-- `references/android-graphics.md` - Material Symbols icons, Canvas drawing, and Palette API
-- `references/android-permissions.md` - runtime permissions and best practices
-- `references/kotlin-delegation.md` - delegation patterns and composition guidance
-- `references/crashlytics.md` - crash reporting with modular provider swaps
-- `references/android-strictmode.md` - StrictMode guardrails and Compose stability
-- `references/android-code-coverage.md` - JaCoCo code coverage setup and CI integration
-- `references/android-security.md` - security, encryption, biometrics, certificate pinning, root detection
-- `references/code-quality.md` - Detekt setup and code quality rules
-- `references/dependencies.md` - dependency rules and version catalog guidance
-- `references/android-performance.md` - benchmarking and performance checks
-- `references/design-patterns.md` - Android-focused design patterns
-- `templates/proguard-rules.pro.template` - R8/ProGuard rules for all libraries
-- `templates/detekt.yml.template` - Detekt static analysis configuration
-- `templates/libs.versions.toml.template` - Version catalog with all dependencies
-- `templates/settings.gradle.kts.template` - Project settings with repositories
-- `templates/convention/` - Convention plugin implementations (18 plugins + 7 config files)
+- [`SKILL.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/SKILL.md) - entry point and workflow decision tree
+- [`references/architecture.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/architecture.md) - architecture principles, data/domain layers, and flows
+- [`references/modularization.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/modularization.md) - module structure and Navigation3 wiring
+- [`references/compose-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/compose-patterns.md) - Compose UI patterns and best practices
+- [`references/android-theming.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-theming.md) - Material 3 theming, colors, typography, shapes
+- [`references/android-accessibility.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-accessibility.md) - accessibility, TalkBack, semantic properties, WCAG
+- [`references/android-i18n.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-i18n.md) - internationalization, localization, RTL support, plurals
+- [`references/android-notifications.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-notifications.md) - notifications, channels, styles, foreground services
+- [`references/android-data-sync.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-data-sync.md) - offline-first, sync strategies, conflict resolution
+- [`references/kotlin-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/kotlin-patterns.md) - Kotlin best practices (must-read for Kotlin code)
+- [`references/coroutines-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/coroutines-patterns.md) - coroutines best practices and patterns
+- [`references/gradle-setup.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/gradle-setup.md) - build logic, conventions, and build files
+- [`references/testing.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/testing.md) - testing patterns with fakes, Hilt, Room, and Navigation3
+- [`references/android-graphics.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-graphics.md) - Material Symbols icons, Canvas drawing, and Palette API
+- [`references/android-permissions.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-permissions.md) - runtime permissions and best practices
+- [`references/kotlin-delegation.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/kotlin-delegation.md) - delegation patterns and composition guidance
+- [`references/crashlytics.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/crashlytics.md) - crash reporting with modular provider swaps
+- [`references/android-strictmode.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-strictmode.md) - StrictMode guardrails and Compose stability
+- [`references/android-code-coverage.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-code-coverage.md) - JaCoCo code coverage setup and CI integration
+- [`references/android-security.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-security.md) - security, encryption, biometrics, certificate pinning, root detection
+- [`references/code-quality.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/code-quality.md) - Detekt setup and code quality rules
+- [`references/dependencies.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/dependencies.md) - dependency rules and version catalog guidance
+- [`references/android-performance.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-performance.md) - benchmarking and performance checks
+- [`references/design-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/design-patterns.md) - Android-focused design patterns
+- [`templates/proguard-rules.pro.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/templates/proguard-rules.pro.template) - R8/ProGuard rules for all libraries
+- [`templates/detekt.yml.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/templates/detekt.yml.template) - Detekt static analysis configuration
+- [`templates/libs.versions.toml.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/templates/libs.versions.toml.template) - Version catalog with all dependencies
+- [`templates/settings.gradle.kts.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/templates/settings.gradle.kts.template) - Project settings with repositories
+- [`templates/convention/`](https://github.com/Drjacky/claude-android-ninja/tree/master/templates/convention) - Convention plugin implementations (18 plugins + 7 config files)
 
 ## Scope
 This skill is focused on Android app development using:
