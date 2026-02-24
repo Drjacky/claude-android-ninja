@@ -247,17 +247,7 @@ com.example.core.model.*
 - Compatible with Robolectric
 - Task: `create{Variant}CombinedCoverageReport`
 
-**Usage:**
-```bash
-# Run tests first
-./gradlew testDebugUnitTest
-./gradlew connectedDebugAndroidTest
-
-# Generate coverage report
-./gradlew createDebugCombinedCoverageReport
-
-# Reports at: build/reports/jacoco/createDebugCombinedCoverageReport/
-```
+For usage steps (running tests, generating reports, viewing output), see `references/android-code-coverage.md` → "Generating Coverage Reports".
 
 ## Configuration Files
 

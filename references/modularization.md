@@ -51,29 +51,7 @@ Entry point that brings everything together with Navigation3 adaptive navigation
 
 ### Feature Modules (`feature/*`)
 Self-contained features with clear boundaries and no inter-feature dependencies.
-
-```
-feature-auth/
-├── build.gradle.kts
-├── src/main/
-│   ├── kotlin/com/example/feature/auth/
-│   │   ├── presentation/              # UI Layer
-│   │   │   ├── AuthScreen.kt          # Main composable
-│   │   │   ├── AuthRoute.kt           # Navigation setup
-│   │   │   ├── viewmodel/             
-│   │   │   │   ├── AuthViewModel.kt   # State holder
-│   │   │   │   ├── AuthUiState.kt     # UI state models
-│   │   │   │   └── AuthActions.kt     # User actions
-│   │   │   └── components/            # Smaller UI components
-│   │   ├── navigation/                # Navigation Layer
-│   │   │   ├── AuthDestination.kt     # Feature routes (@Immutable NavKey)
-│   │   │   ├── AuthNavigator.kt       # Navigation interface
-│   │   │   └── AuthGraph.kt           # EntryProviderScope extension
-│   │   └── domain/                    # Optional: Feature-specific domain
-│   │       ├── repository/
-│   │       └── usecase/
-│   └── res/                          # Feature resources
-```
+See [Feature Module Structure](#feature-module-structure) for the full directory layout.
 
 ### Core Modules (`core/`)
 Shared library code used across features with strict dependency direction.

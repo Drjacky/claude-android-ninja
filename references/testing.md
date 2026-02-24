@@ -374,21 +374,7 @@ class AuthViewModelTest {
 
 ### Test Dispatcher Rule (in `core:testing`)
 
-```kotlin
-// core/testing/src/main/kotlin/com/example/testing/rule/TestDispatcherRule.kt
-class TestDispatcherRule(
-    private val testDispatcher: TestDispatcher = StandardTestDispatcher(),
-) : TestWatcher() {
-
-    override fun starting(description: Description) {
-        Dispatchers.setMain(testDispatcher)
-    }
-
-    override fun finished(description: Description) {
-        Dispatchers.resetMain()
-    }
-}
-```
+See [Coroutine Testing → Test Dispatcher Rule](#test-dispatcher-rule-in-coretesting-1) for the full implementation.
 
 ### Testing StateFlow with Turbine and Truth
 
