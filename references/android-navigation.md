@@ -2,6 +2,7 @@
 
 Navigation3 architecture with type-safe routing, adaptive navigation, and multi-module coordination.
 All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
+**Dependencies**: See `templates/libs.versions.toml.template` for Navigation 3 versions and the `navigation3` bundle.
 
 ## Table of Contents
 1. [Navigation3 Architecture](#navigation3-architecture)
@@ -100,8 +101,8 @@ fun ProductsRoute(
 ```kotlin
 // app/navigation/AppNavigation.kt
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.NavDisplay
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.NavDisplay
 
 @Composable
 fun AppNavigation() {
@@ -113,30 +114,33 @@ fun AppNavigation() {
     val productsNavigator = remember {
         object : ProductsNavigator {
             override fun navigateToDetail(productId: String) {
-                backStack.push(ProductsDestination.ProductDetail(productId))
+                backStack.add(ProductsDestination.ProductDetail(productId))
             }
             override fun navigateBack() {
-                backStack.pop()
+                backStack.removeLastOrNull()
             }
         }
     }
     
     // Define routes
-    NavDisplay(backStack = backStack) {
-        entry<ProductsDestination.ProductsList> { key ->
-            ProductsRoute(
-                categoryId = key.categoryId,
-                navigator = productsNavigator
-            )
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        entryProvider = entryProvider {
+            entry<ProductsDestination.ProductsList> { key ->
+                ProductsRoute(
+                    categoryId = key.categoryId,
+                    navigator = productsNavigator
+                )
+            }
+            entry<ProductsDestination.ProductDetail> { key ->
+                ProductDetailRoute(
+                    productId = key.productId,
+                    navigator = productsNavigator
+                )
+            }
         }
-        
-        entry<ProductsDestination.ProductDetail> { key ->
-            ProductDetailRoute(
-                productId = key.productId,
-                navigator = productsNavigator
-            )
-        }
-    }
+    )
 }
 ```
 
