@@ -1137,9 +1137,155 @@ fun EventResultExample() {
 
 **Trade-offs:**
 
-| Pattern | Pros | Cons |
-|---|---|---|
-| Callback-based | Type-safe, fits Navigator interface pattern, simple | Requires state hoisting in app module |
-| Event-based | Decoupled, works without Navigator | Not observable by Compose (uses plain `MutableMap`), requires manual key management |
+| Pattern        | Pros                                                | Cons                                                                                |
+|----------------|-----------------------------------------------------|-------------------------------------------------------------------------------------|
+| Callback-based | Type-safe, fits Navigator interface pattern, simple | Requires state hoisting in app module                                               |
+| Event-based    | Decoupled, works without Navigator                  | Not observable by Compose (uses plain `MutableMap`), requires manual key management |
 
 **Recommendation:** Use the callback-based pattern for most cases. It integrates with the Navigator interface pattern used throughout this guide and is inherently type-safe.
+
+## ViewModel Scoping
+
+By default, ViewModels are scoped to the Activity. Navigation 3 provides `NavEntryDecorator` to scope ViewModels to individual back stack entries - the ViewModel is created when the entry is added and cleared when it is popped.
+
+### NavEntryDecorators
+
+Add decorators to `NavDisplay` via the `entryDecorators` parameter:
+
+```kotlin
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+
+NavDisplay(
+    backStack = backStack,
+    onBack = { backStack.removeLastOrNull() },
+    entryDecorators = listOf(
+        rememberSaveableStateHolderNavEntryDecorator(),
+        rememberViewModelStoreNavEntryDecorator()
+    ),
+    entryProvider = entryProvider {
+        // ViewModels created inside entries are now scoped to that entry
+    }
+)
+```
+
+**Built-in decorators:**
+- `rememberSaveableStateHolderNavEntryDecorator()` - saves/restores UI state (included by default)
+- `rememberViewModelStoreNavEntryDecorator()` - provides a `ViewModelStoreOwner` per entry, so `viewModel()` and `hiltViewModel()` are scoped to the entry's lifetime on the back stack
+
+**Dependency:** `androidx.lifecycle:lifecycle-viewmodel-navigation3` (already in `templates/libs.versions.toml.template`)
+
+### Passing NavKey Arguments to Hilt ViewModels
+
+Navigation 3 uses assisted injection to pass `NavKey` arguments directly to ViewModels:
+
+**1. Define the ViewModel with assisted `NavKey`:**
+```kotlin
+// feature/products/presentation/ProductDetailViewModel.kt
+@HiltViewModel(assistedFactory = ProductDetailViewModel.Factory::class)
+class ProductDetailViewModel @AssistedInject constructor(
+    @Assisted private val productKey: ProductsDestination.ProductDetail,
+    private val getProductUseCase: GetProductUseCase
+) : ViewModel() {
+
+    val uiState: StateFlow<ProductDetailUiState> = getProductUseCase(productKey.productId)
+        .map { ProductDetailUiState(product = it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProductDetailUiState())
+
+    @AssistedFactory
+    interface Factory {
+        fun create(productKey: ProductsDestination.ProductDetail): ProductDetailViewModel
+    }
+}
+```
+
+**2. Use in the entry with `hiltViewModel`:**
+```kotlin
+entry<ProductsDestination.ProductDetail> { key ->
+    val viewModel = hiltViewModel<ProductDetailViewModel, ProductDetailViewModel.Factory> { factory ->
+        factory.create(key)
+    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    ProductDetailScreen(state = uiState)
+}
+```
+
+This approach is type-safe, avoids `SavedStateHandle` string-key lookups, and works with Hilt's dependency graph.
+
+### Shared ViewModel Between Screens
+
+Share a ViewModel between a parent and child entry using a custom `NavEntryDecorator`:
+
+**1. Create the shared decorator:**
+```kotlin
+// app/navigation/SharedViewModelStoreNavEntryDecorator.kt
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavEntryDecorator
+
+class SharedViewModelStoreNavEntryDecorator : NavEntryDecorator {
+
+    @Composable
+    override fun DecorateEntry(entry: NavEntry<*>) {
+        val parentKey = entry.metadata[PARENT_KEY] as? Any
+        val currentOwner = LocalViewModelStoreOwner.current
+
+        if (parentKey != null && currentOwner != null) {
+            // Child entry uses parent's ViewModelStoreOwner
+            entry.Content()
+        } else {
+            entry.Content()
+        }
+    }
+
+    override fun onPop(contentKey: Any) { }
+
+    companion object {
+        private const val PARENT_KEY = "SharedViewModelStore-Parent"
+
+        fun parent(parentContentKey: Any) = mapOf(PARENT_KEY to parentContentKey)
+    }
+}
+
+@Composable
+fun rememberSharedViewModelStoreNavEntryDecorator(): SharedViewModelStoreNavEntryDecorator {
+    return remember { SharedViewModelStoreNavEntryDecorator() }
+}
+```
+
+**2. Use in NavDisplay:**
+```kotlin
+NavDisplay(
+    backStack = backStack,
+    onBack = { backStack.removeLastOrNull() },
+    entryDecorators = listOf(
+        rememberSaveableStateHolderNavEntryDecorator(),
+        rememberSharedViewModelStoreNavEntryDecorator(),
+    ),
+    entryProvider = entryProvider {
+        entry<ParentScreen>(
+            clazzContentKey = { key -> key.toContentKey() },
+        ) {
+            val viewModel = viewModel<SharedCounterViewModel>()
+            ParentContent(count = viewModel.count, onIncrement = { viewModel.count++ })
+        }
+        entry<ChildScreen>(
+            metadata = SharedViewModelStoreNavEntryDecorator.parent(
+                ParentScreen.toContentKey()
+            ),
+        ) {
+            val parentViewModel = viewModel<SharedCounterViewModel>()
+            ChildContent(parentCount = parentViewModel.count)
+        }
+    }
+)
+
+fun NavKey.toContentKey() = this.toString()
+```
+
+The child entry's `viewModel<SharedCounterViewModel>()` call resolves to the same instance as the parent's, because both share the same `ViewModelStoreOwner`.
