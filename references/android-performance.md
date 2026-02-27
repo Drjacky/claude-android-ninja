@@ -370,6 +370,248 @@ stability_check:
       run: ./gradlew stabilityCheck
 ```
 
+## App Startup & Initialization
+
+Optimize cold start time by controlling when and how components initialize. Avoid ContentProvider-based auto-initialization and use the App Startup library for explicit control.
+
+### ContentProvider Anti-Pattern
+
+Many libraries auto-initialize via `ContentProvider.onCreate()`, which runs before `Application.onCreate()` on the main thread. Each ContentProvider adds overhead to cold start. Instead, disable auto-initialization and use the App Startup library or lazy initialization.
+
+**Disable a library's auto-initialization** (e.g., WorkManager):
+```xml
+<!-- app/src/main/AndroidManifest.xml -->
+<provider
+    android:name="androidx.startup.InitializationProvider"
+    android:authorities="${applicationId}.androidx-startup"
+    android:exported="false"
+    tools:node="merge">
+    <!-- Disable WorkManager's auto-initialization -->
+    <meta-data
+        android:name="androidx.work.WorkManagerInitializer"
+        android:value="androidx.startup"
+        tools:node="remove" />
+</provider>
+```
+
+### App Startup Library
+
+Use `androidx.startup:startup-runtime` to consolidate initialization into a single shared ContentProvider with explicit dependency ordering.
+
+**1. Implement an `Initializer`:**
+```kotlin
+// core/common/src/main/kotlin/com/example/core/startup/TimberInitializer.kt
+import android.content.Context
+import androidx.startup.Initializer
+import timber.log.Timber
+
+class TimberInitializer : Initializer<Unit> {
+    override fun create(context: Context) {
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        }
+    }
+
+    override fun dependencies(): List<Class<out Initializer<*>>> = emptyList()
+}
+```
+
+**2. Initializer with dependencies:**
+```kotlin
+// core/common/src/main/kotlin/com/example/core/startup/CrashReporterInitializer.kt
+class CrashReporterInitializer : Initializer<Unit> {
+    override fun create(context: Context) {
+        CrashReporter.init(context)
+    }
+
+    override fun dependencies(): List<Class<out Initializer<*>>> = listOf(
+        TimberInitializer::class.java
+    )
+}
+```
+
+**3. Register in AndroidManifest:**
+```xml
+<!-- app/src/main/AndroidManifest.xml -->
+<provider
+    android:name="androidx.startup.InitializationProvider"
+    android:authorities="${applicationId}.androidx-startup"
+    android:exported="false"
+    tools:node="merge">
+    <!-- Only list leaf initializers - dependencies are resolved automatically -->
+    <meta-data
+        android:name="com.example.core.startup.CrashReporterInitializer"
+        android:value="androidx.startup" />
+</provider>
+```
+
+**4. Lazy initialization (on-demand):**
+
+Remove the `<meta-data>` entry from the manifest and initialize manually when needed:
+```kotlin
+AppInitializer.getInstance(context)
+    .initializeComponent(CrashReporterInitializer::class.java)
+```
+
+### Lazy Initialization Strategies
+
+Defer non-essential work until after the first frame is drawn:
+
+```kotlin
+// In Application or MainActivity
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+
+        // Critical path only - keep minimal
+        // App Startup handles TimberInitializer, CrashReporterInitializer
+
+        // Defer non-critical initialization
+        ProcessLifecycleOwner.get().lifecycle.addObserver(
+            object : DefaultLifecycleObserver {
+                override fun onStart(owner: LifecycleOwner) {
+                    // First time app becomes visible - initialize non-critical components
+                    initializeNonCritical()
+                    owner.lifecycle.removeObserver(this)
+                }
+            }
+        )
+    }
+
+    private fun initializeNonCritical() {
+        // Analytics, feature flags, prefetch, etc.
+    }
+}
+```
+
+**In Compose - defer heavy content until first frame:**
+```kotlin
+@Composable
+fun DeferredContent(content: @Composable () -> Unit) {
+    var shouldLoad by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        // Yield to let the first frame draw
+        withContext(Dispatchers.Main) {
+            shouldLoad = true
+        }
+    }
+
+    if (shouldLoad) {
+        content()
+    }
+}
+```
+
+**What to initialize eagerly vs lazily:**
+
+| Timing | Components |
+|---|---|
+| Eager (App Startup) | Crash reporter, logging, StrictMode |
+| After first frame | Analytics, feature flags, remote config |
+| On demand | Image loader, ML models, database migrations, WorkManager |
+
+### Splash Screen
+
+Use the `androidx.core:core-splashscreen` library for a consistent splash screen across API levels. It displays while App Startup initializers and early ViewModel loading complete.
+
+**1. Define splash theme:**
+```xml
+<!-- app/src/main/res/values/themes.xml -->
+<style name="Theme.App.Splash" parent="Theme.SplashScreen">
+    <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+    <item name="windowSplashScreenBackground">@color/splash_background</item>
+    <item name="postSplashScreenTheme">@style/Theme.App</item>
+</style>
+
+<!-- For animated icon with background circle (optional) -->
+<style name="Theme.App.Splash.WithBackground" parent="Theme.SplashScreen.IconBackground">
+    <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+    <item name="windowSplashScreenIconBackgroundColor">@color/splash_icon_bg</item>
+    <item name="windowSplashScreenBackground">@color/splash_background</item>
+    <item name="postSplashScreenTheme">@style/Theme.App</item>
+</style>
+```
+
+**2. Set in manifest:**
+```xml
+<!-- app/src/main/AndroidManifest.xml -->
+<activity
+    android:name=".MainActivity"
+    android:theme="@style/Theme.App.Splash"
+    android:exported="true">
+    <!-- ... intent filters ... -->
+</activity>
+```
+
+**3. Install in Activity with Compose:**
+```kotlin
+// app/src/main/kotlin/com/example/app/MainActivity.kt
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+
+class MainActivity : ComponentActivity() {
+    private val viewModel: MainViewModel by viewModels()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
+        super.onCreate(savedInstanceState)
+
+        // Keep splash screen visible while loading
+        splashScreen.setKeepOnScreenCondition {
+            viewModel.isLoading.value
+        }
+
+        enableEdgeToEdge()
+
+        setContent {
+            val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+
+            if (!isLoading) {
+                AppTheme {
+                    AppNavigation()
+                }
+            }
+        }
+    }
+}
+```
+
+**4. MainViewModel for splash loading:**
+```kotlin
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    private val authRepository: AuthRepository
+) : ViewModel() {
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            // Check auth state, load user prefs, etc.
+            authRepository.isAuthenticated()
+            _isLoading.value = false
+        }
+    }
+}
+```
+
+**Key points:**
+- Call `installSplashScreen()` before `super.onCreate()`
+- `setKeepOnScreenCondition` callback runs on main thread before each draw - keep it fast (just read a boolean)
+- The splash screen dismisses automatically once the condition returns `false`
+- Animated icons are supported on API 31+; animation duration should not exceed 1000ms
+- `postSplashScreenTheme` switches to your app theme after dismissal
+
+### Startup Optimization Checklist
+
+- [ ] Audit `ContentProvider` usage - remove or replace with App Startup initializers
+- [ ] Classify initializers as eager, after-first-frame, or on-demand
+- [ ] Use `installSplashScreen()` with `setKeepOnScreenCondition` for loading state
+- [ ] Generate Baseline Profiles for startup paths (see [Benchmark](#benchmark) section)
+- [ ] Measure cold start time with Macrobenchmark before/after changes
+- [ ] Avoid blocking the main thread with I/O, network, or heavy computation during startup
+- [ ] Use `ProcessLifecycleOwner` or `Lifecycle` callbacks to defer non-critical work
+
 ## References
 - Benchmarking overview: https://developer.android.com/topic/performance/benchmarking/benchmarking-overview
 - Macrobenchmark overview: https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview

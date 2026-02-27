@@ -36,7 +36,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Dependency management rules and templates
 - Crash reporting with provider-agnostic interfaces (Firebase/Sentry)
 - Runtime permissions with Compose patterns
-- Performance benchmarking (Macrobenchmark, Microbenchmark, Baseline Profiles)
+- Performance benchmarking (Macrobenchmark, Microbenchmark, Baseline Profiles) and app startup optimization (App Startup library, splash screen, lazy initialization)
 - StrictMode guardrails and Compose compiler stability diagnostics
 - Code coverage with JaCoCo (unit + instrumented tests)
 - Security (certificate pinning, encryption, biometrics, root detection, Play Integrity)
@@ -66,7 +66,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - [`references/android-security.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-security.md) - security, encryption, biometrics, certificate pinning, root detection
 - [`references/code-quality.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/code-quality.md) - Detekt setup and code quality rules
 - [`references/dependencies.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/dependencies.md) - dependency rules and version catalog guidance
-- [`references/android-performance.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-performance.md) - benchmarking and performance checks
+- [`references/android-performance.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-performance.md) - benchmarking, app startup optimization, and splash screen
 - [`references/design-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/design-patterns.md) - Android-focused design patterns
 - [`templates/proguard-rules.pro.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/templates/proguard-rules.pro.template) - R8/ProGuard rules for all libraries
 - [`templates/detekt.yml.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/templates/detekt.yml.template) - Detekt static analysis configuration

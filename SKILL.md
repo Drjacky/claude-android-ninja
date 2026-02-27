@@ -36,7 +36,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Code coverage (JaCoCo)                               | [android-code-coverage.md](references/android-code-coverage.md) |
 | Security (encryption, biometrics, pinning)           | [android-security.md](references/android-security.md)           |
 | Design patterns                                      | [design-patterns.md](references/design-patterns.md)             |
-| Android performance benchmarking                     | [android-performance.md](references/android-performance.md)     |
+| Android performance & app startup                    | [android-performance.md](references/android-performance.md)     |
 
 ## Workflow Decision Tree
 
@@ -137,6 +137,11 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Measuring performance regressions or startup/jank?**
 → Use [android-performance.md](references/android-performance.md) for Macrobenchmark setup and commands  
 → Keep benchmark module aligned with `benchmark` build type in [gradle-setup.md](references/gradle-setup.md)  
+
+**Setting up app initialization or splash screen?**
+→ Follow [android-performance.md](references/android-performance.md) → "App Startup & Initialization" for App Startup library, lazy init, and splash screen  
+→ Avoid ContentProvider-based auto-initialization - use `Initializer` interface instead  
+→ Use `installSplashScreen()` with `setKeepOnScreenCondition` for loading state  
 
 **Adding icons, images, or custom graphics?**
 → Use [android-graphics.md](references/android-graphics.md) for Material Symbols icons and custom drawing  
