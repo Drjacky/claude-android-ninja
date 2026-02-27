@@ -1034,3 +1034,112 @@ fun ConditionalNavExample() {
 - After successful login, the `Login` entry is removed from the back stack and the user is sent to the original target
 - `dropUnlessResumed` prevents navigation during transitions (e.g., double-clicks)
 - Use `rememberSaveable` for `isLoggedIn` so auth state survives configuration changes; in production, back this with a ViewModel or repository
+
+## Returning Results
+
+Pass data back from one screen to another. Navigation 3 offers two patterns: event-based (one-shot delivery) and callback-based (via Navigator interface).
+
+### Callback-Based Results (Recommended)
+
+The simplest approach - define result callbacks in the Navigator interface. This fits our multi-module architecture naturally:
+
+**1. Feature module defines the callback:**
+```kotlin
+// feature/picker/navigation/ColorPickerNavigator.kt
+interface ColorPickerNavigator {
+    fun navigateBackWithColor(color: String)
+    fun navigateBack()
+}
+```
+
+**2. App module implements it by modifying the caller's state:**
+```kotlin
+// app/navigation/AppNavigation.kt
+@Composable
+fun AppNavigation() {
+    val backStack = rememberNavBackStack(HomeRoute)
+    var selectedColor by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val colorPickerNavigator = remember {
+        object : ColorPickerNavigator {
+            override fun navigateBackWithColor(color: String) {
+                selectedColor = color
+                backStack.removeLastOrNull()
+            }
+            override fun navigateBack() {
+                backStack.removeLastOrNull()
+            }
+        }
+    }
+
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        entryProvider = entryProvider {
+            entry<HomeRoute> {
+                HomeScreen(
+                    selectedColor = selectedColor,
+                    onPickColor = dropUnlessResumed {
+                        backStack.add(ColorPickerRoute)
+                    }
+                )
+            }
+            entry<ColorPickerRoute> {
+                ColorPickerScreen(navigator = colorPickerNavigator)
+            }
+        }
+    )
+}
+```
+
+### Event-Based Results
+
+For decoupled result delivery without direct state hoisting, use a result map keyed by the caller's content key:
+
+```kotlin
+@Composable
+fun EventResultExample() {
+    val backStack = rememberNavBackStack(ScreenA)
+    val resultMap = remember { mutableMapOf<Any, Any>() }
+
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        entryProvider = entryProvider {
+            entry<ScreenA> {
+                val result = resultMap.remove(ScreenA) as? String
+
+                LaunchedEffect(result) {
+                    result?.let { name ->
+                        // Handle the returned result
+                    }
+                }
+
+                ScreenAContent(
+                    lastResult = result,
+                    onRequestName = dropUnlessResumed {
+                        backStack.add(ScreenB)
+                    }
+                )
+            }
+            entry<ScreenB> {
+                ScreenBContent(
+                    onReturnName = dropUnlessResumed { name ->
+                        resultMap[ScreenA] = name
+                        backStack.removeLastOrNull()
+                    }
+                )
+            }
+        }
+    )
+}
+```
+
+**Trade-offs:**
+
+| Pattern | Pros | Cons |
+|---|---|---|
+| Callback-based | Type-safe, fits Navigator interface pattern, simple | Requires state hoisting in app module |
+| Event-based | Decoupled, works without Navigator | Not observable by Compose (uses plain `MutableMap`), requires manual key management |
+
+**Recommendation:** Use the callback-based pattern for most cases. It integrates with the Navigator interface pattern used throughout this guide and is inherently type-safe.
