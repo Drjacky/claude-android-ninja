@@ -942,6 +942,211 @@ fun navigateUp(deepLinkKey: NavKey, activity: Activity) {
 - Deep linking simulates manual navigation via synthetic back stack
 - The start destination should never show an Up button
 
+### AndroidManifest Setup
+
+Declare intent filters for your deep link Activity:
+
+```xml
+<!-- app/src/main/AndroidManifest.xml -->
+<activity
+    android:name=".MainActivity"
+    android:exported="true"
+    android:launchMode="singleTask">
+
+    <!-- App Links (verified HTTPS - preferred) -->
+    <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data
+            android:scheme="https"
+            android:host="example.com"
+            android:pathPrefix="/products" />
+        <data android:pathPrefix="/users" />
+    </intent-filter>
+
+    <!-- Custom scheme (fallback, not verifiable) -->
+    <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data
+            android:scheme="myapp"
+            android:host="open" />
+    </intent-filter>
+</activity>
+```
+
+**Key points:**
+- `android:autoVerify="true"` enables Android App Links verification (HTTPS only)
+- `android:exported="true"` is required for Activities with intent filters (Android 12+)
+- `android:launchMode="singleTask"` ensures deep links reuse the existing Activity instance via `onNewIntent`
+- Keep `pathPrefix` entries narrow - avoid matching overly broad paths
+- Prefer HTTPS App Links over custom schemes for security
+
+### App Links Verification
+
+App Links (verified HTTPS deep links) prevent other apps from claiming your URLs. They require a Digital Asset Links file on your server.
+
+**1. Host `assetlinks.json` on your domain:**
+
+Publish at `https://example.com/.well-known/assetlinks.json`:
+
+```json
+[{
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+        "namespace": "android_app",
+        "package_name": "com.example.app",
+        "sha256_cert_fingerprints": [
+            "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
+        ]
+    }
+}]
+```
+
+**Get your signing certificate fingerprint:**
+```bash
+# Debug keystore
+keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android
+
+# Release keystore (or use Play Console > Setup > App signing)
+keytool -list -v -keystore your-release-key.keystore -alias your-alias
+```
+
+**Requirements:**
+- Must be served at `https://domain/.well-known/assetlinks.json` (exact path)
+- Must return HTTP 200 (redirects are NOT followed)
+- Must have `Content-Type: application/json`
+- Include fingerprints for all signing keys (debug, release, Play App Signing)
+
+**2. Verify on device (Android 12+):**
+```bash
+# Reset verification state
+adb shell pm set-app-links --package com.example.app 0 all
+
+# Trigger re-verification
+adb shell pm verify-app-links --re-verify com.example.app
+
+# Check verification status
+adb shell pm get-app-links com.example.app
+```
+
+Domain states: `verified`, `approved`, `denied`, `none` (not yet verified).
+
+### URI Pattern Matching
+
+Map URI patterns to `NavKey` types with path and query parameter extraction:
+
+```kotlin
+// app/deeplink/DeepLinkPatterns.kt
+
+private const val BASE_URL = "https://example.com"
+
+internal val deepLinkPatterns: List<DeepLinkPattern<out NavKey>> = listOf(
+    // Exact match
+    DeepLinkPattern(
+        serializer = HomeRoute.serializer(),
+        pattern = "$BASE_URL/home".toUri()
+    ),
+    // Path parameter: /products/{productId}
+    DeepLinkPattern(
+        serializer = ProductDetail.serializer(),
+        pattern = "$BASE_URL/products/{productId}".toUri()
+    ),
+    // Multiple path parameters: /orders/{orderId}/items/{itemId}
+    DeepLinkPattern(
+        serializer = OrderItemDetail.serializer(),
+        pattern = "$BASE_URL/orders/{orderId}/items/{itemId}".toUri()
+    ),
+    // Query parameters: /search?query={query}&category={category}
+    DeepLinkPattern(
+        serializer = SearchRoute.serializer(),
+        pattern = "$BASE_URL/search?query={query}&category={category}".toUri()
+    ),
+    // Custom scheme: myapp://open/profile/{userId}
+    DeepLinkPattern(
+        serializer = UserProfile.serializer(),
+        pattern = "myapp://open/profile/{userId}".toUri()
+    ),
+)
+```
+
+`{placeholder}` names must match the `@Serializable` field names in the corresponding `NavKey`:
+```kotlin
+@Serializable
+data class OrderItemDetail(val orderId: String, val itemId: String) : NavKey
+```
+
+### Deep Link Security
+
+Deep links are public entry points - treat all incoming data as untrusted:
+
+```kotlin
+// app/deeplink/DeepLinkValidator.kt
+object DeepLinkValidator {
+
+    private val ALLOWED_HOSTS = setOf("example.com", "www.example.com")
+    private val ALLOWED_SCHEMES = setOf("https", "myapp")
+
+    fun validate(uri: Uri): Boolean {
+        if (uri.scheme !in ALLOWED_SCHEMES) return false
+        if (uri.scheme == "https" && uri.host !in ALLOWED_HOSTS) return false
+        return true
+    }
+
+    fun sanitizeArgument(value: String, maxLength: Int = 256): String {
+        return value.take(maxLength).replace(Regex("[^a-zA-Z0-9_\\-.]"), "")
+    }
+}
+```
+
+**Use in Activity:**
+```kotlin
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+
+    val deepLinkKey: NavKey = intent.data?.let { uri ->
+        if (!DeepLinkValidator.validate(uri)) return@let null
+
+        val request = DeepLinkRequest(uri)
+        val match = deepLinkPatterns.firstNotNullOfOrNull { pattern ->
+            DeepLinkMatcher(request, pattern).match()
+        }
+        match?.let {
+            KeyDecoder(match.args).decodeSerializableValue(match.serializer)
+        }
+    } ?: HomeRoute
+
+    // ...
+}
+```
+
+**Handle `onNewIntent` for `singleTask` launch mode:**
+```kotlin
+override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    intent.data?.let { uri ->
+        if (DeepLinkValidator.validate(uri)) {
+            val key = parseDeepLink(uri)
+            // Add to existing back stack or reset
+        }
+    }
+}
+```
+
+**Security guidelines:**
+- Always validate scheme and host against allowlists before processing
+- Sanitize all URI parameters (path segments, query values) - they are attacker-controlled
+- Verify authentication/authorization state before navigating to protected screens (see [Conditional Navigation](#conditional-navigation))
+- Never load deep link URLs directly in a WebView without strict allowlisting
+- Prefer verified HTTPS App Links over custom URI schemes - custom schemes can be claimed by any app
+- Log deep link attempts for anomaly detection (see `references/crashlytics.md`)
+
+### Testing Deep Links
+
+For ADB commands and unit tests for deep link parsing, validation, and synthetic back stack, see `references/testing.md` → "Testing Deep Links".
+
 ## Conditional Navigation
 
 Redirect users to a different flow based on app state (e.g., authentication, onboarding). The pattern uses a `requiresLogin` flag on navigation keys and a redirect mechanism.
