@@ -772,7 +772,7 @@ The Material3 `ListDetailSceneStrategy` automatically handles pane arrangement, 
 
 ## Deep Links
 
-Navigation 3 gives you direct control over deep link handling — you parse the intent, create the `NavKey`, and manage the back stack yourself. This section follows the [Principles of Navigation](https://developer.android.com/guide/navigation/principles).
+Navigation 3 gives you direct control over deep link handling - you parse the intent, create the `NavKey`, and manage the back stack yourself. This section follows the [Principles of Navigation](https://developer.android.com/guide/navigation/principles).
 
 ### Parsing an Intent into a NavKey
 
@@ -880,7 +880,7 @@ setContent {
 }
 ```
 
-For `ProductDetail("abc")`, the back stack becomes: `[HomeRoute, ProductListRoute, ProductDetail("abc")]` — pressing Back walks through parents naturally.
+For `ProductDetail("abc")`, the back stack becomes: `[HomeRoute, ProductListRoute, ProductDetail("abc")]` - pressing Back walks through parents naturally.
 
 ### Task Management
 
@@ -905,7 +905,7 @@ override fun onCreate(savedInstanceState: Bundle?) {
 }
 ```
 
-**Up button behavior on original task** — restart the Activity in a new task so Up navigates within the app:
+**Up button behavior on original task** - restart the Activity in a new task so Up navigates within the app:
 ```kotlin
 fun navigateUp(deepLinkKey: NavKey, activity: Activity) {
     val parentKey = (deepLinkKey as? DeepLinkKey)?.parent
@@ -926,12 +926,111 @@ fun navigateUp(deepLinkKey: NavKey, activity: Activity) {
 
 **Summary:**
 
-| Scenario | Back | Up | Synthetic back stack? |
-|---|---|---|---|
-| New task | Parent screen | Parent screen | Yes, on Activity creation |
-| Existing task | Previous app/screen | Parent screen (restarts in new task) | Optional |
+| Scenario      | Back                | Up                                   | Synthetic back stack?     |
+|---------------|---------------------|--------------------------------------|---------------------------|
+| New task      | Parent screen       | Parent screen                        | Yes, on Activity creation |
+| Existing task | Previous app/screen | Parent screen (restarts in new task) | Optional                  |
 
 **Guidelines:**
-- Up button never exits the app — disable it on the start destination
+- Up button never exits the app - disable it on the start destination
 - Deep linking simulates manual navigation via synthetic back stack
 - The start destination should never show an Up button
+
+## Conditional Navigation
+
+Redirect users to a different flow based on app state (e.g., authentication, onboarding). The pattern uses a `requiresLogin` flag on navigation keys and a redirect mechanism.
+
+### Define Auth-Gated Keys
+
+```kotlin
+@Serializable
+sealed class AppNavKey(val requiresLogin: Boolean = false) : NavKey
+
+@Serializable
+data object Home : AppNavKey()
+
+@Serializable
+data object Profile : AppNavKey(requiresLogin = true)
+
+@Serializable
+data class Login(val redirectToKey: AppNavKey? = null) : AppNavKey()
+```
+
+### Navigator with Auth Check
+
+```kotlin
+class AppNavigator(
+    private val backStack: NavBackStack<AppNavKey>,
+    private val isLoggedIn: () -> Boolean,
+    private val onNavigateToRestrictedKey: (AppNavKey) -> Login
+) {
+    fun navigate(route: AppNavKey) {
+        if (route.requiresLogin && !isLoggedIn()) {
+            backStack.add(onNavigateToRestrictedKey(route))
+        } else {
+            backStack.add(route)
+        }
+    }
+
+    fun goBack() {
+        backStack.removeLastOrNull()
+    }
+}
+```
+
+### Wire Up in Composable
+
+```kotlin
+@Composable
+fun ConditionalNavExample() {
+    val backStack = rememberNavBackStack(Home)
+    var isLoggedIn by rememberSaveable { mutableStateOf(false) }
+
+    val navigator = remember {
+        AppNavigator(
+            backStack = backStack,
+            isLoggedIn = { isLoggedIn },
+            onNavigateToRestrictedKey = { redirectToKey -> Login(redirectToKey) }
+        )
+    }
+
+    NavDisplay(
+        backStack = backStack,
+        onBack = { navigator.goBack() },
+        entryProvider = entryProvider {
+            entry<Home> {
+                HomeScreen(
+                    isLoggedIn = isLoggedIn,
+                    onProfileClick = dropUnlessResumed { navigator.navigate(Profile) },
+                    onLoginClick = dropUnlessResumed { navigator.navigate(Login()) }
+                )
+            }
+            entry<Profile> {
+                ProfileScreen(
+                    onLogout = dropUnlessResumed {
+                        isLoggedIn = false
+                        navigator.navigate(Home)
+                    }
+                )
+            }
+            entry<Login> { key ->
+                LoginScreen(
+                    onLoginSuccess = dropUnlessResumed {
+                        isLoggedIn = true
+                        key.redirectToKey?.let { target ->
+                            backStack.remove(key)
+                            navigator.navigate(target)
+                        }
+                    }
+                )
+            }
+        }
+    )
+}
+```
+
+**How it works:**
+- Navigating to `Profile` while logged out redirects to `Login(redirectToKey = Profile)`
+- After successful login, the `Login` entry is removed from the back stack and the user is sent to the original target
+- `dropUnlessResumed` prevents navigation during transitions (e.g., double-clicks)
+- Use `rememberSaveable` for `isLoggedIn` so auth state survives configuration changes; in production, back this with a ViewModel or repository
