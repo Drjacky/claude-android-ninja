@@ -14,6 +14,12 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 7. [Key Principles](#key-principles)
 8. [Navigation Flow](#navigation-flow)
 9. [Migration Note](#migration-note)
+10. [Animations](#animations)
+11. [Scenes & Custom Layouts](#scenes--custom-layouts)
+12. [Deep Links](#deep-links)
+13. [Conditional Navigation](#conditional-navigation)
+14. [Returning Results](#returning-results)
+15. [ViewModel Scoping](#viewmodel-scoping)
 
 ## Navigation3 Architecture
 
