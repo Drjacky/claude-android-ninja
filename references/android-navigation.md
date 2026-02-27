@@ -432,3 +432,97 @@ If migrating from Navigation 2.x to Navigation3:
 2. Use `NavigationSuiteScaffold` (it handles adaptive switching automatically)
 3. Update `NavHost` and `rememberNavController()` imports
 4. Use `NavigableListDetailPaneScaffold` / `NavigableSupportingPaneScaffold` for tablet-optimized layouts
+
+## Animations
+
+`NavDisplay` provides built-in animation support via `ContentTransform`. Customize globally or per-entry.
+
+### Global Transitions
+
+Set default animations for all destinations on `NavDisplay`:
+
+```kotlin
+NavDisplay(
+    backStack = backStack,
+    onBack = { backStack.removeLastOrNull() },
+    transitionSpec = {
+        // Forward navigation: slide in from right
+        slideInHorizontally(initialOffsetX = { it }) togetherWith
+            slideOutHorizontally(targetOffsetX = { -it })
+    },
+    popTransitionSpec = {
+        // Back navigation: slide in from left
+        slideInHorizontally(initialOffsetX = { -it }) togetherWith
+            slideOutHorizontally(targetOffsetX = { it })
+    },
+    predictivePopTransitionSpec = {
+        // Predictive back gesture: same as popTransitionSpec
+        slideInHorizontally(initialOffsetX = { -it }) togetherWith
+            slideOutHorizontally(targetOffsetX = { it })
+    },
+    entryProvider = entryProvider {
+        // ...
+    }
+)
+```
+
+**Parameters:**
+- `transitionSpec` — `ContentTransform` when content is added to back stack (navigating forward)
+- `popTransitionSpec` — `ContentTransform` when content is removed from back stack (navigating back)
+- `predictivePopTransitionSpec` — `ContentTransform` during predictive back gestures (Android 14+)
+
+### Per-Entry Overrides
+
+Override global transitions for specific entries using metadata helper functions:
+
+```kotlin
+entry<ScreenC>(
+    metadata = NavDisplay.transitionSpec {
+        // Slide up from bottom, keep old content underneath
+        slideInVertically(
+            initialOffsetY = { it },
+            animationSpec = tween(1000)
+        ) togetherWith ExitTransition.KeepUntilTransitionsFinished
+    } + NavDisplay.popTransitionSpec {
+        // Slide down, reveal content underneath
+        EnterTransition.None togetherWith
+            slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = tween(1000)
+            )
+    } + NavDisplay.predictivePopTransitionSpec {
+        EnterTransition.None togetherWith
+            slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = tween(1000)
+            )
+    }
+) {
+    ScreenCContent()
+}
+```
+
+**Metadata keys** (combine with `+`):
+- `NavDisplay.transitionSpec { ... }` — forward animation for this entry
+- `NavDisplay.popTransitionSpec { ... }` — back animation for this entry
+- `NavDisplay.predictivePopTransitionSpec { ... }` — predictive back animation for this entry
+
+Per-entry metadata overrides the global `NavDisplay` transitions.
+
+### Common Animation Patterns
+
+```kotlin
+// Fade
+fadeIn(tween(300)) togetherWith fadeOut(tween(300))
+
+// Horizontal slide
+slideInHorizontally(initialOffsetX = { it }) togetherWith
+    slideOutHorizontally(targetOffsetX = { -it })
+
+// Vertical slide (bottom sheet style)
+slideInVertically(initialOffsetY = { it }) togetherWith
+    ExitTransition.KeepUntilTransitionsFinished
+
+// No animation
+EnterTransition.None togetherWith ExitTransition.None
+```
