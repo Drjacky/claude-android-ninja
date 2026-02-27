@@ -769,3 +769,169 @@ fun MaterialListDetailExample() {
 - `ListDetailSceneStrategy.extraPane()` - marks entry as extra pane (three-pane layout)
 
 The Material3 `ListDetailSceneStrategy` automatically handles pane arrangement, predictive back, and window size adaptation. For supporting-pane layouts, use `rememberSupportingPaneSceneStrategy()` with matching metadata.
+
+## Deep Links
+
+Navigation 3 gives you direct control over deep link handling — you parse the intent, create the `NavKey`, and manage the back stack yourself. This section follows the [Principles of Navigation](https://developer.android.com/guide/navigation/principles).
+
+### Parsing an Intent into a NavKey
+
+Convert the incoming `Intent` data URI into a navigation key using `kotlinx.serialization`:
+
+**1. Define deep link patterns:**
+```kotlin
+// app/deeplink/DeepLinkPatterns.kt
+import androidx.navigation3.runtime.NavKey
+
+internal val deepLinkPatterns: List<DeepLinkPattern<out NavKey>> = listOf(
+    DeepLinkPattern(
+        serializer = HomeRoute.serializer(),
+        pattern = "https://example.com/home".toUri()
+    ),
+    DeepLinkPattern(
+        serializer = ProductDetail.serializer(),
+        pattern = "https://example.com/products/{productId}".toUri()
+    ),
+    DeepLinkPattern(
+        serializer = UserProfile.serializer(),
+        pattern = "https://example.com/users/{userId}".toUri()
+    ),
+)
+```
+
+**2. Parse and match in Activity:**
+```kotlin
+// app/MainActivity.kt
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+
+    val deepLinkKey: NavKey = intent.data?.let { uri ->
+        val request = DeepLinkRequest(uri)
+
+        val match = deepLinkPatterns.firstNotNullOfOrNull { pattern ->
+            DeepLinkMatcher(request, pattern).match()
+        }
+
+        match?.let {
+            KeyDecoder(match.args).decodeSerializableValue(match.serializer)
+        }
+    } ?: HomeRoute
+
+    setContent {
+        val backStack = rememberNavBackStack(deepLinkKey)
+        // ... NavDisplay setup
+    }
+}
+```
+
+**Key points:**
+- `DeepLinkPattern` maps a URI pattern to a `NavKey` serializer, extracting `{path}` and `?query` arguments
+- `DeepLinkRequest` parses the incoming URI into path segments and query parameters
+- `DeepLinkMatcher` compares the request against each pattern
+- `KeyDecoder` uses `kotlinx.serialization` to decode matched arguments into the `NavKey`
+
+### Synthetic Back Stack
+
+When a deep link launches directly to a destination, build a synthetic back stack so Up/Back navigates naturally to parent screens:
+
+**1. Define parent relationships:**
+```kotlin
+interface DeepLinkKey : NavKey {
+    val parent: NavKey
+}
+
+@Serializable
+data object HomeRoute : NavKey
+
+@Serializable
+data object ProductListRoute : DeepLinkKey {
+    override val parent: NavKey = HomeRoute
+}
+
+@Serializable
+data class ProductDetail(val productId: String) : DeepLinkKey {
+    override val parent: NavKey = ProductListRoute
+}
+```
+
+**2. Build the synthetic back stack:**
+```kotlin
+fun buildSyntheticBackStack(deepLinkKey: NavKey): List<NavKey> = buildList {
+    var current: NavKey? = deepLinkKey
+    while (current != null) {
+        add(0, current)
+        current = (current as? DeepLinkKey)?.parent
+    }
+}
+```
+
+**3. Use with NavDisplay:**
+```kotlin
+val syntheticBackStack = buildSyntheticBackStack(deepLinkKey)
+
+setContent {
+    val backStack = rememberNavBackStack(*syntheticBackStack.toTypedArray())
+
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        entryProvider = entryProvider { /* ... */ }
+    )
+}
+```
+
+For `ProductDetail("abc")`, the back stack becomes: `[HomeRoute, ProductListRoute, ProductDetail("abc")]` — pressing Back walks through parents naturally.
+
+### Task Management
+
+Deep link behavior differs based on whether the Activity is started in a new task or the existing task:
+
+**Detect the task:**
+```kotlin
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+
+    val isNewTask = intent.flags and Intent.FLAG_ACTIVITY_NEW_TASK != 0
+    val deepLinkKey = parseDeepLink(intent)
+
+    if (isNewTask) {
+        // Build synthetic back stack for proper Up/Back
+        val syntheticBackStack = buildSyntheticBackStack(deepLinkKey)
+        // Use syntheticBackStack with rememberNavBackStack(...)
+    } else {
+        // Add deep link destination to existing back stack
+        // Use deepLinkKey directly with rememberNavBackStack(...)
+    }
+}
+```
+
+**Up button behavior on original task** — restart the Activity in a new task so Up navigates within the app:
+```kotlin
+fun navigateUp(deepLinkKey: NavKey, activity: Activity) {
+    val parentKey = (deepLinkKey as? DeepLinkKey)?.parent
+
+    val intent = Intent(activity, activity::class.java).apply {
+        if (parentKey is DeepLinkKey) {
+            data = parentKey.toDeepLinkUri()
+        }
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+    }
+
+    TaskStackBuilder.create(activity)
+        .addNextIntentWithParentStack(intent)
+        .startActivities()
+    activity.finish()
+}
+```
+
+**Summary:**
+
+| Scenario | Back | Up | Synthetic back stack? |
+|---|---|---|---|
+| New task | Parent screen | Parent screen | Yes, on Activity creation |
+| Existing task | Previous app/screen | Parent screen (restarts in new task) | Optional |
+
+**Guidelines:**
+- Up button never exits the app — disable it on the start destination
+- Deep linking simulates manual navigation via synthetic back stack
+- The start destination should never show an Up button
