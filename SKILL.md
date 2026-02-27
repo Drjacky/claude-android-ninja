@@ -20,6 +20,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Notifications & foreground services                  | [android-notifications.md](references/android-notifications.md) |
 | Data sync & offline-first patterns                   | [android-data-sync.md](references/android-data-sync.md)         |
 | Material 3 theming & dynamic colors                  | [android-theming.md](references/android-theming.md)             |
+| Navigation3 & adaptive navigation                    | [android-navigation.md](references/android-navigation.md)       |
 | Kotlin best practices                                | [kotlin-patterns.md](references/kotlin-patterns.md)             |
 | Coroutines best practices                            | [coroutines-patterns.md](references/coroutines-patterns.md)     |
 | Gradle & build configuration                         | [gradle-setup.md](references/gradle-setup.md)                   |
@@ -99,7 +100,8 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Monitor network state before syncing  
 
 **Setting up navigation?**
-→ Follow Navigation Coordination in [modularization.md](references/modularization.md)  
+→ Follow [android-navigation.md](references/android-navigation.md) for Navigation3 architecture, state management, and adaptive navigation  
+→ See [modularization.md](references/modularization.md) for feature module navigation components (Destination, Navigator, Graph)  
 → Configure navigation graph in the app module  
 → Use feature navigation destinations and navigator interfaces  
 
@@ -189,7 +191,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Migrating legacy code (LiveData, Fragments, etc.)?**
 → Replace LiveData with StateFlow using [coroutines-patterns.md](references/coroutines-patterns.md)  
 → Replace Fragments with Compose screens using [compose-patterns.md](references/compose-patterns.md)  
-→ Update navigation to Navigation3 using [modularization.md](references/modularization.md)  
+→ Update navigation to Navigation3 using [android-navigation.md](references/android-navigation.md)  
 → Follow [architecture.md](references/architecture.md) for modern MVVM patterns  
 
 **Optimizing Compose recomposition or stability?**

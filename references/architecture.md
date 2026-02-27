@@ -496,40 +496,8 @@ UI guidance centralized.
 
 ## Navigation
 
-### Navigation3 Architecture
-
-Implementation examples for `AppNavigation`, `AuthDestination`, `AuthNavigator`, and `AuthGraph` live in
-`references/modularization.md` to keep navigation wiring in one place.
-
-### When to Use Navigation3:
-- **All new Compose projects should use Navigation3** as it's the modern navigation API
-- Building responsive UIs for phones, tablets, foldables, or desktop
-- Need automatic navigation adaptation with `NavigationSuiteScaffold`
-- Want Material 3 adaptive navigation patterns and list-detail layouts
-- **Important**: Navigation3 is in active development; check current stability status before production use
-
-### Key Benefits of Navigation3 Architecture:
-
-1. **Feature Independence**: Features don't depend on each other; only app module coordinates navigation via `Navigator` interfaces
-2. **Type-Safe Navigation**: Sealed `Destination` classes with `createRoute()` functions
-3. **Testable Navigation**: `Navigator` interfaces allow easy mocking without NavController dependencies
-4. **Adaptive UI**: `NavigationSuiteScaffold` auto-switches between navigation bar, rail, and drawer based on window size class
-5. **Single Backstack**: One `NavHost` controls entire app flow within `NavigationSuiteScaffold`
-6. **Material 3 Integration**: Built-in support for Material 3 adaptive design with `NavigableListDetailPaneScaffold` and `NavigableSupportingPaneScaffold`
-7. **Modern API**: Latest navigation patterns including support for predictive back gestures
-8. **Multi-pane Support**: `NavigableListDetailPaneScaffold` and `NavigableSupportingPaneScaffold` for tablets and foldables
-9. **Predictive Back Gestures**: Built-in support for Android's predictive back gesture system (mandatory on API 36)
-10. **Compose-First Design**: Designed specifically for Jetpack Compose, not adapted from View system
-11. **`NavigableListDetailPaneScaffold`**: For tablet/foldable list-detail layouts with built-in navigation and predictive back
-12. **`NavigableSupportingPaneScaffold`**: For main + supporting content layouts
-13. **`NavHost` from `androidx.navigation3`**: The Navigation3 version of NavHost
-
-### Migration Note:
-If migrating from Navigation 2.x to Navigation3:
-1. Update imports from `androidx.navigation.*` to `androidx.navigation3.*`
-2. Use `NavigationSuiteScaffold` (it handles adaptive switching automatically)
-3. Update `NavHost` and `rememberNavController()` imports
-4. Use `NavigableListDetailPaneScaffold` / `NavigableSupportingPaneScaffold` for tablet-optimized layouts
+For Navigation3 architecture, type-safe routing, state management, adaptive navigation
+(`NavigationSuiteScaffold`), and migration guidance, see `references/android-navigation.md`.
 
 ## Complete Architecture Flow
 

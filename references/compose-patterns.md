@@ -92,7 +92,7 @@ fun LoginScreen(
 - **Adaptive Ready**: Designed for `NavigationSuiteScaffold` and responsive layouts
 
 Navigation setup, destination definitions, and navigator interfaces live in
-`references/modularization.md`.
+`references/android-navigation.md`.
 
 ## State Management
 
@@ -1545,7 +1545,8 @@ fun AuthEventCard(
 ## Related Guides
 
 - [Architecture Guide](architecture.md) - ViewModel patterns and state management
-- [Modularization Guide](modularization.md) - Feature modules and navigation
+- [Modularization Guide](modularization.md) - Feature modules and dependency rules
+- [Navigation Guide](android-navigation.md) - Navigation3 architecture and adaptive navigation
 - [Android Accessibility](android-accessibility.md) - Semantic properties and TalkBack support
 - [Android Theming](android-theming.md) - Material 3 theming, dynamic colors, typography
 - [Android i18n](android-i18n.md) - Localization, RTL support, and string resources

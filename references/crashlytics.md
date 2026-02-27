@@ -262,7 +262,7 @@ class MyApplication : Application() {
 
 Crashlytics breadcrumbs do not automatically include Compose destination names.
 Log screen transitions in the **app-level** `AppNavigation()` coordinator.
-See the centralized navigation setup in `references/modularization.md`.
+See the centralized navigation setup in `references/android-navigation.md`.
 
 ```kotlin
 @Composable

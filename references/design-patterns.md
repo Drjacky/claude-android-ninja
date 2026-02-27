@@ -1690,7 +1690,7 @@ class AppNavigator(private val navigator: Navigator) : ProfileNavigator, AuthNav
 - **Sealed classes** for exhaustive state modeling
 - **Result<T>** for type-safe error handling
 - **Flow/StateFlow** for reactive streams (see `references/coroutines-patterns.md`)
-- **Navigator interfaces** for cross-feature navigation (see `references/modularization.md`)
+- **Navigator interfaces** for cross-feature navigation (see `references/android-navigation.md`)
 - **Avoid**: LiveData, GlobalScope, god objects, premature abstraction, feature-to-feature dependencies
 
 Use patterns to solve real problems, not to add complexity.
