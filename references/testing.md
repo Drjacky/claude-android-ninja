@@ -1458,6 +1458,73 @@ class StabilityTest {
 **Note**: Use Compose Compiler reports (`composeStabilityAnalyzer` Gradle plugin) to verify stability
 at build time. See `references/gradle-setup.md` → "Compose Stability Analyzer".
 
+### Testing Deep Links
+
+**ADB commands:**
+```bash
+# Test HTTPS deep link
+adb shell am start -W -a android.intent.action.VIEW \
+    -d "https://example.com/products/abc123" \
+    com.example.app
+
+# Test custom scheme
+adb shell am start -W -a android.intent.action.VIEW \
+    -d "myapp://open/profile/user42" \
+    com.example.app
+
+# Test with query parameters
+adb shell am start -W -a android.intent.action.VIEW \
+    -d "https://example.com/search?query=shoes&category=footwear" \
+    com.example.app
+
+# Simulate new task (as if opened from another app)
+adb shell am start -W -a android.intent.action.VIEW \
+    --activity-new-task \
+    -d "https://example.com/products/abc123" \
+    com.example.app
+```
+
+**Unit test for deep link parsing:**
+```kotlin
+class DeepLinkParsingTest {
+
+    @Test
+    fun `product deep link parses productId correctly`() {
+        val uri = "https://example.com/products/abc123".toUri()
+        val request = DeepLinkRequest(uri)
+
+        val match = deepLinkPatterns.firstNotNullOfOrNull { pattern ->
+            DeepLinkMatcher(request, pattern).match()
+        }
+
+        assertThat(match).isNotNull()
+        val key = KeyDecoder(match!!.args)
+            .decodeSerializableValue(match.serializer)
+        assertThat(key).isEqualTo(ProductDetail(productId = "abc123"))
+    }
+
+    @Test
+    fun `invalid host is rejected`() {
+        val uri = "https://evil.com/products/abc123".toUri()
+        assertThat(DeepLinkValidator.validate(uri)).isFalse()
+    }
+
+    @Test
+    fun `synthetic back stack includes all parents`() {
+        val key = ProductDetail(productId = "abc123")
+        val stack = buildSyntheticBackStack(key)
+
+        assertThat(stack).containsExactly(
+            HomeRoute,
+            ProductListRoute,
+            ProductDetail(productId = "abc123")
+        ).inOrder()
+    }
+}
+```
+
+For deep link patterns, validation, and synthetic back stack setup, see `references/android-navigation.md` → "Deep Links".
+
 ## UI Tests
 
 ### Compose UI Tests for Auth Screen with Truth
