@@ -467,9 +467,9 @@ NavDisplay(
 ```
 
 **Parameters:**
-- `transitionSpec` — `ContentTransform` when content is added to back stack (navigating forward)
-- `popTransitionSpec` — `ContentTransform` when content is removed from back stack (navigating back)
-- `predictivePopTransitionSpec` — `ContentTransform` during predictive back gestures (Android 14+)
+- `transitionSpec` - `ContentTransform` when content is added to back stack (navigating forward)
+- `popTransitionSpec` - `ContentTransform` when content is removed from back stack (navigating back)
+- `predictivePopTransitionSpec` - `ContentTransform` during predictive back gestures (Android 14+)
 
 ### Per-Entry Overrides
 
@@ -503,9 +503,9 @@ entry<ScreenC>(
 ```
 
 **Metadata keys** (combine with `+`):
-- `NavDisplay.transitionSpec { ... }` — forward animation for this entry
-- `NavDisplay.popTransitionSpec { ... }` — back animation for this entry
-- `NavDisplay.predictivePopTransitionSpec { ... }` — predictive back animation for this entry
+- `NavDisplay.transitionSpec { ... }` - forward animation for this entry
+- `NavDisplay.popTransitionSpec { ... }` - back animation for this entry
+- `NavDisplay.predictivePopTransitionSpec { ... }` - predictive back animation for this entry
 
 Per-entry metadata overrides the global `NavDisplay` transitions.
 
@@ -526,3 +526,246 @@ slideInVertically(initialOffsetY = { it }) togetherWith
 // No animation
 EnterTransition.None togetherWith ExitTransition.None
 ```
+
+## Scenes & Custom Layouts
+
+A `Scene` is the fundamental rendering unit in Navigation 3. It renders one or more `NavEntry` instances, allowing single-pane, multi-pane, dialog, and bottom sheet layouts. A `SceneStrategy` determines how back stack entries are arranged into a `Scene`.
+
+### Scene Interface
+
+```kotlin
+interface Scene<T : Any> {
+    val key: Any
+    val entries: List<NavEntry<T>>
+    val previousEntries: List<NavEntry<T>>
+    val content: @Composable () -> Unit
+}
+```
+
+- `key` - unique identifier driving top-level animation when the Scene changes
+- `entries` - the `NavEntry` objects this Scene displays
+- `previousEntries` - entries for calculating predictive back state
+- `content` - composable rendering the Scene's entries
+
+### SceneStrategy
+
+A `SceneStrategy` decides whether it can create a `Scene` from the current back stack entries:
+
+```kotlin
+interface SceneStrategy<T : Any> {
+    fun SceneStrategyScope<T>.calculateScene(
+        entries: List<NavEntry<T>>
+    ): Scene<T>?
+}
+```
+
+Returns `null` if it cannot handle the entries, letting the next strategy try. Built-in strategies:
+- `SinglePaneSceneStrategy` - displays the last entry full-screen (default)
+- `DialogSceneStrategy` - renders entries marked as dialogs in an overlay
+
+### Dialog Navigation
+
+Use `DialogSceneStrategy` to show entries as dialogs:
+
+```kotlin
+import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.dropUnlessResumed
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.scene.DialogSceneStrategy
+import androidx.navigation3.ui.NavDisplay
+
+@Composable
+fun DialogExample() {
+    val backStack = rememberNavBackStack(HomeRoute)
+    val dialogStrategy = remember { DialogSceneStrategy<NavKey>() }
+
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        sceneStrategy = dialogStrategy,
+        entryProvider = entryProvider {
+            entry<HomeRoute> {
+                HomeScreen(
+                    onShowDialog = dropUnlessResumed {
+                        backStack.add(ConfirmRoute("Are you sure?"))
+                    }
+                )
+            }
+            entry<ConfirmRoute>(
+                metadata = DialogSceneStrategy.dialog(
+                    DialogProperties(dismissOnClickOutside = true)
+                )
+            ) { key ->
+                ConfirmDialog(
+                    message = key.message,
+                    onDismiss = { backStack.removeLastOrNull() }
+                )
+            }
+        }
+    )
+}
+```
+
+**Key points:**
+- Pass `DialogSceneStrategy<NavKey>()` as `sceneStrategy` to `NavDisplay`
+- Mark dialog entries with `metadata = DialogSceneStrategy.dialog(DialogProperties(...))`
+- The dialog renders as an overlay on top of the previous entry
+- Use `dropUnlessResumed` to prevent double-clicks during transitions
+
+### Custom Scene: List-Detail Layout
+
+Create a custom `Scene` and `SceneStrategy` for adaptive layouts (e.g., list-detail on wide screens):
+
+```kotlin
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.scene.Scene
+import androidx.navigation3.scene.SceneStrategy
+import androidx.window.core.layout.WIDTH_DP_MEDIUM_LOWER_BOUND
+import androidx.window.core.layout.WindowSizeClass
+
+class ListDetailScene<T : Any>(
+    override val key: Any,
+    override val previousEntries: List<NavEntry<T>>,
+    val listEntry: NavEntry<T>,
+    val detailEntry: NavEntry<T>,
+) : Scene<T> {
+    override val entries: List<NavEntry<T>> = listOf(listEntry, detailEntry)
+    override val content: @Composable (() -> Unit) = {
+        Row(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.weight(0.4f)) {
+                listEntry.Content()
+            }
+            Column(modifier = Modifier.weight(0.6f)) {
+                detailEntry.Content()
+            }
+        }
+    }
+}
+
+class ListDetailSceneStrategy<T : Any>(
+    val windowSizeClass: WindowSizeClass
+) : SceneStrategy<T> {
+
+    override fun SceneStrategyScope<T>.calculateScene(
+        entries: List<NavEntry<T>>
+    ): Scene<T>? {
+        if (!windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)) {
+            return null
+        }
+
+        val detailEntry = entries.lastOrNull()
+            ?.takeIf { it.metadata.containsKey(DETAIL_KEY) } ?: return null
+        val listEntry = entries.findLast {
+            it.metadata.containsKey(LIST_KEY)
+        } ?: return null
+
+        return ListDetailScene(
+            key = listEntry.contentKey,
+            previousEntries = entries.dropLast(1),
+            listEntry = listEntry,
+            detailEntry = detailEntry
+        )
+    }
+
+    companion object {
+        internal const val LIST_KEY = "ListDetailScene-List"
+        internal const val DETAIL_KEY = "ListDetailScene-Detail"
+
+        fun listPane() = mapOf(LIST_KEY to true)
+        fun detailPane() = mapOf(DETAIL_KEY to true)
+    }
+}
+
+@Composable
+fun <T : Any> rememberListDetailSceneStrategy(): ListDetailSceneStrategy<T> {
+    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    return remember(windowSizeClass) { ListDetailSceneStrategy(windowSizeClass) }
+}
+```
+
+**Usage:**
+```kotlin
+val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>()
+
+NavDisplay(
+    backStack = backStack,
+    onBack = { backStack.removeLastOrNull() },
+    sceneStrategy = listDetailStrategy,
+    entryProvider = entryProvider {
+        entry<ConversationList>(
+            metadata = ListDetailSceneStrategy.listPane()
+        ) {
+            ConversationListScreen(onSelect = { id ->
+                backStack.removeIf { it is ConversationDetail }
+                backStack.add(ConversationDetail(id))
+            })
+        }
+        entry<ConversationDetail>(
+            metadata = ListDetailSceneStrategy.detailPane()
+        ) { key ->
+            ConversationDetailScreen(conversationId = key.id)
+        }
+    }
+)
+```
+
+On wide screens, list and detail show side-by-side (40/60 split). On narrow screens, the strategy returns `null` and the default `SinglePaneSceneStrategy` takes over.
+
+### Material3 Adaptive Scenes
+
+For production list-detail and supporting-pane layouts, use the pre-built Material3 Adaptive scenes from `androidx.compose.material3.adaptive:adaptive-navigation3`:
+
+```kotlin
+import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
+import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
+
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Composable
+fun MaterialListDetailExample() {
+    val backStack = rememberNavBackStack(ProductList)
+    val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>()
+
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        sceneStrategy = listDetailStrategy,
+        entryProvider = entryProvider {
+            entry<ProductList>(
+                metadata = ListDetailSceneStrategy.listPane(
+                    detailPlaceholder = {
+                        Text("Select a product from the list")
+                    }
+                )
+            ) {
+                ProductListScreen(onProductClick = { id ->
+                    backStack.add(ProductDetail(id))
+                })
+            }
+            entry<ProductDetail>(
+                metadata = ListDetailSceneStrategy.detailPane()
+            ) { key ->
+                ProductDetailScreen(productId = key.id)
+            }
+            entry<ProductProfile>(
+                metadata = ListDetailSceneStrategy.extraPane()
+            ) {
+                ProductProfileScreen()
+            }
+        }
+    )
+}
+```
+
+**Material3 metadata helpers:**
+- `ListDetailSceneStrategy.listPane(detailPlaceholder = { ... })` - marks entry as list pane, with optional placeholder when no detail is selected
+- `ListDetailSceneStrategy.detailPane()` - marks entry as detail pane
+- `ListDetailSceneStrategy.extraPane()` - marks entry as extra pane (three-pane layout)
+
+The Material3 `ListDetailSceneStrategy` automatically handles pane arrangement, predictive back, and window size adaptation. For supporting-pane layouts, use `rememberSupportingPaneSceneStrategy()` with matching metadata.
