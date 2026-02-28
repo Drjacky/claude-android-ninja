@@ -21,6 +21,9 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 8. [Animation](#animation)
 9. [Side Effects](#side-effects)
 10. [Modifiers](#modifiers)
+11. [CompositionLocal](#compositionlocal)
+12. [Lists & Scrolling](#lists--scrolling)
+13. [View Composition Rules](#view-composition-rules)
 
 ## Screen Architecture
 
@@ -392,6 +395,109 @@ Key points:
 - Use `flowWithLifecycle` for a single side-effect flow
 - Use `repeatOnLifecycle` for multiple flows or complex scoped operations
 - Both prevent leaked collectors and wasted background work during lifecycle changes
+
+### Primitive State Specializations
+
+Avoid boxing overhead - use type-specific state holders:
+
+```kotlin
+var count by remember { mutableIntStateOf(0) }       // not mutableStateOf(0)
+var progress by remember { mutableFloatStateOf(0f) }  // not mutableStateOf(0f)
+var timestamp by remember { mutableLongStateOf(0L) }  // not mutableStateOf(0L)
+var enabled by remember { mutableStateOf(true) }      // Boolean has no specialization
+```
+
+### snapshotFlow - Compose State to Flow
+
+Converts Compose state reads into a Kotlin Flow. Use inside `LaunchedEffect` to react to state changes with Flow operators (debounce, distinctUntilChanged, filter).
+
+```kotlin
+@Composable
+fun SearchScreen(viewModel: SearchViewModel) {
+    var query by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { query }
+            .debounce(300)
+            .distinctUntilChanged()
+            .collect { viewModel.search(it) }
+    }
+
+    TextField(value = query, onValueChange = { query = it })
+}
+```
+
+```kotlin
+// Bad: accessing state directly in LaunchedEffect doesn't track changes
+LaunchedEffect(Unit) {
+    viewModel.search(query) // captures initial value only
+}
+
+// Bad: using query as key restarts the entire effect on every keystroke
+LaunchedEffect(query) {
+    delay(300) // crude debounce, cancelled on every change
+    viewModel.search(query)
+}
+```
+
+### SnapshotStateList and SnapshotStateMap
+
+Observable collections that trigger recomposition on structural changes.
+
+```kotlin
+val items = remember { mutableStateListOf<Item>() }
+val cache = remember { mutableStateMapOf<String, User>() }
+
+// These trigger recomposition:
+items.add(Item(1, "First"))
+items[0] = Item(1, "Updated")
+items.removeAt(0)
+cache["key"] = user
+```
+
+**Gotcha:** In-place mutation of elements does NOT trigger recomposition:
+
+```kotlin
+// Bad: mutating in place - Compose won't see the change
+items[0].name = "Updated"
+
+// Good: replace with copy
+items[0] = items[0].copy(name = "Updated")
+```
+
+For ViewModel-level state, prefer `StateFlow<PersistentList<T>>` (see [Persistent Collections](#persistent-collections-for-performance)) over `SnapshotStateList`. Use `SnapshotStateList` only for UI-local state.
+
+### rememberSaveable with Custom Types
+
+`rememberSaveable` survives process death and configuration changes. Custom types require a `Saver` or `@Parcelize`:
+
+```kotlin
+// Option 1: Saver (pure Kotlin, no Android dependency)
+data class FilterState(val category: String, val sortOrder: String)
+
+val filterSaver = Saver<FilterState, List<String>>(
+    save = { listOf(it.category, it.sortOrder) },
+    restore = { FilterState(category = it[0], sortOrder = it[1]) }
+)
+
+var filter by rememberSaveable(stateSaver = filterSaver) {
+    mutableStateOf(FilterState("all", "newest"))
+}
+
+// Option 2: @Parcelize (requires kotlin-parcelize plugin)
+@Parcelize
+data class FilterState(val category: String, val sortOrder: String) : Parcelable
+
+var filter by rememberSaveable { mutableStateOf(FilterState("all", "newest")) }
+
+// Option 3: mapSaver for quick key-value serialization
+val filterSaver = mapSaver(
+    save = { mapOf("category" to it.category, "sortOrder" to it.sortOrder) },
+    restore = { FilterState(it["category"] as String, it["sortOrder"] as String) }
+)
+```
+
+Use `rememberSaveable` for user input, form state, scroll positions, and selected tabs. Use plain `remember` for transient UI state (expanded/collapsed, hover).
 
 ### Edge-to-Edge (Mandatory on API 36)
 
@@ -2508,6 +2614,410 @@ fun GoodCard(modifier: Modifier = Modifier) {
     Box(modifier.padding(16.dp).background(Color.Blue)) { }
 }
 ```
+
+## CompositionLocal
+
+Implicit data passing down the composition tree without threading through every parameter. Use for configuration-like values (theme, locale, density), not for general dependency injection.
+
+### compositionLocalOf vs staticCompositionLocalOf
+
+```kotlin
+// compositionLocalOf: use when value changes and consumers need updates
+val LocalUserPreferences = compositionLocalOf<UserPreferences> {
+    error("UserPreferences not provided")
+}
+
+// staticCompositionLocalOf: use when value rarely/never changes (no change tracking overhead)
+val LocalAnalytics = staticCompositionLocalOf<Analytics> {
+    error("Analytics not provided")
+}
+
+// compositionLocalWithComputedDefaultOf: computed default based on other locals
+val LocalContentAlpha = compositionLocalWithComputedDefaultOf<Float> { 1f }
+```
+
+| Type | Recomposition Behavior | Use When |
+|------|----------------------|----------|
+| `compositionLocalOf` | All consumers recompose on value change | Theme colors, user preferences, frequently changing config |
+| `staticCompositionLocalOf` | Only direct readers update | Analytics, loggers, app version, static config |
+| `compositionLocalWithComputedDefaultOf` | Computed default from other locals | Derived configuration values |
+
+### Providing and Reading Values
+
+```kotlin
+// Provide values
+CompositionLocalProvider(
+    LocalUserPreferences provides userPrefs,
+    LocalAnalytics provides analytics
+) {
+    AppContent()
+}
+
+// Read values
+@Composable
+fun UserAvatar() {
+    val prefs = LocalUserPreferences.current
+    // use prefs...
+}
+```
+
+Values are scoped to descendants. Inner providers override outer ones.
+
+### Built-In CompositionLocals
+
+| Local | Type | Access Pattern |
+|-------|------|---------------|
+| `LocalContext` | `Context` | `val context = LocalContext.current` |
+| `LocalConfiguration` | `Configuration` | Screen size, orientation, density |
+| `LocalDensity` | `Density` | dp/px conversions |
+| `LocalLayoutDirection` | `LayoutDirection` | LTR/RTL |
+| `LocalLifecycleOwner` | `LifecycleOwner` | Activity/Fragment lifecycle |
+| `LocalView` | `View` | Underlying Android View |
+
+### When to Use vs When NOT to Use
+
+**Use CompositionLocal for:**
+- Values needed by many descendants across the tree
+- Configuration data (theme, locale, feature flags)
+- Avoiding deep parameter drilling (5+ levels)
+
+**Do NOT use CompositionLocal for:**
+- Data only 1-2 levels deep - pass as parameters
+- Frequently changing values that need precise control - use State/ViewModel
+- General dependency injection - use Hilt
+
+### CompositionLocal Anti-Patterns
+
+```kotlin
+// Bad: using CompositionLocal as generic DI container
+val LocalEverything = compositionLocalOf { AppContainer() }
+
+// Bad: storing MutableState in CompositionLocal - changes won't propagate correctly
+val LocalCounter = compositionLocalOf { mutableStateOf(0) }
+
+// Good: provide the value, not the State
+val LocalCount = compositionLocalOf { 0 }
+@Composable
+fun Parent() {
+    var count by remember { mutableIntStateOf(0) }
+    CompositionLocalProvider(LocalCount provides count) {
+        Child()
+    }
+}
+```
+
+## Lists & Scrolling
+
+### contentType for Recycling Optimization
+
+When rendering different item types, `contentType` enables layout reuse between items of the same type:
+
+```kotlin
+sealed class FeedItem {
+    data class Header(val title: String) : FeedItem()
+    data class Post(val id: String, val content: String) : FeedItem()
+    data class Ad(val id: String) : FeedItem()
+}
+
+LazyColumn {
+    items(
+        items = feedItems,
+        key = { it.id },
+        contentType = { item ->
+            when (item) {
+                is FeedItem.Header -> "header"
+                is FeedItem.Post -> "post"
+                is FeedItem.Ad -> "ad"
+            }
+        }
+    ) { item ->
+        when (item) {
+            is FeedItem.Header -> HeaderRow(item)
+            is FeedItem.Post -> PostCard(item)
+            is FeedItem.Ad -> AdBanner(item)
+        }
+    }
+}
+```
+
+Without `contentType`, all items share one pool. With it, items reuse layouts efficiently.
+
+### LazyListState - Programmatic Scrolling
+
+```kotlin
+val listState = rememberLazyListState()
+val scope = rememberCoroutineScope()
+
+LazyColumn(state = listState) {
+    items(items, key = { it.id }) { item -> ItemRow(item) }
+}
+
+// Scroll to item
+Button(onClick = { scope.launch { listState.animateScrollToItem(0) } }) {
+    Text("Scroll to top")
+}
+
+// Read scroll position
+val firstVisibleIndex = listState.firstVisibleItemIndex
+val firstVisibleOffset = listState.firstVisibleItemScrollOffset
+```
+
+Use `derivedStateOf` for scroll-dependent UI to avoid recomposing the entire list:
+
+```kotlin
+val showScrollToTop by remember {
+    derivedStateOf { listState.firstVisibleItemIndex > 5 }
+}
+
+if (showScrollToTop) {
+    FloatingActionButton(onClick = { scope.launch { listState.animateScrollToItem(0) } }) {
+        Icon(painterResource(R.drawable.ic_arrow_up), "Scroll to top")
+    }
+}
+```
+
+### Sticky Headers
+
+```kotlin
+LazyColumn {
+    groupedItems.forEach { (category, items) ->
+        stickyHeader(key = "header-$category") {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = category,
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+        }
+        items(items, key = { it.id }) { item ->
+            ItemRow(item)
+        }
+    }
+}
+```
+
+### Grids
+
+```kotlin
+// Fixed columns
+LazyVerticalGrid(columns = GridCells.Fixed(3)) {
+    items(items, key = { it.id }) { GridItem(it) }
+}
+
+// Adaptive - fills available space with min column width
+LazyVerticalGrid(columns = GridCells.Adaptive(minSize = 120.dp)) {
+    items(items, key = { it.id }) { GridItem(it) }
+}
+```
+
+Prefer `GridCells.Adaptive` for responsive layouts.
+
+### Staggered Grid
+
+Pinterest-style layout with variable heights:
+
+```kotlin
+LazyVerticalStaggeredGrid(
+    columns = StaggeredGridCells.Fixed(2),
+    contentPadding = PaddingValues(16.dp),
+    verticalItemSpacing = 8.dp,
+    horizontalArrangement = Arrangement.spacedBy(8.dp)
+) {
+    items(images, key = { it.id }) { image ->
+        AsyncImage(
+            model = image.url,
+            contentDescription = image.description,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+```
+
+### Pager
+
+```kotlin
+val pagerState = rememberPagerState(pageCount = { pages.size })
+
+HorizontalPager(state = pagerState) { page ->
+    PageContent(pages[page])
+}
+
+// Programmatic scroll
+val scope = rememberCoroutineScope()
+Button(onClick = { scope.launch { pagerState.animateScrollToPage(2) } }) {
+    Text("Go to page 3")
+}
+```
+
+`VerticalPager` works the same for vertical swiping. Replaces deprecated `accompanist-pager`.
+
+### Nested Scrolling Pitfalls
+
+```kotlin
+// Bad: scrollable modifier inside LazyColumn - two scroll containers fight
+LazyColumn {
+    item {
+        Column(Modifier.verticalScroll(rememberScrollState())) {
+            Text("Double scrollable!")
+        }
+    }
+}
+
+// OK: nested LazyRow inside LazyColumn (different scroll axes)
+LazyColumn {
+    item {
+        LazyRow {
+            items(horizontalItems) { HorizontalCard(it) }
+        }
+    }
+}
+
+// For complex same-axis nesting, use nestedScroll:
+val nestedScrollConnection = remember {
+    object : NestedScrollConnection {
+        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+            return Offset.Zero // custom handling
+        }
+    }
+}
+LazyColumn(Modifier.nestedScroll(nestedScrollConnection)) {
+    items(100) { Text("Item $it") }
+}
+```
+
+### Lists Rules
+
+- Always provide stable, unique `key` for mutable lists (IDs, not indices)
+- Use `contentType` for multi-type lists
+- Use `Column`/`Row` for small fixed lists (< 10 items) - `LazyColumn` is overkill
+- Never use indices as keys - list mutations corrupt item state
+- Use `derivedStateOf` for scroll-dependent UI
+
+## View Composition Rules
+
+### Composable Naming
+
+- **PascalCase nouns** for UI components: `UserCard`, `LoginScreen`, `CheckboxWithLabel`
+- **PascalCase verbs** for effect-only composables: `LaunchedEffect`, `TrackScreenView`
+- Never ambiguous names like `HandleLogin` - is it UI or an effect?
+
+### Slot Pattern
+
+Accept `@Composable` lambda parameters for flexible, reusable containers:
+
+```kotlin
+@Composable
+fun SectionCard(
+    title: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    actions: @Composable RowScope.() -> Unit = {},
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(modifier = modifier) {
+        Column(Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                title()
+                Row(content = actions)
+            }
+            Spacer(Modifier.height(8.dp))
+            content()
+        }
+    }
+}
+
+// Usage - caller controls content
+SectionCard(
+    title = { Text("Recent Activity", style = MaterialTheme.typography.titleMedium) },
+    actions = {
+        IconButton(onClick = { }) {
+            Icon(painterResource(R.drawable.ic_filter), "Filter")
+        }
+    }
+) {
+    ActivityList(items = events)
+}
+```
+
+Pass `@Composable` lambdas, not pre-composed values. Optional slots use nullable lambdas with `?.invoke()`.
+
+### Never Return Values from Composables
+
+Composables execute during composition at unpredictable times. Always use callbacks:
+
+```kotlin
+// Bad: composables don't return values
+@Composable
+fun UserInput(): String {
+    var text by remember { mutableStateOf("") }
+    TextField(value = text, onValueChange = { text = it })
+    return text
+}
+
+// Good: callback pattern
+@Composable
+fun UserInput(onValueChange: (String) -> Unit) {
+    var text by remember { mutableStateOf("") }
+    TextField(
+        value = text,
+        onValueChange = {
+            text = it
+            onValueChange(it)
+        }
+    )
+}
+```
+
+### Screen-Level Composable Structure
+
+Screens are a thin ViewModel integration layer. Keep ViewModel at screen level only - never pass to child composables:
+
+```kotlin
+// Screen composable: connects ViewModel to pure UI
+@Composable
+fun ProductDetailScreen(viewModel: ProductDetailViewModel = hiltViewModel()) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    ProductDetailContent(uiState = uiState, onAction = viewModel::onAction)
+}
+
+// Content composable: pure, testable, previewable
+@Composable
+private fun ProductDetailContent(
+    uiState: ProductUiState,
+    onAction: (ProductAction) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Pure UI rendering - no ViewModel dependency
+}
+
+// Bad: passing ViewModel to children
+@Composable
+fun ProductCard(viewModel: ProductDetailViewModel) { } // couples child to ViewModel
+
+// Good: pass only data
+@Composable
+fun ProductCard(product: Product, onClick: () -> Unit) { }
+```
+
+### Extraction Guidelines
+
+**Extract when:**
+- Reused in multiple places
+- Composable exceeds ~50 lines
+- Independent concern (header, form, list item)
+- Needs independent testing/preview
+
+**Don't extract when:**
+- Single use and under ~10 lines (single `Text()` or `Icon()`)
+- Would require passing 5+ parameters (over-extraction)
+- Tightly coupled to parent logic
 
 ## Related Guides
 
