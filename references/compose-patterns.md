@@ -10,6 +10,7 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 **Internationalization:** Use string resources for all text. See `references/android-i18n.md` for localization, RTL support, and plurals.
 
 ## Table of Contents
+
 1. [Screen Architecture](#screen-architecture)
 2. [State Management](#state-management)
 3. [Component Patterns](#component-patterns)
@@ -17,6 +18,7 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 5. [Theming & Design System](#theming--design-system)
 6. [Previews & Testing](#previews--testing)
 7. [Performance Optimization](#performance-optimization)
+8. [Animation](#animation)
 
 ## Screen Architecture
 
@@ -85,6 +87,7 @@ fun LoginScreen(
 ```
 
 ### Benefits with Our Architecture:
+
 - **Feature Isolation**: Screens are self-contained within feature modules
 - **Testable Components**: Pure UI without ViewModel dependencies
 - **Navigation Decoupling**: Screens call Navigator interfaces, not NavController directly
@@ -382,6 +385,7 @@ fun AuthScreen(
 ```
 
 Key points:
+
 - Use `collectAsStateWithLifecycle()` for state that drives UI
 - Use `flowWithLifecycle` for a single side-effect flow
 - Use `repeatOnLifecycle` for multiple flows or complex scoped operations
@@ -416,6 +420,7 @@ class MainActivity : ComponentActivity() {
 ```
 
 **Key requirements:**
+
 - Call `enableEdgeToEdge()` in `onCreate()` before `setContent`
 - Use `Scaffold` which provides `innerPadding` that accounts for system bars
 - Apply `innerPadding` to your content to avoid overlap with status bar and navigation bar
@@ -437,6 +442,7 @@ fun ScrollableContentWithInsets(modifier: Modifier = Modifier) {
 ```
 
 **Do NOT:**
+
 - Set `fitsSystemWindows` in XML
 - Use `windowOptOutEdgeToEdgeEnforcement` -- it is disabled on API 36
 - Assume the content area excludes system bars
@@ -446,6 +452,7 @@ fun ScrollableContentWithInsets(modifier: Modifier = Modifier) {
 Starting with Android 16 (API 36), predictive back system animations are enabled by default. `onBackPressed` is no longer called and `KeyEvent.KEYCODE_BACK` is not dispatched.
 
 **Migration requirements:**
+
 - Use `BackHandler` from `androidx.activity.compose` for all back handling
 - Use `OnBackInvokedCallback` for non-Compose Activity/Fragment code
 - Do **not** set `android:enableOnBackInvokedCallback="false"` as a permanent fix -- this is only a temporary escape hatch
@@ -479,6 +486,7 @@ class MyActivity : ComponentActivity() {
 ```
 
 **Do NOT:**
+
 - Override `onBackPressed()` -- it is no longer called on API 36
 - Dispatch `KeyEvent.KEYCODE_BACK` -- it is no longer dispatched
 - Use `android:enableOnBackInvokedCallback="false"` as a permanent solution
@@ -488,16 +496,19 @@ class MyActivity : ComponentActivity() {
 Starting with Android 16 (API 36), orientation, resizability, and aspect ratio restrictions are ignored on displays with smallest width >= 600dp. Apps fill the entire display window regardless of declared constraints.
 
 **What is ignored on large screens:**
+
 - `screenOrientation` manifest attribute
 - `resizableActivity="false"`
 - `minAspectRatio` / `maxAspectRatio`
 - `setRequestedOrientation()` / `getRequestedOrientation()`
 
 **Exceptions:**
+
 - Games (based on `android:appCategory="game"`)
 - Screens smaller than `sw600dp`
 
 **Build adaptive layouts by default:**
+
 - Use `WindowSizeClass` to adapt layouts to any screen size
 - Use `NavigationSuiteScaffold` for responsive navigation (auto-switches bar/rail/drawer)
 - Use `NavigableListDetailPaneScaffold` for list-detail patterns (built-in nav + predictive back)
@@ -506,6 +517,7 @@ Starting with Android 16 (API 36), orientation, resizability, and aspect ratio r
 - Test on tablets, foldables, and desktop windowing modes
 
 **Dependencies** (all included in the `adaptive` bundle):
+
 ```kotlin
 implementation(libs.bundles.adaptive)
 ```
@@ -559,6 +571,7 @@ fun ImageDetailScreen(
 **Common Use Cases:**
 
 1. **Unsaved Changes Warning**
+
 ```kotlin
 @Composable
 fun FormScreen(
@@ -597,7 +610,8 @@ fun FormScreen(
 }
 ```
 
-2. **Multi-Step Flow Navigation**
+1. **Multi-Step Flow Navigation**
+
 ```kotlin
 @Composable
 fun OnboardingScreen(
@@ -623,7 +637,8 @@ fun OnboardingScreen(
 }
 ```
 
-3. **Bottom Sheet or Modal State**
+1. **Bottom Sheet or Modal State**
+
 ```kotlin
 @Composable
 fun ScreenWithSheet(
@@ -655,6 +670,7 @@ fun ScreenWithSheet(
 ```
 
 **Key Points:**
+
 - **Nested handlers**: Innermost enabled `BackHandler` takes precedence
 - **Conditional interception**: Use `enabled` parameter to control when back is intercepted
 - **Lifecycle-aware**: Automatically cleaned up when composable leaves composition
@@ -1222,13 +1238,14 @@ fun LoginScreenAllStatesPreview(
 Compose can skip recomposition when inputs are stable. Use these annotations to help Compose's compiler understand stability contracts:
 
 **Important:** `@Immutable` and `@Stable` come from `androidx.compose.runtime`. To use them in domain models:
+
 - **Option 1**: Make your domain module depend on `androidx.compose.runtime` (it's a Kotlin-only library, no Android dependencies):
   ```kotlin
   // core/domain/build.gradle.kts
   plugins {
       alias(libs.plugins.app.android.library)  // or app.jvm.library
   }
-  
+
   dependencies {
       implementation(platform(libs.androidx.compose.bom))
       implementation(libs.androidx.compose.runtime)  // For @Immutable/@Stable
@@ -1348,13 +1365,15 @@ data class Config(
 
 #### Decision Matrix
 
+
 | Type Characteristics           | Annotation   | Example                                             |
-|--------------------------------|--------------|-----------------------------------------------------|
+| ------------------------------ | ------------ | --------------------------------------------------- |
 | All `val`, deeply immutable    | `@Immutable` | `data class User(val id: String, val name: String)` |
 | Mutable with `mutableStateOf`  | `@Stable`    | `var count by mutableStateOf(0)`                    |
 | Mutable with `StateFlow`       | `@Stable`    | `val state: StateFlow<T>`                           |
 | Interface with stable contract | `@Stable`    | `interface Repository`                              |
 | Regular mutable class          | **None**     | Let Compose treat as unstable                       |
+
 
 #### Persistent Collections for Performance
 
@@ -1542,6 +1561,402 @@ fun AuthEventCard(
 ```
 
 **Key takeaway:** Start simple. Only optimize if profiling shows actual performance issues. Premature optimization adds complexity without benefit.
+
+## Animation
+
+### State-Based Animations
+
+#### animate*AsState
+
+Animate individual properties by targeting a value. The animation runs when the target changes.
+
+```kotlin
+val size by animateDpAsState(
+    targetValue = if (isExpanded) 200.dp else 100.dp,
+    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+    label = "size"
+)
+
+Box(modifier = Modifier.size(size))
+```
+
+Common variants:
+
+```kotlin
+val color by animateColorAsState(targetValue = targetColor, label = "color")
+val alpha by animateFloatAsState(targetValue = if (visible) 1f else 0f, label = "alpha")
+val offset by animateIntOffsetAsState(targetValue = IntOffset(10, 20), label = "offset")
+```
+
+Always provide the `label` parameter - it enables debugging in Layout Inspector and animation preview tools.
+
+#### AnimatedVisibility
+
+Controls appear/disappear animations with enter and exit transitions.
+
+```kotlin
+var visible by remember { mutableStateOf(true) }
+
+AnimatedVisibility(
+    visible = visible,
+    enter = slideInHorizontally(initialOffsetX = { -it }) + fadeIn(),
+    exit = slideOutHorizontally(targetOffsetX = { -it }) + fadeOut()
+) {
+    Text("Animated content")
+}
+```
+
+Built-in transitions (combine with `+`):
+
+- `slideInVertically` / `slideOutVertically`
+- `slideInHorizontally` / `slideOutHorizontally`
+- `expandVertically` / `shrinkVertically`
+- `expandHorizontally` / `shrinkHorizontally`
+- `fadeIn` / `fadeOut`
+- `scaleIn` / `scaleOut`
+
+Custom animation specs per transition:
+
+```kotlin
+AnimatedVisibility(
+    visible = visible,
+    enter = slideInVertically(
+        initialOffsetY = { fullHeight -> fullHeight },
+        animationSpec = spring()
+    ),
+    exit = slideOutVertically(
+        targetOffsetY = { fullHeight -> fullHeight },
+        animationSpec = tween(durationMillis = 300)
+    )
+) {
+    Box(Modifier.fillMaxWidth().height(100.dp).background(MaterialTheme.colorScheme.primary))
+}
+```
+
+#### AnimatedContent
+
+Replace content with smooth transitions between different states.
+
+```kotlin
+var count by remember { mutableIntStateOf(0) }
+
+AnimatedContent(
+    targetState = count,
+    transitionSpec = {
+        slideInVertically { it } + fadeIn() togetherWith
+            slideOutVertically { -it } + fadeOut() using
+            SizeTransform(clip = false)
+    },
+    label = "counter"
+) { target ->
+    Text("Count: $target", style = MaterialTheme.typography.headlineLarge)
+}
+```
+
+`SizeTransform` animates container size smoothly during content changes. Use `togetherWith` to pair enter and exit transitions.
+
+#### Crossfade
+
+Simple content swap with fade effect. Lightweight alternative to `AnimatedContent` when you only need a fade.
+
+```kotlin
+var showFirst by remember { mutableStateOf(true) }
+
+Crossfade(targetState = showFirst, label = "crossfade") { state ->
+    if (state) {
+        Text("First screen")
+    } else {
+        Text("Second screen")
+    }
+}
+```
+
+### Coordinated Animations
+
+#### updateTransition
+
+Coordinate multiple animated values with a single state change. All animations run in sync.
+
+```kotlin
+var expanded by remember { mutableStateOf(false) }
+val transition = updateTransition(targetState = expanded, label = "expand")
+
+val size by transition.animateDp(label = "size") { if (it) 200.dp else 100.dp }
+val color by transition.animateColor(label = "color") {
+    if (it) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+}
+val cornerRadius by transition.animateDp(label = "corner") { if (it) 16.dp else 8.dp }
+
+Box(
+    modifier = Modifier
+        .size(size)
+        .clip(RoundedCornerShape(cornerRadius))
+        .background(color)
+        .clickable { expanded = !expanded }
+)
+```
+
+Use for complex components with multiple animated properties that must stay synchronized.
+
+#### rememberInfiniteTransition
+
+Create looping animations for loading indicators and pulsing effects.
+
+```kotlin
+val infiniteTransition = rememberInfiniteTransition(label = "loading")
+
+val alpha by infiniteTransition.animateFloat(
+    initialValue = 0.3f,
+    targetValue = 1f,
+    animationSpec = infiniteRepeatable(
+        animation = tween(1000),
+        repeatMode = RepeatMode.Reverse
+    ),
+    label = "pulse"
+)
+
+Box(
+    modifier = Modifier
+        .size(48.dp)
+        .alpha(alpha)
+        .background(MaterialTheme.colorScheme.primary, CircleShape)
+)
+```
+
+Runs continuously until the composable leaves composition.
+
+### Imperative Animation Control
+
+#### Animatable
+
+Fine-grained animation control in coroutines. Use for gesture-driven animations and complex sequences.
+
+```kotlin
+val offsetX = remember { Animatable(0f) }
+
+LaunchedEffect(shouldAnimate) {
+    if (shouldAnimate) {
+        offsetX.animateTo(
+            targetValue = 300f,
+            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+        )
+    } else {
+        offsetX.snapTo(0f)
+    }
+}
+
+Box(
+    modifier = Modifier
+        .size(100.dp)
+        .graphicsLayer(translationX = offsetX.value)
+        .background(MaterialTheme.colorScheme.primary)
+)
+```
+
+Gesture-driven example with velocity:
+
+```kotlin
+val offsetX = remember { Animatable(0f) }
+
+Box(
+    modifier = Modifier
+        .size(100.dp)
+        .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+        .pointerInput(Unit) {
+            detectHorizontalDragGestures(
+                onDragEnd = {
+                    scope.launch {
+                        offsetX.animateTo(0f, animationSpec = spring())
+                    }
+                }
+            ) { _, dragAmount ->
+                scope.launch {
+                    offsetX.snapTo(offsetX.value + dragAmount)
+                }
+            }
+        }
+        .background(MaterialTheme.colorScheme.primary)
+)
+```
+
+### Animation Specifications
+
+
+| Spec        | Use Case                                     | Parameters                    |
+| ----------- | -------------------------------------------- | ----------------------------- |
+| `spring`    | Interactive feedback, natural motion         | `dampingRatio`, `stiffness`   |
+| `tween`     | Predictable timing, sequential animations    | `durationMillis`, `easing`    |
+| `keyframes` | Complex choreography, frame-by-frame control | Values at specific timestamps |
+
+
+```kotlin
+// Spring - physics-based, no fixed duration (recommended for interactions)
+spring(
+    dampingRatio = Spring.DampingRatioMediumBouncy, // NoBouncy(1f), LowBouncy(0.75f), MediumBouncy(0.5f), HighBouncy(0.2f)
+    stiffness = Spring.StiffnessLow // Low, Medium, MediumLow, High, VeryLow
+)
+
+// Tween - time-based with easing
+tween(
+    durationMillis = 300,
+    easing = FastOutSlowInEasing // also: LinearEasing, EaseInOutCubic, EaseInQuad, EaseOutQuad
+)
+
+// Keyframes - exact values at timestamps
+keyframes {
+    durationMillis = 300
+    0f at 0 using EaseInQuad
+    0.5f at 150 using EaseOutQuad
+    1f at 300
+}
+```
+
+Prefer `spring` for user-driven interactions (feels natural, no fixed duration). Use `tween` for choreographed sequences with predictable timing.
+
+### Layout Animations
+
+#### animateContentSize
+
+Smoothly animate container size when content changes. No explicit `AnimatedVisibility` or layout transitions needed.
+
+```kotlin
+var expanded by remember { mutableStateOf(false) }
+
+Column(
+    modifier = Modifier
+        .animateContentSize(animationSpec = spring())
+        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+        .clickable { expanded = !expanded }
+        .padding(16.dp)
+) {
+    Text("Header", style = MaterialTheme.typography.titleMedium)
+    if (expanded) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("Expanded content that appears with a smooth size animation.")
+    }
+}
+```
+
+#### animateItem in LazyLists
+
+Animate item appearance, removal, and reordering. Requires stable keys.
+
+```kotlin
+LazyColumn {
+    items(items, key = { it.id }) { item ->
+        ItemRow(
+            item = item,
+            modifier = Modifier.animateItem()
+        )
+    }
+}
+```
+
+`animateItem()` replaces the deprecated `animateItemPlacement()`. It automatically handles insert, remove, and reorder animations.
+
+### Shared Element Transitions
+
+Animate elements smoothly across screen transitions.
+
+```kotlin
+SharedTransitionLayout {
+    AnimatedContent(targetState = showDetail, label = "shared") { isDetail ->
+        if (isDetail) {
+            DetailPane(
+                sharedTransitionScope = this@SharedTransitionLayout,
+                animatedVisibilityScope = this@AnimatedContent,
+                onBack = { showDetail = false }
+            )
+        } else {
+            ListPane(
+                sharedTransitionScope = this@SharedTransitionLayout,
+                animatedVisibilityScope = this@AnimatedContent,
+                onItemClick = { showDetail = true }
+            )
+        }
+    }
+}
+```
+
+In list and detail screens, use the same key for matching elements:
+
+```kotlin
+// In ListPane
+Image(
+    painter = painterResource(R.drawable.photo),
+    contentDescription = "Product photo",
+    modifier = Modifier.sharedElement(
+        state = rememberSharedContentState(key = "image-${item.id}"),
+        animatedVisibilityScope = animatedVisibilityScope
+    )
+)
+
+// In DetailPane - same key
+Image(
+    painter = painterResource(R.drawable.photo),
+    contentDescription = "Product photo",
+    modifier = Modifier.sharedElement(
+        state = rememberSharedContentState(key = "image-${item.id}"),
+        animatedVisibilityScope = animatedVisibilityScope
+    )
+)
+```
+
+- `sharedElement` - exact element matching (same content, animates position/size)
+- `sharedBounds` - bounds morphing (different content, animates container bounds)
+
+For navigation-specific shared element transitions with Navigation3, see `references/android-navigation.md`.
+
+### graphicsLayer for Animation Performance
+
+Use `graphicsLayer` for GPU-accelerated transforms that skip recomposition and relayout entirely.
+
+```kotlin
+// Good: GPU-accelerated, no recomposition or relayout
+val offset by animateFloatAsState(targetValue = 100f, label = "offset")
+Box(modifier = Modifier.graphicsLayer(translationX = offset))
+
+// Bad: triggers relayout every frame
+val offsetDp by animateDpAsState(targetValue = 100.dp, label = "offset")
+Box(modifier = Modifier.offset(x = offsetDp))
+```
+
+Use `graphicsLayer` for:
+
+- `translationX` / `translationY` - position
+- `rotationX` / `rotationY` / `rotationZ` - rotation
+- `scaleX` / `scaleY` - scale
+- `alpha` - opacity
+
+Use `Modifier.offset { }` (lambda version) as a middle ground - it defers reads to the layout phase, avoiding recomposition but still triggering relayout.
+
+### Animation Anti-Patterns
+
+```kotlin
+// Bad: no animation on visibility change
+if (visible) { Text("Content") }
+// Good: animated
+AnimatedVisibility(visible = visible) { Text("Content") }
+
+// Bad: Animatable recreated every recomposition
+val animatable = Animatable(0f)
+// Good: wrapped in remember
+val animatable = remember { Animatable(0f) }
+
+// Bad: animating state in composition phase (infinite recomposition loop)
+var position by remember { mutableFloatStateOf(0f) }
+position += 10f
+// Good: animate in a coroutine
+LaunchedEffect(Unit) {
+    repeat(10) { position += 10f; delay(16) }
+}
+
+// Bad: missing label (harder to debug in Layout Inspector)
+val size by animateDpAsState(targetValue = 100.dp)
+// Good: labeled
+val size by animateDpAsState(targetValue = 100.dp, label = "card_size")
+```
+
 ## Related Guides
 
 - [Architecture Guide](architecture.md) - ViewModel patterns and state management
@@ -1552,3 +1967,4 @@ fun AuthEventCard(
 - [Android i18n](android-i18n.md) - Localization, RTL support, and string resources
 - [Kotlin Patterns](kotlin-patterns.md) - Immutability and data class usage
 - [Testing Guide](testing.md) - UI testing with Compose
+
