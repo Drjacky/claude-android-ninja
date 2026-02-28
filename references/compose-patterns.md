@@ -20,6 +20,7 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 7. [Performance Optimization](#performance-optimization)
 8. [Animation](#animation)
 9. [Side Effects](#side-effects)
+10. [Modifiers](#modifiers)
 
 ## Screen Architecture
 
@@ -2179,16 +2180,18 @@ Use `awaitDispose` for cleanup (equivalent to `onDispose` in `DisposableEffect`)
 
 ### Effect Decision Guide
 
-| Scenario | Effect | Why |
-|----------|--------|-----|
-| Load data when key changes | `LaunchedEffect(key)` | Coroutine restarts on key change |
-| One-time setup (analytics, logging) | `LaunchedEffect(Unit)` | Runs once, no restart needed |
-| Register/unregister listener | `DisposableEffect(key)` | Needs deterministic cleanup |
-| Observe lifecycle events | `DisposableEffect(lifecycle)` | Cleanup observer on dispose |
-| Sync with external system after every recomposition | `SideEffect` | No keys, no cleanup |
-| Launch coroutine from click handler | `rememberCoroutineScope` | Event-driven, not state-driven |
-| Keep latest callback in long-running effect | `rememberUpdatedState` | Avoid restart or stale capture |
-| Convert imperative source to Compose state | `produceState` | Bridges callback/suspend to State |
+
+| Scenario                                            | Effect                        | Why                               |
+| --------------------------------------------------- | ----------------------------- | --------------------------------- |
+| Load data when key changes                          | `LaunchedEffect(key)`         | Coroutine restarts on key change  |
+| One-time setup (analytics, logging)                 | `LaunchedEffect(Unit)`        | Runs once, no restart needed      |
+| Register/unregister listener                        | `DisposableEffect(key)`       | Needs deterministic cleanup       |
+| Observe lifecycle events                            | `DisposableEffect(lifecycle)` | Cleanup observer on dispose       |
+| Sync with external system after every recomposition | `SideEffect`                  | No keys, no cleanup               |
+| Launch coroutine from click handler                 | `rememberCoroutineScope`      | Event-driven, not state-driven    |
+| Keep latest callback in long-running effect         | `rememberUpdatedState`        | Avoid restart or stale capture    |
+| Convert imperative source to Compose state          | `produceState`                | Bridges callback/suspend to State |
+
 
 ### Side Effect Anti-Patterns
 
@@ -2240,6 +2243,269 @@ LaunchedEffect(isLoggedIn) {
     if (isLoggedIn) {
         navigator.navigateToHome()
     }
+}
+```
+
+## Modifiers
+
+Modifiers apply layout, drawing, gesture, and accessibility behavior. **Order matters** - modifiers apply left-to-right in the chain.
+
+### Modifier Chain Ordering
+
+```kotlin
+// Red background THEN padding THEN size - red fills behind padding
+Box(
+    Modifier
+        .background(Color.Red)
+        .padding(16.dp)
+        .size(100.dp)
+)
+
+// Size THEN padding THEN red background - different result
+Box(
+    Modifier
+        .size(100.dp)
+        .padding(16.dp)
+        .background(Color.Red)
+)
+```
+
+**Rule:** Order from outer (layout/sizing) to inner (styling/interaction):
+
+1. Size constraints (`size`, `fillMaxWidth`, `sizeIn`)
+2. Padding / margin (`padding`)
+3. Drawing (`background`, `border`, `clip`)
+4. Interaction (`clickable`, `pointerInput`)
+
+### Common Modifier Patterns
+
+#### Sizing
+
+```kotlin
+Box(Modifier.size(100.dp))
+Box(Modifier.size(width = 200.dp, height = 100.dp))
+Box(Modifier.fillMaxWidth(0.8f))  // 80% of parent width
+Box(Modifier.fillMaxSize())
+Box(Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp))  // minimum touch target
+```
+
+#### Background and Border
+
+```kotlin
+// Apply clip before background for shape consistency
+Box(
+    Modifier
+        .clip(RoundedCornerShape(8.dp))
+        .background(MaterialTheme.colorScheme.surface)
+        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+        .padding(16.dp)
+)
+```
+
+#### Clipping
+
+```kotlin
+// Clip content to shape - apply BEFORE background
+Box(
+    Modifier
+        .clip(RoundedCornerShape(8.dp))
+        .background(MaterialTheme.colorScheme.primaryContainer)
+) {
+    AsyncImage(model = url, contentDescription = "Photo")
+}
+```
+
+### Clickable and CombinedClickable
+
+```kotlin
+// Basic clickable with Material ripple
+Box(
+    Modifier
+        .clip(RoundedCornerShape(8.dp))
+        .clickable { onItemClick() }
+        .padding(16.dp)
+)
+
+// Long press + double click + click
+Box(
+    Modifier
+        .clip(RoundedCornerShape(8.dp))
+        .combinedClickable(
+            onClick = { onItemClick() },
+            onLongClick = { onLongPress() },
+            onDoubleClick = { onDoubleTap() }
+        )
+        .padding(16.dp)
+)
+```
+
+Place `clickable` AFTER `clip` (for ripple bounds) but BEFORE `padding` (for larger touch target).
+
+### Conditional Modifiers
+
+Use `Modifier.then()` for conditional chaining:
+
+```kotlin
+// Good: conditional modifier with then()
+Box(
+    Modifier
+        .fillMaxWidth()
+        .then(if (isSelected) Modifier.background(selectedColor) else Modifier)
+        .padding(16.dp)
+)
+
+// Bad: breaks chain readability
+val mod = if (isSelected) Modifier.background(selectedColor) else Modifier
+Box(mod.padding(16.dp))
+```
+
+### Custom Modifiers with Modifier.Node
+
+`Modifier.Node` is the recommended API for custom modifiers. `Modifier.composed` is deprecated.
+
+```kotlin
+// Modifier.Node API (recommended)
+private class HighlightNode(var color: Color) : DrawModifierNode, Modifier.Node() {
+    override fun ContentDrawScope.draw() {
+        drawContent()
+        drawRect(color = color, alpha = 0.1f)
+    }
+}
+
+private data class HighlightElement(val color: Color) : ModifierNodeElement<HighlightNode>() {
+    override fun create() = HighlightNode(color)
+    override fun update(node: HighlightNode) { node.color = color }
+}
+
+fun Modifier.highlight(color: Color) = this then HighlightElement(color)
+
+// Usage
+Box(Modifier.highlight(MaterialTheme.colorScheme.primary))
+```
+
+```kotlin
+// Deprecated: Modifier.composed - do NOT use for new code
+fun Modifier.oldStyleModifier() = composed {
+    val state = remember { mutableStateOf(false) }
+    this.background(if (state.value) Color.Blue else Color.Gray)
+}
+```
+
+### Layout vs Drawing vs Pointer Input
+
+
+| Category      | When It Runs               | Use For                                                 |
+| ------------- | -------------------------- | ------------------------------------------------------- |
+| Layout        | Measurement/placement pass | `size`, `padding`, `offset`, custom `LayoutModifier`    |
+| Drawing       | Draw pass (after layout)   | `background`, `border`, `drawBehind`, `drawWithContent` |
+| Pointer Input | Input event handling       | `clickable`, `pointerInput`, `draggable`                |
+
+
+```kotlin
+// Custom drawing - runs in draw phase, no recomposition
+fun Modifier.debugBorder() = drawBehind {
+    drawRect(color = Color.Red, style = Stroke(width = 2f))
+}
+
+// Custom gesture - runs in pointer input phase
+fun Modifier.onSwipeRight(onSwipe: () -> Unit) = pointerInput(Unit) {
+    detectHorizontalDragGestures { _, dragAmount ->
+        if (dragAmount > 50f) onSwipe()
+    }
+}
+```
+
+### graphicsLayer - GPU Transforms
+
+Applies transforms at the GPU level - no recomposition, no relayout. Prefer for animations.
+
+```kotlin
+Box(
+    Modifier.graphicsLayer(
+        scaleX = 1.2f,
+        scaleY = 1.2f,
+        rotationZ = 45f,
+        alpha = 0.8f,
+        translationX = 10f
+    )
+)
+```
+
+See [Animation > graphicsLayer](#graphicslayer-for-animation-performance) for animation-specific usage.
+
+### Semantics and TestTag
+
+```kotlin
+// Accessibility semantics
+Box(
+    Modifier
+        .semantics {
+            contentDescription = "User avatar"
+            role = Role.Image
+        }
+        .size(48.dp)
+)
+
+// Test tag for UI tests
+Box(Modifier.testTag("submit_button"))
+
+// In tests:
+composeTestRule.onNodeWithTag("submit_button").performClick()
+```
+
+For comprehensive accessibility patterns, see `references/android-accessibility.md`.
+
+### Always Accept Modifier Parameter
+
+Every public composable must accept a `modifier` parameter with `Modifier` as default:
+
+```kotlin
+// Good: accepts and applies modifier
+@Composable
+fun UserCard(
+    user: User,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(modifier = modifier.clickable { onClick() }) {
+        Text(user.name)
+    }
+}
+
+// Bad: no modifier parameter - caller cannot customize layout
+@Composable
+fun UserCard(user: User, onClick: () -> Unit) {
+    Card { Text(user.name) }
+}
+```
+
+### Modifier Anti-Patterns
+
+```kotlin
+// Bad: size after padding - padding excluded from final size
+Modifier.padding(16.dp).size(100.dp)
+// Good: size first
+Modifier.size(100.dp).padding(16.dp)
+
+// Bad: clickable before clip - ripple extends beyond bounds
+Modifier.clickable { }.clip(RoundedCornerShape(8.dp))
+// Good: clip before clickable
+Modifier.clip(RoundedCornerShape(8.dp)).clickable { }
+
+// Bad: background before clip - background extends beyond shape
+Modifier.background(Color.Blue).clip(RoundedCornerShape(8.dp))
+// Good: clip before background
+Modifier.clip(RoundedCornerShape(8.dp)).background(Color.Blue)
+
+// Bad: hardcoded modifier in composable body
+@Composable
+fun BadCard() {
+    Box(Modifier.padding(16.dp).background(Color.Blue)) { }
+}
+// Good: accept modifier parameter
+@Composable
+fun GoodCard(modifier: Modifier = Modifier) {
+    Box(modifier.padding(16.dp).background(Color.Blue)) { }
 }
 ```
 
