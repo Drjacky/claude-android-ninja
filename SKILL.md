@@ -15,7 +15,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 |------------------------------------------------------|-----------------------------------------------------------------|
 | Project structure & modules                          | [modularization.md](references/modularization.md)               |
 | Architecture layers (Presentation, Domain, Data, UI) | [architecture.md](references/architecture.md)                   |
-| Jetpack Compose patterns                             | [compose-patterns.md](references/compose-patterns.md)           |
+| Compose patterns, animation, effects, modifiers      | [compose-patterns.md](references/compose-patterns.md)           |
 | Accessibility & TalkBack support                     | [android-accessibility.md](references/android-accessibility.md) |
 | Notifications & foreground services                  | [android-notifications.md](references/android-notifications.md) |
 | Data sync & offline-first patterns                   | [android-data-sync.md](references/android-data-sync.md)         |
@@ -36,7 +36,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Code coverage (JaCoCo)                               | [android-code-coverage.md](references/android-code-coverage.md) |
 | Security (encryption, biometrics, pinning)           | [android-security.md](references/android-security.md)           |
 | Design patterns                                      | [design-patterns.md](references/design-patterns.md)             |
-| Android performance & app startup                    | [android-performance.md](references/android-performance.md)     |
+| Android performance, recomposition & app startup     | [android-performance.md](references/android-performance.md)     |
 
 ## Workflow Decision Tree
 
@@ -71,7 +71,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Follow dependency flow: Feature → Core/Domain → Core/Data
 
 **Building UI screens/components?**
-→ Read [compose-patterns.md](references/compose-patterns.md)
+→ Read [compose-patterns.md](references/compose-patterns.md) for screen architecture, state, components, modifiers  
 → Use [android-theming.md](references/android-theming.md) for Material 3 colors, typography, and shapes  
 → **Always** align Kotlin code with [kotlin-patterns.md](references/kotlin-patterns.md)  
 → Create Screen + ViewModel + UiState in the feature module  
@@ -193,14 +193,37 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Use [android-permissions.md](references/android-permissions.md) for proper permission justification  
 → Check [android-strictmode.md](references/android-strictmode.md) for detecting cleartext network traffic  
 
-**Migrating legacy code (LiveData, Fragments, etc.)?**
+**Migrating legacy code (LiveData, Fragments, Accompanist)?**
 → Replace LiveData with StateFlow using [coroutines-patterns.md](references/coroutines-patterns.md)  
 → Replace Fragments with Compose screens using [compose-patterns.md](references/compose-patterns.md)  
+→ Replace Accompanist with official APIs per [compose-patterns.md](references/compose-patterns.md) → "Deprecated Patterns & Migrations"  
 → Update navigation to Navigation3 using [android-navigation.md](references/android-navigation.md)  
 → Follow [architecture.md](references/architecture.md) for modern MVVM patterns  
 
+**Adding Compose animations?**
+→ Use [compose-patterns.md](references/compose-patterns.md) → "Animation" for `AnimatedVisibility`, `AnimatedContent`, `animate*AsState`, `Animatable`, shared elements  
+→ Use `graphicsLayer` for GPU-accelerated transforms (no recomposition)  
+→ Always provide `label` parameter for Layout Inspector debugging  
+
+**Using side effects (LaunchedEffect, DisposableEffect)?**
+→ Use [compose-patterns.md](references/compose-patterns.md) → "Side Effects" for effect selection guide  
+→ `LaunchedEffect(key)` for state-driven coroutines, `rememberCoroutineScope` for event-driven  
+→ `DisposableEffect` for listener/resource cleanup, always include `onDispose`  
+
+**Working with Modifier ordering or custom modifiers?**
+→ Use [compose-patterns.md](references/compose-patterns.md) → "Modifiers" for chain ordering rules and patterns  
+→ Use `Modifier.Node` for custom modifiers (not deprecated `Modifier.composed`)  
+→ Order: size → padding → drawing → interaction  
+
+**Migrating from Accompanist or deprecated Compose APIs?**
+→ Use [compose-patterns.md](references/compose-patterns.md) → "Deprecated Patterns & Migrations"  
+→ Replace Accompanist libraries with official Foundation/Material3 equivalents  
+→ Use `collectAsStateWithLifecycle` instead of `collectAsState`  
+→ Use `mutableIntStateOf` instead of `mutableStateOf(0)` for primitives  
+
 **Optimizing Compose recomposition or stability?**
 → Use [compose-patterns.md](references/compose-patterns.md) for `@Immutable`/`@Stable` annotations  
+→ Use [android-performance.md](references/android-performance.md) → "Compose Recomposition Performance" for three phases, deferred state reads, Strong Skipping Mode  
 → Check [gradle-setup.md](references/gradle-setup.md) for Compose Compiler metrics and stability reports  
 → Use [kotlin-patterns.md](references/kotlin-patterns.md) for immutable data structures  
 
