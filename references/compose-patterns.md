@@ -21,6 +21,7 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 8. [Animation](#animation)
 9. [Side Effects](#side-effects)
 10. [Modifiers](#modifiers)
+11. [Deprecated Patterns & Migrations](#deprecated-patterns--migrations)
 11. [CompositionLocal](#compositionlocal)
 12. [Lists & Scrolling](#lists--scrolling)
 13. [View Composition Rules](#view-composition-rules)
@@ -3018,6 +3019,232 @@ fun ProductCard(product: Product, onClick: () -> Unit) { }
 - Single use and under ~10 lines (single `Text()` or `Icon()`)
 - Would require passing 5+ parameters (over-extraction)
 - Tightly coupled to parent logic
+
+## Deprecated Patterns & Migrations
+
+When encountering legacy code, apply these migrations. Each shows the old pattern and its modern replacement.
+
+### Accompanist -> Official APIs
+
+All Accompanist libraries listed below are deprecated. Use the official replacements.
+
+#### System UI Controller -> enableEdgeToEdge()
+
+```kotlin
+// Old (remove accompanist-systemuicontroller dependency)
+val systemUiController = rememberSystemUiController()
+systemUiController.setSystemBarsColor(color = Color.Transparent)
+
+// New: call in Activity.onCreate() before setContent
+enableEdgeToEdge()
+```
+
+#### Pager -> Foundation HorizontalPager/VerticalPager
+
+```kotlin
+// Old (remove accompanist-pager dependency)
+val pagerState = rememberPagerState()
+HorizontalPager(count = items.size, state = pagerState) { page -> }
+
+// New: Foundation pager (page count is a lambda)
+val pagerState = rememberPagerState(pageCount = { items.size })
+HorizontalPager(state = pagerState) { page -> }
+```
+
+#### SwipeRefresh -> PullToRefreshBox
+
+```kotlin
+// Old (remove accompanist-swiperefresh dependency)
+SwipeRefresh(
+    state = rememberSwipeRefreshState(isRefreshing),
+    onRefresh = { load() }
+) { content() }
+
+// New: Material3 PullToRefreshBox
+PullToRefreshBox(
+    isRefreshing = isRefreshing,
+    onRefresh = { load() }
+) { content() }
+```
+
+#### FlowLayout -> Foundation FlowRow/FlowColumn
+
+```kotlin
+// Old (remove accompanist-flowlayout dependency)
+FlowRow(mainAxisSize = SizeMode.Expand) {
+    items.forEach { Chip(it) }
+}
+
+// New: Foundation FlowRow
+FlowRow(modifier = Modifier.fillMaxWidth()) {
+    items.forEach { Chip(it) }
+}
+```
+
+#### Permissions -> activity-compose
+
+```kotlin
+// Old (remove accompanist-permissions dependency)
+// import com.google.accompanist.permissions.rememberPermissionState
+
+// New: same API, different dependency (androidx.activity:activity-compose)
+val permissionState = rememberPermissionState(Manifest.permission.CAMERA) { granted ->
+    // handle result
+}
+```
+
+### Compose API Migrations
+
+#### collectAsState -> collectAsStateWithLifecycle
+
+```kotlin
+// Old: collects even when app is backgrounded (wastes resources)
+val state by viewModel.uiState.collectAsState()
+
+// New: stops collecting when lifecycle is below STARTED
+val state by viewModel.uiState.collectAsStateWithLifecycle()
+```
+
+Requires `androidx.lifecycle:lifecycle-runtime-compose`.
+
+#### mutableStateOf(0) -> mutableIntStateOf(0)
+
+Primitive specializations avoid boxing overhead:
+
+```kotlin
+// Old
+var count by remember { mutableStateOf(0) }
+var progress by remember { mutableStateOf(0.5f) }
+var timestamp by remember { mutableStateOf(0L) }
+
+// New
+var count by remember { mutableIntStateOf(0) }
+var progress by remember { mutableFloatStateOf(0.5f) }
+var timestamp by remember { mutableLongStateOf(0L) }
+```
+
+Available: `mutableIntStateOf`, `mutableLongStateOf`, `mutableFloatStateOf`, `mutableDoubleStateOf`.
+
+#### animateItemPlacement -> animateItem
+
+```kotlin
+// Old
+LazyColumn {
+    items(items, key = { it.id }) { item ->
+        ItemRow(modifier = Modifier.animateItemPlacement())
+    }
+}
+
+// New: handles insert, remove, and reorder animations
+LazyColumn {
+    items(items, key = { it.id }) { item ->
+        ItemRow(modifier = Modifier.animateItem())
+    }
+}
+```
+
+#### Modifier.composed -> Modifier.Node
+
+```kotlin
+// Old (deprecated - creates composition scope overhead)
+fun Modifier.myModifier(value: Int) = composed {
+    val state = remember { mutableStateOf(value) }
+    this.background(if (state.value > 0) Color.Blue else Color.Gray)
+}
+
+// New: Modifier.Node API (no composition scope)
+// See Modifiers > Custom Modifiers with Modifier.Node section above
+```
+
+#### String Routes -> Type-Safe Routes -> Navigation3
+
+```kotlin
+// Old: string-based navigation (pre Navigation 2.8)
+navController.navigate("details/$itemId")
+
+// Migration step: type-safe routes (Navigation 2.8+)
+@Serializable data class Details(val itemId: Int)
+navController.navigate(Details(itemId = 42))
+
+// Current: Navigation3 (see references/android-navigation.md)
+@Serializable data class ProductDetail(val productId: String) : NavKey
+backStack.add(ProductDetail(productId = "42"))
+```
+
+### Material & Scaffold Migrations
+
+#### Scaffold innerPadding (Mandatory)
+
+Since Compose 1.6, `Scaffold` requires using `innerPadding`. Ignoring it causes content overlap with system bars.
+
+```kotlin
+// Bad: ignoring innerPadding (won't compile in modern Compose)
+Scaffold(topBar = { TopAppBar { } }) {
+    LazyColumn { }
+}
+
+// Required: apply innerPadding
+Scaffold(topBar = { TopAppBar { } }) { innerPadding ->
+    LazyColumn(modifier = Modifier.padding(innerPadding)) { }
+}
+```
+
+#### @ExperimentalMaterial3Api Graduations
+
+These APIs are stable - remove `@OptIn` annotations:
+
+- `DatePicker` / `DateRangePicker`
+- `TimePicker`
+- `ExposedDropdownMenuBox`
+- `SearchBar` / `DockedSearchBar`
+- `ModalBottomSheet`
+- `TopAppBar` / `MediumTopAppBar` / `LargeTopAppBar`
+
+```kotlin
+// Old
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MyScreen() {
+    DatePicker(state = rememberDatePickerState())
+}
+
+// New: no opt-in needed
+@Composable
+fun MyScreen() {
+    DatePicker(state = rememberDatePickerState())
+}
+```
+
+#### Material 2 -> Material 3
+
+Key changes when migrating from `androidx.compose.material` to `androidx.compose.material3`:
+
+| Material 2 | Material 3 |
+|-----------|-----------|
+| `MaterialTheme.colors` | `MaterialTheme.colorScheme` |
+| `Surface(color = ...)` | `Surface(color = ...)` (same API) |
+| `TextField` | `TextField` (same API, new defaults) |
+| `BottomNavigation` | `NavigationBar` |
+| `BottomNavigationItem` | `NavigationBarItem` |
+| `TopAppBar` | `TopAppBar` (different parameters) |
+| `Scaffold` (no padding requirement) | `Scaffold` (must use `innerPadding`) |
+
+Never mix Material 2 and Material 3 imports in the same module.
+
+### Edge-to-Edge (API 35+ Default)
+
+Edge-to-edge is the default on Android 15+ and mandatory on API 36. See [Edge-to-Edge](#edge-to-edge-mandatory-on-api-36) section above for full setup.
+
+```kotlin
+// Old: manual system bar padding
+Surface(modifier = Modifier.systemBarsPadding()) { }
+
+// New: enableEdgeToEdge() + Scaffold handles it
+enableEdgeToEdge()  // in Activity.onCreate()
+Scaffold { innerPadding ->
+    Content(modifier = Modifier.padding(innerPadding))
+}
+```
 
 ## Related Guides
 
