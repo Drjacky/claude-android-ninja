@@ -19,6 +19,7 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 6. [Previews & Testing](#previews--testing)
 7. [Performance Optimization](#performance-optimization)
 8. [Animation](#animation)
+9. [Side Effects](#side-effects)
 
 ## Screen Architecture
 
@@ -1568,7 +1569,7 @@ fun AuthEventCard(
 
 #### animate*AsState
 
-Animate individual properties by targeting a value. The animation runs when the target changes.
+Animate a single property toward a target value. Restarts when the target changes.
 
 ```kotlin
 val size by animateDpAsState(
@@ -1588,11 +1589,11 @@ val alpha by animateFloatAsState(targetValue = if (visible) 1f else 0f, label = 
 val offset by animateIntOffsetAsState(targetValue = IntOffset(10, 20), label = "offset")
 ```
 
-Always provide the `label` parameter - it enables debugging in Layout Inspector and animation preview tools.
+Always provide `label` - required for debugging in Layout Inspector.
 
 #### AnimatedVisibility
 
-Controls appear/disappear animations with enter and exit transitions.
+Enter/exit animations for showing and hiding content.
 
 ```kotlin
 var visible by remember { mutableStateOf(true) }
@@ -1615,7 +1616,7 @@ Built-in transitions (combine with `+`):
 - `fadeIn` / `fadeOut`
 - `scaleIn` / `scaleOut`
 
-Custom animation specs per transition:
+Per-transition animation specs:
 
 ```kotlin
 AnimatedVisibility(
@@ -1635,7 +1636,7 @@ AnimatedVisibility(
 
 #### AnimatedContent
 
-Replace content with smooth transitions between different states.
+Smooth transitions when swapping content based on state.
 
 ```kotlin
 var count by remember { mutableIntStateOf(0) }
@@ -1653,11 +1654,11 @@ AnimatedContent(
 }
 ```
 
-`SizeTransform` animates container size smoothly during content changes. Use `togetherWith` to pair enter and exit transitions.
+`SizeTransform` animates container size during content changes. `togetherWith` pairs enter and exit transitions.
 
 #### Crossfade
 
-Simple content swap with fade effect. Lightweight alternative to `AnimatedContent` when you only need a fade.
+Fade-only content swap. Lightweight alternative to `AnimatedContent`.
 
 ```kotlin
 var showFirst by remember { mutableStateOf(true) }
@@ -1675,7 +1676,7 @@ Crossfade(targetState = showFirst, label = "crossfade") { state ->
 
 #### updateTransition
 
-Coordinate multiple animated values with a single state change. All animations run in sync.
+Multiple animated values synchronized by a single state change.
 
 ```kotlin
 var expanded by remember { mutableStateOf(false) }
@@ -1696,11 +1697,9 @@ Box(
 )
 ```
 
-Use for complex components with multiple animated properties that must stay synchronized.
-
 #### rememberInfiniteTransition
 
-Create looping animations for loading indicators and pulsing effects.
+Looping animations for loading indicators and pulsing effects.
 
 ```kotlin
 val infiniteTransition = rememberInfiniteTransition(label = "loading")
@@ -1723,13 +1722,13 @@ Box(
 )
 ```
 
-Runs continuously until the composable leaves composition.
+Runs until composable leaves composition.
 
 ### Imperative Animation Control
 
 #### Animatable
 
-Fine-grained animation control in coroutines. Use for gesture-driven animations and complex sequences.
+Coroutine-based animation control. Use for gesture-driven animations and complex sequences.
 
 ```kotlin
 val offsetX = remember { Animatable(0f) }
@@ -1753,7 +1752,7 @@ Box(
 )
 ```
 
-Gesture-driven example with velocity:
+Gesture-driven:
 
 ```kotlin
 val offsetX = remember { Animatable(0f) }
@@ -1811,13 +1810,13 @@ keyframes {
 }
 ```
 
-Prefer `spring` for user-driven interactions (feels natural, no fixed duration). Use `tween` for choreographed sequences with predictable timing.
+Prefer `spring` for user-driven interactions. Use `tween` for choreographed sequences.
 
 ### Layout Animations
 
 #### animateContentSize
 
-Smoothly animate container size when content changes. No explicit `AnimatedVisibility` or layout transitions needed.
+Automatic container size animation when content changes.
 
 ```kotlin
 var expanded by remember { mutableStateOf(false) }
@@ -1839,7 +1838,7 @@ Column(
 
 #### animateItem in LazyLists
 
-Animate item appearance, removal, and reordering. Requires stable keys.
+Animates item insert, remove, and reorder. Requires stable keys. Replaces deprecated `animateItemPlacement()`.
 
 ```kotlin
 LazyColumn {
@@ -1852,11 +1851,9 @@ LazyColumn {
 }
 ```
 
-`animateItem()` replaces the deprecated `animateItemPlacement()`. It automatically handles insert, remove, and reorder animations.
-
 ### Shared Element Transitions
 
-Animate elements smoothly across screen transitions.
+Animate matching elements across screen transitions.
 
 ```kotlin
 SharedTransitionLayout {
@@ -1878,7 +1875,7 @@ SharedTransitionLayout {
 }
 ```
 
-In list and detail screens, use the same key for matching elements:
+Both screens must use the same key:
 
 ```kotlin
 // In ListPane
@@ -1902,14 +1899,14 @@ Image(
 )
 ```
 
-- `sharedElement` - exact element matching (same content, animates position/size)
-- `sharedBounds` - bounds morphing (different content, animates container bounds)
+- `sharedElement` - exact match (same content, animates position/size)
+- `sharedBounds` - bounds morph (different content, animates container bounds)
 
-For navigation-specific shared element transitions with Navigation3, see `references/android-navigation.md`.
+For Navigation3-specific shared elements, see `references/android-navigation.md`.
 
 ### graphicsLayer for Animation Performance
 
-Use `graphicsLayer` for GPU-accelerated transforms that skip recomposition and relayout entirely.
+GPU-accelerated transforms that skip recomposition and relayout.
 
 ```kotlin
 // Good: GPU-accelerated, no recomposition or relayout
@@ -1921,14 +1918,9 @@ val offsetDp by animateDpAsState(targetValue = 100.dp, label = "offset")
 Box(modifier = Modifier.offset(x = offsetDp))
 ```
 
-Use `graphicsLayer` for:
+`graphicsLayer` properties: `translationX/Y`, `rotationX/Y/Z`, `scaleX/Y`, `alpha`.
 
-- `translationX` / `translationY` - position
-- `rotationX` / `rotationY` / `rotationZ` - rotation
-- `scaleX` / `scaleY` - scale
-- `alpha` - opacity
-
-Use `Modifier.offset { }` (lambda version) as a middle ground - it defers reads to the layout phase, avoiding recomposition but still triggering relayout.
+`Modifier.offset { }` (lambda version) is a middle ground - defers reads to layout phase, avoids recomposition but still triggers relayout.
 
 ### Animation Anti-Patterns
 
@@ -1955,6 +1947,300 @@ LaunchedEffect(Unit) {
 val size by animateDpAsState(targetValue = 100.dp)
 // Good: labeled
 val size by animateDpAsState(targetValue = 100.dp, label = "card_size")
+```
+
+## Side Effects
+
+Use the correct effect for each scenario. Misuse causes stale state, resource leaks, or infinite recomposition loops.
+
+**Execution order:** Composition -> Side effects -> Layout -> Drawing. Effects only run after successful composition.
+
+### LaunchedEffect - Coroutines Scoped to Composition
+
+Coroutine tied to composable lifecycle. Cancelled when the key changes or composable leaves composition.
+
+```kotlin
+@Composable
+fun DataLoader(userId: String) {
+    var data by remember { mutableStateOf<UserData?>(null) }
+
+    LaunchedEffect(userId) {
+        data = repository.loadUser(userId)
+    }
+
+    data?.let { UserContent(it) } ?: LoadingScreen()
+}
+```
+
+#### Key Selection Rules
+
+```kotlin
+// Key = Unit: runs once when composable enters composition, never restarts
+LaunchedEffect(Unit) {
+    analytics.logScreenView("home")
+}
+
+// Key = specific value: restarts whenever the value changes
+LaunchedEffect(userId) {
+    data = repository.loadUser(userId)
+}
+
+// Multiple keys: restarts if ANY key changes
+LaunchedEffect(userId, filterType) {
+    data = repository.loadFiltered(userId, filterType)
+}
+```
+
+#### Cancellation and Cleanup
+
+When the key changes, the current coroutine is cancelled before the new one starts. Use `finally` for cleanup:
+
+```kotlin
+LaunchedEffect(connectionId) {
+    val connection = openConnection(connectionId)
+    try {
+        connection.listen { message ->
+            processMessage(message)
+        }
+    } finally {
+        connection.close()
+    }
+}
+```
+
+### DisposableEffect - Resource Cleanup
+
+Use for listeners, registrations, and resources that need explicit cleanup via `onDispose`.
+
+```kotlin
+@Composable
+fun ScreenWithLifecycle(onResume: () -> Unit, onPause: () -> Unit) {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> onResume()
+                Lifecycle.Event.ON_PAUSE -> onPause()
+                else -> Unit
+            }
+        }
+        lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycle.removeObserver(observer)
+        }
+    }
+}
+```
+
+Prefer over `LaunchedEffect` when cleanup isn't coroutine-based (removing listeners, unregistering callbacks).
+
+```kotlin
+@Composable
+fun BroadcastListener(context: Context, action: String, onReceive: (Intent) -> Unit) {
+    DisposableEffect(action) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context, intent: Intent) {
+                onReceive(intent)
+            }
+        }
+        val filter = IntentFilter(action)
+        context.registerReceiver(receiver, filter)
+
+        onDispose {
+            context.unregisterReceiver(receiver)
+        }
+    }
+}
+```
+
+### SideEffect - After Every Composition
+
+Runs after *every* successful composition. No keys, no cleanup. Use sparingly.
+
+```kotlin
+@Composable
+fun TrackScreenView(screenName: String) {
+    SideEffect {
+        analytics.logScreenView(screenName)
+    }
+}
+```
+
+Only for: analytics logging, synchronizing with non-Compose UI, one-way state sync without cleanup.
+Never for: resource allocation (`DisposableEffect`) or coroutines (`LaunchedEffect`).
+
+### rememberCoroutineScope - Launching from Event Handlers
+
+Coroutine scope tied to composable lifecycle. Use for launching coroutines from callbacks (clicks, gestures) - not for state-driven work (use `LaunchedEffect` instead).
+
+```kotlin
+@Composable
+fun SnackbarDemo(snackbarHostState: SnackbarHostState) {
+    val scope = rememberCoroutineScope()
+
+    Button(
+        onClick = {
+            scope.launch {
+                snackbarHostState.showSnackbar("Action completed")
+            }
+        }
+    ) {
+        Text("Show Snackbar")
+    }
+}
+```
+
+```kotlin
+// Bad: blocks UI thread
+Button(onClick = {
+    runBlocking { fetchData() }
+}) { Text("Fetch") }
+
+// Good: launches on proper scope
+val scope = rememberCoroutineScope()
+Button(onClick = {
+    scope.launch { fetchData() }
+}) { Text("Fetch") }
+```
+
+### rememberUpdatedState - Capturing Latest Values
+
+Keeps a reference to the latest value without restarting a long-running effect.
+
+```kotlin
+@Composable
+fun TimedMessage(
+    message: String,
+    onTimeout: () -> Unit,
+    timeoutMillis: Long = 5000L
+) {
+    val currentOnTimeout by rememberUpdatedState(onTimeout)
+
+    LaunchedEffect(timeoutMillis) {
+        delay(timeoutMillis)
+        currentOnTimeout()
+    }
+}
+```
+
+Without it, changing `onTimeout` either restarts the effect (if used as key) or calls a stale callback (if captured directly):
+
+```kotlin
+// Bad: effect restarts when onTimeout changes (common with lambda parameters)
+LaunchedEffect(onTimeout) {
+    delay(5000)
+    onTimeout()
+}
+
+// Bad: captures initial onTimeout, ignores later changes
+LaunchedEffect(Unit) {
+    delay(5000)
+    onTimeout() // stale reference
+}
+```
+
+### produceState - Converting External State to Compose State
+
+Converts imperative sources (callbacks, flows, suspend functions) into Compose `State`. Combines `remember` + `LaunchedEffect` + state creation.
+
+```kotlin
+@Composable
+fun NetworkStatus(): State<Boolean> {
+    val context = LocalContext.current
+
+    return produceState(initialValue = true) {
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) { value = true }
+            override fun onLost(network: Network) { value = false }
+        }
+
+        val connectivityManager = context.getSystemService<ConnectivityManager>()
+        connectivityManager?.registerDefaultNetworkCallback(callback)
+
+        awaitDispose {
+            connectivityManager?.unregisterNetworkCallback(callback)
+        }
+    }
+}
+
+@Composable
+fun AppContent() {
+    val isOnline by NetworkStatus()
+
+    if (!isOnline) {
+        OfflineBanner()
+    }
+}
+```
+
+Use `awaitDispose` for cleanup (equivalent to `onDispose` in `DisposableEffect`).
+
+### Effect Decision Guide
+
+| Scenario | Effect | Why |
+|----------|--------|-----|
+| Load data when key changes | `LaunchedEffect(key)` | Coroutine restarts on key change |
+| One-time setup (analytics, logging) | `LaunchedEffect(Unit)` | Runs once, no restart needed |
+| Register/unregister listener | `DisposableEffect(key)` | Needs deterministic cleanup |
+| Observe lifecycle events | `DisposableEffect(lifecycle)` | Cleanup observer on dispose |
+| Sync with external system after every recomposition | `SideEffect` | No keys, no cleanup |
+| Launch coroutine from click handler | `rememberCoroutineScope` | Event-driven, not state-driven |
+| Keep latest callback in long-running effect | `rememberUpdatedState` | Avoid restart or stale capture |
+| Convert imperative source to Compose state | `produceState` | Bridges callback/suspend to State |
+
+### Side Effect Anti-Patterns
+
+```kotlin
+// Bad: LaunchedEffect(Unit) when key should change - only loads first userId
+@Composable
+fun UserProfile(userId: String) {
+    var user by remember { mutableStateOf<User?>(null) }
+    LaunchedEffect(Unit) {
+        user = repository.loadUser(userId) // never re-runs when userId changes
+    }
+}
+// Good: use userId as key
+LaunchedEffect(userId) {
+    user = repository.loadUser(userId)
+}
+
+// Bad: forgetting onDispose (resource leak)
+DisposableEffect(Unit) {
+    val listener = Listener()
+    manager.register(listener)
+    // missing onDispose!
+}
+// Good: always clean up
+DisposableEffect(Unit) {
+    val listener = Listener()
+    manager.register(listener)
+    onDispose { manager.unregister(listener) }
+}
+
+// Bad: reading state directly in LaunchedEffect(Unit) - captures initial value only
+var count by remember { mutableIntStateOf(0) }
+LaunchedEffect(Unit) {
+    delay(1000)
+    println(count) // always prints 0
+}
+// Good: use snapshotFlow to observe state changes in effects
+LaunchedEffect(Unit) {
+    snapshotFlow { count }
+        .collect { println("Count: $it") }
+}
+
+// Bad: navigating during composition (runs on every recomposition)
+if (isLoggedIn) {
+    navigator.navigateToHome()
+}
+// Good: navigate in a LaunchedEffect
+LaunchedEffect(isLoggedIn) {
+    if (isLoggedIn) {
+        navigator.navigateToHome()
+    }
+}
 ```
 
 ## Related Guides
