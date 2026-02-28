@@ -210,11 +210,15 @@
 # ==============================================================================
 # 15. COMPOSE
 # ==============================================================================
-# Compose compiler generates code - no manual rules needed.
-# Keep stability annotations if used on domain models in non-Compose modules.
+# Compose compiler generates code - no manual rules needed for most cases.
+# Keep stability annotations so R8 doesn't strip them - they control
+# recomposition skipping at runtime via Strong Skipping Mode.
 
--keep class androidx.compose.runtime.Immutable
--keep class androidx.compose.runtime.Stable
+-keep @androidx.compose.runtime.Stable class **
+-keep @androidx.compose.runtime.Immutable class **
+-keepclassmembers class * {
+    @androidx.compose.runtime.Stable <methods>;
+}
 
 
 # ==============================================================================

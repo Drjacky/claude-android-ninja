@@ -612,6 +612,236 @@ class MainViewModel @Inject constructor(
 - [ ] Avoid blocking the main thread with I/O, network, or heavy computation during startup
 - [ ] Use `ProcessLifecycleOwner` or `Lifecycle` callbacks to defer non-critical work
 
+## Compose Recomposition Performance
+
+### Three Phases of Compose
+
+Every frame runs three phases. State reads in each phase only trigger work for that phase and later ones.
+
+| Phase | What Runs | State Read Triggers |
+|-------|----------|-------------------|
+| Composition | Composable functions, evaluates state | Recomposition of the reading scope |
+| Layout | `measure` and `layout` blocks | Relayout only (no recomposition) |
+| Drawing | `Canvas`, `DrawScope`, `drawBehind` | Redraw only (no recomposition or relayout) |
+
+**Rule:** Push state reads to the latest possible phase to minimize work.
+
+### Deferred State Reads
+
+Read state in the layout or draw phase instead of composition to avoid recomposition:
+
+```kotlin
+// Bad: reads in composition - recomposes every frame during animation
+@Composable
+fun AnimatedBox(offsetState: State<Float>) {
+    val x = offsetState.value
+    Box(modifier = Modifier.offset(x.dp, 0.dp))
+}
+
+// Good: reads in layout phase - no recomposition
+@Composable
+fun AnimatedBox(offsetState: State<Float>) {
+    Box(
+        modifier = Modifier.offset {
+            IntOffset(offsetState.value.roundToInt(), 0)
+        }
+    )
+}
+
+// Best: reads in draw phase via graphicsLayer - no recomposition, no relayout
+@Composable
+fun AnimatedBox(offsetState: State<Float>) {
+    Box(
+        modifier = Modifier.graphicsLayer {
+            translationX = offsetState.value
+        }
+    )
+}
+```
+
+Key lambda-based modifiers that defer reads:
+- `Modifier.offset { }` - defers to layout phase
+- `Modifier.graphicsLayer { }` - defers to draw phase
+- `Modifier.drawBehind { }` - defers to draw phase
+
+### Strong Skipping Mode
+
+Enabled by default in modern Compose compiler. Changes how recomposition skipping works:
+
+- Composables skip recomposition if all parameters are unchanged
+- Lambdas are stable if all captured variables are stable
+- `@Stable` and `@Immutable` annotations are critical for custom types
+
+```kotlin
+// Stable lambda - count is a stable type (Int)
+@Composable
+fun Counter(count: Int) {
+    Button(onClick = { println(count) }) {
+        Text("Count: $count")
+    }
+}
+
+// Unstable parameter - causes recomposition every time
+@Composable
+fun UserCard(config: Config) { // Config not annotated = unstable
+    Text(config.title)
+}
+
+// Fix: annotate or cache
+@Immutable
+data class Config(val title: String, val color: Color)
+```
+
+For stability annotations (`@Immutable`, `@Stable`), see [Performance Optimization > Stability Annotations](../references/compose-patterns.md#stability-annotations-immutable-vs-stable) in compose-patterns.md.
+
+### derivedStateOf - Reducing Recomposition Frequency
+
+Only recomposes when the derived result actually changes, not on every input change:
+
+```kotlin
+// Bad: filters on every recomposition
+@Composable
+fun FilteredList(items: List<Item>, query: String) {
+    val filtered = items.filter { query in it.title }
+    LazyColumn {
+        items(filtered) { ItemRow(it) }
+    }
+}
+
+// Good: only recomposes when the filtered result changes
+@Composable
+fun FilteredList(items: List<Item>, query: String) {
+    val filtered by remember(items, query) {
+        derivedStateOf { items.filter { query in it.title } }
+    }
+    LazyColumn {
+        items(filtered) { ItemRow(it) }
+    }
+}
+```
+
+Also useful for scroll-dependent UI:
+
+```kotlin
+val listState = rememberLazyListState()
+val showScrollToTop by remember {
+    derivedStateOf { listState.firstVisibleItemIndex > 0 }
+}
+```
+
+Only use `derivedStateOf` for non-trivial computations. For cheap operations (string concat, simple boolean), the overhead isn't worth it.
+
+### remember with Keys
+
+```kotlin
+// Recalculates on every recomposition - bad for expensive ops
+val metadata = computeMetadata(id)
+
+// Recalculates only when id changes
+val metadata = remember(id) { computeMetadata(id) }
+
+// Multiple keys
+val data = remember(id, userId) { fetchData(id, userId) }
+```
+
+Skip `remember` for cheap operations (string literals, simple objects). Over-wrapping adds memory overhead.
+
+### R8/ProGuard Compose Rules
+
+Preserve stability annotations in release builds:
+
+```proguard
+# Keep Compose stability annotations for recomposition skipping
+-keep @androidx.compose.runtime.Stable class **
+-keep @androidx.compose.runtime.Immutable class **
+-keepclassmembers class * {
+    @androidx.compose.runtime.Stable <methods>;
+}
+```
+
+Ensure `minifyEnabled` and `shrinkResources` are enabled:
+
+```kotlin
+// app/build.gradle.kts
+android {
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+}
+```
+
+See `templates/proguard-rules.pro.template` for the full R8 rules file.
+
+### Layout Inspector - Recomposition Counts
+
+Measure recompositions in Android Studio:
+
+1. Run app on device
+2. **Tools > Layout Inspector** > select process
+3. Enable **Show Composition Counts** toggle
+4. Interact with the app - counts show how many times each composable recomposed
+
+High recomposition counts indicate:
+- Unstable parameters (add `@Immutable`/`@Stable`)
+- State reads in wrong scope (defer to layout/draw phase)
+- Missing `remember` on expensive computations
+- Lambda allocations (wrap in `remember` or use method references)
+
+### Common Hot Paths
+
+```kotlin
+// Bad: allocates string every recomposition
+Text("Count: ${count}")
+// Acceptable: Compose handles this efficiently for simple interpolation
+
+// Bad: creates new ButtonColors every recomposition
+Button(
+    colors = ButtonDefaults.buttonColors(
+        containerColor = if (isPressed) Color.Red else Color.Blue
+    )
+) { Text("Click") }
+// Good: cache the colors
+val buttonColors = remember(isPressed) {
+    ButtonDefaults.buttonColors(
+        containerColor = if (isPressed) Color.Red else Color.Blue
+    )
+}
+Button(colors = buttonColors) { Text("Click") }
+
+// Bad: filters without derivedStateOf - runs on every recomposition
+LazyColumn {
+    items(items.filter(predicate)) { ItemRow(it) }
+}
+// Good: derive the filtered list
+val filtered by remember(items, predicate) {
+    derivedStateOf { items.filter(predicate) }
+}
+LazyColumn {
+    items(filtered) { ItemRow(it) }
+}
+
+// Bad: creating objects in item scope
+LazyColumn {
+    items(users) { user ->
+        val state = remember { mutableStateOf(user) } // new state per recomposition
+        UserRow(state.value)
+    }
+}
+// Good: pass data directly with stable keys
+LazyColumn {
+    items(users, key = { it.id }) { user ->
+        UserRow(user)
+    }
+}
+```
+
 ## References
 - Benchmarking overview: https://developer.android.com/topic/performance/benchmarking/benchmarking-overview
 - Macrobenchmark overview: https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview
