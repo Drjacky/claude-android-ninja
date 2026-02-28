@@ -20,7 +20,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 ## What This Skill Covers
 - Modular Android architecture (feature-first, core modules, strict dependencies)
 - Domain/Data/UI layering patterns with auth-focused examples
-- Jetpack Compose patterns, state management, and adaptive UI (NavigationSuiteScaffold, ListDetailPaneScaffold, SupportingPaneScaffold)
+- Jetpack Compose patterns, state management, animation, side effects, modifiers, and adaptive UI (NavigationSuiteScaffold, ListDetailPaneScaffold, SupportingPaneScaffold)
 - Edge-to-edge display and predictive back gesture handling
 - Material 3 theming (dynamic colors, typography, shapes, dark/light mode)
 - Navigation3 guidance and navigation coordination
@@ -36,10 +36,11 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Dependency management rules and templates
 - Crash reporting with provider-agnostic interfaces (Firebase/Sentry)
 - Runtime permissions with Compose patterns
-- Performance benchmarking (Macrobenchmark, Microbenchmark, Baseline Profiles) and app startup optimization (App Startup library, splash screen, lazy initialization)
+- Performance benchmarking (Macrobenchmark, Microbenchmark, Baseline Profiles), Compose recomposition optimization (three phases, deferred state reads, Strong Skipping Mode), and app startup optimization (App Startup library, splash screen, lazy initialization)
 - StrictMode guardrails and Compose compiler stability diagnostics
 - Code coverage with JaCoCo (unit + instrumented tests)
 - Security (certificate pinning, encryption, biometrics, root detection, Play Integrity)
+- Deprecated pattern migrations (Accompanist removal, API upgrades, Material 2 to 3)
 - Code quality with Detekt and Compose rules
 
 ## Key Files
@@ -47,7 +48,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - [`references/architecture.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/architecture.md) - architecture principles, data/domain layers, and flows
 - [`references/modularization.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/modularization.md) - module structure, dependency rules, and feature module creation
 - [`references/android-navigation.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-navigation.md) - Navigation3 architecture, state management, and adaptive navigation
-- [`references/compose-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/compose-patterns.md) - Compose UI patterns and best practices
+- [`references/compose-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/compose-patterns.md) - Compose patterns, animation, side effects, modifiers, and migrations
 - [`references/android-theming.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-theming.md) - Material 3 theming, colors, typography, shapes
 - [`references/android-accessibility.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-accessibility.md) - accessibility, TalkBack, semantic properties, WCAG
 - [`references/android-i18n.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-i18n.md) - internationalization, localization, RTL support, plurals
@@ -66,7 +67,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - [`references/android-security.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-security.md) - security, encryption, biometrics, certificate pinning, root detection
 - [`references/code-quality.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/code-quality.md) - Detekt setup and code quality rules
 - [`references/dependencies.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/dependencies.md) - dependency rules and version catalog guidance
-- [`references/android-performance.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-performance.md) - benchmarking, app startup optimization, and splash screen
+- [`references/android-performance.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-performance.md) - benchmarking, recomposition performance, app startup optimization, and splash screen
 - [`references/design-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/design-patterns.md) - Android-focused design patterns
 - [`templates/proguard-rules.pro.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/templates/proguard-rules.pro.template) - R8/ProGuard rules for all libraries
 - [`templates/detekt.yml.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/templates/detekt.yml.template) - Detekt static analysis configuration
