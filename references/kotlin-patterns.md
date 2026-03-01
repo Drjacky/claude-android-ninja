@@ -621,6 +621,50 @@ inline fun <reified T> Json.encodeToString(value: T): String {
 - Don't overuse; adds code size at call sites
 - Best for: DSLs, type-safe wrappers, reflection avoidance
 
+### `noinline` and `crossinline`
+
+When a function is `inline`, all its lambda parameters are inlined by default. Use `noinline` and `crossinline` to change that behavior for specific lambdas.
+
+#### `noinline` - Opt a Lambda Out of Inlining
+
+Use when the lambda must be stored, passed to another function, or returned. Inlined lambdas can't be treated as objects.
+
+```kotlin
+inline fun runWithCallback(
+    action: () -> Unit,
+    noinline onComplete: () -> Unit // must be noinline to pass as object
+) {
+    action()
+    postToMainThread(onComplete) // passing lambda to non-inline function
+}
+```
+
+#### `crossinline` - Forbid Non-Local Returns
+
+Use when the lambda executes in a different context (another coroutine, thread, or lambda). Prevents the caller from using `return` to exit the outer function.
+
+```kotlin
+inline fun executeOnIo(crossinline block: () -> Unit) {
+    CoroutineScope(Dispatchers.IO).launch {
+        block() // runs in different coroutine - non-local return would be unsafe
+    }
+}
+
+// Without crossinline, this return would try to exit the calling function:
+executeOnIo {
+    // return // Compile error: not allowed with crossinline
+    doWork()
+}
+```
+
+#### Decision Rules
+
+| Modifier | When to Use | Effect |
+|----------|-------------|--------|
+| (default) | Lambda used directly at call site | Inlined, non-local `return` allowed |
+| `noinline` | Lambda stored, passed to another function, or returned | Not inlined, creates object |
+| `crossinline` | Lambda runs in different execution context | Inlined, but non-local `return` forbidden |
+
 ## Named Arguments
 
 Use named arguments for clarity, especially with multiple parameters of the same type:
