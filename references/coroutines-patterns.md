@@ -202,6 +202,92 @@ Key `SharingStarted` strategies:
 
 Common mistake: Using `stateIn` with `Eagerly` by default. Prefer `WhileSubscribed` to avoid wasted resources.
 
+### Share Expensive Upstream with `shareIn`
+
+Use `shareIn` to convert a cold Flow into a hot `SharedFlow` shared across multiple collectors. Unlike `stateIn`, it has no initial value and supports configurable replay.
+
+```kotlin
+@HiltViewModel
+class NotificationsViewModel @Inject constructor(
+    private val notificationRepository: NotificationRepository
+) : ViewModel() {
+    // Expensive upstream: WebSocket connection + parsing
+    val notifications: SharedFlow<NotificationEvent> = notificationRepository
+        .observeNotifications()
+        .shareIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            replay = 0
+        )
+}
+```
+
+#### `stateIn` vs `shareIn`
+
+| | `stateIn` | `shareIn` |
+|---|---|---|
+| Return type | `StateFlow<T>` | `SharedFlow<T>` |
+| Initial value | Required | Not needed |
+| Replay | Always 1 (latest) | Configurable (0, 1, n) |
+| `.value` accessor | Yes | No |
+| Use for | UI state, always-available data | Event streams, notifications |
+
+**Rule:** If collectors need `.value` or the current state at any time, use `stateIn`. If collectors only care about emissions after subscribing, use `shareIn`.
+
+```kotlin
+// stateIn: UI state - collectors need current value immediately
+val userProfile: StateFlow<UserProfile?> = profileRepo.observe()
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+// shareIn: events - collectors only care about new emissions
+val toastEvents: SharedFlow<ToastMessage> = eventBus.observe()
+    .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 0)
+```
+
+### Combine Multiple Flows with `combine`
+
+Use `combine` to merge the **latest values** from multiple Flows into a single emission. Re-emits whenever any input Flow emits a new value.
+
+```kotlin
+@HiltViewModel
+class DashboardViewModel @Inject constructor(
+    private val userRepository: UserRepository,
+    private val settingsRepository: SettingsRepository,
+    private val connectivityObserver: ConnectivityObserver
+) : ViewModel() {
+    val uiState: StateFlow<DashboardUiState> = combine(
+        userRepository.observeUser(),
+        settingsRepository.observeSettings(),
+        connectivityObserver.observe()
+    ) { user, settings, connectivity ->
+        DashboardUiState(
+            userName = user.displayName,
+            theme = settings.theme,
+            isOffline = connectivity == ConnectivityStatus.Lost
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = DashboardUiState()
+    )
+}
+```
+
+#### `combine` vs `zip`
+
+- `combine` - emits on **any** input change using latest values from all. Use for independent state sources.
+- `zip` - pairs emissions **1:1** in order, waits for both. Use for synchronized pairs.
+
+```kotlin
+// combine: re-emits when either changes (independent sources)
+combine(userFlow, settingsFlow) { user, settings -> Pair(user, settings) }
+
+// zip: waits for matching pairs (synchronized sources)
+requestFlow.zip(responseFlow) { request, response -> Result(request, response) }
+```
+
+**Rule:** For ViewModel state composed from multiple repositories/data sources, always use `combine`. `zip` is rare - typically used for request/response pairing or synchronized streams.
+
 ### Avoid `async` with Immediate `await`
 Don't use `async` followed immediately by `await` in the same scope. Use `withContext` for sequential work or call the suspend function directly.
 
