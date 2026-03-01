@@ -166,6 +166,10 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Follow [coroutines-patterns.md](references/coroutines-patterns.md) for structured concurrency patterns  
 → Use appropriate dispatchers (IO, Default, Main) and proper cancellation handling  
 → Prefer `StateFlow`/`SharedFlow` over channels for state management  
+→ Use `callbackFlow` to wrap Android callback APIs (connectivity, sensors, location) into Flow  
+→ Use `suspendCancellableCoroutine` for one-shot callbacks (Play Services tasks, biometrics)  
+→ Use `combine()` to merge multiple Flows in ViewModels, `shareIn` to share expensive upstream  
+→ Handle backpressure with `buffer`, `conflate`, `debounce`, or `sample`  
 
 **Need to share behavior across multiple classes?**
 → Use [kotlin-delegation.md](references/kotlin-delegation.md) for interface delegation patterns  
@@ -209,6 +213,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Use [compose-patterns.md](references/compose-patterns.md) → "Side Effects" for effect selection guide  
 → `LaunchedEffect(key)` for state-driven coroutines, `rememberCoroutineScope` for event-driven  
 → `DisposableEffect` for listener/resource cleanup, always include `onDispose`  
+→ `LifecycleResumeEffect` for onResume/onPause work (camera, media), `LifecycleStartEffect` for onStart/onStop (location, sensors)  
 
 **Working with Modifier ordering or custom modifiers?**
 → Use [compose-patterns.md](references/compose-patterns.md) → "Modifiers" for chain ordering rules and patterns  
