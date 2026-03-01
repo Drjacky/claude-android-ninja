@@ -376,6 +376,102 @@ When to use each:
 - `flatMapMerge`: Multiple independent sources running in parallel
 - `flatMapConcat`: Order-dependent sequential processing (rare)
 
+### Backpressure & Rate Limiting
+
+When a Flow producer emits faster than the collector can process, the producer suspends by default (back-pressured). Use these operators to control that behavior explicitly.
+
+#### `buffer` - Decouple Producer and Collector
+
+Run producer and collector concurrently with a buffer in between. Producer keeps emitting without waiting for slow collector.
+
+```kotlin
+sensorReadings()
+    .buffer(64)
+    .collect { reading ->
+        // Slow processing - producer keeps emitting into buffer
+        saveToDisk(reading)
+    }
+```
+
+With overflow strategy:
+
+```kotlin
+highFrequencyEvents()
+    .buffer(capacity = 100, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    .collect { event ->
+        processEvent(event)
+    }
+```
+
+`BufferOverflow` strategies:
+- `SUSPEND` (default) - suspends producer when buffer full
+- `DROP_OLDEST` - drops oldest buffered value, never suspends producer
+- `DROP_LATEST` - drops newest emission, never suspends producer
+
+#### `conflate` - Keep Only Latest
+
+Shorthand for `buffer(CONFLATED)`. Collector always gets the most recent emission, skipping intermediate values.
+
+```kotlin
+// UI only needs latest state - skip intermediate updates
+locationUpdates()
+    .conflate()
+    .collect { location ->
+        updateMapMarker(location)
+    }
+```
+
+#### `debounce` - Wait for Quiet Period
+
+Emit only after no new emissions for the specified duration. Restarts timer on each emission.
+
+```kotlin
+searchQueryFlow
+    .debounce(300)
+    .distinctUntilChanged()
+    .flatMapLatest { query -> repository.search(query) }
+    .collect { results -> updateUi(results) }
+```
+
+#### `sample` - Periodic Snapshots
+
+Emit the most recent value at fixed intervals, regardless of emission frequency.
+
+```kotlin
+// Emit latest sensor reading every 100ms, even if sensor fires at 1000Hz
+accelerometerFlow()
+    .sample(100)
+    .collect { reading -> updateDisplay(reading) }
+```
+
+#### Decision Guide
+
+| Scenario | Operator | Effect |
+|----------|----------|--------|
+| Slow collector, fast producer, all values matter | `buffer(capacity)` | Queues emissions |
+| Slow collector, only latest value matters | `conflate()` | Skips intermediate |
+| Fast producer, drop old when full | `buffer(n, DROP_OLDEST)` | Bounded buffer, drops old |
+| User input (search, text) | `debounce(ms)` | Waits for pause |
+| Continuous stream, periodic sampling | `sample(ms)` | Fixed-rate snapshots |
+| Suppress consecutive duplicates | `distinctUntilChanged()` | Filters equal |
+
+#### Anti-Pattern
+
+```kotlin
+// BAD: Slow collector blocks fast producer, no backpressure handling
+fastProducer()
+    .collect { item ->
+        heavyProcessing(item) // Producer suspended until this completes
+    }
+
+// GOOD: Buffer decouples producer and collector
+fastProducer()
+    .buffer(64, BufferOverflow.DROP_OLDEST)
+    .collect { item ->
+        heavyProcessing(item)
+    }
+```
+
 ### Prefer `suspend` for One-Off Values
 Use a suspending function when only a single value is expected.
 
