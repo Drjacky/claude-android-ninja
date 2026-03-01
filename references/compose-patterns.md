@@ -2285,6 +2285,95 @@ fun AppContent() {
 
 Use `awaitDispose` for cleanup (equivalent to `onDispose` in `DisposableEffect`).
 
+### LifecycleResumeEffect - onResume / onPause
+
+Runs code when the `LifecycleOwner` reaches `RESUMED` state. Cleanup runs on `onPause` or when the composable leaves composition. Use for work that must only be active while the screen is visible and interactive.
+
+```kotlin
+@Composable
+fun CameraPreview(cameraController: CameraController) {
+    LifecycleResumeEffect(cameraController) {
+        cameraController.startPreview()
+
+        onPauseOrDispose {
+            cameraController.stopPreview()
+        }
+    }
+
+    // camera UI...
+}
+```
+
+Common use cases:
+- Start/stop camera or media playback
+- Resume/pause sensor updates
+- Register/unregister push notification listeners
+- Analytics screen-view tracking (fires on return from background)
+
+```kotlin
+@Composable
+fun ScreenAnalytics(screenName: String) {
+    LifecycleResumeEffect(screenName) {
+        analytics.logScreenView(screenName)
+
+        onPauseOrDispose { }
+    }
+}
+```
+
+**Rule:** `onPauseOrDispose` block is mandatory - compiler enforces it.
+
+### LifecycleStartEffect - onStart / onStop
+
+Same pattern as `LifecycleResumeEffect` but maps to `STARTED` state. Runs on `onStart`, cleans up on `onStop` or dispose.
+
+```kotlin
+@Composable
+fun LocationTracker(locationManager: LocationManager) {
+    LifecycleStartEffect(Unit) {
+        val listener = LocationListener { location -> updateMap(location) }
+        locationManager.requestLocationUpdates(
+            LocationManager.GPS_PROVIDER, 5000L, 10f, listener
+        )
+
+        onStopOrDispose {
+            locationManager.removeUpdates(listener)
+        }
+    }
+}
+```
+
+#### When to Use Which Lifecycle Effect
+
+| Effect | Active During | Use For |
+|--------|--------------|---------|
+| `LifecycleResumeEffect` | `onResume` to `onPause` | Camera, media playback, interactive features |
+| `LifecycleStartEffect` | `onStart` to `onStop` | Location, sensors, background-visible work |
+| `DisposableEffect` | Composition to disposal | Not lifecycle-dependent, just composition-scoped |
+
+**Rule:** Prefer `LifecycleResumeEffect`/`LifecycleStartEffect` over manually observing `LocalLifecycleOwner` with `DisposableEffect` + `LifecycleEventObserver`. They provide the same behavior with less boilerplate and no risk of forgetting cleanup.
+
+```kotlin
+// BAD: Manual lifecycle observer boilerplate
+DisposableEffect(lifecycleOwner) {
+    val observer = LifecycleEventObserver { _, event ->
+        when (event) {
+            Lifecycle.Event.ON_RESUME -> startCamera()
+            Lifecycle.Event.ON_PAUSE -> stopCamera()
+            else -> {}
+        }
+    }
+    lifecycleOwner.lifecycle.addObserver(observer)
+    onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+}
+
+// GOOD: Dedicated lifecycle effect
+LifecycleResumeEffect(Unit) {
+    startCamera()
+    onPauseOrDispose { stopCamera() }
+}
+```
+
 ### Effect Decision Guide
 
 
@@ -2293,7 +2382,8 @@ Use `awaitDispose` for cleanup (equivalent to `onDispose` in `DisposableEffect`)
 | Load data when key changes                          | `LaunchedEffect(key)`         | Coroutine restarts on key change  |
 | One-time setup (analytics, logging)                 | `LaunchedEffect(Unit)`        | Runs once, no restart needed      |
 | Register/unregister listener                        | `DisposableEffect(key)`       | Needs deterministic cleanup       |
-| Observe lifecycle events                            | `DisposableEffect(lifecycle)` | Cleanup observer on dispose       |
+| Work active only while resumed (camera, media)      | `LifecycleResumeEffect`       | Pauses on `onPause`, resumes on `onResume` |
+| Work active while started (location, sensors)       | `LifecycleStartEffect`        | Stops on `onStop`, starts on `onStart` |
 | Sync with external system after every recomposition | `SideEffect`                  | No keys, no cleanup               |
 | Launch coroutine from click handler                 | `rememberCoroutineScope`      | Event-driven, not state-driven    |
 | Keep latest callback in long-running effect         | `rememberUpdatedState`        | Avoid restart or stale capture    |
