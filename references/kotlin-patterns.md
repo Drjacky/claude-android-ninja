@@ -625,17 +625,62 @@ inline fun <reified T> Json.encodeToString(value: T): String {
 
 When a function is `inline`, all its lambda parameters are inlined by default. Use `noinline` and `crossinline` to change that behavior for specific lambdas.
 
+#### `inline` (default) - Inlined at Call Site
+
+All lambda parameters are inlined. Non-local `return` is allowed.
+
+```kotlin
+// Timing wrapper for repository calls - zero lambda overhead
+inline fun <T> Repository.timed(tag: String, block: () -> T): T {
+    val start = SystemClock.elapsedRealtime()
+    val result = block()
+    Log.d("Perf", "$tag took ${SystemClock.elapsedRealtime() - start}ms")
+    return result
+}
+
+// Usage - block is inlined, no lambda object created
+val user = userRepository.timed("fetchUser") {
+    remoteDataSource.getUser(userId)
+}
+
+// Compose: inline builder for modifier chains
+inline fun Modifier.conditionalPadding(
+    condition: Boolean,
+    block: Modifier.() -> Modifier
+): Modifier = if (condition) block() else this
+```
+
 #### `noinline` - Opt a Lambda Out of Inlining
 
 Use when the lambda must be stored, passed to another function, or returned. Inlined lambdas can't be treated as objects.
 
 ```kotlin
-inline fun runWithCallback(
-    action: () -> Unit,
-    noinline onComplete: () -> Unit // must be noinline to pass as object
+// Error handler must be stored in the WorkManager retry callback
+inline fun <T> safeApiCall(
+    crossinline call: suspend () -> T,
+    noinline onError: (Throwable) -> Unit // stored in retry callback
+): Flow<Result<T>> = flow {
+    try {
+        emit(Result.success(call()))
+    } catch (e: Exception) {
+        emit(Result.failure(e))
+        RetryScheduler.schedule(onError) // passing lambda as object
+    }
+}
+
+// Click listener stored in View - must be noinline
+inline fun View.onDebouncedClick(
+    debounceMs: Long = 300L,
+    noinline action: (View) -> Unit // stored by setOnClickListener
 ) {
-    action()
-    postToMainThread(onComplete) // passing lambda to non-inline function
+    var lastClickTime = 0L
+    setOnClickListener { view ->
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastClickTime >= debounceMs) {
+            lastClickTime = now
+            action(view)
+        }
+    }
 }
 ```
 
@@ -644,16 +689,38 @@ inline fun runWithCallback(
 Use when the lambda executes in a different context (another coroutine, thread, or lambda). Prevents the caller from using `return` to exit the outer function.
 
 ```kotlin
-inline fun executeOnIo(crossinline block: () -> Unit) {
-    CoroutineScope(Dispatchers.IO).launch {
-        block() // runs in different coroutine - non-local return would be unsafe
+// Lambda runs inside launch {} - different coroutine context
+inline fun ViewModel.launchWithLoading(
+    state: MutableStateFlow<Boolean>,
+    crossinline block: suspend () -> Unit
+) {
+    viewModelScope.launch {
+        state.value = true
+        try {
+            block()
+        } finally {
+            state.value = false
+        }
     }
 }
 
-// Without crossinline, this return would try to exit the calling function:
-executeOnIo {
-    // return // Compile error: not allowed with crossinline
-    doWork()
+// Usage
+fun loadProfile() {
+    launchWithLoading(_isLoading) {
+        // return here would try to exit loadProfile() without crossinline
+        val user = repository.getUser(userId)
+        _profile.value = user
+    }
+}
+
+// Lambda runs in Dispatchers.IO context
+inline fun <T> runOnIo(crossinline block: () -> T, crossinline onResult: (T) -> Unit) {
+    CoroutineScope(Dispatchers.IO).launch {
+        val result = block()
+        withContext(Dispatchers.Main) {
+            onResult(result)
+        }
+    }
 }
 ```
 
@@ -663,7 +730,7 @@ executeOnIo {
 |----------|-------------|--------|
 | (default) | Lambda used directly at call site | Inlined, non-local `return` allowed |
 | `noinline` | Lambda stored, passed to another function, or returned | Not inlined, creates object |
-| `crossinline` | Lambda runs in different execution context | Inlined, but non-local `return` forbidden |
+| `crossinline` | Lambda runs in different execution context (launch, withContext) | Inlined, but non-local `return` forbidden |
 
 ## Named Arguments
 
