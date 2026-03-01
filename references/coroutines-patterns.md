@@ -558,6 +558,152 @@ Important notes:
 - Wrap `withContext` with timeout, not the other way around, so the timeout covers the full operation including dispatcher switch
 - Use `withTimeoutOrNull` when a null result is acceptable; use `withTimeout` with explicit timeout handling when you need to distinguish timeout from other failures
 
+## `callbackFlow` - Bridging Imperative Callbacks to Flow
+
+Use `callbackFlow` to convert imperative callback-based APIs into cold Flows. Required for Android system APIs that use listener/callback patterns (ConnectivityManager, LocationManager, sensors, BroadcastReceiver).
+
+### Core Pattern
+
+```kotlin
+fun observeNetworkStatus(
+    connectivityManager: ConnectivityManager
+): Flow<NetworkStatus> = callbackFlow {
+    val callback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            trySend(NetworkStatus.Available)
+        }
+        override fun onLost(network: Network) {
+            trySend(NetworkStatus.Lost)
+        }
+        override fun onCapabilitiesChanged(
+            network: Network,
+            capabilities: NetworkCapabilities
+        ) {
+            trySend(NetworkStatus.Changed(capabilities))
+        }
+    }
+
+    val request = NetworkRequest.Builder()
+        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        .build()
+
+    connectivityManager.registerNetworkCallback(request, callback)
+
+    awaitClose {
+        connectivityManager.unregisterNetworkCallback(callback)
+    }
+}
+```
+
+### Rules
+
+- **Always call `awaitClose {}`** - even if cleanup is empty. Without it, the flow closes immediately after the builder block completes.
+- **Use `trySend()` from callbacks, not `send()`** - `trySend` is non-suspending and safe to call from any thread. `send()` is suspending and will throw if called from a non-coroutine context.
+- **Emit initial state before registering callback** - prevents collectors from missing the current value.
+- **Unregister/cleanup in `awaitClose`** - mirrors the lifecycle of the collector.
+
+### Emit Initial State
+
+```kotlin
+fun observeLocationUpdates(
+    locationManager: LocationManager
+): Flow<Location> = callbackFlow {
+    // Emit last known location immediately
+    val lastKnown = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+    lastKnown?.let { trySend(it) }
+
+    val listener = LocationListener { location -> trySend(location) }
+
+    locationManager.requestLocationUpdates(
+        LocationManager.GPS_PROVIDER, 5000L, 10f, listener
+    )
+
+    awaitClose { locationManager.removeUpdates(listener) }
+}
+```
+
+### BroadcastReceiver as Flow
+
+```kotlin
+fun Context.observeBatteryLevel(): Flow<Int> = callbackFlow {
+    val receiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+            trySend(level)
+        }
+    }
+
+    registerReceiver(receiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+
+    awaitClose { unregisterReceiver(receiver) }
+}
+```
+
+### Stabilize Rapidly Changing Callbacks
+
+Combine `callbackFlow` with Flow operators to stabilize flapping signals:
+
+```kotlin
+fun observeStableNetworkStatus(
+    connectivityManager: ConnectivityManager
+): Flow<NetworkStatus> =
+    observeNetworkStatus(connectivityManager)
+        .distinctUntilChanged()
+        .debounce(200)
+        .flowOn(Dispatchers.IO)
+```
+
+### `callbackFlow` vs `channelFlow`
+
+- `callbackFlow` - for wrapping external callback APIs. Enforces `awaitClose`.
+- `channelFlow` - for producing values from multiple coroutines. No `awaitClose` requirement.
+
+```kotlin
+// channelFlow: multiple concurrent producers
+fun mergeFeeds(repos: List<FeedRepository>): Flow<FeedItem> = channelFlow {
+    repos.forEach { repo ->
+        launch {
+            repo.getFeed().collect { send(it) }
+        }
+    }
+}
+```
+
+### Anti-Patterns
+
+```kotlin
+// BAD: Missing awaitClose - flow completes immediately
+fun badFlow(): Flow<Event> = callbackFlow {
+    api.registerListener { trySend(it) }
+    // Flow closes here! Listener never cleaned up
+}
+
+// GOOD: Always include awaitClose
+fun goodFlow(): Flow<Event> = callbackFlow {
+    val listener = EventListener { trySend(it) }
+    api.registerListener(listener)
+    awaitClose { api.unregisterListener(listener) }
+}
+```
+
+```kotlin
+// BAD: Using send() from callback thread
+fun badFlow(): Flow<Event> = callbackFlow {
+    api.registerListener { event ->
+        send(event) // Compile error or crash: send is suspending
+    }
+    awaitClose { api.unregisterListener() }
+}
+
+// GOOD: Use trySend() from callbacks
+fun goodFlow(): Flow<Event> = callbackFlow {
+    api.registerListener { event ->
+        trySend(event) // Non-suspending, thread-safe
+    }
+    awaitClose { api.unregisterListener() }
+}
+```
+
 ## Coexisting with RxJava (Legacy Code)
 
 When maintaining projects with both RxJava and Coroutines (migration not planned):
