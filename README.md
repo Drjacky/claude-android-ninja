@@ -31,7 +31,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Material Symbols icons, graphics, and custom drawing with Canvas
 - Gradle/build conventions, version catalog usage, and KSP migration
 - Testing practices with fakes, Hilt testing, and Room testing
-- Coroutines patterns, structured concurrency, and Flow
+- Coroutines patterns, structured concurrency, Flow (callbackFlow, backpressure, combine, shareIn)
 - Kotlin delegation patterns and composition over inheritance
 - Dependency management rules and templates
 - Crash reporting with provider-agnostic interfaces (Firebase/Sentry)
