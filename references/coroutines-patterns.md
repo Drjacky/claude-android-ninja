@@ -558,9 +558,19 @@ Important notes:
 - Wrap `withContext` with timeout, not the other way around, so the timeout covers the full operation including dispatcher switch
 - Use `withTimeoutOrNull` when a null result is acceptable; use `withTimeout` with explicit timeout handling when you need to distinguish timeout from other failures
 
-## `callbackFlow` - Bridging Imperative Callbacks to Flow
+## Bridging Imperative Callbacks to Coroutines
 
-Use `callbackFlow` to convert imperative callback-based APIs into cold Flows. Required for Android system APIs that use listener/callback patterns (ConnectivityManager, LocationManager, sensors, BroadcastReceiver).
+Android and third-party SDKs expose many callback-based APIs. Use the right bridge depending on whether the callback produces **a stream of values** or **a single result**.
+
+| Scenario | Use |
+|----------|-----|
+| Callback fires **multiple times** (listener, observer) | `callbackFlow` |
+| Callback fires **once** (completion, result) | `suspendCancellableCoroutine` |
+| Need **multiple concurrent coroutine producers** | `channelFlow` |
+
+### `callbackFlow` - Callback Stream to Flow
+
+Use `callbackFlow` to convert listener/observer callback APIs into cold Flows. Required for Android system APIs that use listener/callback patterns (ConnectivityManager, LocationManager, sensors, BroadcastReceiver).
 
 ### Core Pattern
 
@@ -595,14 +605,13 @@ fun observeNetworkStatus(
 }
 ```
 
-### Rules
-
+**Rules:**
 - **Always call `awaitClose {}`** - even if cleanup is empty. Without it, the flow closes immediately after the builder block completes.
 - **Use `trySend()` from callbacks, not `send()`** - `trySend` is non-suspending and safe to call from any thread. `send()` is suspending and will throw if called from a non-coroutine context.
 - **Emit initial state before registering callback** - prevents collectors from missing the current value.
 - **Unregister/cleanup in `awaitClose`** - mirrors the lifecycle of the collector.
 
-### Emit Initial State
+#### Emit Initial State
 
 ```kotlin
 fun observeLocationUpdates(
@@ -622,7 +631,7 @@ fun observeLocationUpdates(
 }
 ```
 
-### BroadcastReceiver as Flow
+#### BroadcastReceiver as Flow
 
 ```kotlin
 fun Context.observeBatteryLevel(): Flow<Int> = callbackFlow {
@@ -639,7 +648,7 @@ fun Context.observeBatteryLevel(): Flow<Int> = callbackFlow {
 }
 ```
 
-### Stabilize Rapidly Changing Callbacks
+#### Stabilize Rapidly Changing Callbacks
 
 Combine `callbackFlow` with Flow operators to stabilize flapping signals:
 
@@ -653,13 +662,11 @@ fun observeStableNetworkStatus(
         .flowOn(Dispatchers.IO)
 ```
 
-### `callbackFlow` vs `channelFlow`
+#### `channelFlow` - Multiple Coroutine Producers
 
-- `callbackFlow` - for wrapping external callback APIs. Enforces `awaitClose`.
-- `channelFlow` - for producing values from multiple coroutines. No `awaitClose` requirement.
+Use `channelFlow` when you need multiple coroutines producing into the same Flow. No `awaitClose` requirement.
 
 ```kotlin
-// channelFlow: multiple concurrent producers
 fun mergeFeeds(repos: List<FeedRepository>): Flow<FeedItem> = channelFlow {
     repos.forEach { repo ->
         launch {
@@ -669,7 +676,7 @@ fun mergeFeeds(repos: List<FeedRepository>): Flow<FeedItem> = channelFlow {
 }
 ```
 
-### Anti-Patterns
+#### `callbackFlow` Anti-Patterns
 
 ```kotlin
 // BAD: Missing awaitClose - flow completes immediately
@@ -701,6 +708,100 @@ fun goodFlow(): Flow<Event> = callbackFlow {
         trySend(event) // Non-suspending, thread-safe
     }
     awaitClose { api.unregisterListener() }
+}
+```
+
+### `suspendCancellableCoroutine` - One-Shot Callback to Suspend
+
+Use `suspendCancellableCoroutine` to convert a **single-result** callback into a suspend function. The coroutine suspends until `resume` or `resumeWithException` is called exactly once.
+
+**Always prefer `suspendCancellableCoroutine` over `suspendCoroutine`** - it supports cancellation, which is critical for structured concurrency.
+
+#### Core Pattern
+
+```kotlin
+suspend fun authenticate(biometricManager: BiometricManager): AuthResult =
+    suspendCancellableCoroutine { continuation ->
+        biometricManager.authenticate(
+            onSuccess = { token ->
+                continuation.resume(token)
+            },
+            onError = { error ->
+                continuation.resumeWithException(AuthException(error))
+            }
+        )
+
+        continuation.invokeOnCancellation {
+            biometricManager.cancel()
+        }
+    }
+```
+
+#### Common Use Cases
+
+```kotlin
+// One-shot location request
+suspend fun getLastLocation(
+    fusedLocationClient: FusedLocationProviderClient
+): Location = suspendCancellableCoroutine { cont ->
+    fusedLocationClient.lastLocation
+        .addOnSuccessListener { location ->
+            if (location != null) cont.resume(location)
+            else cont.resumeWithException(LocationNotFoundException())
+        }
+        .addOnFailureListener { e ->
+            cont.resumeWithException(e)
+        }
+
+    cont.invokeOnCancellation {
+        // FusedLocationProviderClient tasks auto-cancel
+    }
+}
+
+// Play Services Task to suspend
+suspend fun <T> Task<T>.await(): T = suspendCancellableCoroutine { cont ->
+    addOnSuccessListener { cont.resume(it) }
+    addOnFailureListener { cont.resumeWithException(it) }
+    addOnCanceledListener { cont.cancel() }
+}
+```
+
+#### Rules
+
+- **Use `suspendCancellableCoroutine`, not `suspendCoroutine`** - `suspendCoroutine` ignores cancellation, leaking work and preventing structured concurrency from cleaning up.
+- **Call `resume`/`resumeWithException` exactly once** - multiple calls throw `IllegalStateException`. Use `cont.isActive` check if the callback might fire after cancellation.
+- **Always implement `invokeOnCancellation`** - clean up resources (cancel requests, unregister listeners) when the coroutine is cancelled.
+- **Never block inside the lambda** - the lambda runs synchronously on the caller's thread. Register the callback and return immediately.
+
+#### Anti-Patterns
+
+```kotlin
+// BAD: Using suspendCoroutine - ignores cancellation
+suspend fun badFetch(): Result = suspendCoroutine { cont ->
+    api.fetch { result -> cont.resume(result) }
+    // If coroutine is cancelled, api.fetch keeps running and cont.resume may crash
+}
+
+// GOOD: Using suspendCancellableCoroutine
+suspend fun goodFetch(): Result = suspendCancellableCoroutine { cont ->
+    val call = api.fetch { result ->
+        if (cont.isActive) cont.resume(result)
+    }
+    cont.invokeOnCancellation { call.cancel() }
+}
+```
+
+```kotlin
+// BAD: Resuming multiple times
+suspend fun bad(): String = suspendCancellableCoroutine { cont ->
+    api.onSuccess { cont.resume(it) }
+    api.onRetry { cont.resume(it) } // Crash: already resumed
+}
+
+// GOOD: Guard with isActive
+suspend fun good(): String = suspendCancellableCoroutine { cont ->
+    api.onSuccess { if (cont.isActive) cont.resume(it) }
+    api.onRetry { if (cont.isActive) cont.resume(it) }
 }
 ```
 
