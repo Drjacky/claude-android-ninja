@@ -290,6 +290,7 @@ class AuthViewModel @Inject constructor(
     
     // Other helper methods omitted for brevity (updateLoginForm, updateRegisterForm, etc.)
 }
+```
 
 ### State Collection with Lifecycle
 
