@@ -709,35 +709,34 @@ class BiometricAuthRepository(
     private val biometricSdk: ThirdPartyBiometricSdk,
     private val ioDispatcher: CoroutineDispatcher
 ) {
-    suspend fun authenticate(): BiometricResult? = withContext(ioDispatcher) {
-        // Third-party SDK has no timeout mechanism, so we add one
+    suspend fun authenticate(): BiometricResult? =
         withTimeoutOrNull(30.seconds) {
-            biometricSdk.authenticate()
+            withContext(ioDispatcher) {
+                biometricSdk.authenticate()
+            }
         }
-    }
 }
 
 class HardwarePrinterRepository(
     private val printerSdk: ThirdPartyPrinterSdk,
     private val ioDispatcher: CoroutineDispatcher
 ) {
-    suspend fun print(document: PrintDocument): PrintResult = withContext(ioDispatcher) {
-        // Hardware operations can hang on device issues
+    suspend fun print(document: PrintDocument): PrintResult =
         try {
             withTimeout(60.seconds) {
-                printerSdk.print(document)
+                withContext(ioDispatcher) {
+                    printerSdk.print(document)
+                }
             }
         } catch (e: TimeoutCancellationException) {
-            // Handle timeout as a specific failure case
             PrintResult.Timeout
         }
-    }
 }
 ```
 
 Important notes:
 - `withTimeout` throws `TimeoutCancellationException` (a subclass of `CancellationException`), which will cancel the coroutine unless caught and handled
-- Wrap `withContext` with timeout, not the other way around, so the timeout covers the full operation including dispatcher switch
+- Wrap `withContext` inside `withTimeout`, not the other way around, so the timeout covers the full operation including dispatcher switch
 - Use `withTimeoutOrNull` when a null result is acceptable; use `withTimeout` with explicit timeout handling when you need to distinguish timeout from other failures
 
 ## Bridging Imperative Callbacks to Coroutines
