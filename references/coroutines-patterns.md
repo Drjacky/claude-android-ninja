@@ -409,14 +409,90 @@ class AuthLegacyKeyStore(
 }
 ```
 
-### Prefer `supervisorScope` for Independent Task Failures
-Avoid passing a `SupervisorJob` into `withContext`; it doesn't provide the isolation most expect because the scope itself
-will still fail if a child does. Use `supervisorScope` instead so one child failure doesn't cancel siblings or the parent.
+### `supervisorScope` vs `SupervisorJob` - Independent Child Failures
+
+Both let children fail independently without cancelling siblings. The difference is **where you use them** and **how exceptions are handled**.
+
+#### `supervisorScope` - Scoped Supervision with Automatic Exception Containment
+
+Use inside suspend functions. Child failures are contained automatically - they don't cancel siblings or propagate to the parent. The scope integrates with structured concurrency.
 
 ```kotlin
 suspend fun refreshAuthCaches(): Unit = supervisorScope {
-    launch { authCache.refreshTokens() }
-    launch { authCache.refreshSessions() }
+    launch { authCache.refreshTokens() }   // if this fails, sessions still runs
+    launch { authCache.refreshSessions() } // independent of tokens
+}
+```
+
+Exceptions from failed children are **contained** - they don't crash the app or propagate upward. You can optionally catch them inside each child for logging/recovery.
+
+#### `SupervisorJob` - Explicit Scope with Manual Error Handling
+
+Use when creating a `CoroutineScope` (Services, Repositories, custom scopes). Children fail independently, BUT **you must handle exceptions explicitly** - unhandled child exceptions still propagate to the `CoroutineExceptionHandler` or crash the app.
+
+```kotlin
+class RelayConnectionService : Service() {
+    private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        Log.e("RelayService", "Child failed: ${throwable.message}", throwable)
+    }
+
+    // SupervisorJob: children fail independently
+    // CoroutineExceptionHandler: REQUIRED to catch unhandled child exceptions
+    private val scope = CoroutineScope(
+        SupervisorJob() + Dispatchers.IO + exceptionHandler
+    )
+
+    fun connectToRelays(relays: List<Relay>) {
+        relays.forEach { relay ->
+            scope.launch {
+                relay.connect() // if this throws, other relays continue
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        scope.cancel()
+        super.onDestroy()
+    }
+}
+```
+
+Without the `CoroutineExceptionHandler`, an unhandled exception from any child would crash the app - `SupervisorJob` only prevents sibling cancellation, it does not swallow exceptions.
+
+#### Decision Guide
+
+| Scenario | Use | Why |
+|----------|-----|-----|
+| Suspend function, parallel independent work | `supervisorScope` | Scoped, automatic exception containment |
+| Long-lived scope (Service, Repository) | `SupervisorJob` + `CoroutineExceptionHandler` | Explicit lifecycle, explicit error handling |
+| `withContext` + supervision needed | `supervisorScope` inside `withContext` | Never pass `SupervisorJob()` to `withContext` |
+
+#### Anti-Pattern: `withContext(SupervisorJob())`
+
+Never pass `SupervisorJob()` directly to `withContext`. It creates an orphaned root Job - cancellation from outside won't propagate in, and child exceptions have no handler.
+
+```kotlin
+// BAD: orphaned Job, breaks structured concurrency, unhandled exceptions crash
+suspend fun bad() = withContext(SupervisorJob()) {
+    launch { throw Exception() } // no handler - crashes app
+    launch { delay(1000) }       // parent cancellation won't reach here
+}
+
+// GOOD: supervisorScope for scoped supervision in suspend functions
+suspend fun good() = supervisorScope {
+    launch { throw Exception() } // contained, siblings continue
+    launch { delay(1000) }       // runs independently
+}
+
+// GOOD: SupervisorJob scope with explicit error handling
+val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+    Log.e("Sync", "Child failed: ${throwable.message}", throwable)
+}
+val supervisedScope = CoroutineScope(SupervisorJob() + Dispatchers.IO + exceptionHandler)
+
+fun startParallelSync() {
+    supervisedScope.launch { syncUsers() }    // if this fails, orders sync continues
+    supervisedScope.launch { syncOrders() }   // independent of users sync
 }
 ```
 
