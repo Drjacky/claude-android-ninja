@@ -78,7 +78,7 @@ dependencies {
     compileOnly(libs.kotlin.composeGradlePlugin)
     compileOnly(libs.ksp.gradlePlugin)
     compileOnly(libs.room.gradlePlugin)
-    compileOnly(libs.plugin.detekt)
+    implementation(libs.plugin.detekt)
 }
 
 gradlePlugin {

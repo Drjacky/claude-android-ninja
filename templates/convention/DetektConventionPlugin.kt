@@ -1,7 +1,7 @@
 /*
  * Convention plugin for Detekt static analysis
  * Configures: Detekt plugin, Compose rules, baseline, type resolution
- * Note: Detekt 2.0+ uses dev.detekt package and new report names
+ * Detekt 2.0+ uses dev.detekt package, Property API, and removed txt report
  */
 
 import dev.detekt.gradle.Detekt
@@ -25,31 +25,30 @@ class DetektConventionPlugin : Plugin<Project> {
         }
 
         extensions.configure<DetektExtension> {
-            buildUponDefaultConfig = true
-            basePath = rootProject.projectDir.absolutePath
-            parallel = true
-            
-            config.from(rootProject.file("config/detekt.yml"))
-            
+            buildUponDefaultConfig.set(true)
+            basePath.set(rootProject.layout.projectDirectory)
+            parallel.set(true)
+
+            config.setFrom(rootProject.file("config/detekt.yml"))
+
             val moduleConfig = project.file("detekt.yml")
             if (moduleConfig.exists()) {
                 config.from(moduleConfig)
             }
-            
-            baseline = project.file("detekt-baseline.xml")
+
+            baseline.set(project.file("detekt-baseline.xml"))
         }
 
         tasks.withType<Detekt>().configureEach {
-            jvmTarget = "17"
-            
+            jvmTarget.set("17")
+
             reports {
                 checkstyle.required.set(true)
                 html.required.set(true)
-                txt.required.set(false)
                 sarif.required.set(true)
                 markdown.required.set(false)
             }
-            
+
             if (project.pluginManager.hasPlugin("org.jetbrains.kotlin.jvm")) {
                 val javaExtension = extensions.findByType(JavaPluginExtension::class.java)
                 javaExtension?.let {
@@ -59,7 +58,7 @@ class DetektConventionPlugin : Plugin<Project> {
         }
 
         tasks.withType<DetektCreateBaselineTask>().configureEach {
-            jvmTarget = "17"
+            jvmTarget.set("17")
         }
     }
 }
