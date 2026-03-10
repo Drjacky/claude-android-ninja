@@ -8,11 +8,16 @@ https://developer.android.com/kotlin/coroutines/coroutines-best-practices
 
 ### Inject Dispatchers (Avoid Hardcoding)
 Inject `CoroutineDispatcher` (or a small wrapper) so production and test behavior are consistent.
+When providing multiple dispatchers of the same type, use `@Qualifier` annotations so Hilt can distinguish them (see `limitedParallelism` section below for a full example).
 
 ```kotlin
-class AuthRepository(
+@Retention(AnnotationRetention.BINARY)
+@Qualifier
+annotation class IoDispatcher
+
+class AuthRepository @Inject constructor(
     private val remote: AuthRemoteDataSource,
-    private val ioDispatcher: CoroutineDispatcher
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
     suspend fun login(email: String, password: String): AuthResult =
         withContext(ioDispatcher) {
@@ -25,28 +30,38 @@ class AuthRepository(
 Prefer `limitedParallelism` over creating custom `ExecutorService` dispatchers. This is more efficient and integrates better with structured concurrency.
 
 ```kotlin
-// Single-threaded dispatcher (e.g., for Room or SQLite operations)
-class AuthDatabaseModule {
+// Define qualifier annotations to distinguish dispatchers of the same type
+@Retention(AnnotationRetention.BINARY)
+@Qualifier
+annotation class DatabaseDispatcher
+
+@Retention(AnnotationRetention.BINARY)
+@Qualifier
+annotation class CryptoDispatcher
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DispatchersModule {
+    // Single-threaded dispatcher (e.g., for Room or SQLite operations)
+    @DatabaseDispatcher
     @Provides
     @Singleton
     fun provideDatabaseDispatcher(): CoroutineDispatcher =
         Dispatchers.IO.limitedParallelism(1)
-}
 
-// Limited concurrency for CPU-intensive work
-class AuthCryptoModule {
+    // Limited concurrency for CPU-intensive work
+    @CryptoDispatcher
     @Provides
     @Singleton
     fun provideCryptoDispatcher(): CoroutineDispatcher =
         Dispatchers.Default.limitedParallelism(4)
 }
 
-// Usage
-class AuthTokenEncryptor(
-    private val cryptoDispatcher: CoroutineDispatcher
+// Usage — qualifier tells Hilt which dispatcher to inject
+class AuthTokenEncryptor @Inject constructor(
+    @CryptoDispatcher private val cryptoDispatcher: CoroutineDispatcher
 ) {
     suspend fun encrypt(token: AuthToken): EncryptedToken = withContext(cryptoDispatcher) {
-        // CPU-intensive encryption limited to 4 threads
         performEncryption(token)
     }
 }
