@@ -1724,17 +1724,7 @@ Write one screenshot test per meaningful UI state (loading, error, success, empt
 android.experimental.enableScreenshotTest=true
 ```
 
-**2. `libs.versions.toml`:**
-```toml
-[versions]
-screenshot = "0.0.1-alpha13"
-
-[plugins]
-screenshot = { id = "com.android.compose.screenshot", version.ref = "screenshot" }
-
-[libraries]
-screenshot-validation-api = { group = "com.android.tools.screenshot", name = "screenshot-validation-api", version.ref = "screenshot" }
-```
+**2. Version catalog:** The `screenshot` version, `screenshot-validation-api` library, and `screenshot` plugin are defined in `templates/libs.versions.toml.template`.
 
 **3. Module `build.gradle.kts`:**
 ```kotlin

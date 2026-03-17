@@ -53,6 +53,7 @@ playIntegrity = "1.4.0"
 retrofit2 = "3.0.0"
 robolectric = "4.13"
 room = "2.6.1"
+screenshot = "0.0.1-alpha13"
 savedstateCompose = "1.2.1"
 splashscreen = "1.0.1"
 startup = "1.2.0"
@@ -145,6 +146,7 @@ plugin-detekt = { group = "dev.detekt", name = "detekt-gradle-plugin", version.r
 retrofit2 = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit2" }
 retrofit2-kotlinx-serialization-converter = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit2" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+screenshot-validation-api = { group = "com.android.tools.screenshot", name = "screenshot-validation-api", version.ref = "screenshot" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 room-gradlePlugin = { group = "androidx.room", name = "room-gradle-plugin", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
@@ -208,6 +210,7 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+screenshot = { id = "com.android.compose.screenshot", version.ref = "screenshot" }
 sentry-android = { id = "io.sentry.android.gradle", version.ref = "sentryPlugin" }
 sentry-kotlin-compiler = { id = "io.sentry.kotlin.compiler.gradle", version.ref = "sentryPlugin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
