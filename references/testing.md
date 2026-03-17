@@ -15,10 +15,11 @@ and Google Truth for assertions.
 9. [Navigation Tests](#navigation-tests)
 10. [Compose Stability Testing](#testing-compose-stability-annotations)
 11. [UI Tests](#ui-tests)
-12. [Performance Benchmarks](#performance-benchmarks)
-13. [Test Utilities](#test-utilities)
-14. [Paging 3 Testing](#paging-3-testing)
-15. [Localization Testing](#localization-testing)
+12. [Screenshot Testing](#screenshot-testing)
+13. [Performance Benchmarks](#performance-benchmarks)
+14. [Test Utilities](#test-utilities)
+15. [Paging 3 Testing](#paging-3-testing)
+16. [Localization Testing](#localization-testing)
 
 ## Testing Philosophy
 
@@ -1707,6 +1708,175 @@ class AuthScreenTest {
 }
 
 ```
+
+## Screenshot Testing
+
+Use [Compose Preview Screenshot Testing](https://developer.android.com/studio/preview/compose-screenshot-testing)
+to catch visual regressions. It runs on the host JVM (no emulator needed), reuses `@Preview` composables,
+and generates HTML diff reports on failure.
+
+Write one screenshot test per meaningful UI state (loading, error, success, empty) for key screens.
+
+### Setup
+
+**1. `gradle.properties`:**
+```properties
+android.experimental.enableScreenshotTest=true
+```
+
+**2. `libs.versions.toml`:**
+```toml
+[versions]
+screenshot = "0.0.1-alpha13"
+
+[plugins]
+screenshot = { id = "com.android.compose.screenshot", version.ref = "screenshot" }
+
+[libraries]
+screenshot-validation-api = { group = "com.android.tools.screenshot", name = "screenshot-validation-api", version.ref = "screenshot" }
+```
+
+**3. Module `build.gradle.kts`:**
+```kotlin
+plugins {
+    alias(libs.plugins.screenshot)
+}
+
+android {
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
+}
+
+dependencies {
+    screenshotTestImplementation(libs.screenshot.validation.api)
+    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
+}
+```
+
+### Writing Screenshot Tests
+
+Place tests in the `screenshotTest` source set. Annotate with both `@PreviewTest` and `@Preview`:
+
+```kotlin
+// app/src/screenshotTest/kotlin/com/example/app/LoginScreenScreenshotTest.kt
+package com.example.app
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
+import com.android.tools.screenshot.PreviewTest
+import com.example.app.ui.theme.AppTheme
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+fun LoginScreen_Loading() {
+    AppTheme {
+        LoginScreen(uiState = LoginUiState.Loading, onAction = {})
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+fun LoginScreen_Success() {
+    AppTheme {
+        LoginScreen(
+            uiState = LoginUiState.LoginForm(
+                email = "user@example.com",
+                password = "password123"
+            ),
+            onAction = {}
+        )
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+fun LoginScreen_Error() {
+    AppTheme {
+        LoginScreen(
+            uiState = LoginUiState.Error("Invalid credentials", canRetry = true),
+            onAction = {}
+        )
+    }
+}
+```
+
+### Multi-Preview for Theme/Device Variants
+
+Use `@Preview` parameters or custom multi-preview annotations to test across configurations:
+
+```kotlin
+@PreviewTest
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO, name = "Light")
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Dark")
+@Composable
+fun LoginScreen_Themes() {
+    AppTheme {
+        LoginScreen(uiState = LoginUiState.LoginForm(), onAction = {})
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, fontScale = 1.0f, name = "Default font")
+@Preview(showBackground = true, fontScale = 1.5f, name = "Large font")
+@Preview(showBackground = true, fontScale = 2.0f, name = "Largest font")
+@Composable
+fun LoginScreen_FontScales() {
+    AppTheme {
+        LoginScreen(uiState = LoginUiState.LoginForm(), onAction = {})
+    }
+}
+```
+
+### Configuring Image Difference Threshold
+
+```kotlin
+// module build.gradle.kts
+android {
+    testOptions {
+        screenshotTests {
+            imageDifferenceThreshold = 0.0001f // 0.01% tolerance
+        }
+    }
+}
+```
+
+### Gradle Commands
+
+```bash
+# Generate/update reference images (run once, then commit to VCS)
+./gradlew updateDebugScreenshotTest
+
+# Update for a specific module
+./gradlew :feature:auth:updateDebugScreenshotTest
+
+# Validate screenshots against references (run in CI)
+./gradlew validateDebugScreenshotTest
+
+# Validate for a specific module
+./gradlew :feature:auth:validateDebugScreenshotTest
+```
+
+Reference images are saved to `{module}/src/screenshotTestDebug/reference/`.
+Commit these to version control alongside your code.
+
+Validation reports are generated at `{module}/build/reports/screenshotTest/preview/debug/index.html`.
+
+### Requirements
+
+- AGP 8.5+ for Gradle tasks, AGP 9.0+ for full Android Studio IDE integration (gutter icons, visual diff viewer)
+- JDK 17+
+- `com.android.compose.screenshot` plugin 0.0.1-alpha13+
+
+### Best Practices
+
+1. **One test per meaningful state**: Cover loading, success, error, and empty states
+2. **Always wrap in your app theme**: Ensure `AppTheme { }` surrounds the composable
+3. **Test light and dark modes**: Use `uiMode` parameter or multi-preview annotations
+4. **Test font scaling**: Catch overflow/layout issues at larger font sizes
+5. **Commit reference images**: They are the baseline for CI validation
+6. **Keep tests in `screenshotTest` source set**: Separate from unit and instrumented tests
 
 ## Performance Benchmarks
 
