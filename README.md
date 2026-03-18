@@ -28,10 +28,10 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Internationalization & localization (i18n/l10n, RTL support, plurals)
 - Notifications (channels, styles, actions, foreground services, progress-centric)
 - Data synchronization & offline-first (sync strategies, conflict resolution, cache invalidation)
-- Material Symbols icons, graphics, and custom drawing with Canvas
-- Gradle/build conventions, version catalog usage, and KSP migration
-- Testing practices with fakes, Hilt testing, and Room testing
-- Coroutines patterns, structured concurrency, Flow (callbackFlow, backpressure, combine, shareIn)
+- Material Symbols icons, graphics, custom drawing with Canvas, and Coil3 image loading patterns (AsyncImage, SubcomposeAsyncImage, Hilt ImageLoader)
+- Gradle/build conventions, version catalog usage, KSP migration, and build performance optimization (diagnostics, lazy tasks, configuration cache)
+- Testing practices with fakes, Hilt testing, Room testing, and Compose Preview Screenshot Testing
+- Coroutines patterns, structured concurrency, Flow (callbackFlow, backpressure, combine, shareIn), and common pitfalls
 - Kotlin delegation patterns and composition over inheritance
 - Dependency management rules and templates
 - Crash reporting with provider-agnostic interfaces (Firebase/Sentry)
@@ -40,7 +40,10 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - StrictMode guardrails and Compose compiler stability diagnostics
 - Code coverage with JaCoCo (unit + instrumented tests)
 - Security (certificate pinning, encryption, biometrics, root detection, Play Integrity)
-- Deprecated pattern migrations (Accompanist removal, API upgrades, Material 2 to 3)
+- Retrofit/networking patterns (service interfaces, Hilt NetworkModule, AuthInterceptor)
+- Haptic feedback, touch targets, and forms/input patterns (keyboard types, autofill, validation)
+- Debugging guide (Logcat, ANR analysis, LeakCanary, Compose recomposition, R8 mapping and manual de-obfuscation)
+- Consolidated migration guide (XML to Compose, LiveData to StateFlow, RxJava to Coroutines, Navigation 2.x to Navigation3, Accompanist to official APIs, Material 2 to 3, Edge-to-Edge)
 - Code quality with Detekt and Compose rules
 
 ## Key Files
@@ -68,6 +71,8 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - [`references/code-quality.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/code-quality.md) - Detekt setup and code quality rules
 - [`references/dependencies.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/dependencies.md) - dependency rules and version catalog guidance
 - [`references/android-performance.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-performance.md) - benchmarking, recomposition performance, app startup optimization, and splash screen
+- [`references/android-debugging.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-debugging.md) - Logcat, ANR, LeakCanary, R8 de-obfuscation, Gradle errors, Compose recomposition
+- [`references/migration.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/migration.md) - XML to Compose, LiveData to StateFlow, RxJava, Navigation, Accompanist, Material migrations
 - [`references/design-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/design-patterns.md) - Android-focused design patterns
 - [`templates/proguard-rules.pro.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/templates/proguard-rules.pro.template) - R8/ProGuard rules for all libraries
 - [`templates/detekt.yml.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/templates/detekt.yml.template) - Detekt static analysis configuration
