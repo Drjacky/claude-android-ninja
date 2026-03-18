@@ -37,6 +37,8 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Security (encryption, biometrics, pinning)           | [android-security.md](references/android-security.md)           |
 | Design patterns                                      | [design-patterns.md](references/design-patterns.md)             |
 | Android performance, recomposition & app startup     | [android-performance.md](references/android-performance.md)     |
+| Debugging (Logcat, ANR, R8, memory leaks)            | [android-debugging.md](references/android-debugging.md)         |
+| Migration guides (XML, RxJava, Navigation, Compose)  | [migration.md](references/migration.md)                         |
 
 ## Workflow Decision Tree
 
@@ -53,6 +55,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Configuring Gradle/build files?**
 → Use [gradle-setup.md](references/gradle-setup.md) for module `build.gradle.kts` patterns  
+→ Use [gradle-setup.md](references/gradle-setup.md) → "Build Performance" for optimization workflow, diagnostics, and bottleneck troubleshooting  
 → Copy convention plugins from `templates/convention/` to `build-logic/` in your project  
 → See `templates/convention/QUICK_REFERENCE.md` for setup instructions and examples  
 → Copy `templates/proguard-rules.pro.template` to `app/proguard-rules.pro` for R8 rules  
@@ -107,6 +110,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Adding tests?**
 → Use [testing.md](references/testing.md) for patterns and examples  
+→ Use [testing.md](references/testing.md) → "Screenshot Testing" for Compose Preview Screenshot Testing setup  
 → Keep test doubles in `core/testing`  
 
 **Handling runtime permissions?**
@@ -159,8 +163,8 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Test with TalkBack and Accessibility Scanner  
 
 **Working with images and color extraction?**
-→ Use [android-graphics.md](references/android-graphics.md) for Palette API and Coil3 integration  
-→ Extract colors from images for dynamic theming  
+→ Use [android-graphics.md](references/android-graphics.md) → "Image Loading with Coil3" for AsyncImage, SubcomposeAsyncImage, rememberAsyncImagePainter, and Hilt ImageLoader setup  
+→ Use [android-graphics.md](references/android-graphics.md) for Palette API and color extraction  
 
 **Implementing complex coroutine flows or background work?**
 → Follow [coroutines-patterns.md](references/coroutines-patterns.md) for structured concurrency patterns  
@@ -182,9 +186,15 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Follow [kotlin-patterns.md](references/kotlin-patterns.md) for Kotlin-specific improvements  
 → Ensure compliance with [modularization.md](references/modularization.md) dependency rules  
 
+**Debugging crashes, ANRs, or obfuscated stack traces?**
+→ Follow [android-debugging.md](references/android-debugging.md) for Logcat, ANR traces, and Compose recomposition debugging  
+→ Use [android-debugging.md](references/android-debugging.md) for R8 mapping files and manual de-obfuscation  
+→ See [gradle-setup.md](references/gradle-setup.md) for R8 build configuration and keep rules
+
 **Debugging performance issues or memory leaks?**
 → Enable [android-strictmode.md](references/android-strictmode.md) for development builds  
 → Use [android-performance.md](references/android-performance.md) for profiling and benchmarking  
+→ Use [android-debugging.md](references/android-debugging.md) for LeakCanary and heap dump analysis  
 → Check [coroutines-patterns.md](references/coroutines-patterns.md) for coroutine cancellation patterns  
 
 **Setting up CI/CD or code quality checks?**
@@ -197,11 +207,8 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Use [android-permissions.md](references/android-permissions.md) for proper permission justification  
 → Check [android-strictmode.md](references/android-strictmode.md) for detecting cleartext network traffic  
 
-**Migrating legacy code (LiveData, Fragments, Accompanist)?**
-→ Replace LiveData with StateFlow using [coroutines-patterns.md](references/coroutines-patterns.md)  
-→ Replace Fragments with Compose screens using [compose-patterns.md](references/compose-patterns.md)  
-→ Replace Accompanist with official APIs per [compose-patterns.md](references/compose-patterns.md) → "Deprecated Patterns & Migrations"  
-→ Update navigation to Navigation3 using [android-navigation.md](references/android-navigation.md)  
+**Migrating legacy code (LiveData, Fragments, Accompanist, RxJava)?**
+→ Use [migration.md](references/migration.md) for all migration paths  
 → Follow [architecture.md](references/architecture.md) for modern MVVM patterns  
 
 **Adding Compose animations?**
@@ -221,10 +228,8 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Order: size → padding → drawing → interaction  
 
 **Migrating from Accompanist or deprecated Compose APIs?**
-→ Use [compose-patterns.md](references/compose-patterns.md) → "Deprecated Patterns & Migrations"  
-→ Replace Accompanist libraries with official Foundation/Material3 equivalents  
-→ Use `collectAsStateWithLifecycle` instead of `collectAsState`  
-→ Use `mutableIntStateOf` instead of `mutableStateOf(0)` for primitives  
+→ Use [migration.md](references/migration.md) for Accompanist, Compose API, Material, and Edge-to-Edge migrations  
+→ See [compose-patterns.md](references/compose-patterns.md) → "Deprecated Patterns & Migrations" for a summary list  
 
 **Optimizing Compose recomposition or stability?**
 → Use [compose-patterns.md](references/compose-patterns.md) for `@Immutable`/`@Stable` annotations  
@@ -243,8 +248,8 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Use [testing.md](references/testing.md) for locale-specific testing  
 
 **Implementing network calls (Retrofit)?**
+→ Use [architecture.md](references/architecture.md) → "Network Layer Setup" for Retrofit service interfaces, Hilt NetworkModule, and AuthInterceptor  
 → Define API interfaces in `core/network` per [modularization.md](references/modularization.md)  
-→ Use [architecture.md](references/architecture.md) for RemoteDataSource patterns  
 → Follow [dependencies.md](references/dependencies.md) for Retrofit, OkHttp, and serialization setup  
 → Handle errors with generic `Result<T>` from [kotlin-patterns.md](references/kotlin-patterns.md)  
 
