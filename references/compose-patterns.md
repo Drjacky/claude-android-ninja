@@ -22,9 +22,10 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 9. [Side Effects](#side-effects)
 10. [Modifiers](#modifiers)
 11. [Deprecated Patterns & Migrations](#deprecated-patterns--migrations)
-11. [CompositionLocal](#compositionlocal)
-12. [Lists & Scrolling](#lists--scrolling)
-13. [View Composition Rules](#view-composition-rules)
+12. [CompositionLocal](#compositionlocal)
+13. [Lists & Scrolling](#lists--scrolling)
+14. [View Composition Rules](#view-composition-rules)
+15. [Forms & Input](#forms--input)
 
 ## Screen Architecture
 
@@ -958,6 +959,47 @@ fun ErrorContent(
     }
 }
 ```
+
+### Touch Targets
+
+Every interactive element must have a minimum touch area of **48x48dp**. If the visual element is
+smaller, expand the touch area. Keep at least **8dp** between adjacent targets to prevent mis-taps.
+
+```kotlin
+IconButton(onClick = onClose) {
+    Icon(Icons.Default.Close, contentDescription = "Close")
+}
+
+Box(
+    modifier = Modifier
+        .minimumInteractiveComponentSize()
+        .clickable { onAction() },
+    contentAlignment = Alignment.Center
+) {
+    Icon(modifier = Modifier.size(24.dp), imageVector = Icons.Default.Star, contentDescription = "Rate")
+}
+```
+
+### Haptic Feedback
+
+Use haptics to confirm significant actions - destructive operations, toggles, long-press confirmations:
+
+```kotlin
+@Composable
+fun DeleteButton(onDelete: () -> Unit) {
+    val haptic = LocalHapticFeedback.current
+    Button(
+        onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            onDelete()
+        }
+    ) {
+        Text("Delete")
+    }
+}
+```
+
+Do not add haptics to every tap - reserve them for actions where physical confirmation improves UX.
 
 ## Adaptive UI
 
@@ -2056,6 +2098,15 @@ LaunchedEffect(Unit) {
 val size by animateDpAsState(targetValue = 100.dp)
 // Good: labeled
 val size by animateDpAsState(targetValue = 100.dp, label = "card_size")
+
+// Bad: ignoring user's reduced motion preference
+AnimatedVisibility(visible = visible, enter = fadeIn() + slideInVertically()) { Content() }
+// Good: respect reduced motion
+val reducedMotion = LocalReducedMotion.current
+AnimatedVisibility(
+    visible = visible,
+    enter = if (reducedMotion) EnterTransition.None else fadeIn() + slideInVertically()
+) { Content() }
 ```
 
 ## Side Effects
@@ -3334,6 +3385,122 @@ Surface(modifier = Modifier.systemBarsPadding()) { }
 enableEdgeToEdge()  // in Activity.onCreate()
 Scaffold { innerPadding ->
     Content(modifier = Modifier.padding(innerPadding))
+}
+```
+
+## Forms & Input
+
+### Keyboard Configuration
+
+Set semantic `KeyboardOptions` so the system shows the correct keyboard layout:
+
+```kotlin
+TextField(
+    value = email,
+    onValueChange = { email = it },
+    keyboardOptions = KeyboardOptions(
+        keyboardType = KeyboardType.Email,
+        imeAction = ImeAction.Next
+    ),
+    keyboardActions = KeyboardActions(
+        onNext = { focusManager.moveFocus(FocusDirection.Down) }
+    )
+)
+```
+
+Common keyboard types:
+
+| Input type | `keyboardType`          |
+|------------|-------------------------|
+| Email      | `KeyboardType.Email`    |
+| Phone      | `KeyboardType.Phone`    |
+| Integer    | `KeyboardType.Number`   |
+| Decimal    | `KeyboardType.Decimal`  |
+| Password   | `KeyboardType.Password` |
+| URL        | `KeyboardType.Uri`      |
+
+### Autofill
+
+Enable autofill by setting `contentType` in semantics:
+
+```kotlin
+TextField(
+    value = email,
+    onValueChange = { email = it },
+    modifier = Modifier.semantics {
+        contentType = ContentType.EmailAddress
+    }
+)
+
+TextField(
+    value = password,
+    onValueChange = { password = it },
+    visualTransformation = PasswordVisualTransformation(),
+    modifier = Modifier.semantics {
+        contentType = ContentType.Password
+    }
+)
+```
+
+### Password Visibility Toggle
+
+```kotlin
+@Composable
+fun PasswordField(
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
+
+    TextField(
+        value = password,
+        onValueChange = onPasswordChange,
+        visualTransformation = if (passwordVisible) {
+            VisualTransformation.None
+        } else {
+            PasswordVisualTransformation()
+        },
+        trailingIcon = {
+            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                Icon(
+                    imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                    contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                )
+            }
+        },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        modifier = modifier
+    )
+}
+```
+
+### Validation Timing
+
+Validate on focus-out, not on every keystroke. Per-keystroke validation creates a noisy experience
+where errors flash while the user is still typing.
+
+```kotlin
+@Composable
+fun ValidatedEmailField(
+    email: String,
+    onEmailChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var hasBlurred by rememberSaveable { mutableStateOf(false) }
+    val isError = hasBlurred && !Patterns.EMAIL_ADDRESS.matcher(email).matches()
+
+    TextField(
+        value = email,
+        onValueChange = onEmailChange,
+        isError = isError,
+        supportingText = if (isError) {{ Text("Invalid email address") }} else null,
+        modifier = modifier.onFocusChanged { state ->
+            if (!state.isFocused && email.isNotEmpty()) {
+                hasBlurred = true
+            }
+        }
+    )
 }
 ```
 
