@@ -60,7 +60,7 @@ object DispatchersModule {
         Dispatchers.Default.limitedParallelism(4)
 }
 
-// Usage — qualifier tells Hilt which dispatcher to inject
+// Usage - qualifier tells Hilt which dispatcher to inject
 class AuthTokenEncryptor @Inject constructor(
     @CryptoDispatcher private val cryptoDispatcher: CoroutineDispatcher
 ) {
@@ -1152,7 +1152,7 @@ In `supervisorScope`, exceptions from unawaited `async` blocks are silently swal
 completes exceptionally but nobody observes it. Use `launch` when you don't need the result.
 
 ```kotlin
-// BAD: exception silently lost — nobody calls await()
+// BAD: exception silently lost - nobody calls await()
 suspend fun syncAll() = supervisorScope {
     async { syncUsers() }   // if this throws, nobody knows
     async { syncOrders() }  // same problem

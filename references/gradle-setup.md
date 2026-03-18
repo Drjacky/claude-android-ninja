@@ -744,6 +744,98 @@ gradle.settingsEvaluated {
 }
 ```
 
+### Optimization Workflow
+
+Apply one change at a time and measure before and after. Batching optimizations makes it
+impossible to know which one helped.
+
+1. **Measure baseline** - clean build (`./gradlew clean assembleDebug`) and incremental build times
+2. **Generate a Build Scan** - `./gradlew assembleDebug --scan` (uploads to scans.gradle.com)
+3. **Identify the slow phase** - in the Build Scan, go to **Performance → Build timeline** to see whether Initialization, Configuration, or Execution is the bottleneck
+4. **Apply one optimization**
+5. **Measure again** - confirm improvement before moving on
+
+For a local report without uploading: `./gradlew assembleDebug --profile` (output in `build/reports/profile/`).
+
+### Lazy Task Configuration
+
+Use `tasks.register` (lazy) instead of `tasks.create` (eager). Eager creation instantiates and
+configures the task even when it's not in the execution graph, slowing the configuration phase.
+
+```kotlin
+// BAD: eagerly creates and configures the task on every build
+tasks.create("generateBuildInfo") {
+    doLast { /* ... */ }
+}
+
+// GOOD: configured only when the task is actually needed
+tasks.register("generateBuildInfo") {
+    doLast { /* ... */ }
+}
+```
+
+This applies to convention plugins and custom tasks. All standard AGP and Kotlin plugin tasks
+already use lazy registration.
+
+### Avoid I/O During Configuration
+
+File reads, network calls, and `exec {}` during the configuration phase run on every build and
+break the configuration cache. Defer them to execution using Gradle's `providers` API.
+
+```kotlin
+// BAD: reads file during configuration - runs every build, breaks configuration cache
+val version = file("version.txt").readText()
+
+// GOOD: defers read to execution phase
+val version = providers.fileContents(layout.projectDirectory.file("version.txt")).asText
+```
+
+```kotlin
+// BAD: runs git during configuration
+val gitHash = Runtime.getRuntime().exec("git rev-parse --short HEAD")
+    .inputStream.bufferedReader().readText().trim()
+
+// GOOD: defers to execution via a provider
+val gitHash = providers.exec {
+    commandLine("git", "rev-parse", "--short", "HEAD")
+}.standardOutput.asText.map { it.trim() }
+```
+
+### Pin Dependency Versions
+
+Dynamic versions (e.g., `1.+`, `latest.release`) force dependency resolution on every build
+and produce non-reproducible builds. Always use exact versions, managed via the version catalog.
+
+```kotlin
+// BAD: forces network check every build
+implementation("com.example:lib:1.0.+")
+
+// GOOD: pinned in libs.versions.toml
+implementation(libs.example.lib)
+```
+
+### Bottleneck Troubleshooting
+
+**Slow Configuration Phase:**
+
+- Eager task creation → use `tasks.register()` (see above)
+- File/network I/O in `build.gradle.kts` → defer to execution with `providers` (see above)
+- Many plugins applied unconditionally → move to convention plugins, apply only where needed
+- `subprojects {}` / `allprojects {}` blocks → replace with convention plugins
+
+**Slow Execution Phase:**
+
+- kapt annotation processing → migrate to KSP (see `references/dependencies.md`)
+- Build cache misses → enable `org.gradle.caching=true`; check for non-deterministic task inputs (timestamps, absolute paths) in the Build Scan under **Performance → Task execution**
+- Sequential module builds → enable `org.gradle.parallel=true`
+- Insufficient memory → increase `-Xmx` in `org.gradle.jvmargs`
+
+**Slow Dependency Resolution:**
+
+- Dynamic versions (`1.+`, `-SNAPSHOT`) → pin exact versions via version catalog
+- Slow or unnecessary repositories → reorder (google first, mavenCentral second); remove unused repos
+- No dependency caching → ensure `org.gradle.caching=true` is set
+
 ## Best Practices
 
 1. **Use Version Catalog**: Centralize dependency versions for consistency
