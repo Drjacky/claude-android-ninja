@@ -950,7 +950,7 @@ AsyncImage(
 #### SubcomposeAsyncImage (Custom State Composables)
 
 Use only when you need fully custom composables for loading, success, and error states.
-**Never use inside `LazyColumn` / `LazyRow`** — subcomposition is significantly slower than
+**Never use inside `LazyColumn` / `LazyRow`** - subcomposition is significantly slower than
 regular composition and causes scroll jank.
 
 ```kotlin
@@ -969,7 +969,7 @@ SubcomposeAsyncImage(
 #### rememberAsyncImagePainter (Low-Level)
 
 Use only when a `Painter` is strictly required (e.g., `Canvas`, `Icon`, or a custom draw
-operation). Unlike `AsyncImage`, it does **not** infer display size — without an explicit
+operation). Unlike `AsyncImage`, it does **not** infer display size - without an explicit
 `.size()`, it loads the image at original dimensions, wasting memory.
 
 ```kotlin

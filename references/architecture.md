@@ -197,6 +197,116 @@ internal class AuthRepositoryImpl @Inject constructor(
 | Remote      | core/network   | Retrofit API    | Network data fetching               |
 | Preferences | core/datastore | Proto DataStore | User settings, simple key-value     |
 
+### Network Layer Setup (core/network)
+
+#### Retrofit Service Interfaces
+
+All endpoint functions must be `suspend`. Use `Response<T>` only when you need access to status
+codes or error bodies; use the body type directly when 2xx is the only expected success case.
+
+```kotlin
+interface AuthApiService {
+
+    @POST("auth/login")
+    suspend fun login(@Body request: LoginRequest): LoginResponse
+
+    @POST("auth/register")
+    suspend fun register(@Body request: RegisterRequest): Response<Unit>
+
+    @GET("users/{id}")
+    suspend fun getUser(@Path("id") userId: String): NetworkUser
+
+    @GET("users/search")
+    suspend fun searchUsers(
+        @Query("q") query: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20
+    ): PaginatedResponse<NetworkUser>
+
+    @Multipart
+    @PUT("users/{id}/avatar")
+    suspend fun uploadAvatar(
+        @Path("id") userId: String,
+        @Part avatar: MultipartBody.Part
+    ): NetworkUser
+}
+```
+
+#### Hilt NetworkModule
+
+```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+object NetworkModule {
+
+    @Provides
+    @Singleton
+    fun provideJson(): Json = Json {
+        ignoreUnknownKeys = true
+        coerceInputValues = true
+        isLenient = true
+    }
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(
+        authInterceptor: AuthInterceptor
+    ): OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(authInterceptor)
+        .addInterceptor(
+            HttpLoggingInterceptor().apply {
+                level = if (BuildConfig.DEBUG) {
+                    HttpLoggingInterceptor.Level.BODY
+                } else {
+                    HttpLoggingInterceptor.Level.NONE
+                }
+            }
+        )
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(okHttpClient: OkHttpClient, json: Json): Retrofit =
+        Retrofit.Builder()
+            .baseUrl(BuildConfig.BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+
+    @Provides
+    @Singleton
+    fun provideAuthApiService(retrofit: Retrofit): AuthApiService =
+        retrofit.create(AuthApiService::class.java)
+}
+```
+
+#### Authentication Interceptor
+
+Inject auth tokens via an `Interceptor` instead of adding `@Header` parameters to every endpoint:
+
+```kotlin
+class AuthInterceptor @Inject constructor(
+    private val tokenProvider: TokenProvider
+) : Interceptor {
+
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val token = tokenProvider.getToken()
+            ?: return chain.proceed(chain.request())
+
+        val request = chain.request().newBuilder()
+            .header("Authorization", "Bearer $token")
+            .build()
+        return chain.proceed(request)
+    }
+}
+```
+
+Network exceptions (`HttpException`, `IOException`) are caught and mapped to domain error types
+in the repository layer - see [Repository Pattern](#repository-pattern) above and
+[Domain-Specific Error Types](#domain-specific-error-types) below.
+
 ### Model Mapping Strategy
 
 Use mappers when transformations add business logic, not for simple 1:1 field mappings.
