@@ -1119,6 +1119,142 @@ suspend fun good(): String = suspendCancellableCoroutine { cont ->
 }
 ```
 
+## Common Pitfalls
+
+Quick-reference table of coroutine and Flow mistakes that are easy to miss during code review.
+
+### Redundant SupervisorJob in ViewModel
+
+`viewModelScope` already uses `SupervisorJob` internally. Adding another one creates a detached scope
+that breaks structured concurrency.
+
+```kotlin
+// BAD: redundant SupervisorJob, creates orphaned scope
+class MyViewModel : ViewModel() {
+    private val scope = CoroutineScope(viewModelScope.coroutineContext + SupervisorJob())
+
+    fun load() {
+        scope.launch { /* ... */ } // not cancelled when ViewModel clears
+    }
+}
+
+// GOOD: viewModelScope already has SupervisorJob
+class MyViewModel : ViewModel() {
+    fun load() {
+        viewModelScope.launch { /* ... */ }
+    }
+}
+```
+
+### Unawaited async in supervisorScope
+
+In `supervisorScope`, exceptions from unawaited `async` blocks are silently swallowed. The deferred
+completes exceptionally but nobody observes it. Use `launch` when you don't need the result.
+
+```kotlin
+// BAD: exception silently lost — nobody calls await()
+suspend fun syncAll() = supervisorScope {
+    async { syncUsers() }   // if this throws, nobody knows
+    async { syncOrders() }  // same problem
+}
+
+// GOOD: use launch when you don't need the return value
+suspend fun syncAll() = supervisorScope {
+    launch { syncUsers() }
+    launch { syncOrders() }
+}
+```
+
+### Side Effects Inside combine/map Transforms
+
+Transform lambdas in `combine`, `map`, and similar operators re-execute on every resubscription
+(e.g., after screen rotation). Launching coroutines or emitting events inside them causes
+duplicate side effects.
+
+```kotlin
+// BAD: launches a coroutine on every resubscription (rotation fires it again)
+val uiState = combine(userFlow, settingsFlow) { user, settings ->
+    viewModelScope.launch { analytics.trackView(user.id) } // fires on every rotation
+    UiState(user, settings)
+}
+
+// GOOD: move side effects to onEach or a dedicated handler
+val uiState = combine(userFlow, settingsFlow) { user, settings ->
+    UiState(user, settings)
+}.onEach { state ->
+    analytics.trackView(state.user.id)
+}
+```
+
+### Collecting a Flow Inside a Transform
+
+Calling `.first()` or `.firstOrNull()` inside a `map` or `combine` lambda creates a hidden
+sequential fetch that re-executes on every upstream emission. Use `combine` to merge both flows
+reactively instead.
+
+```kotlin
+// BAD: hidden suspend call inside combine, re-fetches on every emission
+val uiState = userFlow.map { user ->
+    val settings = settingsFlow.first() // blocks, re-fetches every time userFlow emits
+    UiState(user, settings)
+}
+
+// GOOD: combine both flows reactively
+val uiState = combine(userFlow, settingsFlow) { user, settings ->
+    UiState(user, settings)
+}
+```
+
+### Manual Job Cancellation Instead of flatMapLatest
+
+A common pattern is cancelling a previous `Job` and re-launching on new input. `flatMapLatest`
+handles this automatically and is less error-prone.
+
+```kotlin
+// BAD: manual Job? tracking
+class SearchViewModel : ViewModel() {
+    private var searchJob: Job? = null
+
+    fun onQueryChanged(query: String) {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            val results = repository.search(query)
+            _uiState.update { it.copy(results = results) }
+        }
+    }
+}
+
+// GOOD: flatMapLatest cancels previous automatically
+class SearchViewModel : ViewModel() {
+    private val query = MutableStateFlow("")
+
+    val uiState = query
+        .debounce(300)
+        .flatMapLatest { q -> repository.search(q) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun onQueryChanged(q: String) { query.value = q }
+}
+```
+
+### Using emit() on MutableStateFlow
+
+`MutableStateFlow.emit()` is a suspending function but behaves identically to `.value =` assignment.
+Using `emit()` misleads readers into thinking suspension is meaningful and adds unnecessary overhead.
+
+```kotlin
+// MISLEADING: emit() suspends but does nothing extra on MutableStateFlow
+viewModelScope.launch {
+    _uiState.emit(UiState.Loading) // no benefit over .value =
+}
+
+// CLEAR: direct assignment
+_uiState.value = UiState.Loading
+```
+
+Use `.value =` for `MutableStateFlow`. Reserve `emit()` for `MutableSharedFlow` where suspension
+actually matters (it suspends when the buffer is full).
+
 ## Coexisting with RxJava (Legacy Code)
 
 When maintaining projects with both RxJava and Coroutines (migration not planned):
