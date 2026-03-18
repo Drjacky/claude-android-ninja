@@ -66,7 +66,12 @@ In the trace file, find the `main` thread and check its state:
 
 ### LeakCanary
 
-Add to `debugImplementation` only:
+**Android Studio Panda 3+** includes a built-in LeakCanary integration in the Profiler
+(a dedicated "Analyze Leaks" task). If you are on Panda 3 or newer, no dependency is needed -
+use the Profiler task directly. See the
+[Android Studio Panda 3 release notes](https://developer.android.com/studio/preview/features#leakcanary).
+
+For older Android Studio versions, add the dependency to `debugImplementation` only:
 
 ```kotlin
 debugImplementation(libs.leakcanary)
@@ -97,12 +102,12 @@ For R8 build configuration and keep rules, see [gradle-setup.md](gradle-setup.md
 After a release build (`./gradlew assembleRelease`), R8 produces these files in
 `app/build/outputs/mapping/<variant>/`:
 
-| File | Purpose |
-|---|---|
-| `mapping.txt` | Maps obfuscated names back to original names |
-| `usage.txt` | Lists classes and members that were removed (tree-shaken) |
-| `seeds.txt` | Lists classes and members matched by `-keep` rules (retained) |
-| `configuration.txt` | The merged R8 configuration from all sources |
+| File                | Purpose                                                       |
+|---------------------|---------------------------------------------------------------|
+| `mapping.txt`       | Maps obfuscated names back to original names                  |
+| `usage.txt`         | Lists classes and members that were removed (tree-shaken)     |
+| `seeds.txt`         | Lists classes and members matched by `-keep` rules (retained) |
+| `configuration.txt` | The merged R8 configuration from all sources                  |
 
 **Always archive `mapping.txt` alongside every release build.** Without it, production crash
 traces cannot be decoded. Crashlytics and Sentry Gradle plugins upload this automatically.
@@ -205,13 +210,13 @@ Read Gradle errors from the **bottom up** - Gradle wraps errors in multiple laye
 
 ### Common Error Patterns
 
-| Error | Investigation |
-|---|---|
-| `Manifest merger failed` | Check `app/build/intermediates/merged_manifests/` for conflicts |
-| `Duplicate class` | Run `./gradlew :app:dependencies` and look for the same class in multiple transitive deps |
-| `Could not resolve` | Check repository declarations, VPN/proxy, verify the dependency version exists |
-| `D8/R8: Type not present` | Missing `-keep` rule or desugaring issue; check `minSdk` vs API used |
-| `KSP error` | Look for the processor's own error message above the Gradle wrapper |
+| Error                     | Investigation                                                                             |
+|---------------------------|-------------------------------------------------------------------------------------------|
+| `Manifest merger failed`  | Check `app/build/intermediates/merged_manifests/` for conflicts                           |
+| `Duplicate class`         | Run `./gradlew :app:dependencies` and look for the same class in multiple transitive deps |
+| `Could not resolve`       | Check repository declarations, VPN/proxy, verify the dependency version exists            |
+| `D8/R8: Type not present` | Missing `-keep` rule or desugaring issue; check `minSdk` vs API used                      |
+| `KSP error`               | Look for the processor's own error message above the Gradle wrapper                       |
 
 ### Dependency Investigation
 
@@ -243,16 +248,8 @@ fun MyScreen(state: UiState) {
 - `State` objects created inside composition without `remember`
 - Missing `equals()` on state data classes - a new instance with the same values still triggers
   recomposition if structural equality is not implemented
-- Unstable lambda references:
-
-```kotlin
-// BAD: new lambda instance every recomposition - child always recomposes
-MyButton(onClick = { viewModel.doAction() })
-
-// GOOD: stable reference
-val onClickAction = remember { { viewModel.doAction() } }
-MyButton(onClick = onClickAction)
-```
+- Unstable lambda references (relevant only if Strong Skipping Mode is disabled - it is enabled
+  by default since Compose Compiler 2.0+/Kotlin 2.0+, which auto-memoizes lambdas)
 
 For stability annotations (`@Immutable`, `@Stable`) and Compose compiler metrics, see
 [compose-patterns.md](compose-patterns.md#stability-annotations-immutable-vs-stable) and
