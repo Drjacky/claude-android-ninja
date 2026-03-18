@@ -433,11 +433,8 @@ Flow section in `references/architecture.md`.
 
 ## Migration Note
 
-If migrating from Navigation 2.x to Navigation3:
-1. Update imports from `androidx.navigation.*` to `androidx.navigation3.*`
-2. Use `NavigationSuiteScaffold` (it handles adaptive switching automatically)
-3. Update `NavHost` and `rememberNavController()` imports
-4. Use `NavigableListDetailPaneScaffold` / `NavigableSupportingPaneScaffold` for tablet-optimized layouts
+For step-by-step migration from Navigation 2.x to Navigation3, see
+[migration.md](migration.md#navigation-2x-to-navigation3).
 
 ## Animations
 
