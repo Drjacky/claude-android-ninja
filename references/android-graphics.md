@@ -926,7 +926,113 @@ fun DynamicSizeCanvas() {
 
 ### Image Loading with Coil3
 
-Load images and extract colors:
+#### AsyncImage (Primary API)
+
+Use `AsyncImage` for the vast majority of cases. It resolves image size from layout constraints
+automatically, avoiding oversized bitmap loading.
+
+```kotlin
+AsyncImage(
+    model = ImageRequest.Builder(LocalContext.current)
+        .data("https://example.com/avatar.jpg")
+        .crossfade(true)
+        .build(),
+    contentDescription = stringResource(R.string.user_avatar),
+    contentScale = ContentScale.Crop,
+    placeholder = painterResource(R.drawable.ic_placeholder),
+    error = painterResource(R.drawable.ic_error),
+    modifier = Modifier
+        .size(64.dp)
+        .clip(CircleShape)
+)
+```
+
+#### SubcomposeAsyncImage (Custom State Composables)
+
+Use only when you need fully custom composables for loading, success, and error states.
+**Never use inside `LazyColumn` / `LazyRow`** — subcomposition is significantly slower than
+regular composition and causes scroll jank.
+
+```kotlin
+SubcomposeAsyncImage(
+    model = "https://example.com/hero.jpg",
+    contentDescription = null
+) {
+    when (painter.state) {
+        is AsyncImagePainter.State.Loading -> CircularProgressIndicator()
+        is AsyncImagePainter.State.Error -> Icon(Icons.Default.BrokenImage, null)
+        else -> SubcomposeAsyncImageContent()
+    }
+}
+```
+
+#### rememberAsyncImagePainter (Low-Level)
+
+Use only when a `Painter` is strictly required (e.g., `Canvas`, `Icon`, or a custom draw
+operation). Unlike `AsyncImage`, it does **not** infer display size — without an explicit
+`.size()`, it loads the image at original dimensions, wasting memory.
+
+```kotlin
+val painter = rememberAsyncImagePainter(
+    model = ImageRequest.Builder(LocalContext.current)
+        .data("https://example.com/image.jpg")
+        .size(Size.ORIGINAL)
+        .build()
+)
+Image(painter = painter, contentDescription = null)
+```
+
+#### ImageRequest Configuration
+
+```kotlin
+ImageRequest.Builder(context)
+    .data(imageUrl)
+    .crossfade(300)
+    .size(200, 200)
+    .scale(Scale.CROP)
+    .transformations(CircleCropTransformation())
+    .memoryCachePolicy(CachePolicy.ENABLED)
+    .diskCachePolicy(CachePolicy.ENABLED)
+    .build()
+```
+
+#### Hilt ImageLoader Setup
+
+Provide a single `ImageLoader` instance app-wide to share disk and memory caches:
+
+```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+object ImageModule {
+
+    @Provides
+    @Singleton
+    fun provideImageLoader(@ApplicationContext context: Context): ImageLoader =
+        ImageLoader.Builder(context)
+            .crossfade(true)
+            .respectCacheHeaders(false)
+            .build()
+}
+```
+
+Pass it to `AsyncImage` via injection or `CompositionLocal`:
+
+```kotlin
+AsyncImage(
+    model = url,
+    contentDescription = null,
+    imageLoader = imageLoader
+)
+```
+
+#### Which API to Use
+
+- **Standard image loading** → `AsyncImage`
+- **Need `Painter` for `Canvas` / `Icon`** → `rememberAsyncImagePainter` + explicit `.size()`
+- **Custom loading/error composables** → `SubcomposeAsyncImage` (never in lists)
+- **Decorative image** → `contentDescription = null`
+
+#### Color Extraction from Loaded Images
 
 ```kotlin
 import coil3.ImageLoader
