@@ -1,6 +1,12 @@
 ---
 name: android-kotlin-compose
 description: Create production-quality Android applications following Google's official Android architecture guidance with Kotlin, Jetpack Compose, MVVM architecture, Hilt dependency injection, Room database, and multi-module architecture. Triggers on requests to create Android projects, modules, screens, ViewModels, repositories, or when asked about Android architecture patterns and best practices.
+license: Apache-2.0
+metadata:
+  author: DrJacky
+  version: 1.0.0
+  documentation: https://github.com/DrJacky/claude-android-ninja
+  tags: [android, kotlin, compose, mvvm, hilt, room, gradle, mobile]
 ---
 # Android Kotlin Compose Development
 
