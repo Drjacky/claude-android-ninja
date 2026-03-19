@@ -150,13 +150,13 @@ pluginManagement {
 
 ### 5. Register Plugins in Version Catalog
 
-Convention plugin entries are already defined in `templates/libs.versions.toml.template` under the `[plugins]` section (look for the "Convention plugins" comment).
+Convention plugin entries are already defined in `assets/libs.versions.toml.template` under the `[plugins]` section (look for the "Convention plugins" comment).
 
 Copy the entire `[plugins]` section from the template to your project's `gradle/libs.versions.toml`.
 
 ### 6. Create Detekt Configuration
 
-Create `config/detekt.yml` in project root (copy from `templates/detekt.yml.template`).
+Create `config/detekt.yml` in project root (copy from `assets/detekt.yml.template`).
 
 ### 7. Create Compose Stability Configuration (Optional)
 
@@ -264,7 +264,7 @@ Configuration utilities are located in the `config/` subdirectory:
 
 ## Version Catalog Entries (libs.versions.toml)
 
-All required versions, libraries, and plugin entries are defined in `templates/libs.versions.toml.template`. Copy the entire file to your project's `gradle/libs.versions.toml` or merge the relevant sections if you have an existing version catalog.
+All required versions, libraries, and plugin entries are defined in `assets/libs.versions.toml.template`. Copy the entire file to your project's `gradle/libs.versions.toml` or merge the relevant sections if you have an existing version catalog.
 
 ## gradle.properties Flags
 

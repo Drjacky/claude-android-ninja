@@ -239,7 +239,7 @@ dependencies {
 }
 ```
 
-The `app.android.application.baseline` convention plugin (from `templates/convention/AndroidApplicationBaselineProfileConventionPlugin.kt`) automatically applies the `androidx.baselineprofile` plugin and configures it for your app module.
+The `app.android.application.baseline` convention plugin (from `assets/convention/AndroidApplicationBaselineProfileConventionPlugin.kt`) automatically applies the `androidx.baselineprofile` plugin and configures it for your app module.
 
 #### Define the Baseline Profile Generator
 
@@ -777,7 +777,7 @@ android {
 }
 ```
 
-See `templates/proguard-rules.pro.template` for the full R8 rules file.
+See `assets/proguard-rules.pro.template` for the full R8 rules file.
 
 ### Layout Inspector - Recomposition Counts
 

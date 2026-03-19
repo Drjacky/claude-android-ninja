@@ -1724,7 +1724,7 @@ Write one screenshot test per meaningful UI state (loading, error, success, empt
 android.experimental.enableScreenshotTest=true
 ```
 
-**2. Version catalog:** The `screenshot` version, `screenshot-validation-api` library, and `screenshot` plugin are defined in `templates/libs.versions.toml.template`.
+**2. Version catalog:** The `screenshot` version, `screenshot-validation-api` library, and `screenshot` plugin are defined in `assets/libs.versions.toml.template`.
 
 **3. Module `build.gradle.kts`:**
 ```kotlin

@@ -1277,7 +1277,7 @@ If JavaScript must be enabled, avoid `addJavascriptInterface()` as it exposes yo
 
 ## ProGuard / R8 Hardening
 
-Use `templates/proguard-rules.pro.template` as the source of truth for all keep rules. It includes security-specific sections:
+Use `assets/proguard-rules.pro.template` as the source of truth for all keep rules. It includes security-specific sections:
 
 - **Log stripping** - removes `Log.v/d/i/w` calls in release builds
 - **Crypto/security class preservation** - keeps `core.data.crypto.**` and `core.data.security.**`

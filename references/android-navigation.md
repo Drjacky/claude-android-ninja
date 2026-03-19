@@ -2,7 +2,7 @@
 
 Navigation3 architecture with type-safe routing, adaptive navigation, and multi-module coordination.
 All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
-**Dependencies**: See `templates/libs.versions.toml.template` for Navigation 3 versions and the `navigation3` bundle.
+**Dependencies**: See `assets/libs.versions.toml.template` for Navigation 3 versions and the `navigation3` bundle.
 
 ## Table of Contents
 1. [Navigation3 Architecture](#navigation3-architecture)
@@ -1382,7 +1382,7 @@ NavDisplay(
 - `rememberSaveableStateHolderNavEntryDecorator()` - saves/restores UI state (included by default)
 - `rememberViewModelStoreNavEntryDecorator()` - provides a `ViewModelStoreOwner` per entry, so `viewModel()` and `hiltViewModel()` are scoped to the entry's lifetime on the back stack
 
-**Dependency:** `androidx.lifecycle:lifecycle-viewmodel-navigation3` (already in `templates/libs.versions.toml.template`)
+**Dependency:** `androidx.lifecycle:lifecycle-viewmodel-navigation3` (already in `assets/libs.versions.toml.template`)
 
 ### Passing NavKey Arguments to Hilt ViewModels
 

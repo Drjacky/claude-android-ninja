@@ -102,7 +102,7 @@ plugins {
 }
 ```
 
-The `app.sentry` convention plugin (from `templates/convention/SentryConventionPlugin.kt`) automatically:
+The `app.sentry` convention plugin (from `assets/convention/SentryConventionPlugin.kt`) automatically:
 - Applies `io.sentry.android.gradle` plugin (auto-adds core SDK, uploads mapping files)
 - Applies `io.sentry.kotlin.compiler.gradle` plugin (automatic @Composable tagging)
 - Adds `sentry-android` dependency
@@ -215,7 +215,7 @@ plugins {
 }
 ```
 
-The `app.firebase` convention plugin (from `templates/convention/FirebaseConventionPlugin.kt`) automatically:
+The `app.firebase` convention plugin (from `assets/convention/FirebaseConventionPlugin.kt`) automatically:
 - Applies `com.google.gms.google-services` plugin
 - Applies `com.google.firebase.crashlytics` plugin
 - Adds Firebase BoM dependency (version managed centrally)
@@ -421,7 +421,7 @@ plugins {
 
 ## ProGuard/R8 Mapping Upload
 
-Both providers require mapping file upload for symbolicated crashes in release builds. See [gradle-setup.md](gradle-setup.md#r8--proguard-configuration) for R8 build configuration and `templates/proguard-rules.pro.template` for all keep rules.
+Both providers require mapping file upload for symbolicated crashes in release builds. See [gradle-setup.md](gradle-setup.md#r8--proguard-configuration) for R8 build configuration and `assets/proguard-rules.pro.template` for all keep rules.
 
 ### Firebase Crashlytics
 
@@ -696,7 +696,7 @@ abstract class CrashReporterModule {
 
 ## Gradle & Setup Guidance
 
-- Keep SDK dependencies in the version catalog (`templates/libs.versions.toml.template`).
+- Keep SDK dependencies in the version catalog (`assets/libs.versions.toml.template`).
 - Follow `references/gradle-setup.md` for plugin configuration patterns.
 - For provider-specific setup, follow the official docs:
   - Sentry Android install and configuration: https://docs.sentry.io/platforms/android/

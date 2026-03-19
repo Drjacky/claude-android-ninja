@@ -32,7 +32,7 @@ plugins {
 }
 ```
 
-The JaCoCo convention plugins (from `templates/convention/`) automatically:
+The JaCoCo convention plugins (from `assets/convention/`) automatically:
 - Apply the JaCoCo plugin
 - Configure JaCoCo version from version catalog
 - Enable coverage for debug builds only
@@ -179,4 +179,4 @@ This fixes compatibility with Robolectric and JDK 11+.
 
 - [JaCoCo Documentation](https://www.jacoco.org/jacoco/trunk/doc/)
 - [Android Testing: Code Coverage](https://developer.android.com/studio/test/code-coverage)
-- Convention plugin implementations: `templates/convention/AndroidApplicationJacocoConventionPlugin.kt`, `templates/convention/AndroidLibraryJacocoConventionPlugin.kt`, `templates/convention/config/Jacoco.kt`
+- Convention plugin implementations: `assets/convention/AndroidApplicationJacocoConventionPlugin.kt`, `assets/convention/AndroidLibraryJacocoConventionPlugin.kt`, `assets/convention/config/Jacoco.kt`

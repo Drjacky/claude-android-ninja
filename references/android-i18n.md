@@ -269,7 +269,7 @@ Use `kotlinx-datetime` for locale-aware date/time formatting.
 ### Dependencies
 
 ```kotlin
-// Already in templates/libs.versions.toml.template
+// Already in assets/libs.versions.toml.template
 implementation(libs.kotlinx.datetime)
 ```
 
