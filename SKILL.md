@@ -43,30 +43,30 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 ## Workflow Decision Tree
 
 **Creating a new project?**
-→ Start with `templates/settings.gradle.kts.template` for settings and module includes  
-→ Start with `templates/libs.versions.toml.template` for the version catalog  
-→ Copy all files from `templates/convention/` to `build-logic/convention/src/main/kotlin/`  
-→ Create `build-logic/settings.gradle.kts` (see `templates/convention/QUICK_REFERENCE.md`)  
+→ Start with `assets/settings.gradle.kts.template` for settings and module includes  
+→ Start with `assets/libs.versions.toml.template` for the version catalog  
+→ Copy all files from `assets/convention/` to `build-logic/convention/src/main/kotlin/`  
+→ Create `build-logic/settings.gradle.kts` (see `assets/convention/QUICK_REFERENCE.md`)  
 → Add `includeBuild("build-logic")` to root `settings.gradle.kts`  
-→ Add plugin entries to `gradle/libs.versions.toml` (see `templates/convention/QUICK_REFERENCE.md`)  
-→ Copy `templates/proguard-rules.pro.template` to `app/proguard-rules.pro`  
+→ Add plugin entries to `gradle/libs.versions.toml` (see `assets/convention/QUICK_REFERENCE.md`)
+→ Copy `assets/proguard-rules.pro.template` to `app/proguard-rules.pro`
 → Read [modularization.md](references/modularization.md) for structure and module types  
 → Use [gradle-setup.md](references/gradle-setup.md) for build files and build logic  
 
 **Configuring Gradle/build files?**
 → Use [gradle-setup.md](references/gradle-setup.md) for module `build.gradle.kts` patterns  
 → Use [gradle-setup.md](references/gradle-setup.md) → "Build Performance" for optimization workflow, diagnostics, and bottleneck troubleshooting  
-→ Copy convention plugins from `templates/convention/` to `build-logic/` in your project  
-→ See `templates/convention/QUICK_REFERENCE.md` for setup instructions and examples  
-→ Copy `templates/proguard-rules.pro.template` to `app/proguard-rules.pro` for R8 rules  
+→ Copy convention plugins from `assets/convention/` to `build-logic/` in your project  
+→ See `assets/convention/QUICK_REFERENCE.md` for setup instructions and examples  
+→ Copy `assets/proguard-rules.pro.template` to `app/proguard-rules.pro` for R8 rules  
 
 **Setting up code quality / Detekt?**
 → Use [code-quality.md](references/code-quality.md) for Detekt convention plugin setup  
-→ Start from `templates/detekt.yml.template` for rules and enable Compose rules  
+→ Start from `assets/detekt.yml.template` for rules and enable Compose rules  
 
 **Adding or updating dependencies?**
 → Follow [dependencies.md](references/dependencies.md)  
-→ Update `templates/libs.versions.toml.template` if the dependency is missing  
+→ Update `assets/libs.versions.toml.template` if the dependency is missing  
 
 **Adding a new feature/module?**
 → Follow module naming in [modularization.md](references/modularization.md)  
