@@ -74,11 +74,11 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - [`references/android-debugging.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-debugging.md) - Logcat, ANR, LeakCanary, R8 de-obfuscation, Gradle errors, Compose recomposition
 - [`references/migration.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/migration.md) - XML to Compose, LiveData to StateFlow, RxJava, Navigation, Accompanist, Material migrations
 - [`references/design-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/design-patterns.md) - Android-focused design patterns
-- [`templates/proguard-rules.pro.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/templates/proguard-rules.pro.template) - R8/ProGuard rules for all libraries
-- [`templates/detekt.yml.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/templates/detekt.yml.template) - Detekt static analysis configuration
-- [`templates/libs.versions.toml.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/templates/libs.versions.toml.template) - Version catalog with all dependencies
-- [`templates/settings.gradle.kts.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/templates/settings.gradle.kts.template) - Project settings with repositories
-- [`templates/convention/`](https://github.com/Drjacky/claude-android-ninja/tree/master/templates/convention) - Convention plugin implementations (18 plugins + 7 config files)
+- [`assets/proguard-rules.pro.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/assets/proguard-rules.pro.template) - R8/ProGuard rules for all libraries
+- [`assets/detekt.yml.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/assets/detekt.yml.template) - Detekt static analysis configuration
+- [`assets/libs.versions.toml.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/assets/libs.versions.toml.template) - Version catalog with all dependencies
+- [`assets/settings.gradle.kts.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/assets/settings.gradle.kts.template) - Project settings with repositories
+- [`assets/convention/`](https://github.com/Drjacky/claude-android-ninja/tree/master/assets/convention) - Convention plugin implementations (18 plugins + 7 config files)
 
 ## Scope
 This skill is focused on Android app development using:
@@ -105,7 +105,7 @@ Clone or download this repo, then place it in Claude's skills folder and refresh
 ~/.claude/skills/claude-android-ninja/
 ├── SKILL.md
 ├── references/
-└── templates/
+└── assets/
 ```
 
 If you prefer project-local skills, use `.claude/skills/` inside your project.
