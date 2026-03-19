@@ -33,7 +33,7 @@ Project structure, module layout, and naming conventions are defined in
 
 ## Version Catalog
 
-The version catalog source of truth lives in `templates/libs.versions.toml.template`.
+The version catalog source of truth lives in `assets/libs.versions.toml.template`.
 Use it to generate or update `gradle/libs.versions.toml` for each project.
 
 Key points:
@@ -43,7 +43,7 @@ Key points:
 
 ## Convention Plugins
 
-**Complete Convention Plugin Implementation**: All plugin source files are available in `templates/convention/` including:
+**Complete Convention Plugin Implementation**: All plugin source files are available in `assets/convention/` including:
 - All 18 convention plugins (`.kt` files)
 - Configuration files in `config/` subdirectory (KotlinAndroid.kt, AndroidCompose.kt, Jacoco.kt, etc.)
 - Build script (`build.gradle.kts`)
@@ -149,7 +149,7 @@ gradlePlugin {
 
 ### Convention Plugin Files
 
-All convention plugin implementations are available in `templates/convention/`:
+All convention plugin implementations are available in `assets/convention/`:
 
 **Core Plugins:**
 - `AndroidApplicationConventionPlugin.kt` - Root app module configuration
@@ -186,7 +186,7 @@ All convention plugin implementations are available in `templates/convention/`:
 - `config/PrintApksTask.kt` - APK path printing
 - `config/Jacoco.kt` - Code coverage configuration
 
-See `templates/convention/QUICK_REFERENCE.md` for detailed setup instructions and usage examples.
+See `assets/convention/QUICK_REFERENCE.md` for detailed setup instructions and usage examples.
 
 ## Module Build Files
 
@@ -647,7 +647,7 @@ buildTypes {
 }
 ```
 
-Copy `templates/proguard-rules.pro.template` to `app/proguard-rules.pro` and adjust `com.example.*` package names to match your project. The template includes rules for every library in the version catalog.
+Copy `assets/proguard-rules.pro.template` to `app/proguard-rules.pro` and adjust `com.example.*` package names to match your project. The template includes rules for every library in the version catalog.
 
 **Key points:**
 - Most AndroidX/Jetpack libraries ship their own consumer rules inside the AAR - only add manual rules when library docs say so or when R8 full-mode requires it
@@ -674,7 +674,7 @@ See [android-security.md](android-security.md#proguard--r8-hardening) for securi
 
 ### Settings Configuration
 
-Check `templates/settings.gradle.kts.template` as the source of truth for settings setup,
+Check `assets/settings.gradle.kts.template` as the source of truth for settings setup,
 module includes, and repository configuration.
 
 ### Root Build File
