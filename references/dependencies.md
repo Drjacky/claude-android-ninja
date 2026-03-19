@@ -10,7 +10,7 @@ Use this guide for dependency selection, versioning strategy, and best practices
 - **Library evaluation**: Decide between competing libraries
 
 ## Version Catalog Source of Truth
-Always check `templates/libs.versions.toml.template` before adding or changing dependencies.
+Always check `assets/libs.versions.toml.template` before adding or changing dependencies.
 
 ### Rules
 1. **Prefer existing entries** in the template when adding dependencies
@@ -184,7 +184,7 @@ implementation("androidx.compose.ui:ui:1.7.0")
 ### Test Bundles
 
 Use `libs.bundles.unit-test` and `libs.bundles.android-test` for consistent test dependencies across modules. 
-These are defined in `templates/libs.versions.toml.template`.
+These are defined in `assets/libs.versions.toml.template`.
 
 ## Build Performance Considerations
 
@@ -246,7 +246,7 @@ dependencies {
 
 ## ProGuard/R8 Considerations
 
-Use `templates/proguard-rules.pro.template` as the source of truth for all keep rules. It includes rules for every library in the version catalog (Retrofit, kotlinx-serialization, Room, OkHttp, Hilt, SQLCipher, etc.).
+Use `assets/proguard-rules.pro.template` as the source of truth for all keep rules. It includes rules for every library in the version catalog (Retrofit, kotlinx-serialization, Room, OkHttp, Hilt, SQLCipher, etc.).
 
 Copy the template to `app/proguard-rules.pro` and adjust `com.example.*` package names. See [gradle-setup.md](gradle-setup.md#r8--proguard-configuration) for build configuration.
 
@@ -254,7 +254,7 @@ Copy the template to `app/proguard-rules.pro` and adjust `com.example.*` package
 
 ### Step-by-Step
 
-1. **Check if it exists** in `templates/libs.versions.toml.template`
+1. **Check if it exists** in `assets/libs.versions.toml.template`
 2. **Evaluate the library:**
    - Is it stable? (Avoid alpha/beta for production)
    - Is it maintained? (Check last update, GitHub activity)
