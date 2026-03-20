@@ -81,6 +81,46 @@ Results are generated per device:
 
 Use these in CI to detect regressions and track changes over time.
 
+#### Custom System Tracing
+
+While Macrobenchmark generates system traces automatically, they often lack visibility into specific app-level functions. Adding custom trace sections significantly improves your ability to identify jank and startup bottlenecks.
+
+**Setup:**
+
+Add the dependency to your app module. For the latest low-overhead Kotlin API (Tracing 2.0) that supports context propagation for Coroutines, use `tracing-wire-android`:
+```kotlin
+// app/build.gradle.kts
+dependencies {
+    implementation(libs.androidx.tracing.wire) // or libs.androidx.tracing
+}
+```
+
+**Usage:**
+
+Wrap the code you want to measure in a `trace` block:
+```kotlin
+import androidx.tracing.trace
+
+fun processImage() {
+    trace("processImage") {
+        // Your work here will appear as a custom section in the system trace
+        loadImage()
+        sharpen()
+    }
+}
+```
+
+For Kotlin Coroutines, Tracing 2.0 supports context propagation to correctly visualize suspended and resumed tasks:
+```kotlin
+suspend fun taskOne(tracer: Tracer) {
+    tracer.traceCoroutine(category = "main", "taskOne") {
+        delay(100L)
+    }
+}
+```
+
+These custom sections will appear in the Perfetto trace when you run your Macrobenchmarks, allowing you to see exactly how long your specific methods take.
+
 ### Startup Performance Metrics (TTID & TTFD)
 
 Android provides two key metrics for measuring app startup performance:

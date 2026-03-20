@@ -64,6 +64,7 @@ slf4j = "2.0.3"
 spotless = "6.25.0"
 sqlcipher = "4.6.1"
 targetSdk = "36"
+tracing = "2.0.0-alpha03"
 truth = "1.4.5"
 turbine = "1.2.1"
 uiautomator = "2.3.0"
@@ -111,6 +112,8 @@ androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscree
 androidx-startup-runtime = { group = "androidx.startup", name = "startup-runtime", version.ref = "startup" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
 androidx-test-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
+androidx-tracing = { group = "androidx.tracing", name = "tracing-android", version.ref = "tracing" }
+androidx-tracing-wire = { group = "androidx.tracing", name = "tracing-wire-android", version.ref = "tracing" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
