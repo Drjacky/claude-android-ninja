@@ -317,6 +317,27 @@ class StartupBenchmark {
 - Update profiles when adding new features or changing critical paths.
 - Include both startup and runtime journeys (scrolling, navigation) for best results.
 
+#### ProfileInstaller
+
+While Baseline Profiles are generated during the build, the `androidx.profileinstaller` library ensures they are correctly compiled by the Android Runtime (ART) on the user's device immediately after install or update. It acts as the delivery and installation crew for your performance blueprints.
+
+Without it, users might experience sluggish startup or janky scrolling on the very first run until ART compiles the app in the background.
+
+**Setup:**
+
+Add the dependency to your app module:
+```kotlin
+// app/build.gradle.kts
+dependencies {
+    implementation(libs.androidx.profileinstaller)
+}
+```
+
+**Why it's essential:**
+- **Instant Speed:** Guarantees immediate performance benefits on the first launch.
+- **Outside Play Store:** Crucial for apps distributed via other channels (e.g., direct APK download, enterprise MDM) where Play Store's cloud profiles aren't available.
+- **Consistency:** Ensures all users get the baseline profile optimizations regardless of how they installed the app.
+
 ## Compose Stability Validation (Optional)
 
 The [Compose Stability Analyzer](https://github.com/skydoves/compose-stability-analyzer) provides real-time analysis and CI guardrails for Jetpack Compose stability.
