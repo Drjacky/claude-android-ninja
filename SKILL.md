@@ -147,6 +147,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Measuring performance regressions or startup/jank?**
 → Use [android-performance.md](references/android-performance.md) for Macrobenchmark, Baseline Profiles, and ProfileInstaller setup  
 → Keep benchmark module aligned with `benchmark` build type in [gradle-setup.md](references/gradle-setup.md)  
+→ If the user explicitly requests to investigate jank or add custom trace points, use [android-performance.md](references/android-performance.md) for System Tracing (`androidx.tracing`) setup
 
 **Setting up app initialization or splash screen?**
 → Follow [android-performance.md](references/android-performance.md) → "App Startup & Initialization" for App Startup library, lazy init, and splash screen  
