@@ -145,7 +145,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Align with [architecture.md](references/architecture.md) and [modularization.md](references/modularization.md)  
 
 **Measuring performance regressions or startup/jank?**
-→ Use [android-performance.md](references/android-performance.md) for Macrobenchmark setup and commands  
+→ Use [android-performance.md](references/android-performance.md) for Macrobenchmark, Baseline Profiles, and ProfileInstaller setup  
 → Keep benchmark module aligned with `benchmark` build type in [gradle-setup.md](references/gradle-setup.md)  
 
 **Setting up app initialization or splash screen?**
