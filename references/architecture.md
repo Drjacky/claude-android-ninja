@@ -197,6 +197,98 @@ internal class AuthRepositoryImpl @Inject constructor(
 | Remote      | core/network   | Retrofit API    | Network data fetching               |
 | Preferences | core/datastore | Proto DataStore | User settings, simple key-value     |
 
+### DataStore (Preferences & Typed)
+
+**When to use what:**
+- **Room:** Complex datasets, partial updates, referential integrity, large datasets.
+- **DataStore:** Ideal for small datasets, simple key-value pairs, or typed objects. Does **not** support partial updates or referential integrity.
+- **Files:** Large media, blobs.
+- **MultiProcessDataStoreFactory:** Only if accessing data across multiple processes.
+
+**Critical Rules:**
+1. **Never** create more than one instance of `DataStore` for a given file in the same process (it will throw `IllegalStateException`).
+2. The generic type `T` in `DataStore<T>` **must be immutable**. Mutating it breaks consistency.
+
+#### Preferences DataStore
+Use for simple key-value pairs without type safety.
+
+```kotlin
+// Define keys
+object PrefsKeys {
+    val THEME_MODE = intPreferencesKey("theme_mode")
+    val HAS_SEEN_ONBOARDING = booleanPreferencesKey("has_seen_onboarding")
+}
+
+// Read with error handling
+fun getThemeMode(dataStore: DataStore<Preferences>): Flow<Int> = dataStore.data
+    .catch { exception ->
+        if (exception is IOException) emit(emptyPreferences()) else throw exception
+    }
+    .map { prefs -> prefs[PrefsKeys.THEME_MODE] ?: ThemeMode.SYSTEM }
+
+// Write
+suspend fun setThemeMode(dataStore: DataStore<Preferences>, mode: Int) {
+    dataStore.edit { prefs ->
+        prefs[PrefsKeys.THEME_MODE] = mode
+    }
+}
+```
+
+#### Typed DataStore (JSON / Proto)
+Use for custom classes with type safety. Requires a `Serializer`.
+
+```kotlin
+@Serializable
+data class UserSettings(
+    val themeMode: Int = 0,
+    val hasSeenOnboarding: Boolean = false
+)
+
+object UserSettingsSerializer : Serializer<UserSettings> {
+    override val defaultValue: UserSettings = UserSettings()
+
+    override suspend fun readFrom(input: InputStream): UserSettings = try {
+        Json.decodeFromString(input.readBytes().decodeToString())
+    } catch (e: SerializationException) {
+        throw CorruptionException("Unable to read UserSettings", e)
+    }
+
+    override suspend fun writeTo(t: UserSettings, output: OutputStream) {
+        output.write(Json.encodeToString(t).encodeToByteArray())
+    }
+}
+```
+
+#### SharedPreferences Migration
+Easily migrate existing `SharedPreferences` to `DataStore` during creation:
+
+```kotlin
+val dataStore = PreferenceDataStoreFactory.create(
+    migrations = listOf(SharedPreferencesMigration(context, "legacy_prefs")),
+    produceFile = { context.preferencesDataStoreFile("settings") }
+)
+```
+
+#### Hilt Setup
+Always provide `DataStore` as a `@Singleton` to guarantee a single instance per file.
+
+```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+object DataStoreModule {
+    
+    @Provides
+    @Singleton
+    fun provideUserSettingsDataStore(
+        @ApplicationContext context: Context
+    ): DataStore<UserSettings> = DataStoreFactory.create(
+        serializer = UserSettingsSerializer,
+        produceFile = { context.dataStoreFile("user_settings.json") },
+        corruptionHandler = ReplaceFileCorruptionHandler { UserSettings() }
+    )
+}
+```
+
 ### Network Layer Setup (core/network)
 
 #### Retrofit Service Interfaces
