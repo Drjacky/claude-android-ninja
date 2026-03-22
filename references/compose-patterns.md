@@ -107,6 +107,49 @@ fun LoginScreen(
 Navigation setup, destination definitions, and navigator interfaces live in
 `references/android-navigation.md`.
 
+## Naming Conventions
+
+Follow these conventions when naming Compose functions:
+
+### Components
+
+Components are functions that emit UI elements.
+
+- **Name:** `UpperCamelCase` (e.g., `FancyButton`, `ScrollAwareHeader`)
+- **Return Type:** `Unit` (does not return a value)
+- **Parameters:** Should have a `modifier` parameter at the first optional position
+- **Usage:** Uses the `modifier` parameter at the top of the UI root
+
+```kotlin
+@Composable
+fun FancyButton(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = text,
+        modifier = modifier
+    )
+}
+```
+
+### Factory Functions
+
+Factory functions are used to create objects or state, usually involving `remember`.
+
+- **Name:** `lowerCamelCase` (e.g., `defaultStyle`, `rememberCoroutineScope`)
+- **Return Type:** Returns a result (e.g., `Style`, `CoroutineScope`)
+- **UI Emission:** Does not emit UI
+- **Usage:** Uses `@Composable` only if it needs to `remember` or use `CompositionLocal`
+
+```kotlin
+@Composable
+fun defaultStyle(): Style = // ...
+
+@Composable
+fun rememberCoroutineScope(): CoroutineScope = // ...
+```
+
 ## State Management
 
 ### Sealed Interface for UI State
