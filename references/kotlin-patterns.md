@@ -51,7 +51,7 @@ Keep types and file structure easy to read. This aligns with `references/archite
 Never bury types behind long fully qualified names in business logic. Import at the top of the file; use `import … as …` when two layers expose the same simple name.
 
 ```kotlin
-// Bad — package noise hides intent
+// Bad - package noise hides intent
 val unit = com.example.app.data.db.entity.enums.WeightUnit.entries
     .find { it.name == rawValue }
 
@@ -60,7 +60,7 @@ import com.example.app.data.db.entity.enums.WeightUnit
 
 val unit = WeightUnit.entries.find { it.name == rawValue }
 
-// Good — clash between DB and domain enums
+// Good - clash between DB and domain enums
 import com.example.app.data.db.entity.enums.WeightUnit as DbWeightUnit
 import com.example.app.domain.model.WeightUnit
 
@@ -75,23 +75,23 @@ val domainUnit = WeightUnit.fromDb(dbUnit)
 A class that only forwards to a repository with no extra policy, validation, or reuse is usually **noise**:
 
 ```kotlin
-// Often unnecessary — call the repository from the ViewModel instead
+// Often unnecessary - call the repository from the ViewModel instead
 class GetSettingsUseCase(private val repository: SettingsRepository) {
     suspend operator fun invoke() = repository.getSettings()
 }
 ```
 
-Keep a **use case** (or domain service) when logic is multi-step, reused across features, policy-heavy, or worth unit-testing on its own—not when it is a one-line pass-through.
+Keep a **use case** (or domain service) when logic is multi-step, reused across features, policy-heavy, or worth unit-testing on its own-not when it is a one-line pass-through.
 
 ### State updates without extra type layers
 
-This skill uses **sealed actions**, **`UiState`**, and **one-shot events** (`SharedFlow` / similar) from the ViewModel. Avoid introducing a **fourth** parallel type (e.g. `Result` / `PartialState` / mandatory pure `reduce`) when every event maps **1:1** to a small state change—`when (action) { … }` with `update` is simpler and easier to follow.
+This skill uses **sealed actions**, **`UiState`**, and **one-shot events** (`SharedFlow` / similar) from the ViewModel. Avoid introducing a **fourth** parallel type (e.g. `Result` / `PartialState` / mandatory pure `reduce`) when every event maps **1:1** to a small state change-`when (action) { … }` with `update` is simpler and easier to follow.
 
 Add a dedicated reducer or intermediate “result” type only when many sources (events, async completions, pushes, sockets) must funnel through **one** centralized transition function.
 
 ### Composable boundaries
 
-Extract composables when there is **real reuse**, a **stable API**, or a clear visual/behavioral boundary. Do not extract one-line wrappers around `Text` / `Spacer` or “components” used only once—see `references/compose-patterns.md` → “View Composition Rules”.
+Extract composables when there is **real reuse**, a **stable API**, or a clear visual/behavioral boundary. Do not extract one-line wrappers around `Text` / `Spacer` or “components” used only once-see `references/compose-patterns.md` → “View Composition Rules”.
 
 ## Collection APIs
 

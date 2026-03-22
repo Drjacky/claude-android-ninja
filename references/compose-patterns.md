@@ -168,7 +168,7 @@ Prefer **stable layout** and **preserved context** while data loads or refreshes
 **Do not:** replace the whole screen with a spinner on every refresh, clear forms when a reload runs, or drop the last good result on transient errors.
 
 ```kotlin
-// Bad — content disappears, layout jumps, user loses context
+// Bad - content disappears, layout jumps, user loses context
 @Composable
 fun SummarySection(summary: SummaryUi?, isLoading: Boolean) {
     if (isLoading) {
@@ -178,7 +178,7 @@ fun SummarySection(summary: SummaryUi?, isLoading: Boolean) {
     }
 }
 
-// Good — stable slot; previous data stays visible while refreshing
+// Good - stable slot; previous data stays visible while refreshing
 @Composable
 fun SummarySection(summary: SummaryUi?, isLoading: Boolean) {
     SummaryCardSlot {
@@ -202,7 +202,7 @@ private fun SummaryCardSlot(content: @Composable BoxScope.() -> Unit) {
 }
 ```
 
-Model **refreshing** as a flag on the content state (e.g. `isRefreshing` on a data class) or a small overlay—not as a mode that **hides** the main UI unless there is nothing to show yet.
+Model **refreshing** as a flag on the content state (e.g. `isRefreshing` on a data class) or a small overlay-not as a mode that **hides** the main UI unless there is nothing to show yet.
 
 ### Sealed Interface for UI State
 
