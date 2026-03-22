@@ -82,8 +82,11 @@ class SentryCrashReporter @Inject constructor() : CrashReporter {
         throwable: Throwable,
         context: Map<String, String>
     ) {
-        context.forEach { (k, v) -> Sentry.setTag(k, v) }
-        Sentry.captureException(throwable)
+        // Use Isolated (Local) Scope to prevent tags from leaking to subsequent events
+        Sentry.withScope { scope ->
+            context.forEach { (k, v) -> scope.setTag(k, v) }
+            Sentry.captureException(throwable)
+        }
     }
 }
 ```
@@ -413,6 +416,7 @@ plugins {
 ## Best Practices
 
 - **Initialize once** in the app module.
+- **Sentry Scopes**: Use `Sentry.withScope` (Isolated/Local Scope) for one-off operations (like capturing a specific exception with custom tags) to prevent polluting the global or thread scope. Remember that `Sentry.configureScope` on the main thread modifies the Global Scope, while on a background thread it modifies the Thread Scope.
 - **Avoid PII** in tags and logs; keep user identifiers minimal. Use data scrubbing for sensitive information.
 - **Use sampling** for performance tracing/profiling if enabled.
 - **Send non-fatal errors intentionally**: log only what helps debugging.
