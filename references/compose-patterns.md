@@ -2664,6 +2664,24 @@ Box(
 }
 ```
 
+#### Drawing
+
+Use `drawWithCache` to optimize drawing operations by persisting objects across draw calls. The cache is re-created only when the drawing area size changes or any state objects read within the cache block change.
+
+```kotlin
+Box(
+    Modifier
+        .drawWithCache {
+            // Objects created here are cached
+            val brush = Brush.linearGradient(listOf(Color.Red, Color.Blue))
+            onDrawBehind {
+                // Drawing logic using cached objects
+                drawRect(brush)
+            }
+        }
+)
+```
+
 ### Clickable and CombinedClickable
 
 ```kotlin
