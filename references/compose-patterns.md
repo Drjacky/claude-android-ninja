@@ -3261,7 +3261,18 @@ Without `contentType`, all items share one pool. With it, items reuse layouts ef
 
 ### LazyListState - Programmatic Scrolling
 
-Keep scroll state **in composition** by default: create `LazyListState` with `rememberLazyListState()` next to the `LazyColumn` / `LazyRow` that uses it. **Do not** copy `firstVisibleItemIndex`, `firstVisibleItemScrollOffset`, or similar into the ViewModel’s `StateFlow` for a normal feed—those values change constantly and will spam state updates without business value.
+`LazyColumn` and `LazyRow` take `state: LazyListState = rememberLazyListState()` by default. **If you do not need a reference to the list’s scroll state, omit `state` entirely**—the default remembers scroll for you inside the lazy list.
+
+**Hoist `LazyListState` explicitly** (create `val listState = rememberLazyListState()` and pass `state = listState`) only when something in **your** composable tree must call into that same instance—for example:
+
+- `animateScrollToItem` / `scrollToItem` (FAB, deep link, “jump to”)
+- Reading `firstVisibleItemIndex`, `firstVisibleItemScrollOffset`, or `layoutInfo` (progress indicators, scroll-aware headers)
+- `derivedStateOf { … }` tied to scroll (e.g. show/hide scroll-to-top)
+- `Modifier.nestedScroll` or other APIs that need the list’s `NestedScrollConnection` / state
+
+If none of that applies, use a plain `LazyColumn { … }` with no `state` parameter.
+
+**Do not** copy `firstVisibleItemIndex`, `firstVisibleItemScrollOffset`, or similar into the ViewModel’s `StateFlow` for a normal feed—those values change constantly and will spam state updates without business value.
 
 Hoist or persist scroll only when there is a **clear requirement**: e.g. **process death** / configuration recovery (persist minimal scroll hints via `SavedStateHandle` or `rememberSaveable` when you own the saver), or a spec that ties list position to something outside the composable. Otherwise treat scroll position as **UI-local**, like other transient layout state.
 
@@ -3417,7 +3428,8 @@ LazyColumn(Modifier.nestedScroll(nestedScrollConnection)) {
 - Use `Column`/`Row` for small fixed lists (< 10 items) - `LazyColumn` is overkill
 - Never use indices as keys - list mutations corrupt item state
 - Use `derivedStateOf` for scroll-dependent UI
-- Keep `LazyListState` in composition; avoid mirroring scroll indices into ViewModel state unless restoring scroll or meeting an explicit product requirement
+- Omit `state` on `LazyColumn`/`LazyRow` when you do not need programmatic scroll APIs; default `rememberLazyListState()` inside the lazy list is enough
+- When you do hoist `LazyListState`, keep it in composition; avoid mirroring scroll indices into ViewModel state unless restoring scroll or meeting an explicit product requirement
 
 ## View Composition Rules
 
