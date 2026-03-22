@@ -825,6 +825,22 @@ fun `session refresh flow emits at correct intervals`() = runTest {
         cancelAndIgnoreRemainingEvents()
     }
 }
+
+@Test
+fun `channel events are received correctly`() = runTest {
+    // Arrange
+    val viewModel = AuthViewModel(loginUseCase, savedStateHandle)
+    
+    // Act & Assert
+    viewModel.navigationEvents.test {
+        viewModel.login()
+        advanceUntilIdle()
+        
+        assertThat(awaitItem()).isEqualTo(AuthNavigationEvent.LoginSuccess)
+        
+        cancelAndIgnoreRemainingEvents()
+    }
+}
 ```
 
 ### Testing Cancellation
