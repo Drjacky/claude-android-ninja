@@ -165,17 +165,30 @@ concurrency remains intact.
 
 ### Prefer StateFlow Over LiveData for New Code
 
-Use `StateFlow` for observable state and `SharedFlow` for events. Reserve `LiveData` for interop
-or legacy code that still requires it.
+Use `StateFlow` for observable state and `SharedFlow` or `Channel` for events. Reserve `LiveData` for interop
+or legacy code that still requires it. **Migration Priority:** If the project plan allows, prioritize refactoring and migrating existing `LiveData` to `StateFlow` by following the guidelines in `references/migration.md` -> `## LiveData to StateFlow`.
+
+#### StateFlow vs SharedFlow vs Channel
+
+| Type         | Best For                                   | Behavior                                                                     |
+|--------------|--------------------------------------------|------------------------------------------------------------------------------|
+| `StateFlow`  | UI State (forms, loading, data)            | Holds exactly one value. New collectors get current value immediately.       |
+| `SharedFlow` | Broadcast events (logout, theme change)    | Can replay N values. Drops events if no one is collecting (unless buffered). |
+| `Channel`    | One-shot UI events (navigation, snackbars) | Guarantees delivery exactly once. Buffers events if UI is in background.     |
+
+**One-shot UI Events (SharedFlow vs Channel):**
+We recommend using `SharedFlow` for one-shot events, but it requires careful configuration to avoid dropping events when the UI is in the background (e.g., during a configuration change). Alternatively, you can use a `Channel` which guarantees delivery.
 
 ```kotlin
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+    // State: always has a value, conflates rapid updates
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Loading)
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
+    // Recommended: One-shot events using SharedFlow
     // replay is for new collectors; extraBufferCapacity is for bursts from existing collectors
     private val _events = MutableSharedFlow<AuthEvent>(
         replay = 0,
@@ -183,10 +196,32 @@ class AuthViewModel @Inject constructor(
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
     val events: SharedFlow<AuthEvent> = _events.asSharedFlow()
+
+    // Alternative: Using Channel for guaranteed delivery (buffers if no collectors)
+    // private val _events = Channel<AuthEvent>(Channel.BUFFERED)
+    // val events: Flow<AuthEvent> = _events.receiveAsFlow()
+
+    fun login() {
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            // ... do login ...
+            _events.tryEmit(AuthEvent.LoginSuccess) // For SharedFlow
+            // _events.send(AuthEvent.LoginSuccess) // For Channel
+        }
+    }
 }
 ```
 
-Note on buffering:
+**Common Mistake:** Using `StateFlow` for a one-off snackbar.
+```kotlin
+// Bad: StateFlow holds the value forever. You have to manually reset it to null after showing the snackbar.
+private val _snackbarMessage = MutableStateFlow<String?>(null)
+
+// Good: SharedFlow or Channel delivers it once and forgets it.
+private val _snackbarMessage = MutableSharedFlow<String>(extraBufferCapacity = 1)
+```
+
+Note on buffering with SharedFlow:
 
 - `replay` controls how many values new subscribers receive.
 - `extraBufferCapacity` adds temporary queue space for bursts from active emitters.
@@ -195,7 +230,7 @@ add `extraBufferCapacity` for bursty emissions.
 
 Guidance for events vs state:
 
-- Use `SharedFlow(replay = 0)` for one-shot, lossy UI events (toasts, dialogs, navigation).
+- Use `SharedFlow(replay = 0)` or `Channel` for one-shot, lossy UI events (toasts, dialogs, navigation).
 - If an event must survive the UI being stopped, persist it as state and render it on resume
 (StateFlow/ViewModel state/persistence), rather than relying on buffering.
 
