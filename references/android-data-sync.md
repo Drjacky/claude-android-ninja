@@ -306,6 +306,98 @@ interface TaskDao {
 }
 ```
 
+## Database Optimization (Room/SQLite)
+
+Database operations can block the UI if not done correctly. A slow query can freeze your entire app.
+
+### Room Database Best Practices
+
+1. **Always Use Suspend Functions or Flow**: Never block the calling thread.
+```kotlin
+@Dao
+interface UserDao {
+    // Bad: Blocks calling thread
+    @Query("SELECT * FROM users")
+    fun getAllUsers(): List<User>
+
+    // Good: Runs on background thread
+    @Query("SELECT * FROM users")
+    suspend fun getAllUsers(): List<User>
+
+    // Best: Observes changes automatically
+    @Query("SELECT * FROM users")
+    fun getAllUsersFlow(): Flow<List<User>>
+}
+```
+
+2. **Use Indexes**: Add indices for columns that are frequently queried to turn slow full-table scans into fast direct lookups.
+```kotlin
+@Entity(
+    tableName = "users",
+    indices = [
+        Index(value = ["email"], unique = true), // Fast email lookups
+        Index(value = ["created_at"]) // Fast date range queries
+    ]
+)
+data class User(
+    @PrimaryKey val id: Long,
+    val email: String,
+    val name: String,
+    val createdAt: Long
+)
+```
+
+3. **Use Transactions for Bulk Operations**: Without a transaction, each insert is a separate transaction, which is very slow.
+```kotlin
+@Dao
+interface UserDao {
+    // 1 transaction = fast!
+    @Insert
+    suspend fun insertAll(users: List<User>)
+}
+
+// Or explicit transaction for multiple operations
+@Transaction
+suspend fun updateUserAndPosts(user: User, posts: List<Post>) {
+    userDao.update(user)
+    postDao.insertAll(posts) // All or nothing!
+}
+```
+
+4. **Limit Query Results / Use Paging**: Don't load an entire table into memory.
+```kotlin
+// Bad: Could load 100,000 rows into memory
+@Query("SELECT * FROM posts ORDER BY created_at DESC")
+suspend fun getAllPosts(): List<Post>
+
+// Good: Load in pages
+@Query("SELECT * FROM posts ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+suspend fun getPostsPage(limit: Int, offset: Int): List<Post>
+
+// Best: Use Paging 3 Library
+@Query("SELECT * FROM posts ORDER BY created_at DESC")
+fun getPostsPaged(): PagingSource<Int, Post>
+```
+
+### SQLite Optimization
+
+1. **Use Appropriate Data Types**: Avoid using `TEXT` for numbers.
+```sql
+-- Bad: Text for numbers
+CREATE TABLE users (id TEXT, age TEXT, created_at TEXT);
+
+-- Good: Proper types
+CREATE TABLE users (id INTEGER PRIMARY KEY, age INTEGER, created_at INTEGER);
+```
+
+2. **EXPLAIN QUERY PLAN**: Use this to check if your queries are using indices.
+```kotlin
+// Output shows if index is used:
+// SCAN TABLE users (slow - no index)
+// SEARCH TABLE users USING INDEX idx_email (fast - using index)
+database.query("EXPLAIN QUERY PLAN SELECT * FROM users WHERE email = ?", arrayOf("test@example.com"))
+```
+
 ## Network State Monitoring
 
 Monitor network connectivity to determine when to sync.
