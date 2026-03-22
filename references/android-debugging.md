@@ -64,6 +64,12 @@ In the trace file, find the `main` thread and check its state:
 
 ## Memory Leaks
 
+### Common Causes
+
+1. **Static References to Context**: Storing an `Activity` context statically prevents the entire activity (and its view hierarchy) from being garbage collected. If you must use a static context, use the Application context.
+2. **Inner Classes Holding Activity References**: Non-static inner classes implicitly hold a reference to their outer `Activity`. If doing background work, use a static inner class with a `WeakReference<Activity>`, or prefer Kotlin Coroutines tied to `lifecycleScope`.
+3. **Handler Memory Leaks**: A `Handler` processing delayed messages can keep the `Activity` alive after it's destroyed. Always call `handler.removeCallbacksAndMessages(null)` in `onDestroy()`.
+
 ### LeakCanary
 
 **Android Studio Panda 3+** includes a built-in LeakCanary integration in the Profiler
@@ -301,6 +307,18 @@ adb shell run-as com.example.app ls /data/data/com.example.app/
 
 # Forward device port to host (for debugging network traffic)
 adb forward tcp:8080 tcp:8080
+
+# Show memory usage
+adb shell dumpsys meminfo com.example.app
+
+# Show battery usage
+adb shell dumpsys batterystats com.example.app
+
+# Show graphics performance
+adb shell dumpsys gfxinfo com.example.app
+
+# Monitor frame rates
+adb shell dumpsys gfxinfo com.example.app framestats
 ```
 
 ## Red Flags
