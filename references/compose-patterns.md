@@ -13,6 +13,7 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 
 1. [Screen Architecture](#screen-architecture)
 2. [State Management](#state-management)
+   - [Loading and refresh UX](#loading-and-refresh-ux)
 3. [Component Patterns](#component-patterns)
 4. [Adaptive UI](#adaptive-ui)
 5. [Theming & Design System](#theming--design-system)
@@ -151,6 +152,57 @@ fun rememberCoroutineScope(): CoroutineScope = // ...
 ```
 
 ## State Management
+
+### Loading and refresh UX
+
+Prefer **stable layout** and **preserved context** while data loads or refreshes. Users should not lose visible content, scroll position, or typed input because a network call started.
+
+| Situation                                                  | Default                                                                                           |
+|------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| First load, layout shape is known                          | Skeleton or placeholder in a **fixed-height** slot                                                |
+| Refresh while previous data exists                         | Keep previous content; show **inline** progress (pull-to-refresh, small indicator on the section) |
+| Recalculate / refine result while an older result is valid | Keep old result visible; show “updating” until the new payload arrives                            |
+| Empty and idle                                             | Empty state copy, not a blocking spinner                                                          |
+| Blocking work with **no** stable structure                 | Full-screen spinner is acceptable but should be rare                                              |
+
+**Do not:** replace the whole screen with a spinner on every refresh, clear forms when a reload runs, or drop the last good result on transient errors.
+
+```kotlin
+// Bad — content disappears, layout jumps, user loses context
+@Composable
+fun SummarySection(summary: SummaryUi?, isLoading: Boolean) {
+    if (isLoading) {
+        CircularProgressIndicator()
+    } else if (summary != null) {
+        SummaryContent(summary = summary, refreshing = false)
+    }
+}
+
+// Good — stable slot; previous data stays visible while refreshing
+@Composable
+fun SummarySection(summary: SummaryUi?, isLoading: Boolean) {
+    SummaryCardSlot {
+        when {
+            summary != null -> SummaryContent(summary = summary, refreshing = isLoading)
+            isLoading -> SummarySkeleton()
+            else -> SummaryEmptyState()
+        }
+    }
+}
+
+@Composable
+private fun SummaryCardSlot(content: @Composable BoxScope.() -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 180.dp)
+    ) {
+        content()
+    }
+}
+```
+
+Model **refreshing** as a flag on the content state (e.g. `isRefreshing` on a data class) or a small overlay—not as a mode that **hides** the main UI unless there is nothing to show yet.
 
 ### Sealed Interface for UI State
 
