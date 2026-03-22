@@ -1700,10 +1700,18 @@ interface UserDao {
 }
 ```
 
+`OnConflictStrategy.REPLACE` is implemented as **delete then insert** for the conflicting row. That can trigger **foreign-key `ON DELETE CASCADE`** on dependent rows. Prefer `@Upsert` when you want update-in-place semantics without that delete path, unless you intentionally rely on `REPLACE`.
+
 ### Critical Performance Rules
 1. **Never use `Flow<List<T>>` for large tables**: It loads the entire table into memory on every change. Use Paging 3 instead.
 2. **Always use specific column queries**: Avoid `SELECT *` if you only need a few columns.
 3. **Use `@Transaction` for multiple operations**: Ensures atomicity and improves performance by batching disk writes.
+4. **Index what you filter, sort, and join**: Add `@Entity(indices = [...])` (or migration `CREATE INDEX`) for columns in `WHERE`, `ORDER BY`, `JOIN`, and foreign keys. Unindexed predicates often force full table scans.
+5. **`@Relation` and multi-query reads**: DAO methods that return `@Relation` graphs run more than one query. Annotate those methods with `@Transaction` so Room uses a single database snapshot across the queries.
+6. **Avoid N+1 access patterns**: Do not load a parent list then query per row in a loop. Prefer one query with `JOIN`, `IN (:ids)`, or a single `@Relation` / projection query.
+7. **Never `allowMainThreadQueries()` in production**: It blocks the UI thread and risks ANRs. Use `suspend` or `Flow` from the DAO.
+8. **One `RoomDatabase` instance per database name**: Provide it as a DI singleton (`@Singleton`). Multiple instances waste memory and break invalidation expectations.
+9. **Large binary payloads**: Prefer storing a **file path** or content URI in the database and keeping blobs on disk; huge `BLOB` columns slow reads and backups.
 
 ### Full-Text Search (FTS) Pattern
 Use Room's FTS4 support for fast, efficient text searching instead of `LIKE '%query%'`.
