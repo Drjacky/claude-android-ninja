@@ -3204,6 +3204,10 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
 
 **Anti-pattern:** Never call `searchResults.refresh()` directly in the composable body (it will loop infinitely). Call it only in event handlers (e.g., `PullToRefresh` or a retry button).
 
+#### Offline-first and `RemoteMediator`
+
+For **paged** lists backed by **Room** plus a remote API, use a [`RemoteMediator`](https://developer.android.com/topic/libraries/architecture/paging/v3-network-db) to load pages from the network into the local database and expose a `PagingSource` from Room to the `Pager`. That keeps the UI on a single `Flow<PagingData<T>>` while the database stays the source of truth. For broader sync, conflict handling, and invalidation patterns check `references/android-data-sync.md`.
+
 ### Flow Layouts
 
 Use `FlowRow` and `FlowColumn` for wrapping content (like chips or tags) when it exceeds the available space.
