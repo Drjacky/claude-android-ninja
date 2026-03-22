@@ -231,9 +231,11 @@ fun EmailListItem(
 }
 ```
 
-### Merge Descendants
+### Merge Descendants vs ClearAndSetSemantics
 
-Combine multiple elements into a single accessibility node.
+Use `mergeDescendants = true` when you want to combine the semantics of child elements into a single announcement (e.g., a card with a title and subtitle).
+
+Use `clearAndSetSemantics` when you want to completely replace the semantics of child elements with a custom description, ignoring what the children would normally announce.
 
 ```kotlin
 // ✅ Good: Merge card content for single announcement
@@ -242,6 +244,8 @@ fun ArticleCard(article: Article, onClick: () -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier.semantics(mergeDescendants = true) {
+            // Screen reader will read this, plus any other semantics from children
+            // that aren't explicitly overridden here.
             contentDescription = "${article.title}. ${article.author}. ${article.date}"
         }
     ) {
@@ -297,13 +301,27 @@ Image(
 Box(
     modifier = Modifier
         .clearAndSetSemantics {
-            // Completely replace default semantics
+            // Completely replace default semantics. Children are ignored.
             contentDescription = "Custom rating: 4 out of 5 stars"
             role = Role.Button
         }
         .clickable { showRatingDialog() }
 ) {
     CustomStarRating(rating = 4)
+}
+```
+
+### Semantic Keys
+
+Compose uses `SemanticsPropertyKey` to define semantic properties. You can create custom keys for specific use cases, though the built-in ones (`contentDescription`, `stateDescription`, `role`, etc.) cover most needs.
+
+```kotlin
+// Define a custom semantic key
+val IsFavoriteKey = SemanticsPropertyKey<Boolean>("IsFavorite")
+
+// Apply it
+Modifier.semantics {
+    set(IsFavoriteKey, true)
 }
 ```
 
