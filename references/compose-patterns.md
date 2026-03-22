@@ -3261,6 +3261,10 @@ Without `contentType`, all items share one pool. With it, items reuse layouts ef
 
 ### LazyListState - Programmatic Scrolling
 
+Keep scroll state **in composition** by default: create `LazyListState` with `rememberLazyListState()` next to the `LazyColumn` / `LazyRow` that uses it. **Do not** copy `firstVisibleItemIndex`, `firstVisibleItemScrollOffset`, or similar into the ViewModel’s `StateFlow` for a normal feed—those values change constantly and will spam state updates without business value.
+
+Hoist or persist scroll only when there is a **clear requirement**: e.g. **process death** / configuration recovery (persist minimal scroll hints via `SavedStateHandle` or `rememberSaveable` when you own the saver), or a spec that ties list position to something outside the composable. Otherwise treat scroll position as **UI-local**, like other transient layout state.
+
 ```kotlin
 val listState = rememberLazyListState()
 val scope = rememberCoroutineScope()
@@ -3413,6 +3417,7 @@ LazyColumn(Modifier.nestedScroll(nestedScrollConnection)) {
 - Use `Column`/`Row` for small fixed lists (< 10 items) - `LazyColumn` is overkill
 - Never use indices as keys - list mutations corrupt item state
 - Use `derivedStateOf` for scroll-dependent UI
+- Keep `LazyListState` in composition; avoid mirroring scroll indices into ViewModel state unless restoring scroll or meeting an explicit product requirement
 
 ## View Composition Rules
 
