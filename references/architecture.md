@@ -220,14 +220,15 @@ internal class AuthRepositoryImpl @Inject constructor(
 ### DataStore (Preferences & Typed)
 
 **When to use what:**
-- **Room:** Complex datasets, partial updates, referential integrity, large datasets.
-- **DataStore:** Ideal for small datasets, simple key-value pairs, or typed objects. Does **not** support partial updates or referential integrity.
+- **Room:** Relational data, SQL queries (`WHERE` / `JOIN`), indexes, unbounded or **large** collections (order-of **~100+ entries** is a common threshold), partial updates, referential integrity.
+- **DataStore:** Small preference blobs: simple key-value pairs, typed settings objects, feature flags. Does **not** support partial updates, ad hoc queries, or relational integrity—use Room when you need those.
 - **Files:** Large media, blobs.
-- **MultiProcessDataStoreFactory:** Only if accessing data across multiple processes.
+- **MultiProcessDataStoreFactory:** Only if accessing data across multiple processes—and then **every** reader/writer for that file must use the multi-process path (see Critical Rules).
 
 **Critical Rules:**
 1. **Never** create more than one instance of `DataStore` for a given file in the same process (it will throw `IllegalStateException`).
 2. The generic type `T` in `DataStore<T>` **must be immutable**. Mutating it breaks consistency.
+3. **Never mix access modes for the same file:** If any code path uses `MultiProcessDataStoreFactory`, **all** access to that file must use it. Do not combine it with single-process `PreferenceDataStoreFactory` or the `preferencesDataStore` delegate for the same backing store.
 
 #### Preferences DataStore
 Use for simple key-value pairs without type safety.
@@ -290,6 +291,8 @@ val dataStore = PreferenceDataStoreFactory.create(
 ```
 
 #### Hilt Setup
+The `preferencesDataStore(name = …)` property delegate on `Context` is fine for very small apps. Prefer an explicit `@Singleton` provider (below) when you want **test doubles** without tying tests to `Application` or static `Context`.
+
 Always provide `DataStore` as a `@Singleton` to guarantee a single instance per file.
 
 ```kotlin
