@@ -2851,6 +2851,83 @@ fun Parent() {
 
 ## Lists & Scrolling
 
+### Paging 3
+
+Paging 3 is the standard for loading large datasets in chunks.
+
+#### Five Critical Rules
+1. **Never embed `PagingData` in `UiState`**: `PagingData` is a self-contained stream. Expose it as a separate `Flow<PagingData<T>>`.
+2. **No new `Pager` per recomposition**: Create the `Pager` once in the ViewModel.
+3. **Always use `cachedIn(viewModelScope)`**: Prevents duplicate network requests and crashes on configuration changes.
+4. **Stable keys**: Always provide a stable `key` in `items()` using the item's unique ID.
+5. **Dynamic queries**: Use `flatMapLatest` for parameter changes (e.g., search query), not naive `combine`.
+
+#### ViewModel Pattern
+```kotlin
+@HiltViewModel
+class SearchViewModel @Inject constructor(
+    private val repository: SearchRepository
+) : ViewModel() {
+
+    private val _query = MutableStateFlow("")
+    val query = _query.asStateFlow()
+
+    // Separate Flow for PagingData, distinct from regular UiState
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val searchResults: Flow<PagingData<SearchResult>> = _query
+        .debounce(300)
+        .distinctUntilChanged()
+        .flatMapLatest { q ->
+            Pager(
+                config = PagingConfig(pageSize = 20, enablePlaceholders = false),
+                pagingSourceFactory = { repository.search(q) }
+            ).flow
+        }
+        .cachedIn(viewModelScope) // CRITICAL
+
+    fun setQuery(newQuery: String) {
+        _query.value = newQuery
+    }
+}
+```
+
+#### Compose UI Pattern
+```kotlin
+@Composable
+fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
+    val query by viewModel.query.collectAsStateWithLifecycle()
+    val searchResults = viewModel.searchResults.collectAsLazyPagingItems()
+
+    Column {
+        SearchBar(query = query, onQueryChange = viewModel::setQuery)
+
+        LazyColumn {
+            items(
+                count = searchResults.itemCount,
+                key = searchResults.itemKey { it.id }, // CRITICAL: Stable key
+                contentType = searchResults.itemContentType { "search_result" }
+            ) { index ->
+                val item = searchResults[index]
+                if (item != null) {
+                    SearchResultRow(item)
+                } else {
+                    SearchResultPlaceholder()
+                }
+            }
+
+            // LoadState handling
+            when (val appendState = searchResults.loadState.append) {
+                is LoadState.Loading -> item { LoadingSpinner() }
+                is LoadState.Error -> item { ErrorRow(appendState.error) }
+                is LoadState.NotLoading -> Unit
+            }
+        }
+    }
+}
+```
+
+**Anti-pattern:** Never call `searchResults.refresh()` directly in the composable body (it will loop infinitely). Call it only in event handlers (e.g., `PullToRefresh` or a retry button).
+
 ### contentType for Recycling Optimization
 
 When rendering different item types, `contentType` enables layout reuse between items of the same type:
