@@ -46,11 +46,14 @@ fun AuthRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
     // Collect one-time navigation events
-    LaunchedEffect(viewModel) {
-        viewModel.navigationEvents.collect { event ->
-            when (event) {
-                is AuthNavigationEvent.LoginSuccess -> authNavigator.navigateToMainApp()
-                is AuthNavigationEvent.RegisterSuccess -> authNavigator.navigateToMainApp()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(viewModel.navigationEvents, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.navigationEvents.collect { event ->
+                when (event) {
+                    is AuthNavigationEvent.LoginSuccess -> authNavigator.navigateToMainApp()
+                    is AuthNavigationEvent.RegisterSuccess -> authNavigator.navigateToMainApp()
+                }
             }
         }
     }
@@ -215,13 +218,17 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.LoginForm())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
     
-    // One-time navigation events (SharedFlow with no replay)
+    // Recommended: One-time navigation events using SharedFlow
     private val _navigationEvents = MutableSharedFlow<AuthNavigationEvent>(
         replay = 0,
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
     val navigationEvents: SharedFlow<AuthNavigationEvent> = _navigationEvents.asSharedFlow()
+
+    // Alternative: Using Channel for guaranteed delivery (buffers if no collectors)
+    // private val _navigationEvents = Channel<AuthNavigationEvent>(Channel.BUFFERED)
+    // val navigationEvents: Flow<AuthNavigationEvent> = _navigationEvents.receiveAsFlow()
     
     // Process-death survival: persist form state
     private val email = savedStateHandle.getStateFlow("email", "")
@@ -278,7 +285,8 @@ class AuthViewModel @Inject constructor(
             loginUseCase(currentState.email, currentState.password).fold(
                 onSuccess = { user -> 
                     // Emit navigation event - AuthRoute will call authNavigator.navigateToMainApp()
-                    _navigationEvents.emit(AuthNavigationEvent.LoginSuccess)
+                    _navigationEvents.tryEmit(AuthNavigationEvent.LoginSuccess) // For SharedFlow
+                    // _navigationEvents.trySend(AuthNavigationEvent.LoginSuccess) // For Channel
                 },
                 onFailure = { error ->
                     _uiState.update { 
@@ -303,12 +311,15 @@ fun AuthRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
-    // Collect one-time navigation events
-    LaunchedEffect(viewModel) {
-        viewModel.navigationEvents.collect { event ->
-            when (event) {
-                is AuthNavigationEvent.LoginSuccess -> authNavigator.navigateToMainApp()
-                is AuthNavigationEvent.RegisterSuccess -> authNavigator.navigateToMainApp()
+    // Collect one-time navigation events using repeatOnLifecycle
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(viewModel.navigationEvents, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.navigationEvents.collect { event ->
+                when (event) {
+                    is AuthNavigationEvent.LoginSuccess -> authNavigator.navigateToMainApp()
+                    is AuthNavigationEvent.RegisterSuccess -> authNavigator.navigateToMainApp()
+                }
             }
         }
     }
@@ -2927,6 +2938,27 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
 ```
 
 **Anti-pattern:** Never call `searchResults.refresh()` directly in the composable body (it will loop infinitely). Call it only in event handlers (e.g., `PullToRefresh` or a retry button).
+
+### Flow Layouts
+
+Use `FlowRow` and `FlowColumn` for wrapping content (like chips or tags) when it exceeds the available space.
+
+```kotlin
+FlowRow(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+    verticalArrangement = Arrangement.spacedBy(8.dp),
+    maxItemsInEachRow = 3 // Optional: force wrapping after N items
+) {
+    tags.forEach { tag ->
+        FilterChip(
+            selected = tag.isSelected,
+            onClick = { onTagClick(tag) },
+            label = { Text(tag.name) }
+        )
+    }
+}
+```
 
 ### contentType for Recycling Optimization
 
