@@ -328,8 +328,8 @@ class AuthViewModel @Inject constructor(
             loginUseCase(currentState.email, currentState.password).fold(
                 onSuccess = { user -> 
                     // Emit navigation event - AuthRoute will call authNavigator.navigateToMainApp()
-                    _navigationEvents.tryEmit(AuthNavigationEvent.LoginSuccess) // For SharedFlow
-                    // _navigationEvents.trySend(AuthNavigationEvent.LoginSuccess) // For Channel
+                    _navigationEvents.emit(AuthNavigationEvent.LoginSuccess) // For SharedFlow
+                    // _navigationEvents.send(AuthNavigationEvent.LoginSuccess) // For Channel
                 },
                 onFailure = { error ->
                     _uiState.update { 

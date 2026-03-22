@@ -205,7 +205,7 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             // ... do login ...
-            _events.tryEmit(AuthEvent.LoginSuccess) // For SharedFlow
+            _events.emit(AuthEvent.LoginSuccess) // For SharedFlow
             // _events.send(AuthEvent.LoginSuccess) // For Channel
         }
     }
@@ -1271,6 +1271,15 @@ class SearchViewModel : ViewModel() {
     fun onQueryChanged(q: String) { query.value = q }
 }
 ```
+
+### `emit` vs `tryEmit`
+
+When sending data to a `MutableSharedFlow` or `MutableStateFlow`, you have two options:
+
+- **`emit`**: A `suspend` function. It will suspend the execution of your coroutine if the flow's buffer is full, waiting until the value can be safely delivered. **Use this by default** when you are inside a coroutine to ensure no data is dropped due to backpressure.
+- **`tryEmit`**: A non-suspending function. It returns `true` if the value was emitted successfully, and `false` if the buffer was full and the value was dropped. **Use this only** when you are outside a coroutine (and thus cannot suspend) or when it is perfectly acceptable to drop the value if the subscribers can't keep up.
+
+**Note on BufferOverflow:** If you configure a `MutableSharedFlow` with `onBufferOverflow = BufferOverflow.DROP_OLDEST` or `DROP_LATEST`, `tryEmit` will always succeed and return `true`, because the buffer never technically "fills up" in a way that blocks emission. However, `emit` is still preferred inside coroutines for consistency and safety if buffer strategies change.
 
 ### Using emit() on MutableStateFlow
 

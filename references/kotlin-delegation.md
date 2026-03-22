@@ -660,7 +660,9 @@ When migrating from inheritance-based patterns to delegation, audit base classes
    abstract class BaseViewModel : ViewModel() {
        // ❌ Dead code: No subclass ever uses this
        protected fun handleFailure(throwable: Throwable) {
-           _failure.emit(throwable)
+           viewModelScope.launch {
+               _failure.emit(throwable)
+           }
        }
        
        private val _failure = MutableSharedFlow<Throwable>()
