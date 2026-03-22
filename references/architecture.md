@@ -8,12 +8,13 @@ All Kotlin code in this architecture must align with `references/kotlin-patterns
 ## Table of Contents
 1. [Architecture Overview](#architecture-overview)
 2. [Architecture Principles](#architecture-principles)
-3. [Data Layer](#data-layer)
-4. [Domain Layer](#domain-layer)
-5. [Presentation Layer](#presentation-layer)
-6. [UI Layer](#ui-layer)
-7. [Navigation](#navigation)
-8. [Complete Architecture Flow](#complete-architecture-flow)
+3. [Cross-cutting anti-patterns (quick reference)](#cross-cutting-anti-patterns-quick-reference)
+4. [Data Layer](#data-layer)
+5. [Domain Layer](#domain-layer)
+6. [Presentation Layer](#presentation-layer)
+7. [UI Layer](#ui-layer)
+8. [Navigation](#navigation)
+9. [Complete Architecture Flow](#complete-architecture-flow)
 
 ## Architecture Overview
 
@@ -99,6 +100,25 @@ Four-layer architecture with strict module separation and unidirectional data fl
 7. **Dependency direction**: Features depend on Core modules, not on other features
 8. **Navigation coordination**: App module coordinates navigation between features
 9. **Pattern fit**: Choose patterns that match Android constraints and the module boundaries (see `references/design-patterns.md`)
+
+## Cross-cutting anti-patterns (quick reference)
+
+Domain-specific pitfalls (navigation, Room, Paging, etc.) live in their topic references. This table is a **layering and state-shape** checklist. Deeper guidance on recomposition and stability: `references/android-performance.md` and `references/compose-patterns.md`.
+
+| Anti-pattern                                                                       | Why it hurts                                                             | Prefer instead                                                                                                      |
+|------------------------------------------------------------------------------------|--------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| Business logic in composables                                                      | Competing sources of truth, hard to test, work reruns during composition | ViewModel / domain services / repositories; composables map state → UI                                              |
+| Oversized “god” ViewModel                                                          | Hard to own and change safely                                            | One ViewModel per screen or one coherent flow                                                                       |
+| Unstable `UiState` (mutable collections, non-stable lambdas in state)              | Weakens Compose skipping, extra recompositions                           | Immutable `data class` / persistent collections; stable types                                                       |
+| Duplicated derived fields (`total`, `formattedTotal`, `hasTotal` all stored)       | Fields drift out of sync                                                 | One canonical value; derive the rest (computed properties or at the UI edge)                                        |
+| Parent reads too much `StateFlow` / state                                          | Recomposition fans out to the whole subtree                              | Pass only the slices each child needs                                                                               |
+| One-shot UI as sticky state (`showSnackbarOnce = true`)                            | Can replay after config change or rotation                               | One-shot events: `SharedFlow` (or channel-backed flow) collected in the Route; see `references/compose-patterns.md` |
+| `StateFlow` updates when nothing changed                                           | Wasted recompositions                                                    | Compare before `update` / avoid redundant `copy`                                                                    |
+| ViewModel performs platform work (navigation, share sheet, analytics side effects) | Couples logic to Android, harder to test                                 | Emit one-shot events or callbacks; handle in Route / Activity edge                                                  |
+| Display strings fully formatted in ViewModel                                       | Locale/layout rigidity, duplicated presentation                          | Keep canonical values; format with resources at the Compose boundary (`references/android-i18n.md`)                 |
+| Lazy list keys missing or index-based                                              | Wrong item state after reorder/delete                                    | Stable domain id as key (`references/compose-patterns.md`)                                                          |
+| Many trivial composables (thin wrappers around one `Text` / `Spacer`)              | Noise, weak boundaries                                                   | Extract only meaningful, reused UI blocks                                                                           |
+| Fully qualified package names inline                                               | Hard to read                                                             | Top-level imports; `import … as …` when names clash (`references/kotlin-patterns.md`)                               |
 
 ## Module Structure
 
