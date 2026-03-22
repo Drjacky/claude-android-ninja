@@ -344,6 +344,107 @@ class AuthViewModel @Inject constructor(
 }
 ```
 
+### Initial Data Load Strategies
+
+There is no single "correct" answer for where initial load logic should live in Jetpack Compose-the decision depends on your specific constraints and context. Here are the four established patterns:
+
+#### 1. ViewModel `init {}` Block
+- **How it works:** Executes when the ViewModel is created.
+- **Pros:** Decouples logic from the composable, making it more testable and reusable. Best when data is always needed.
+- **Cons:** Limited control over re-triggering; harder to test timing.
+
+```kotlin
+class MyViewModel(private val repository: MyRepository) : ViewModel() {
+    private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
+    val uiState = _uiState.asStateFlow()
+
+    init {
+        loadData()
+    }
+
+    private fun loadData() {
+        viewModelScope.launch {
+            _uiState.value = repository.getData()
+        }
+    }
+}
+```
+
+#### 2. `LaunchedEffect(Unit)` in Composable
+- **How it works:** Ties data fetching to the composable's composition lifecycle.
+- **Pros:** Simple and intuitive with minimal boilerplate. Lifecycle-aware.
+- **Cons:** Couples fetching logic to UI; risk of multiple triggers.
+
+```kotlin
+@Composable
+fun MyScreen(viewModel: MyViewModel = hiltViewModel()) {
+    LaunchedEffect(Unit) {
+        viewModel.loadData() // Triggered when composable enters composition
+    }
+    
+    // ... UI rendering
+}
+```
+
+#### 3. `.onStart` + `stateIn` Pattern (Without Retry)
+- **How it works:** A reactive approach using Flow operators, triggering on first collection.
+- **Pros:** Excellent for handling configuration changes and persistent state. Fully reactive.
+- **Cons:** Can be more complex to set up for simple one-shot loads. Lacks an easy way to retry failed requests.
+
+```kotlin
+class MyViewModel(repository: MyRepository) : ViewModel() {
+    val uiState: StateFlow<UiState> = repository.dataFlow()
+        .map { UiState.Success(it) }
+        .onStart { emit(UiState.Loading) }
+        .catch { emit(UiState.Error(it)) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = UiState.Loading
+        )
+}
+```
+
+#### 4. Reactive Trigger / Action-driven (`flatMapLatest`) (With Retry)
+- **How it works:** Uses a trigger state (e.g., a refresh counter or action intent) combined with `flatMapLatest` to fetch data.
+- **Pros:** Makes retrying, pull-to-refresh, and error recovery trivial. Retains all the benefits of the reactive `.onStart` approach.
+- **Cons:** Slightly more boilerplate than a simple `init` block or `.onStart`.
+
+```kotlin
+class MyViewModel(private val repository: MyRepository) : ViewModel() {
+    // Trigger for initial load and subsequent retries/refreshes
+    private val loadTrigger = MutableSharedFlow<Unit>(
+        replay = 1, 
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
+    val uiState: StateFlow<UiState> = loadTrigger
+        .onStart { emit(Unit) } // Fire initial load
+        .flatMapLatest {
+            repository.dataFlow()
+                .map { UiState.Success(it) }
+                .onStart { emit(UiState.Loading) }
+                .catch { emit(UiState.Error(it)) }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = UiState.Loading
+        )
+
+    fun retry() {
+        loadTrigger.tryEmit(Unit)
+    }
+}
+```
+
+#### Decision Framework
+Choose your approach based on:
+- **Retry logic / Pull-to-refresh:** Use the **Reactive Trigger (`flatMapLatest`)** approach (Pattern 4) if you anticipate needing to retry failed requests or support pull-to-refresh.
+- **Screen complexity:** Reactive-heavy screens benefit from `.onStart + stateIn` (Pattern 3) or the Reactive Trigger approach (Pattern 4).
+- **Configuration changes:** Prefer `ViewModel init` (Pattern 1) or `.onStart + stateIn` (Patterns 3 & 4) if data must persist across configuration changes without reloading.
+- **Simplicity:** For simple, one-shot loads tied to the UI lifecycle without retries, `LaunchedEffect` (Pattern 2) is acceptable but often less robust than ViewModel-driven approaches.
+
 ### State Collection with Lifecycle
 
 ```kotlin
