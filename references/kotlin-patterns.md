@@ -341,6 +341,37 @@ displayTemperature(Temperature(25.0))
 
 Use `Sequence` for large collections or chained operations to avoid intermediate allocations.
 
+### Avoid Memory Churn
+
+Memory churn occurs when you create lots of temporary objects that are quickly garbage collected. This triggers frequent GC pauses, causing jank.
+
+```kotlin
+// ❌ Creates new String objects in loop
+for (i in 0..10000) {
+    val text = "Item number: $i" // 10,000 objects created!
+    processText(text)
+}
+
+// ✅ Reuse StringBuilder
+val builder = StringBuilder()
+for (i in 0..10000) {
+    builder.clear()
+    builder.append("Item number: ").append(i)
+    processText(builder.toString())
+}
+
+// ❌ Creates new object each time
+fun getCurrentDate(): Date {
+    return Date() // Called 1000 times = 1000 objects
+}
+
+// ✅ Reuse if possible
+private var cachedDate: Date? = null
+fun getCurrentDate(): Date {
+    return cachedDate ?: Date().also { cachedDate = it }
+}
+```
+
 ```kotlin
 // ❌ Eager evaluation - creates intermediate lists
 val activeUserNames = users
