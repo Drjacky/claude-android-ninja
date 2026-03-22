@@ -70,7 +70,7 @@ val domainUnit = WeightUnit.fromDb(dbUnit)
 
 **Alias naming:** suffix or prefix with the layer (`Db`, `Api`, `Dto`, `Ui`, `Domain`) so readers see which world a value belongs to.
 
-### When “use cases” are just ceremony
+### When "use cases" are just ceremony
 
 A class that only forwards to a repository with no extra policy, validation, or reuse is usually **noise**:
 
@@ -81,17 +81,17 @@ class GetSettingsUseCase(private val repository: SettingsRepository) {
 }
 ```
 
-Keep a **use case** (or domain service) when logic is multi-step, reused across features, policy-heavy, or worth unit-testing on its own-not when it is a one-line pass-through.
+Keep a **use case** (or domain service) when logic is multi-step, reused across features, policy-heavy, or worth unit-testing on its own - not when it is a one-line pass-through.
 
 ### State updates without extra type layers
 
-This skill uses **sealed actions**, **`UiState`**, and **one-shot events** (`SharedFlow` / similar) from the ViewModel. Avoid introducing a **fourth** parallel type (e.g. `Result` / `PartialState` / mandatory pure `reduce`) when every event maps **1:1** to a small state change-`when (action) { … }` with `update` is simpler and easier to follow.
+This skill uses **sealed actions**, **`UiState`**, and **one-shot events** (`SharedFlow` / similar) from the ViewModel. Avoid introducing a **fourth** parallel type (e.g. `Result` / `PartialState` / mandatory pure `reduce`) when every event maps **1:1** to a small state change - `when (action) { … }` with `update` is simpler and easier to follow.
 
-Add a dedicated reducer or intermediate “result” type only when many sources (events, async completions, pushes, sockets) must funnel through **one** centralized transition function.
+Add a dedicated reducer or intermediate "result" type only when many sources (events, async completions, pushes, sockets) must funnel through **one** centralized transition function.
 
 ### Composable boundaries
 
-Extract composables when there is **real reuse**, a **stable API**, or a clear visual/behavioral boundary. Do not extract one-line wrappers around `Text` / `Spacer` or “components” used only once-see `references/compose-patterns.md` → “View Composition Rules”.
+Extract composables when there is **real reuse**, a **stable API**, or a clear visual/behavioral boundary. Do not extract one-line wrappers around `Text` / `Spacer` or "components" used only once - see `references/compose-patterns.md` → "View Composition Rules".
 
 ## Collection APIs
 

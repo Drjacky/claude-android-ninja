@@ -161,7 +161,7 @@ Prefer **stable layout** and **preserved context** while data loads or refreshes
 |------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
 | First load, layout shape is known                          | Skeleton or placeholder in a **fixed-height** slot                                                |
 | Refresh while previous data exists                         | Keep previous content; show **inline** progress (pull-to-refresh, small indicator on the section) |
-| Recalculate / refine result while an older result is valid | Keep old result visible; show “updating” until the new payload arrives                            |
+| Recalculate / refine result while an older result is valid | Keep old result visible; show "updating" until the new payload arrives                            |
 | Empty and idle                                             | Empty state copy, not a blocking spinner                                                          |
 | Blocking work with **no** stable structure                 | Full-screen spinner is acceptable but should be rare                                              |
 
@@ -202,7 +202,7 @@ private fun SummaryCardSlot(content: @Composable BoxScope.() -> Unit) {
 }
 ```
 
-Model **refreshing** as a flag on the content state (e.g. `isRefreshing` on a data class) or a small overlay-not as a mode that **hides** the main UI unless there is nothing to show yet.
+Model **refreshing** as a flag on the content state (e.g. `isRefreshing` on a data class) or a small overlay, not as a mode that **hides** the main UI unless there is nothing to show yet.
 
 ### Sealed Interface for UI State
 
@@ -3239,7 +3239,13 @@ sealed class FeedItem {
 LazyColumn {
     items(
         items = feedItems,
-        key = { it.id },
+        key = { item ->
+            when (item) {
+                is FeedItem.Header -> "header-${item.title}"
+                is FeedItem.Post -> item.id
+                is FeedItem.Ad -> item.id
+            }
+        },
         contentType = { item ->
             when (item) {
                 is FeedItem.Header -> "header"
@@ -3257,22 +3263,22 @@ LazyColumn {
 }
 ```
 
-Without `contentType`, all items share one pool. With it, items reuse layouts efficiently.
+Without `contentType`, all items share one pool. With it, items reuse layouts efficiently. If two headers could share the same title, give `Header` a stable unique id and use that in the `key` lambda instead of `title`.
 
 ### LazyListState - Programmatic Scrolling
 
-`LazyColumn` and `LazyRow` take `state: LazyListState = rememberLazyListState()` by default. **If you do not need a reference to the list’s scroll state, omit `state` entirely**—the default remembers scroll for you inside the lazy list.
+`LazyColumn` and `LazyRow` take `state: LazyListState = rememberLazyListState()` by default. **If you do not need a reference to the list's scroll state, omit `state` entirely** - the default remembers scroll for you inside the lazy list.
 
-**Hoist `LazyListState` explicitly** (create `val listState = rememberLazyListState()` and pass `state = listState`) only when something in **your** composable tree must call into that same instance—for example:
+**Hoist `LazyListState` explicitly** (create `val listState = rememberLazyListState()` and pass `state = listState`) only when something in **your** composable tree must call into that same instance - for example:
 
-- `animateScrollToItem` / `scrollToItem` (FAB, deep link, “jump to”)
+- `animateScrollToItem` / `scrollToItem` (FAB, deep link, 'jump to')
 - Reading `firstVisibleItemIndex`, `firstVisibleItemScrollOffset`, or `layoutInfo` (progress indicators, scroll-aware headers)
 - `derivedStateOf { … }` tied to scroll (e.g. show/hide scroll-to-top)
-- `Modifier.nestedScroll` or other APIs that need the list’s `NestedScrollConnection` / state
+- `Modifier.nestedScroll` or other APIs that need the list's `NestedScrollConnection` / state
 
 If none of that applies, use a plain `LazyColumn { … }` with no `state` parameter.
 
-**Do not** copy `firstVisibleItemIndex`, `firstVisibleItemScrollOffset`, or similar into the ViewModel’s `StateFlow` for a normal feed—those values change constantly and will spam state updates without business value.
+**Do not** copy `firstVisibleItemIndex`, `firstVisibleItemScrollOffset`, or similar into the ViewModel's `StateFlow` for a normal feed - those values change constantly and will spam state updates without business value.
 
 Hoist or persist scroll only when there is a **clear requirement**: e.g. **process death** / configuration recovery (persist minimal scroll hints via `SavedStateHandle` or `rememberSaveable` when you own the saver), or a spec that ties list position to something outside the composable. Otherwise treat scroll position as **UI-local**, like other transient layout state.
 
