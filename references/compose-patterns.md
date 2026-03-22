@@ -1529,13 +1529,16 @@ data class Config(
 #### Decision Matrix
 
 
-| Type Characteristics           | Annotation   | Example                                             |
-| ------------------------------ | ------------ | --------------------------------------------------- |
-| All `val`, deeply immutable    | `@Immutable` | `data class User(val id: String, val name: String)` |
-| Mutable with `mutableStateOf`  | `@Stable`    | `var count by mutableStateOf(0)`                    |
-| Mutable with `StateFlow`       | `@Stable`    | `val state: StateFlow<T>`                           |
-| Interface with stable contract | `@Stable`    | `interface Repository`                              |
-| Regular mutable class          | **None**     | Let Compose treat as unstable                       |
+| Type Characteristics           | Annotation   | Example                                                         |
+|--------------------------------|--------------|-----------------------------------------------------------------|
+| All `val`, deeply immutable    | `@Immutable` | `data class User(val id: String, val name: String)`             |
+| Mutable with `mutableStateOf`  | `@Stable`    | `var count by mutableStateOf(0)`                                |
+| Mutable with `StateFlow`       | `@Stable`    | `val state: StateFlow<T>`                                       |
+| Interface with stable contract | `@Stable`    | `interface Repository`                                          |
+| Regular mutable class          | **None**     | Let Compose treat as unstable                                   |
+| `java.time` classes            | **None**     | `LocalDate`, `LocalTime`, `LocalDateTime` (Unstable by default) |
+
+> **Warning:** Standard Java time classes like `LocalDate`, `LocalTime`, and `LocalDateTime` are considered **unstable** by Compose. If you use them in your state, you must either wrap them in a stable class, map them to primitives (like epoch milliseconds), or configure them as stable via a stability configuration file.
 
 
 #### Persistent Collections for Performance
