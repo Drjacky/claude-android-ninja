@@ -431,6 +431,175 @@ stability_check:
       run: ./gradlew stabilityCheck
 ```
 
+## CPU Optimization
+
+CPU is like your app’s brain. Too much thinking leads to battery drain and heat.
+
+### Common CPU Hogs
+
+1. **Unnecessary Work in Loops**: Avoid recalculating values or accessing properties repeatedly inside a loop.
+```kotlin
+// Bad: Recalculates in every iteration
+for (i in 0 until items.size) { // items.size called multiple times
+    process(items[i])
+}
+
+// Good: Calculate once or use forEach
+items.forEach { item ->
+    process(item)
+}
+```
+
+2. **String Concatenation in Loops**: Avoid using `+=` for strings in loops as it creates new String objects each time. Use `StringBuilder` instead.
+```kotlin
+// Bad: Creates new String object 1000 times
+var result = ""
+for (i in 1..1000) {
+    result += "Item $i\n"
+}
+
+// Good: Use StringBuilder
+val result = StringBuilder()
+for (i in 1..1000) {
+    result.append("Item $i\n")
+}
+```
+
+3. **Regex in Performance-Critical Code**: Compiling a regex is expensive. Compile it once and reuse it.
+```kotlin
+// Bad: Compiles regex every time
+fun validateEmail(email: String): Boolean {
+    return email.matches(Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"))
+}
+
+// Good: Compile once
+companion object {
+    private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")
+}
+fun validateEmail(email: String): Boolean {
+    return email.matches(EMAIL_REGEX)
+}
+```
+
+## Battery Optimization
+
+Users uninstall apps that drain battery. Android shows battery usage stats, and your app will be blamed!
+
+### Common Battery Drains
+
+1. **Wakelocks (Keeping Device Awake)**: Ensure wakelocks are always released or use a timeout.
+```kotlin
+// Bad: Device never sleeps if not released manually!
+wakeLock.acquire() 
+
+// Good: Auto-release after a timeout
+wakeLock.acquire(10 * 60 * 1000L) // 10 minutes
+```
+
+2. **Location Updates**: Avoid requesting high accuracy updates too frequently.
+```kotlin
+// Bad: High accuracy every second kills battery
+locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0f, listener)
+
+// Good: Balanced power and accuracy with reasonable intervals
+val locationRequest = LocationRequest.create().apply {
+    interval = 60000 // 1 minute
+    fastestInterval = 30000 // 30 seconds
+    priority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY
+}
+```
+
+## Network Performance Optimization
+
+Network calls are slow (100–500ms), use battery, cost data, and can cause ANRs if done on the main thread.
+
+### Best Practices
+
+1. **Use OkHttp/Retrofit with Caching**: Cache responses to save data and improve load times when offline.
+```kotlin
+val cacheSize = 10 * 1024 * 1024L // 10 MB
+val cache = Cache(context.cacheDir, cacheSize)
+
+val okHttpClient = OkHttpClient.Builder()
+    .cache(cache)
+    .addInterceptor { chain ->
+        var request = chain.request()
+        request = if (hasNetwork(context)) {
+            request.newBuilder().header("Cache-Control", "public, max-age=60").build()
+        } else {
+            request.newBuilder().header("Cache-Control", "public, only-if-cached, max-stale=86400").build()
+        }
+        chain.proceed(request)
+    }
+    .build()
+```
+
+2. **Compress Images Before Upload**: Compress images locally before sending them to the server.
+```kotlin
+bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream) // 80% quality
+```
+
+3. **Batch Network Requests**: Instead of making 100 separate network calls for individual items, make a single batch request.
+
+4. **Enable HTTP/2**: HTTP/2 multiplexes requests over a single connection, making it faster.
+```kotlin
+val okHttpClient = OkHttpClient.Builder()
+    .protocols(listOf(Protocol.HTTP_2, Protocol.HTTP_1_1))
+    .build()
+```
+
+## Image Optimization
+
+Images are the biggest memory consumers in apps. Unoptimized images can cause `OutOfMemoryError`, janky scrolling, and slow loading.
+
+### Best Practices
+
+1. **Use Image Loading Libraries**: Never use `BitmapFactory` directly for loading images from the network. Use Coil.
+```kotlin
+// Coil (Kotlin-first, uses Coroutines)
+imageView.load(imageUrl) {
+    crossfade(true)
+    placeholder(R.drawable.placeholder)
+}
+```
+
+2. **Resize Images**: Don't load a 4000x3000 image to display in a 200x200 view. Let the image loading library resize it to the actual display size.
+
+3. **Use Appropriate Image Formats**:
+   - **JPEG**: Photos (smaller file size, lossy compression)
+   - **PNG**: Icons/logos with transparency (larger, lossless)
+   - **WebP**: Modern format (smaller than JPEG, supports transparency)
+
+4. **Vector Drawables for Icons**: Use Vector Drawables (`.xml`) instead of multiple PNG sizes (`mdpi`, `hdpi`, `xhdpi`, etc.) to save significant space.
+
+## APK Size Optimization
+
+Smaller APKs lead to faster downloads, more installs, and better retention for users on limited data plans.
+
+### Size Reduction Techniques
+
+1. **Enable Code Shrinking (R8)**: Removes unused code/resources and obfuscates code (can reduce size by 30-60%). Ensure `isMinifyEnabled` and `isShrinkResources` are true for release builds.
+2. **Use Android App Bundle (AAB)**: Upload AABs to the Play Store instead of APKs. The Play Store generates optimized APKs containing only the resources, code, and languages needed for a specific user's device.
+3. **Remove Unused Resources**: Use `resConfigs` to keep only the languages your app actually supports.
+```kotlin
+android {
+    defaultConfig {
+        resConfigs("en", "es") // Only keep English and Spanish
+    }
+}
+```
+4. **Use WebP Instead of PNG**: Convert PNG images to WebP to reduce size by up to 70% without losing quality.
+5. **Remove Native Library Variants**: If you use NDK, filter ABIs to only include common architectures.
+```kotlin
+android {
+    defaultConfig {
+        ndk {
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a"))
+        }
+    }
+}
+```
+
 ## App Startup & Initialization
 
 Optimize cold start time by controlling when and how components initialize. Avoid ContentProvider-based auto-initialization and use the App Startup library for explicit control.
