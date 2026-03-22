@@ -62,6 +62,7 @@ Always check `assets/libs.versions.toml.template` before adding or changing depe
 - ✅ Built on Dagger, Android-optimized
 - ✅ Compile-time safety, ViewModel integration
 - ✅ This SKILL requires Hilt for all projects
+- Module patterns, scopes, and anti-patterns: `references/architecture.md` (Domain Layer - [Dependency Injection Setup](architecture.md#dependency-injection-setup))
 
 ### AndroidX Libraries
 

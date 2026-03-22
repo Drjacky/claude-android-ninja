@@ -291,7 +291,10 @@ val dataStore = PreferenceDataStoreFactory.create(
 ```
 
 #### Hilt Setup
-The `preferencesDataStore(name = …)` property delegate on `Context` is fine for very small apps. Prefer an explicit `@Singleton` provider (below) when you want **test doubles** without tying tests to `Application` or static `Context`.
+
+**Scope:** DataStore-only wiring below. For **Hilt module rules** (`@Binds` vs `@Provides`, scopes, anti-patterns, Navigation3 + `hiltViewModel`), see [Dependency Injection Setup](#dependency-injection-setup) under **Domain Layer**.
+
+The `preferencesDataStore(name = ...)` property delegate on `Context` is fine for very small apps. Prefer an explicit `@Singleton` provider (below) when you want **test doubles** without tying tests to `Application` or static `Context`.
 
 Always provide `DataStore` as a `@Singleton` to guarantee a single instance per file.
 
@@ -543,6 +546,44 @@ dependencies {
 **Note:** `androidx.compose.runtime` is a Kotlin-only library despite the `androidx` namespace. It contains `@Immutable` and `@Stable` annotations used for Compose compiler optimizations. See [compose-patterns.md](compose-patterns.md#stability-annotations-immutable-vs-stable) for details.
 
 ### Dependency Injection Setup
+
+Hilt provides **compile-time DI** across features and core modules: `@Module` / `@InstallIn`, with `@HiltAndroidApp` and `@AndroidEntryPoint` entry points in the app module.
+
+**Constructor injection:** Prefer `@Inject constructor(...)` on types Hilt builds. Avoid `@Inject lateinit var` on app or domain types (their dependencies are hidden and tests get harder). Platform types may still use field injection where the API requires it.
+
+**`@Binds` vs `@Provides`:**
+- **`@Binds`** - `abstract` method in a module; map an interface to an `@Inject`-constructable implementation (Hilt generates the binding).
+- **`@Provides`** - you construct the instance (`OkHttpClient.Builder()`, `DataStoreFactory.create`, third-party SDKs). See **Hilt NetworkModule** and **DataStore** `#### Hilt Setup` in this Data Layer for real `@Provides` examples.
+
+**Scopes (match real lifetime):**
+
+| Annotation                | Lifetime                                       | Typical use                                          |
+|---------------------------|------------------------------------------------|------------------------------------------------------|
+| `@Singleton`              | Application                                    | Retrofit, `OkHttp`, `Room`, `DataStore`, dispatchers |
+| `@ActivityRetainedScoped` | Survives config change until activity finished | Session-like state (use sparingly)                   |
+| `@ViewModelScoped`        | Same as hosting `ViewModel`                    | Feature helpers (validators, calculators)            |
+| `@ActivityScoped`         | Activity instance                              | Rare in Compose-first apps                           |
+| `@FragmentScoped`         | Fragment instance                              | Rare when using Compose                              |
+
+Over-scoping wastes memory; under-scoping duplicates heavy types or breaks singleton expectations.
+
+**Modules:** Colocate modules with the **feature or layer** they wire (`AuthModule` in a feature, `DatabaseModule` in `core/data`). The app module owns the application graph entry points.
+
+**Anti-patterns:**
+
+| Problem                                                  | Why it hurts                   | Prefer                                                                    |
+|----------------------------------------------------------|--------------------------------|---------------------------------------------------------------------------|
+| `Activity` / `Fragment` in a `ViewModel`                 | Leaks, lifecycle mismatch      | Ids via `SavedStateHandle`, navigation args, repositories                 |
+| Raw `Context` in a `ViewModel`                           | Same                           | `@ApplicationContext` in data/repository wiring, not in `ViewModel`       |
+| `ViewModel` with `@Inject` but no `@HiltViewModel`       | Hilt does not own the instance | `@HiltViewModel` + `@Inject constructor` + `hiltViewModel()` in Compose   |
+| Manual `ViewModel(...)` factories everywhere             | Bypasses graph                 | `hiltViewModel()` or Hilt-assisted factories                              |
+| Feature-only deps in `SingletonComponent` "just in case" | Wrong lifetime, memory         | `ViewModelComponent` / `@ViewModelScoped` when only screens need the type |
+
+**Navigation arguments and assisted injection:** `SavedStateHandle`, `@AssistedInject`, and `hiltViewModel` factory lambdas with Navigation3 - see `references/android-navigation.md` as the source of truth.
+
+Official docs: [Hilt Android](https://developer.android.com/training/dependency-injection/hilt-android), [Hilt with Compose](https://developer.android.com/develop/ui/compose/libraries#hilt).
+
+**Example - repository bindings in `core/data`:**
 
 ```kotlin
 // core/data/di/DataModule.kt
