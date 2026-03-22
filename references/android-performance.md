@@ -903,6 +903,29 @@ LazyColumn {
 }
 ```
 
+### Text Input Performance
+
+```kotlin
+// Bad: using BasicTextField or OutlinedTextField for high-frequency input
+// This can cause dropped keystrokes and jank because state updates must round-trip through the ViewModel.
+var text by remember { mutableStateOf("") }
+TextField(value = text, onValueChange = { text = it })
+
+// Good: use BasicTextField2 for all text input
+// BasicTextField2 manages its own internal state, preventing dropped keystrokes.
+val state = rememberTextFieldState()
+BasicTextField2(state = state)
+```
+
+### Performance Checklist
+
+- [ ] Use `BasicTextField2` for all text inputs to prevent dropped keystrokes.
+- [ ] Use `derivedStateOf` when reading scroll state or filtering lists.
+- [ ] Defer state reads to the layout or draw phase when animating (e.g., `Modifier.offset { }`, `Modifier.graphicsLayer { }`).
+- [ ] Ensure all domain models passed to Compose are `@Immutable` or `@Stable`.
+- [ ] Use `key` and `contentType` in all `LazyColumn`/`LazyRow` items.
+- [ ] Avoid calling `refresh()` on PagingData inside a composable body.
+
 ## References
 - Benchmarking overview: https://developer.android.com/topic/performance/benchmarking/benchmarking-overview
 - Macrobenchmark overview: https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview
