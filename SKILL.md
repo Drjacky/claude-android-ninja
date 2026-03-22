@@ -86,6 +86,10 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Create Screen + ViewModel + UiState in the feature module  
 → Use shared components from `core/ui` when possible
 
+**Handling State and Events?**
+→ Use `StateFlow` for state, `SharedFlow` for events (see [coroutines-patterns.md](references/coroutines-patterns.md))
+→ Survive process death with `SavedStateHandle` (see [compose-patterns.md](references/compose-patterns.md))
+
 **Setting up app theme (colors, typography, shapes)?**
 → Follow [android-theming.md](references/android-theming.md) for Material 3 theming and dynamic colors  
 → Use semantic color roles from `MaterialTheme.colorScheme` (never hardcoded colors)  
@@ -98,6 +102,25 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Setting up data/domain layers?**
 → Read [architecture.md](references/architecture.md)  
+→ Create Repository interfaces in `core/domain`  
+→ Create implementations in `core/data` using Room/Retrofit/DataStore
+→ Use DataStore for simple key-value pairs, Room for complex datasets
+
+**Implementing Lists and Scrolling?**
+→ Use `LazyColumn`/`LazyRow` with stable keys and `contentType` (see [compose-patterns.md](references/compose-patterns.md))
+→ For large datasets, use Paging 3 (see [compose-patterns.md](references/compose-patterns.md) -> "Paging 3")
+
+**Handling Navigation?**
+→ Use Navigation3 for adaptive navigation (see [android-navigation.md](references/android-navigation.md))
+→ Avoid navigation anti-patterns (see [android-navigation.md](references/android-navigation.md) -> "Navigation Anti-Patterns")
+
+**Optimizing Performance?**
+→ Follow the Performance Checklist in [android-performance.md](references/android-performance.md)
+→ Use `BasicTextField2` for high-frequency text input
+
+**Testing?**
+→ Read [testing.md](references/testing.md) for testing philosophy and patterns
+→ Use Turbine for testing Flow emissions (see [testing.md](references/testing.md) -> "Testing Flow Emissions with Turbine")
 → Create Repository interfaces in `core/domain`
 → Implement Repository in `core/data`
 → Create DataSource + DAO in `core/data`
