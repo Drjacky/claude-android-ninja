@@ -2926,14 +2926,19 @@ Values are scoped to descendants. Inner providers override outer ones.
 
 ### Built-In CompositionLocals
 
-| Local | Type | Access Pattern |
-|-------|------|---------------|
-| `LocalContext` | `Context` | `val context = LocalContext.current` |
-| `LocalConfiguration` | `Configuration` | Screen size, orientation, density |
-| `LocalDensity` | `Density` | dp/px conversions |
-| `LocalLayoutDirection` | `LayoutDirection` | LTR/RTL |
-| `LocalLifecycleOwner` | `LifecycleOwner` | Activity/Fragment lifecycle |
-| `LocalView` | `View` | Underlying Android View |
+| Local                             | Type                          | Access Pattern                             |
+|-----------------------------------|-------------------------------|--------------------------------------------|
+| `LocalContext`                    | `Context`                     | `val context = LocalContext.current`       |
+| `LocalConfiguration`              | `Configuration`               | Screen size, orientation, density          |
+| `LocalDensity`                    | `Density`                     | dp/px conversions                          |
+| `LocalLayoutDirection`            | `LayoutDirection`             | LTR/RTL                                    |
+| `LocalLifecycleOwner`             | `LifecycleOwner`              | Activity/Fragment lifecycle                |
+| `LocalView`                       | `View`                        | Underlying Android View                    |
+| `LocalSoftwareKeyboardController` | `SoftwareKeyboardController?` | Control software keyboard (hide/show)      |
+| `LocalFocusManager`               | `FocusManager`                | Control focus within Compose (clear focus) |
+| `LocalClipboard`                  | `Clipboard`                   | Platform clipboard service (copy/paste)    |
+| `LocalUriHandler`                 | `UriHandler`                  | Open URIs (e.g., in a browser)             |
+| `LocalHapticFeedback`             | `HapticFeedback`              | Provide haptic feedback (vibrations)       |
 
 ### When to Use vs When NOT to Use
 
