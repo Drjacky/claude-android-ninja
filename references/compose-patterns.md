@@ -1653,6 +1653,47 @@ fun SearchableAuthActivity(
 }
 ```
 
+### Hoistable Stable State Pattern
+
+For complex components, extract state into a hoistable stable state interface with a private implementation and a factory function. This allows callers to either provide their own state or let the component manage it.
+
+```kotlin
+@Stable
+interface VerticalScrollerState {
+    var scrollPosition: Int
+    var scrollRange: Int
+}
+
+private class VerticalScrollerStateImpl(
+    scrollPosition: Int = 0,
+    scrollRange: Int = 0
+) : VerticalScrollerState {
+    private var _scrollPosition by mutableIntStateOf(scrollPosition)
+    
+    override var scrollRange by mutableIntStateOf(scrollRange)
+    
+    override var scrollPosition: Int
+        get() = _scrollPosition
+        set(value) {
+            _scrollPosition = value.coerceIn(0, scrollRange)
+        }
+}
+
+// Factory function
+fun VerticalScrollerState(): VerticalScrollerState = VerticalScrollerStateImpl()
+
+@Composable
+fun VerticalScroller(
+    modifier: Modifier = Modifier,
+    state: VerticalScrollerState = remember { VerticalScrollerState() }
+) {
+    val scrollPosition = state.scrollPosition
+    val scrollRange = state.scrollRange
+    
+    // Use state...
+}
+```
+
 ### Remember/Lambda Best Practices
 
 **Default approach (99% of cases):** Keep it simple. Let Compose handle optimizations automatically when your data types are stable/immutable.
