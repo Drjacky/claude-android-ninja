@@ -81,6 +81,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Building UI screens/components?**
 → Read [compose-patterns.md](references/compose-patterns.md) for screen architecture, state, components, modifiers  
+→ Use [compose-patterns.md](references/compose-patterns.md) -> State Management -> "Loading and refresh UX" for stable layout during loads and refreshes (avoid full-screen spinners that wipe context)  
 → Use [android-theming.md](references/android-theming.md) for Material 3 colors, typography, and shapes  
 → **Always** align Kotlin code with [kotlin-patterns.md](references/kotlin-patterns.md)  
 → Create Screen + ViewModel + UiState in the feature module  
@@ -102,6 +103,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Setting up data/domain layers?**
 → Read [architecture.md](references/architecture.md)  
+→ Hilt `@Binds`, scopes, and DI anti-patterns: [architecture.md](references/architecture.md) -> Domain Layer -> "Dependency Injection Setup"  
 → Create Repository interfaces in `core/domain`  
 → Create implementations in `core/data` using Room/Retrofit/DataStore
 → Use DataStore for simple key-value pairs, Room for complex datasets
@@ -212,6 +214,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Refactoring existing code or improving architecture?**
 → Review [architecture.md](references/architecture.md) for layer responsibilities  
+→ Skim [architecture.md](references/architecture.md) -> "Cross-cutting anti-patterns (quick reference)" for common layering mistakes  
 → Check [design-patterns.md](references/design-patterns.md) for applicable patterns  
 → Follow [kotlin-patterns.md](references/kotlin-patterns.md) for Kotlin-specific improvements  
 → Ensure compliance with [modularization.md](references/modularization.md) dependency rules  
