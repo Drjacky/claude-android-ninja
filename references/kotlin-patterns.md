@@ -9,15 +9,16 @@ This guide focuses on intermediate and advanced Kotlin patterns. Basic language 
 
 ## Table of Contents
 1. [Delegation (Composition over Inheritance)](#delegation-composition-over-inheritance)
-2. [Collection APIs](#collection-apis)
-3. [Sealed Classes & Exhaustive When](#sealed-classes--exhaustive-when)
-4. [Generics & Reified Types](#generics--reified-types)
-5. [Extension Functions](#extension-functions)
-6. [Inline Value Classes](#inline-value-classes)
-7. [Sequences for Lazy Evaluation](#sequences-for-lazy-evaluation)
-8. [Companion Objects](#companion-objects)
-9. [Type Aliases](#type-aliases)
-10. [Coroutines Best Practices](#coroutines-best-practices)
+2. [Pragmatic layering & import hygiene](#pragmatic-layering--import-hygiene)
+3. [Collection APIs](#collection-apis)
+4. [Sealed Classes & Exhaustive When](#sealed-classes--exhaustive-when)
+5. [Generics & Reified Types](#generics--reified-types)
+6. [Extension Functions](#extension-functions)
+7. [Inline Value Classes](#inline-value-classes)
+8. [Sequences for Lazy Evaluation](#sequences-for-lazy-evaluation)
+9. [Companion Objects](#companion-objects)
+10. [Type Aliases](#type-aliases)
+11. [Coroutines Best Practices](#coroutines-best-practices)
 
 ## Delegation (Composition over Inheritance)
 
@@ -40,6 +41,57 @@ class AuthViewModel @Inject constructor(
 ```
 
 See: `references/kotlin-delegation.md` for complete patterns, testing, and best practices.
+
+## Pragmatic layering & import hygiene
+
+Keep types and file structure easy to read. This aligns with `references/architecture.md` (layers) and `references/compose-patterns.md` (screens and state).
+
+### Import hygiene
+
+Never bury types behind long fully qualified names in business logic. Import at the top of the file; use `import … as …` when two layers expose the same simple name.
+
+```kotlin
+// Bad — package noise hides intent
+val unit = com.example.app.data.db.entity.enums.WeightUnit.entries
+    .find { it.name == rawValue }
+
+// Good
+import com.example.app.data.db.entity.enums.WeightUnit
+
+val unit = WeightUnit.entries.find { it.name == rawValue }
+
+// Good — clash between DB and domain enums
+import com.example.app.data.db.entity.enums.WeightUnit as DbWeightUnit
+import com.example.app.domain.model.WeightUnit
+
+val dbUnit = DbWeightUnit.entries.find { it.name == rawValue }
+val domainUnit = WeightUnit.fromDb(dbUnit)
+```
+
+**Alias naming:** suffix or prefix with the layer (`Db`, `Api`, `Dto`, `Ui`, `Domain`) so readers see which world a value belongs to.
+
+### When “use cases” are just ceremony
+
+A class that only forwards to a repository with no extra policy, validation, or reuse is usually **noise**:
+
+```kotlin
+// Often unnecessary — call the repository from the ViewModel instead
+class GetSettingsUseCase(private val repository: SettingsRepository) {
+    suspend operator fun invoke() = repository.getSettings()
+}
+```
+
+Keep a **use case** (or domain service) when logic is multi-step, reused across features, policy-heavy, or worth unit-testing on its own—not when it is a one-line pass-through.
+
+### State updates without extra type layers
+
+This skill uses **sealed actions**, **`UiState`**, and **one-shot events** (`SharedFlow` / similar) from the ViewModel. Avoid introducing a **fourth** parallel type (e.g. `Result` / `PartialState` / mandatory pure `reduce`) when every event maps **1:1** to a small state change—`when (action) { … }` with `update` is simpler and easier to follow.
+
+Add a dedicated reducer or intermediate “result” type only when many sources (events, async completions, pushes, sockets) must funnel through **one** centralized transition function.
+
+### Composable boundaries
+
+Extract composables when there is **real reuse**, a **stable API**, or a clear visual/behavioral boundary. Do not extract one-line wrappers around `Text` / `Spacer` or “components” used only once—see `references/compose-patterns.md` → “View Composition Rules”.
 
 ## Collection APIs
 
