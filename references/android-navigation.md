@@ -1497,3 +1497,62 @@ fun NavKey.toContentKey() = this.toString()
 ```
 
 The child entry's `viewModel<SharedCounterViewModel>()` call resolves to the same instance as the parent's, because both share the same `ViewModelStoreOwner`.
+
+## Navigation Anti-Patterns
+
+### `hiltViewModel()` Scope Mistakes
+
+```kotlin
+// Bad: hiltViewModel() inside a nested composable (wrong scope)
+@Composable
+fun ProductCard() {
+    // This ViewModel is scoped to the entire NavEntry, not just this card!
+    // Multiple ProductCards will share the exact same ViewModel instance.
+    val viewModel: ProductViewModel = hiltViewModel() 
+}
+
+// Good: Pass state and callbacks down from the route/screen level
+@Composable
+fun ProductCard(product: Product, onClick: () -> Unit) {
+    // Pure UI component
+}
+```
+
+### ViewModel Navigation
+
+```kotlin
+// Bad: Passing Navigator to ViewModel (breaks unidirectional data flow and testability)
+class AuthViewModel(private val navigator: AuthNavigator) : ViewModel() {
+    fun login() {
+        // ...
+        navigator.navigateToMainApp() // ViewModel shouldn't drive navigation directly
+    }
+}
+
+// Good: Emit a one-shot event, let the Route composable handle navigation
+class AuthViewModel : ViewModel() {
+    private val _events = Channel<AuthEvent>()
+    val events = _events.receiveAsFlow()
+
+    fun login() {
+        // ...
+        _events.trySend(AuthEvent.LoginSuccess)
+    }
+}
+```
+
+### Passing Complex Objects in NavKeys
+
+```kotlin
+// Bad: Passing large or complex objects in navigation routes
+@Serializable
+data class ProductDetail(
+    val product: Product // Product might be too large for SavedStateHandle or contain non-serializable data
+) : ProductsDestination
+
+// Good: Pass only IDs, fetch data in the destination
+@Serializable
+data class ProductDetail(
+    val productId: String // Small, easily serializable ID
+) : ProductsDestination
+```
