@@ -6,12 +6,12 @@ metadata:
   author: DrJacky
   version: 1.0.0
   documentation: https://github.com/DrJacky/claude-android-ninja
-  tags: [android, kotlin, compose, mvvm, hilt, room, gradle, mobile]
+  tags: [android, kotlin, compose, mvvm, hilt, room, datastore, paging, gradle, mobile]
 ---
 # Android Kotlin Compose Development
 
 Create production-quality Android applications following Google's official architecture guidance and best practices.
-Use when building Android apps with Kotlin, Jetpack Compose, MVVM architecture, Hilt dependency injection, Room database, or Android multi-module projects.
+Use when building Android apps with Kotlin, Jetpack Compose, MVVM architecture, Hilt dependency injection, Room database, DataStore, Paging 3, or Android multi-module projects.
 Triggers on requests to create Android projects, screens, ViewModels, repositories, feature modules, or when asked about Android architecture patterns.
 
 
