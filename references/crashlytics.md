@@ -419,9 +419,10 @@ plugins {
 - **Sentry Scopes**: Use `Sentry.withScope` (Isolated/Local Scope) for one-off operations (like capturing a specific exception with custom tags) to prevent polluting the global or thread scope. Remember that `Sentry.configureScope` on the main thread modifies the Global Scope, while on a background thread it modifies the Thread Scope.
 - **Avoid PII** in tags and logs; keep user identifiers minimal. Use data scrubbing for sensitive information.
 - **Use sampling** for performance tracing/profiling if enabled.
-- **Send non-fatal errors intentionally**: log only what helps debugging.
+- **Send non-fatal errors intentionally**: log only what helps debugging (e.g., API failures).
+- **Correlate with Analytics**: Use Firebase Analytics (or your analytics provider) to log key user events. This complements Crashlytics by showing how users interact with your app before a crash, helping you identify risky user flows.
 - **Quality breadcrumbs**: Focus on user actions and state changes, not internal implementation details.
-- **Upload mapping files**: Ensure ProGuard/R8 mappings are uploaded for symbolicated stack traces.
+- **Upload mapping files**: Ensure ProGuard/R8 mappings are uploaded for symbolicated stack traces, and keep line numbers intact.
 
 ## ProGuard/R8 Mapping Upload
 
@@ -429,13 +430,15 @@ Both providers require mapping file upload for symbolicated crashes in release b
 
 ### Firebase Crashlytics
 
-The Firebase Crashlytics Gradle plugin automatically uploads mapping files during the build. No additional keep rules needed - apply the convention plugin and enable minification:
+The Firebase Crashlytics Gradle plugin automatically uploads mapping files during the build. Apply the convention plugin and enable minification:
 
 ```kotlin
 plugins {
     alias(libs.plugins.app.firebase)
 }
 ```
+
+**Important**: To ensure your stack traces include exact line numbers, you must keep the `SourceFile` and `LineNumberTable` attributes. This is already included in the provided `assets/proguard-rules.pro.template`.
 
 ### Sentry
 
