@@ -1682,6 +1682,64 @@ class AppNavigator(private val navigator: Navigator) : ProfileNavigator, AuthNav
 }
 ```
 
+## Room Database Patterns
+
+### The `@Upsert` Caveat
+Use `@Insert(onConflict = OnConflictStrategy.REPLACE)` instead of `@Upsert` if you need to return the inserted row ID. `@Upsert` returns `-1` on updates, which can break logic depending on the ID.
+
+```kotlin
+@Dao
+interface UserDao {
+    // Bad: Returns -1 if the user already exists and is updated
+    @Upsert
+    suspend fun upsertUser(user: UserEntity): Long
+
+    // Good: Always returns the row ID
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdateUser(user: UserEntity): Long
+}
+```
+
+### Critical Performance Rules
+1. **Never use `Flow<List<T>>` for large tables**: It loads the entire table into memory on every change. Use Paging 3 instead.
+2. **Always use specific column queries**: Avoid `SELECT *` if you only need a few columns.
+3. **Use `@Transaction` for multiple operations**: Ensures atomicity and improves performance by batching disk writes.
+
+### Full-Text Search (FTS) Pattern
+Use Room's FTS4 support for fast, efficient text searching instead of `LIKE '%query%'`.
+
+```kotlin
+// 1. Define the FTS entity
+@Entity(tableName = "notes_fts")
+@Fts4(contentEntity = NoteEntity::class)
+data class NoteFtsEntity(
+    @ColumnInfo(name = "rowid") val rowId: Int,
+    val title: String,
+    val content: String
+)
+
+// 2. Define the main entity
+@Entity(tableName = "notes")
+data class NoteEntity(
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "rowid")
+    val id: Int = 0,
+    val title: String,
+    val content: String
+)
+
+// 3. Query using MATCH
+@Dao
+interface NoteDao {
+    @Query("""
+        SELECT notes.* FROM notes
+        JOIN notes_fts ON notes.rowid = notes_fts.rowid
+        WHERE notes_fts MATCH :query
+    """)
+    fun searchNotes(query: String): Flow<List<NoteEntity>>
+}
+```
+
 ## Summary
 
 - **MVVM** is our base architecture (see `references/architecture.md`)
