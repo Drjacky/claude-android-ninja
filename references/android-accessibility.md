@@ -2,7 +2,7 @@
 
 Modern accessibility patterns for Jetpack Compose applications. Following WCAG 2.1 Level AA guidelines and Android accessibility best practices for production apps.
 
-Accessibility is not optional-it's required for Google Play, benefits all users, and is often a legal requirement. Build it in from the start.
+Accessibility is not optional - it is required for Google Play, benefits all users, and is often a legal requirement. Build it in from the start.
 
 ## Table of Contents
 1. [Semantic Properties](#semantic-properties)
@@ -59,6 +59,19 @@ Button(onClick = { }) {
 - **Set to null** if the element is decorative or its parent already describes it
 - **Be specific**: "Delete Shopping List" not "Delete"
 - **Include state**: "Favorite, added" not just "Favorite"
+
+### Label copy (TalkBack)
+
+TalkBack already announces the **role** (button, image). Labels should describe **purpose**, not control type.
+
+| Prefer                  | Avoid                  |
+|-------------------------|------------------------|
+| "Save"                  | "Save button"          |
+| "Submit"                | "Click here to submit" |
+| "Profile photo of Alex" | "Image" or "Image 1"   |
+| "Delete message"        | "Button" (generic)     |
+
+Do not put "tap" or "click" in descriptions (input method varies). Keep labels **short** and **unique in context** (for example "Delete draft" vs "Delete message" when both exist). For **editable fields**, use Material `label` / `placeholder` semantics; do not duplicate the same text in `contentDescription` in a way that makes TalkBack repeat itself.
 
 ### State Description
 
@@ -519,6 +532,10 @@ fun ArticleScreen(article: Article) {
 ### Live Region Announcements
 
 Announce dynamic content changes to screen readers.
+
+**Modes:** In `Modifier.semantics`, `liveRegion = LiveRegionMode.Polite` queues announcements when the user is idle; `LiveRegionMode.Assertive` interrupts (use sparingly, for example critical errors). Prefer **polite** live regions on the composable that actually changed, or rely on **stateDescription** / **error** semantics so TalkBack picks up updates without extra noise.
+
+**Avoid** firing raw `AccessibilityEvent.TYPE_ANNOUNCEMENT` for every minor UI tick. Prefer semantics-driven updates; use one-off announcements only when there is no stable node to attach semantics to.
 
 ```kotlin
 @Composable
@@ -1384,6 +1401,21 @@ fun toggleButton_announcesState() {
 }
 ```
 
+### Espresso accessibility checks (instrumented)
+
+For **View-based** or hybrid screens, enable Espresso's built-in checks so basic a11y violations fail tests early. Add the `espresso-accessibility` artifact (see `references/testing.md` and your version catalog), then:
+
+```kotlin
+import androidx.test.espresso.accessibility.AccessibilityChecks
+
+@Before
+fun enableA11yChecks() {
+    AccessibilityChecks.enable()
+}
+```
+
+Compose UI tests usually assert **semantics** directly (see **Compose Testing** above). Use Espresso accessibility checks when you still have `ActivityScenario` / `Espresso` flows or `AndroidView` interop.
+
 ### Accessibility Scanner
 
 Use Android Accessibility Scanner for manual testing:
@@ -1455,6 +1487,7 @@ android {
 
 **Always:**
 - ✅ Provide `contentDescription` for all icons and images
+- ✅ Write concise labels (purpose, not "button" / "tap here")
 - ✅ Ensure 48dp × 48dp minimum touch targets
 - ✅ Use `mergeDescendants` to group related content
 - ✅ Announce state changes with `stateDescription`
