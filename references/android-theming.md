@@ -18,6 +18,9 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 - [Custom Theme Attributes](#custom-theme-attributes)
 - [Architecture Integration](#architecture-integration)
 - [Testing](#testing)
+- [Layout Spacing and Component Dimensions](#layout-spacing-and-component-dimensions)
+- [Reserved Resource Names](#reserved-resource-names)
+- [Visual Style by App Category](#visual-style-by-app-category)
 - [Best Practices](#best-practices)
 
 ## Material 3 Theme System
@@ -1236,6 +1239,62 @@ fun `theme settings screen shows correct theme selection`() {
 }
 ```
 
+## Layout Spacing and Component Dimensions
+
+Use an **8 dp grid** for spacing (4 dp only for fine tuning). Map tokens to `Modifier.padding` / `Spacer` consistently across features.
+
+| Token | Value | Typical use                          |
+|-------|-------|--------------------------------------|
+| xs    | 4 dp  | Icon padding, tight gaps             |
+| sm    | 8 dp  | Inline spacing, dense lists          |
+| md    | 16 dp | Default screen and card padding      |
+| lg    | 24 dp | Section separation                   |
+| xl    | 32 dp | Large gaps between groups            |
+| xxl   | 48 dp | Screen edge margins on compact width |
+
+**Common component heights** (Material 3; combine with minimum **48 dp** touch targets in `references/android-accessibility.md`)
+
+| Component         | Height / size                 | Notes                             |
+|-------------------|-------------------------------|-----------------------------------|
+| Standard button   | 40 dp height, min width 64 dp | Touch target still at least 48 dp |
+| FAB               | 56 x 56 dp                    | Mini FAB 40 dp when spec allows   |
+| Text field        | 56 dp tall, min width ~280 dp | Includes label area               |
+| Top app bar       | 64 dp                         |                                   |
+| Bottom navigation | 80 dp                         |                                   |
+| Navigation rail   | 80 dp width                   |                                   |
+
+## Reserved Resource Names
+
+Avoid **Android-reserved or overly generic** names for colors, drawables, and IDs. They can cause merge errors, shadow system resources, or confusing generated `R` fields.
+
+| Category       | Avoid as a resource name                                                                                    |
+|----------------|-------------------------------------------------------------------------------------------------------------|
+| Colors         | `background`, `foreground`, `transparent`, `white`, `black` (prefer `app_background`, `icon_primary`, etc.) |
+| Drawables      | `icon`, `logo`, `image`, `drawable`                                                                         |
+| Generic        | `view`, `text`, `button`, `layout`, `container`                                                             |
+| Meta           | `id`, `name`, `type`, `style`, `theme`, `color` as bare names                                               |
+| Namespace-like | `app`, `android`, `content`, `data`, `action`                                                               |
+
+In Kotlin, prefer descriptive names (`screenBackground`) over labels that read like framework APIs.
+
+## Visual Style by App Category
+
+Match **density, color, motion, and typography** to what the product is for. A banking app should feel calm and trustworthy; a kids app needs larger targets and simpler language.
+
+| App category           | Visual direction                                        | Interaction notes                                        |
+|------------------------|---------------------------------------------------------|----------------------------------------------------------|
+| Utility / tools        | Minimal, neutral palette, clear hierarchy               | Fast paths, little ornament                              |
+| Finance / business     | Conservative colors, structured layout                  | Confirm destructive actions                              |
+| Health / wellness      | Soft palette, generous whitespace                       | Encouraging, not alarming copy                           |
+| Kids (younger)         | Bright colors, large type (18 sp+), very rounded shapes | Large targets (56 dp+), avoid text-only critical actions |
+| Kids (older)           | Vibrant but readable                                    | Gamification ok; keep navigation obvious                 |
+| Social / entertainment | Brand-forward, media-rich                               | Gestures ok if alternatives exist                        |
+| Productivity           | High contrast options, dense modes                      | Keyboard and focus friendly                              |
+| E-commerce             | Clear CTAs, scannable prices                            | Fast cart and checkout paths                             |
+| Games                  | Theme-driven                                            | Follow platform sign-in and parent gates where required  |
+
+**Style mismatches to avoid:** playful palette on finance, dense dashboards on meditation apps, tiny touch targets on kids flows, clownish UI on enterprise tools.
+
 ## Best Practices
 
 ### ✅ Always Do
@@ -1250,7 +1309,7 @@ fun `theme settings screen shows correct theme selection`() {
 8. **Persist theme preferences** using DataStore (not SharedPreferences)
 9. **Handle edge-to-edge** UI properly with `enableEdgeToEdge()` and `Scaffold` (mandatory on API 36)
 10. **Test on both themes** to ensure content is readable
-11. **Do not use `elegantTextHeight`** attribute -- it is deprecated and ignored on API 36
+11. **Do not use `elegantTextHeight` attribute** - it is deprecated and ignored on API 36
 
 ### ❌ Never Do
 
