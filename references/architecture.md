@@ -350,6 +350,25 @@ interface AuthApiService {
 }
 ```
 
+#### Network DTOs and nullable JSON fields
+
+Wire formats do not match your ideal domain model: fields can be **missing**, **null**, or **renamed** across API versions. Types used only for JSON (network DTOs) should reflect that.
+
+- Prefer **nullable** properties for anything the server might omit or null out; map to non-null domain types in the repository or mapper after you decide defaults.
+- Keep `Json { ignoreUnknownKeys = true }` (see `NetworkModule`) so new server fields do not crash deserialization.
+- Avoid fake non-nulls such as `String = ""` for "missing" JSON keys unless you have a strict, documented contract. Empty string is ambiguous versus "present but empty".
+
+```kotlin
+@Serializable
+data class NetworkUser(
+    val id: String? = null,
+    val displayName: String? = null,
+    val avatarUrl: String? = null,
+)
+```
+
+Use `@SerialName("json_name")` when wire names differ from Kotlin properties. Gson users apply the same idea with `@SerializedName`.
+
 #### Hilt NetworkModule
 
 ```kotlin
