@@ -4,9 +4,10 @@ Guide to icons, vector graphics, and custom drawing in Jetpack Compose.
 
 ## Table of Contents
 1. [Material Symbols Icons](#material-symbols-icons)
-2. [ImageVector Patterns](#imagevector-patterns)
-3. [Custom Drawing with Canvas](#custom-drawing-with-canvas)
-4. [Performance Optimizations](#performance-optimizations)
+2. [Adaptive Launcher Icons](#adaptive-launcher-icons)
+3. [ImageVector Patterns](#imagevector-patterns)
+4. [Custom Drawing with Canvas](#custom-drawing-with-canvas)
+5. [Performance Optimizations](#performance-optimizations)
 
 ## Material Symbols Icons
 
@@ -109,6 +110,23 @@ Icon(
     contentDescription = stringResource(R.string.lock_icon)
 )
 ```
+
+## Adaptive Launcher Icons
+
+Launcher icons are **adaptive** on API 26+: foreground and background layers mask to different shapes per OEM.
+
+**Key specs**
+
+| Item                   | Value                                                      |
+|------------------------|------------------------------------------------------------|
+| Layer canvas           | 108 x 108 dp per layer (foreground and background)         |
+| Safe zone (full asset) | Keep critical logo inside center **66 dp** diameter circle |
+| Logo artwork           | Often ~48-66 dp so it is not clipped by masks              |
+| Monochrome             | API 33+ optional monochrome layer for themed icons         |
+
+Place `mipmap-anydpi-v26/ic_launcher.xml` with `<adaptive-icon>` pointing at foreground and background drawables. Provide legacy mipmaps (mdpi through xxxhdpi) for older APIs as needed.
+
+See [Adaptive icons](https://developer.android.com/develop/ui/views/launch/icon_design_adaptive) for exports from design tools.
 
 ## ImageVector Patterns
 
