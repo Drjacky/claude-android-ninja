@@ -17,6 +17,8 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 - [Progress Notifications](#progress-notifications)
 - [Progress-Centric Notifications (API 36+)](#progress-centric-notifications-api-36)
 - [Foreground Service Notifications](#foreground-service-notifications)
+- [Media, PiP, Sharing, and Background Work](#media-pip-sharing-and-background-work)
+- [Navigation State (Navigation3)](#navigation-state-navigation3)
 - [Notification Manager Interface](#notification-manager-interface)
 - [Architecture Integration](#architecture-integration)
 - [Testing](#testing)
@@ -758,6 +760,54 @@ Declare in AndroidManifest.xml:
         android:exported="false" />
 </application>
 ```
+
+## Media, PiP, Sharing, and Background Work
+
+### Audio focus
+
+If your app plays audio, request audio focus with `AudioManager` / `AudioFocusRequest`. React when other apps take focus:
+
+| Change              | Typical app action                                   |
+|---------------------|------------------------------------------------------|
+| Permanent loss      | Stop playback and release resources                  |
+| Transient loss      | Pause until focus returns                            |
+| Transient, can duck | Lower volume (duck) instead of full pause            |
+| Focus gained        | Resume or restore volume if the user had not stopped |
+
+Do not start playback without focus. For long-running playback in the background, use a **foreground service** with a **MediaStyle** notification and a **`MediaSession`** so lock screen and Bluetooth controls stay in sync. Exact service types and permissions depend on API level and use case; follow [playback](https://developer.android.com/media/legacy/audio/mediaplayer) and [foreground service](https://developer.android.com/develop/background-work/services/foreground-services) documentation.
+
+### Picture-in-picture (video)
+
+For video activities, support **PiP** when users leave during playback: declare `android:supportsPictureInPicture="true"` on the activity, call `enterPictureInPictureMode()` when appropriate, and keep aspect ratio within supported bounds. Pair with ongoing media notifications when playback continues in the background.
+
+### System sharesheet
+
+Use the system **chooser** for sharing content instead of custom share UIs for the same job:
+
+```kotlin
+val send = Intent(Intent.ACTION_SEND).apply {
+    type = "text/plain"
+    putExtra(Intent.EXTRA_TEXT, shareText)
+}
+context.startActivity(Intent.createChooser(send, null))
+```
+
+### Background work vs long-running services
+
+- **Deferrable work** (sync, uploads, cleanup): **WorkManager** (see `references/android-data-sync.md`).
+- **User-visible ongoing work**: foreground service with notification (this guide).
+- **Push-triggered updates**: **FCM** or high-priority pushes where appropriate, not a permanent background socket unless the product truly requires it.
+
+Avoid holding wake locks or silent background services for tasks WorkManager can schedule.
+
+## Navigation State (Navigation3)
+
+Notification actions and deep links often need to align with **where** the user lands in the app.
+
+- Use **Navigation3** `rememberNavBackStack` / `NavDisplay` patterns from `references/android-navigation.md` so the **back stack** matches user expectations when opening a screen from a notification.
+- Persist **process death** state with **SavedStateHandle** in ViewModels and `references/compose-patterns.md` (not a separate "NavController" graph for Navigation3-only apps).
+
+Treat notification taps like cold entry: resolve the target destination, then push or replace stack entries so **Back** returns to a sensible place.
 
 ## Notification Manager Interface
 
