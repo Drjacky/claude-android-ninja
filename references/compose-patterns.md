@@ -2216,6 +2216,33 @@ keyframes {
 
 Prefer `spring` for user-driven interactions. Use `tween` for choreographed sequences.
 
+### Material Design motion (duration and easing)
+
+Material motion uses consistent **durations** and **easing** so transitions feel intentional. Align `tween`/`keyframes` with these bands when you pick fixed timings (springs stay physics-driven).
+
+**Durations by interaction type**
+
+| Band   | Duration   | Typical use                                 |
+|--------|------------|---------------------------------------------|
+| Micro  | 50-100 ms  | Ripples, small state toggles, hover         |
+| Short  | 100-200 ms | Simple transitions, fades                   |
+| Medium | 200-300 ms | Expand/collapse, bottom sheet motion        |
+| Long   | 300-500 ms | Larger choreography, complex screen changes |
+
+Keep most UI transitions under about **400 ms** unless you are showing loading or long-form motion. Tablet/desktop can feel slightly slower; wearables often use shorter motion. See [Motion](https://m3.material.io/styles/motion/overview) for the full system.
+
+**Easing roles** (Material names map to cubic-bezier curves in design specs; in Compose use `FastOutSlowInEasing`, `LinearEasing`, or custom `CubicBezierEasing` as needed)
+
+| Role       | Typical use                  |
+|------------|------------------------------|
+| Standard   | Default enter/exit           |
+| Emphasized | Prominent transitions        |
+| Decelerate | Elements entering the screen |
+| Accelerate | Elements leaving permanently |
+| Sharp      | Temporary exit and return    |
+
+**Reduced motion:** Always respect `LocalReducedMotion` for enter/exit (see **Animation Anti-Patterns** below).
+
 ### Layout Animations
 
 #### animateContentSize
