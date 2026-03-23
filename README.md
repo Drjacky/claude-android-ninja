@@ -22,56 +22,56 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Domain/Data/UI layering patterns with auth-focused examples
 - Jetpack Compose patterns, state management, animation, side effects, modifiers, and adaptive UI (NavigationSuiteScaffold, ListDetailPaneScaffold, SupportingPaneScaffold)
 - Edge-to-edge display and predictive back gesture handling
-- Material 3 theming (dynamic colors, typography, shapes, dark/light mode)
-- Navigation3 guidance and navigation coordination
-- Accessibility support (TalkBack, semantic properties, WCAG compliance)
+- Material 3 theming (dynamic colors, typography, shapes, 8dp spacing tokens, app-category style fit, reserved resource names, dark/light mode)
+- Navigation3 guidance, adaptive navigation, and large-screen quality tiers (phones, tablets, foldables, input expectations)
+- Accessibility support (TalkBack, semantic properties, label copy, live regions, Espresso accessibility checks, WCAG alignment)
 - Internationalization & localization (i18n/l10n, RTL support, plurals)
-- Notifications (channels, styles, actions, foreground services, progress-centric)
+- Notifications (channels, styles, actions, foreground services, progress-centric, media/audio focus, PiP, system sharesheet, Navigation3 state from taps)
 - Data synchronization & offline-first (sync strategies, conflict resolution, cache invalidation)
-- Material Symbols icons, graphics, custom drawing with Canvas, and Coil3 image loading patterns (AsyncImage, SubcomposeAsyncImage, Hilt ImageLoader)
-- Gradle/build conventions, version catalog usage, KSP migration, and build performance optimization (diagnostics, lazy tasks, configuration cache)
+- Material Symbols icons, adaptive launcher icon specs, graphics, custom drawing with Canvas, and Coil3 image loading patterns (AsyncImage, SubcomposeAsyncImage, Hilt ImageLoader)
+- Gradle/build conventions, product flavors and BuildConfig, version catalog usage, KSP migration, and build performance optimization (diagnostics, lazy tasks, configuration cache)
 - Testing practices with fakes, Hilt testing, Room testing, and Compose Preview Screenshot Testing
 - Coroutines patterns, structured concurrency, Flow (callbackFlow, backpressure, combine, shareIn), and common pitfalls
 - Kotlin delegation patterns and composition over inheritance
 - Dependency management rules and templates
 - Crash reporting with provider-agnostic interfaces (Firebase/Sentry)
 - Runtime permissions with Compose patterns
-- Performance benchmarking (Macrobenchmark, Microbenchmark, Baseline Profiles, ProfileInstaller, System Tracing), Compose recomposition optimization (three phases, deferred state reads, Strong Skipping Mode), and app startup optimization (App Startup library, splash screen, lazy initialization)
+- Performance benchmarking (Macrobenchmark, Microbenchmark, Baseline Profiles, ProfileInstaller, System Tracing), Google Play Vitals context (crash/ANR bars, startup targets, frame budgets, battery/background), Compose recomposition optimization (three phases, deferred state reads, Strong Skipping Mode), and app startup optimization (App Startup library, splash screen, lazy initialization)
 - StrictMode guardrails and Compose compiler stability diagnostics
 - Code coverage with JaCoCo (unit + instrumented tests)
-- Security (certificate pinning, encryption, biometrics, root detection, Play Integrity)
-- Retrofit/networking patterns (service interfaces, Hilt NetworkModule, AuthInterceptor)
+- Security (certificate pinning, encryption, biometrics, Credential Manager and passkeys, device identifiers and privacy, Play Data safety, root detection, Play Integrity)
+- Retrofit/networking patterns (service interfaces, nullable JSON DTOs, Hilt NetworkModule, AuthInterceptor)
 - Haptic feedback, touch targets, and forms/input patterns (keyboard types, autofill, validation)
-- Debugging guide (Logcat, ANR analysis, LeakCanary, Compose recomposition, R8 mapping and manual de-obfuscation)
+- Debugging guide (Logcat levels, ANR timeouts, Gradle error patterns, LeakCanary, Compose recomposition, R8 mapping and manual de-obfuscation)
 - Consolidated migration guide (XML to Compose, LiveData to StateFlow, RxJava to Coroutines, Navigation 2.x to Navigation3, Accompanist to official APIs, Material 2 to 3, Edge-to-Edge)
 - Code quality with Detekt and Compose rules
 
 ## Key Files
 - [`SKILL.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/SKILL.md) - entry point and workflow decision tree
-- [`references/architecture.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/architecture.md) - architecture principles, data/domain layers, and flows
+- [`references/architecture.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/architecture.md) - architecture principles, data/domain layers, nullable network DTOs, and flows
 - [`references/modularization.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/modularization.md) - module structure, dependency rules, and feature module creation
-- [`references/android-navigation.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-navigation.md) - Navigation3 architecture, state management, and adaptive navigation
-- [`references/compose-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/compose-patterns.md) - Compose patterns, animation, side effects, modifiers, stability, and migrations
-- [`references/android-theming.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-theming.md) - Material 3 theming, colors, typography, shapes
-- [`references/android-accessibility.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-accessibility.md) - accessibility, TalkBack, semantic properties, WCAG
+- [`references/android-navigation.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-navigation.md) - Navigation3, adaptive navigation, large-screen quality tiers
+- [`references/compose-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/compose-patterns.md) - Compose patterns, Material motion, animation, side effects, modifiers, stability, and migrations
+- [`references/android-theming.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-theming.md) - Material 3 theming, spacing tokens, category style, colors, typography, shapes
+- [`references/android-accessibility.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-accessibility.md) - accessibility, TalkBack, label copy, semantic properties, WCAG
 - [`references/android-i18n.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-i18n.md) - internationalization, localization, RTL support, plurals
-- [`references/android-notifications.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-notifications.md) - notifications, channels, styles, foreground services
+- [`references/android-notifications.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-notifications.md) - notifications, channels, media/PiP/sharesheet, foreground services
 - [`references/android-data-sync.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-data-sync.md) - offline-first, sync strategies, conflict resolution
-- [`references/kotlin-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/kotlin-patterns.md) - Kotlin best practices (must-read for Kotlin code)
+- [`references/kotlin-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/kotlin-patterns.md) - Kotlin best practices and View lifecycle interop (must-read for Kotlin code)
 - [`references/coroutines-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/coroutines-patterns.md) - coroutines best practices and patterns
-- [`references/gradle-setup.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/gradle-setup.md) - build logic, conventions, and build files
+- [`references/gradle-setup.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/gradle-setup.md) - build logic, product flavors, BuildConfig, conventions, and build files
 - [`references/testing.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/testing.md) - testing patterns with fakes, Hilt, Room, and Navigation3
-- [`references/android-graphics.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-graphics.md) - Material Symbols icons, Canvas drawing, and Palette API
+- [`references/android-graphics.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-graphics.md) - Material Symbols icons, adaptive launcher icons, Canvas drawing, Palette API
 - [`references/android-permissions.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-permissions.md) - runtime permissions and best practices
 - [`references/kotlin-delegation.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/kotlin-delegation.md) - delegation patterns and composition guidance
 - [`references/crashlytics.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/crashlytics.md) - crash reporting with modular provider swaps
 - [`references/android-strictmode.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-strictmode.md) - StrictMode guardrails and Compose stability
 - [`references/android-code-coverage.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-code-coverage.md) - JaCoCo code coverage setup and CI integration
-- [`references/android-security.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-security.md) - security, encryption, biometrics, certificate pinning, root detection
+- [`references/android-security.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-security.md) - security, Credential Manager, identifiers, Data safety, encryption, biometrics, pinning, root detection
 - [`references/code-quality.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/code-quality.md) - Detekt setup and code quality rules
 - [`references/dependencies.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/dependencies.md) - dependency rules and version catalog guidance
-- [`references/android-performance.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-performance.md) - benchmarking, recomposition performance, app startup optimization, and splash screen
-- [`references/android-debugging.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-debugging.md) - Logcat, ANR, LeakCanary, R8 de-obfuscation, Gradle errors, Compose recomposition
+- [`references/android-performance.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-performance.md) - Play Vitals context, benchmarking, recomposition, app startup, splash screen
+- [`references/android-debugging.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-debugging.md) - Logcat levels, ANR timeouts, LeakCanary, R8 de-obfuscation, Gradle errors, Compose recomposition
 - [`references/migration.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/migration.md) - XML to Compose, LiveData to StateFlow, RxJava, Navigation, Accompanist, Material migrations
 - [`references/design-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/design-patterns.md) - Android-focused design patterns
 - [`assets/proguard-rules.pro.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/assets/proguard-rules.pro.template) - R8/ProGuard rules for all libraries
