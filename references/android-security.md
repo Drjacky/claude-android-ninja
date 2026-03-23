@@ -8,16 +8,19 @@ Security guide for Android apps, aligned with our modular architecture.
 3. [Data Encryption at Rest](#data-encryption-at-rest)
 4. [Android Keystore, TEE & StrongBox](#android-keystore-tee--strongbox)
 5. [Biometric Authentication](#biometric-authentication)
-6. [Play Integrity API](#play-integrity-api)
-7. [Root & Emulator Detection](#root--emulator-detection)
-8. [Screenshot & Screen Recording Prevention](#screenshot--screen-recording-prevention)
-9. [Secure Database (Room)](#secure-database-room)
-10. [Secure Clipboard](#secure-clipboard)
-11. [WebView Security](#webview-security)
-12. [Content Provider Security](#content-provider-security)
-13. [ProGuard / R8 Hardening](#proguard--r8-hardening)
-14. [CI/CD Security](#cicd-security)
-15. [Security Checklist](#security-checklist)
+6. [Credential Manager and Sign-In](#credential-manager-and-sign-in)
+7. [Device Identifiers and Privacy](#device-identifiers-and-privacy)
+8. [Play Console Data Safety](#play-console-data-safety)
+9. [Play Integrity API](#play-integrity-api)
+10. [Root & Emulator Detection](#root--emulator-detection)
+11. [Screenshot & Screen Recording Prevention](#screenshot--screen-recording-prevention)
+12. [Secure Database (Room)](#secure-database-room)
+13. [Secure Clipboard](#secure-clipboard)
+14. [WebView Security](#webview-security)
+15. [Content Provider Security](#content-provider-security)
+16. [ProGuard / R8 Hardening](#proguard--r8-hardening)
+17. [CI/CD Security](#cicd-security)
+18. [Security Checklist](#security-checklist)
 
 ## Dependencies
 
@@ -715,6 +718,36 @@ class BiometricCryptoManager @Inject constructor(
     }
 }
 ```
+
+## Credential Manager and Sign-In
+
+**BiometricPrompt** (above) covers local biometric unlock. For **sign-in**, Google recommends **Credential Manager** (`androidx.credentials`) as the unified API for **passkeys**, saved passwords, and federated identity (for example Sign in with Google) in one user flow. It replaces older Smart Lock Password Manager integration patterns for new work.
+
+- Use Credential Manager for new sign-in and account linking flows where it fits your backend (WebAuthn / passkeys require server support).
+- Keep **server-side** validation authoritative; the client only collects credentials.
+- See [Sign in your user with Credential Manager](https://developer.android.com/identity/sign-in/credential-manager) and [Passkeys](https://developer.android.com/identity/sign-in/passkeys).
+
+## Device Identifiers and Privacy
+
+Do **not** use hardware identifiers for advertising or routine analytics. Google Play policies restrict many identifiers; users expect resettable, transparent tracking.
+
+| Identifier                                                              | Guidance                                                                                                                   |
+|-------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| IMEI, IMSI, serial number, MAC address                                  | Do not use for ads or general analytics; restricted / disallowed for most use cases                                        |
+| [Advertising ID](https://developer.android.com/training/articles/ad-id) | Use for ads and measurement where allowed; user can reset; declare in Play Data Safety                                     |
+| **Android ID**                                                          | App-scoped on modern Android; may change after factory reset; use only when appropriate, not as a global cross-app user ID |
+| App-specific ID                                                         | Generate and store a random UUID in app storage or tie identity to your **account** after sign-in                          |
+
+Prefer **account-based** identity for personalization. For crash and product analytics without PII, follow `references/crashlytics.md` scrubbing rules.
+
+## Play Console Data Safety
+
+In Play Console, complete the **Data safety** section (what you collect, how it is used, whether it is optional, retention). It must match your **privacy policy** URL and in-app disclosures.
+
+- Allow **account and data deletion** where required by policy and your product.
+- If you use Advertising ID or sensitive permissions, declare them accurately; mismatches can cause policy violations.
+
+See [Play Console Help - Data safety](https://support.google.com/googleplay/android-developer/answer/10787469) and [User Data policy](https://support.google.com/googleplay/android-developer/answer/10144311).
 
 ## Play Integrity API
 
@@ -1415,8 +1448,15 @@ Use this checklist for every release:
 
 ### Authentication
 - [ ] BiometricPrompt for sensitive actions
+- [ ] Credential Manager / passkeys or other sign-in flows aligned with backend (where applicable)
+- [ ] No hardware IDs (IMEI, MAC, serial) used for tracking; Advertising ID only where policy allows
 - [ ] Session timeout implemented
 - [ ] Re-authentication for critical operations (payment, password change)
+
+### Privacy and Play policy
+- [ ] Play Console **Data safety** form matches actual SDK and app behavior
+- [ ] Privacy policy URL current and linked from store listing / in-app as required
+- [ ] User data deletion or export path documented where required
 
 ### App Hardening
 - [ ] R8/ProGuard enabled for release builds
