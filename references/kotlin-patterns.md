@@ -18,7 +18,8 @@ This guide focuses on intermediate and advanced Kotlin patterns. Basic language 
 8. [Sequences for Lazy Evaluation](#sequences-for-lazy-evaluation)
 9. [Companion Objects](#companion-objects)
 10. [Type Aliases](#type-aliases)
-11. [Coroutines Best Practices](#coroutines-best-practices)
+11. [Android View Lifecycle (Interop)](#android-view-lifecycle-interop)
+12. [Coroutines Best Practices](#coroutines-best-practices)
 
 ## Delegation (Composition over Inheritance)
 
@@ -858,6 +859,34 @@ createUser(
 - Parameters with defaults
 - Builder-like function calls
 
+## Android View Lifecycle (Interop)
+
+Custom `View` subclasses (Compose `AndroidView`, legacy widgets, Canvas) sometimes register **lifecycle** observers or process listeners. **Add and remove in pairs** so you do not leak the activity or keep callbacks after the view is gone.
+
+```kotlin
+class MyView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+) : View(context, attrs), DefaultLifecycleObserver {
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        findViewTreeLifecycleOwner()?.lifecycle?.addObserver(this)
+    }
+
+    override fun onDetachedFromWindow() {
+        findViewTreeLifecycleOwner()?.lifecycle?.removeObserver(this)
+        super.onDetachedFromWindow()
+    }
+
+    override fun onDestroy(owner: LifecycleOwner) {
+        // Stop sensors, cancel work tied to this view
+    }
+}
+```
+
+Prefer `findViewTreeLifecycleOwner()` when the view lives under a `Fragment` or Compose host. For pure composables, use lifecycle-aware APIs from `references/compose-patterns.md` (`LifecycleResumeEffect`, `DisposableEffect`, etc.) instead of manual `View` hooks.
+
 ## Coroutines Best Practices
 
 ### Structured Concurrency
@@ -953,6 +982,7 @@ suspend fun <T> withTimeoutResult(
 8. **Sequences**: For large collections with multiple transformations
 9. **Named arguments**: For clarity with multiple parameters
 10. **Avoid `GlobalScope`**: Always use scoped coroutines
+11. **View lifecycle**: Pair `addObserver` with `removeObserver` for custom `View` code (see [Android View Lifecycle (Interop)](#android-view-lifecycle-interop))
 
 For detailed patterns, see:
 - **Delegation**: `references/kotlin-delegation.md`
