@@ -530,8 +530,12 @@ See `references/code-quality.md` for setup details, baseline usage, and CI guida
 `app/build.gradle.kts`:
 ```kotlin
 android {
+    buildFeatures {
+        buildConfig = true // Required when using buildConfigField (off by default in AGP 8+)
+    }
+
     flavorDimensions += "environment"
-    
+
     productFlavors {
         create("development") {
             dimension = "environment"
@@ -539,14 +543,14 @@ android {
             versionNameSuffix = "-dev"
             buildConfigField("String", "BASE_URL", "\"https://api.dev.example.com/\"")
         }
-        
+
         create("staging") {
             dimension = "environment"
             applicationIdSuffix = ".staging"
             versionNameSuffix = "-staging"
             buildConfigField("String", "BASE_URL", "\"https://api.staging.example.com/\"")
         }
-        
+
         create("production") {
             dimension = "environment"
             buildConfigField("String", "BASE_URL", "\"https://api.example.com/\"")
@@ -554,6 +558,37 @@ android {
     }
 }
 ```
+
+**BuildConfig:** From AGP 8.0 onward, `BuildConfig` is not generated unless `buildFeatures.buildConfig` is enabled. You need this for `buildConfigField` values (e.g. `BuildConfig.BASE_URL`) and `BuildConfig.DEBUG`.
+
+**Variant names:** Gradle names variants `{productFlavor}{buildType}` with **capitalized** build type - for example `developmentDebug`, `stagingRelease`, `productionRelease`.
+
+**Common Gradle commands:**
+
+```bash
+# List build-related tasks
+./gradlew tasks --group="build"
+
+# Assemble or install a specific variant (flavor + build type)
+./gradlew :app:assembleDevelopmentDebug
+./gradlew :app:assembleStagingRelease
+./gradlew :app:assembleProductionRelease
+./gradlew :app:installDevelopmentDebug
+./gradlew :app:installProductionRelease
+
+# All debug or all release variants across flavors
+./gradlew :app:assembleDebug
+./gradlew :app:assembleRelease
+
+# Deeper dependency / sync issues
+./gradlew :app:dependencies
+./gradlew assembleDevelopmentDebug --stacktrace
+./gradlew --refresh-dependencies
+```
+
+**Flavor-specific source sets:** Optional overrides live next to `main` - for example `app/src/development/`, `app/src/staging/`, `app/src/production/` for resources or code only for that flavor; `app/src/debug/` and `app/src/release/` apply per build type across flavors.
+
+**Multiple flavor dimensions:** If you add another dimension (e.g. `tier` = `free` / `paid`), variants become combinations such as `developmentFreeDebug`. Prefer a small number of dimensions to avoid an explosion of variant count and CI time.
 
 ### Build Optimization Configuration
 
