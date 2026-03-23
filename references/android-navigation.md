@@ -20,6 +20,7 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 13. [Conditional Navigation](#conditional-navigation)
 14. [Returning Results](#returning-results)
 15. [ViewModel Scoping](#viewmodel-scoping)
+16. [Adaptive Quality and Large Screens](#adaptive-quality-and-large-screens)
 
 ## Navigation3 Architecture
 
@@ -48,6 +49,74 @@ of the feature module setup in `references/modularization.md` → "Create Featur
 11. **`NavigableListDetailPaneScaffold`**: For tablet/foldable list-detail layouts with built-in navigation and predictive back
 12. **`NavigableSupportingPaneScaffold`**: For main + supporting content layouts
 13. **`NavHost` from `androidx.navigation3`**: The Navigation3 version of NavHost
+
+## Adaptive Quality and Large Screens
+
+Large-screen and [adaptive app](https://developer.android.com/large-screens) guidance complements Navigation3. `NavigationSuiteScaffold` and pane scaffolds handle **where** to put navigation chrome; the tiers below describe **how complete** the experience is across form factors.
+
+### Quality tiers (summary)
+
+Google frames progressive expectations for adaptive apps:
+
+| Tier                            | Focus                                                                                            |
+|---------------------------------|--------------------------------------------------------------------------------------------------|
+| **3 - Adaptive ready**          | No letterboxing, handles rotation and resizing, split-screen works, basic keyboard/mouse         |
+| **2 - Adaptive optimized**      | Responsive layouts at all widths, stronger keyboard shortcuts and hover, state survives resize   |
+| **1 - Adaptive differentiated** | Multitasking (e.g. drag and drop where relevant), fold postures, stylus, desktop-style windowing |
+
+Aim for at least **tier 3** everywhere; invest in **tier 2** for productivity and tablet-heavy audiences; **tier 1** when you target foldables, Chromebooks, or stylus-first workflows.
+
+### Width and layout (with Navigation3)
+
+| Window width           | Typical layout (Material adaptive)                   |
+|------------------------|------------------------------------------------------|
+| Compact (under 600 dp) | Bottom bar, single pane                              |
+| Medium (600-840 dp)    | Navigation rail, optional list-detail                |
+| Expanded (over 840 dp) | Rail or persistent drawer, list-detail or multi-pane |
+
+Use `WindowSizeClass` / `currentWindowAdaptiveInfo()` for custom splits; prefer `NavigationSuiteScaffold` so bar vs rail vs drawer tracks size without manual branching.
+
+### Configuration and state
+
+Handle **configuration changes** without losing user context: rotation, fold/unfold, multi-window resize, split-screen enter/exit, hardware keyboard attach/detach.
+
+- Keep UI state in **ViewModel** and process death in **SavedStateHandle** (see [compose-patterns.md](compose-patterns.md) and modularization docs).
+- Test with **Don't keep activities** during development to flush out lost state.
+
+### Foldables
+
+| Posture                                 | Notes for UI                                                  |
+|-----------------------------------------|---------------------------------------------------------------|
+| Flat / open                             | Treat like tablet or large phone                              |
+| Tabletop / half-open (horizontal hinge) | Avoid primary actions on the hinge; split content per segment |
+| Book / vertical hinge                   | Same: no critical tap targets on the fold                     |
+| Folded closed                           | Usually one display; navigation should match compact patterns |
+
+Use Jetpack **WindowManager** (`androidx.window`) when you need explicit fold or posture; not for everyday bar vs rail decisions.
+
+### Pointer, keyboard, and desktop expectations
+
+| Input            | Expectation                                                                               |
+|------------------|-------------------------------------------------------------------------------------------|
+| Keyboard         | Tab order matches visual order; Enter/Space activate; arrow keys in lists                 |
+| Mouse / trackpad | Hover states on clickable rows; scroll wheels work; context menus where users expect them |
+| Stylus           | Pressure/tilt only if you draw; otherwise ignore safely                                   |
+
+Large screens are often **not** touch-only. Do not rely on swipe-only shortcuts without a visible alternative.
+
+### Multi-window
+
+Assume the app **does not own the full display**. Support minimum resize width (on the order of ~220 dp per platform guidance), preserve state across bounds changes, and avoid modal flows that break when the window is half width.
+
+### Testing matrix (manual)
+
+| Scenario                          | Priority                          |
+|-----------------------------------|-----------------------------------|
+| Phone portrait and landscape      | Required                          |
+| Tablet portrait and landscape     | Required if you ship large-screen |
+| Foldable fold/unfold              | High if you target foldables      |
+| Desktop / Chromebook windowed     | Medium for those form factors     |
+| Split-screen and free-form resize | Required for tier 2+              |
 
 ## Navigation 3 Quick Start
 
