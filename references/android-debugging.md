@@ -28,6 +28,18 @@ adb logcat -d > crash_log.txt
 
 Log levels: `V` (verbose), `D` (debug), `I` (info), `W` (warn), `E` (error), `F` (fatal).
 
+### When to use each level (operational discipline)
+
+Use `android.util.Log` consistently so production and debug logs stay readable:
+
+| Level   | Use for                                                                               |
+|---------|---------------------------------------------------------------------------------------|
+| `Log.i` | Normal checkpoints (feature started, important parameters that are not PII)           |
+| `Log.w` | Recoverable problems (fallback used, retry, unexpected but handled state)             |
+| `Log.e` | Failures (request failed, uncaught path in a catch that you log before mapping to UI) |
+
+Avoid `Log.v`/`Log.d` spam in hot paths in release builds. Never log secrets, tokens, or personal data (see `references/android-security.md`).
+
 ### Reading Crash Logs
 
 The root cause is usually at the bottom of the `Caused by:` chain, not the top-level exception.
@@ -35,7 +47,15 @@ Always read the full stack trace before forming a hypothesis.
 
 ## ANR Debugging
 
-ANR (Application Not Responding) means the main thread was blocked for 5+ seconds.
+ANRs occur when Android's system watchdog decides the main thread (or a bounded callback path) did not respond in time. The timeout depends on **what** was blocked:
+
+| Scenario                                      | Typical timeout                                    |
+|-----------------------------------------------|----------------------------------------------------|
+| Input dispatch (touch, key) on main           | ~5 seconds                                         |
+| `BroadcastReceiver.onReceive` running on main | ~10 seconds                                        |
+| Starting a service on main / bound work       | on the order of ~20 seconds for some service paths |
+
+The **~5 second** rule is the one you hit most often from heavy work on the main thread.
 
 ### Gathering Evidence
 
@@ -216,13 +236,17 @@ Read Gradle errors from the **bottom up** - Gradle wraps errors in multiple laye
 
 ### Common Error Patterns
 
-| Error                     | Investigation                                                                             |
-|---------------------------|-------------------------------------------------------------------------------------------|
-| `Manifest merger failed`  | Check `app/build/intermediates/merged_manifests/` for conflicts                           |
-| `Duplicate class`         | Run `./gradlew :app:dependencies` and look for the same class in multiple transitive deps |
-| `Could not resolve`       | Check repository declarations, VPN/proxy, verify the dependency version exists            |
-| `D8/R8: Type not present` | Missing `-keep` rule or desugaring issue; check `minSdk` vs API used                      |
-| `KSP error`               | Look for the processor's own error message above the Gradle wrapper                       |
+| Error                     | Investigation                                                                                     |
+|---------------------------|---------------------------------------------------------------------------------------------------|
+| `Manifest merger failed`  | Check `app/build/intermediates/merged_manifests/` for conflicts                                   |
+| `Duplicate class`         | Run `./gradlew :app:dependencies` and look for the same class in multiple transitive deps         |
+| `Could not resolve`       | Check repository declarations, VPN/proxy, verify the dependency version exists                    |
+| `Unresolved reference`    | Missing import, wrong module dependency, or typo; ensure the declaring module is on the classpath |
+| `Type mismatch`           | Wrong generic, nullable vs non-null, or API change after a dependency bump                        |
+| `@Composable invocations` | Composable called from a non-`@Composable` context; lift the call or wrap in a composable         |
+| `AAPT` / resource errors  | Invalid XML, bad `@drawable` reference, or merge conflict in `res/`                               |
+| `D8/R8: Type not present` | Missing `-keep` rule or desugaring issue; check `minSdk` vs API used                              |
+| `KSP error`               | Look for the processor's own error message above the Gradle wrapper                               |
 
 ### Dependency Investigation
 

@@ -3,6 +3,53 @@
 Performance guidance for this multi-module, Compose-first architecture. Use this when you need
 repeatable metrics for startup, navigation, or UI rendering changes.
 
+## Google Play Vitals and production targets
+
+Ship quality is measured in production, not only in local benchmarks. [Android vitals](https://developer.android.com/topic/performance/vitals) in Play Console surface behavior that affects visibility and ranking.
+
+### Core thresholds (Play Console)
+
+Google publishes bad-behavior thresholds for **user-perceived** crash rate and ANR rate. Exceeding them can reduce distribution and discovery. Play Console help lists current values; historically the overall phone app bar is often stated around **1.09%** (crash rate) and **0.47%** (ANR rate). Per-device model buckets (and other form factors) can use different numbers.
+
+| Metric                    | Typical overall threshold (verify in Play docs) | Notes                                  |
+|---------------------------|-------------------------------------------------|----------------------------------------|
+| User-perceived crash rate | Often cited around ~1.09% at overall tier       | Per phone model and watches may differ |
+| User-perceived ANR rate   | Often cited around ~0.47% at overall tier       | Same: check model-specific rows        |
+
+Use Vitals alongside Firebase Crashlytics or similar to see stack traces and release correlation.
+
+### Startup time (user experience)
+
+Targets below are practical goals for **cold / warm / hot** start. If cold start routinely exceeds about **2 seconds** on mid-range hardware, show a splash or inline progress so the user sees feedback (see "App Startup & Initialization" elsewhere in this file).
+
+| Start type | Target (typical) | Investigate if worse than (rule of thumb) |
+|------------|------------------|-------------------------------------------|
+| Cold       | Under ~1 s       | ~2 s without progress UI                  |
+| Warm       | Under ~500 ms    | ~1 s                                      |
+| Hot        | Under ~100 ms    | ~500 ms                                   |
+
+Align measurement with **TTID / TTFD** and Macrobenchmark `StartupTimingMetric()` (see below).
+
+### Frame time and jank
+
+Rendering should stay within the display's frame budget:
+
+| Display | Frame budget (approx.) |
+|---------|------------------------|
+| 60 Hz   | ~16.7 ms per frame     |
+| 90 Hz   | ~11.1 ms per frame     |
+| 120 Hz  | ~8.3 ms per frame      |
+
+**Slow frames** exceed the budget; **frozen frames** are long stalls (often hundreds of ms or more) and strongly harm perceived quality. Investigate with `FrameTimingMetric()`, Profetto, and the system GPU/profile tools described later in this guide.
+
+### Background work and battery
+
+- Prefer **WorkManager** for deferrable background work; avoid long-lived services unless required (foreground service with user-visible notification when applicable).
+- **Doze** and **App Standby** limit background execution; design for batched work and FCM for push where needed.
+- Release **WakeLocks** promptly; avoid holding partial wake locks across idle periods.
+
+For StrictMode and main-thread guardrails, see `references/android-strictmode.md`.
+
 ## Benchmark
 
 Benchmarking is for measuring **real performance** (not just profiling). Use it to detect
