@@ -677,9 +677,30 @@ items[0] = items[0].copy(name = "Updated")
 
 For ViewModel-level state, prefer `StateFlow<PersistentList<T>>` (see [Persistent Collections](#persistent-collections-for-performance)) over `SnapshotStateList`. Use `SnapshotStateList` only for UI-local state.
 
-### rememberSaveable with Custom Types
+### remember, rememberSaveable, and rememberSerializable
 
-`rememberSaveable` survives process death and configuration changes. Custom types require a `Saver` or `@Parcelize`:
+These APIs differ in **how long** state is kept and **what types** you can store. Official overview: [State lifespans in Compose](https://developer.android.com/develop/ui/compose/state-lifespans).
+
+|                                       | `remember`           | `rememberSaveable`                                                                                                                     | `rememberSerializable`                                                     |
+|---------------------------------------|----------------------|----------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| Survives recompositions               | Yes                  | Yes                                                                                                                                    | Yes                                                                        |
+| Survives activity / config recreation | No                   | Yes (restored value may be a **new** instance, `==` but not `===`)                                                                     | Same as `rememberSaveable`                                                 |
+| Survives process death                | No                   | Yes                                                                                                                                    | Yes                                                                        |
+| Custom / complex types                | Any (in memory only) | Primitives, `String`, arrays, built-in support for common types (`List`, `Map`, `State`, …), **`@Parcelize`**, or a **custom `Saver`** | Types you can represent with **`kotlinx.serialization`** (`@Serializable`) |
+
+**When to use which**
+
+- **`remember`** - Default for composable-scoped state that can be recreated without harming UX: animation state, internal helpers, `LazyListState` when you do not need process death, ephemeral expand/collapse, hover. **Do not** store irreplaceable user input or form data in plain `remember`; it is cleared on configuration change and process death.
+
+- **`rememberSaveable`** - User-visible state the app cannot easily reload from elsewhere: text fields, toggles, scroll position, selected tab, navigation arguments mirrored in UI. Use this when your type is already `Parcelable`, fits the built-in `Saver` rules, or you hand-write a `Saver` / `mapSaver` / `listSaver`.
+
+- **`rememberSerializable`** - Same persistence guarantees as `rememberSaveable`, but **automatic persistence for `@Serializable` models** via `kotlinx.serialization`. Prefer it when your domain or UI model is already (or can be) marked `@Serializable`; use **`rememberSaveable`** for primitives, `Parcelable`, or manual `Saver`s when you are not using kotlinx.serialization.
+
+Both saveable variants serialize into a `Bundle`, so restored values are **equivalent** copies, not the same object identity.
+
+#### rememberSaveable with custom types
+
+`rememberSaveable` survives process death and configuration changes. Custom types need a `Saver`, `@Parcelize`, or supported primitives/collections:
 
 ```kotlin
 // Option 1: Saver (pure Kotlin, no Android dependency)
@@ -707,7 +728,23 @@ val filterSaver = mapSaver(
 )
 ```
 
-Use `rememberSaveable` for user input, form state, scroll positions, and selected tabs. Use plain `remember` for transient UI state (expanded/collapsed, hover).
+#### rememberSerializable with @Serializable types
+
+Use when your state is modeled with kotlinx.serialization (same lifecycle as `rememberSaveable`; do not wrap the same state in both `rememberSaveable` and `rememberSerializable`). The `MutableState` overload infers a `KSerializer` for the reified type `T`:
+
+```kotlin
+import androidx.compose.runtime.saveable.rememberSerializable
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class FilterState(val category: String, val sortOrder: String)
+
+var filter by rememberSerializable { mutableStateOf(FilterState("all", "newest")) }
+```
+
+For a non-state value, use the overload whose `init` returns `T` directly. If you need an explicit `KSerializer` (custom serializers, polymorphism, etc.), use the overloads that take `serializer:` or `stateSerializer:` - see [`rememberSerializable`](https://developer.android.com/reference/kotlin/androidx/compose/runtime/saveable/package-summary#rememberSerializable(kotlin.Array,kotlinx.serialization.KSerializer,androidx.savedstate.serialization.SavedStateConfiguration,kotlin.Function0)).
+
+For other APIs that sit between these lifespans (for example **`retain`**, which survives configuration change but not process death), see the same [State lifespans](https://developer.android.com/develop/ui/compose/state-lifespans) guide.
 
 ### Edge-to-Edge (Mandatory on API 36)
 
