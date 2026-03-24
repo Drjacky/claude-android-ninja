@@ -38,9 +38,9 @@ Add them to your module as needed, following [dependencies.md → Adding a New D
 
 Use this section when you need **strong assurance** that a sensitive action (login, payment, account change) really comes from **your Play-distributed app** on a **trustworthy device**, not from a modified client or replayed token.
 
-### Why client-only “root” style checks are not enough
+### Why client-only "root" style checks are not enough
 
-Heuristics that look for `su`, Magisk paths, or suspicious packages can still be useful as **telemetry**, but they are **easy to evade** and **tamperable** on the client. An implementation that only does local checks and then allows or blocks in the app is a weak trust boundary. **Do not** treat “root detected” / “not detected” as the only input for high-value flows.
+Heuristics that look for `su`, Magisk paths, or suspicious packages can still be useful as **telemetry**, but they are **easy to evade** and **tamperable** on the client. An implementation that only does local checks and then allows or blocks in the app is a weak trust boundary. **Do not** treat "root detected" / "not detected" as the only input for high-value flows.
 
 ### What to decide instead
 
@@ -49,17 +49,17 @@ Ask whether you can trust **this combination** for **this action**:
 - The **app binary** matches what Play expects (**app integrity**).
 - The **install and account context** are legitimate (**licensing / account signals**).
 - The **device environment** meets your policy (**device integrity** and optional signals).
-- The **integrity token** applies to **this specific server request** (binding via `requestHash` for Standard API or `nonce` for Classic—see [Play Integrity API](#play-integrity-api)).
+- The **integrity token** applies to **this specific server request** (binding via `requestHash` for Standard API or `nonce` for Classic - see [Play Integrity API](#play-integrity-api)).
 
 That matches how [Play Integrity API](https://developer.android.com/google/play/integrity/overview) is designed: **server-verifiable** signals, not a single client-side boolean.
 
 ### What to implement (order of responsibility)
 
 1. **Backend is authoritative.** Decrypt and verify tokens on the server; apply **tiered** policy (allow, step-up auth, rate limits, or deny **only** the sensitive operation). The client must not be the only place that enforces access to protected APIs.
-2. **Use Play Integrity** for apps distributed on Google Play when you need that assurance. Integrate the **Standard** flow for frequent checks (prepare token provider, then request with `requestHash`) or **Classic** for rare, high-value checks (`nonce`)—details in [Play Integrity API](#play-integrity-api).
+2. **Use Play Integrity** for apps distributed on Google Play when you need that assurance. Integrate the **Standard** flow for frequent checks (prepare token provider, then request with `requestHash`) or **Classic** for rare, high-value checks (`nonce`) - details in [Play Integrity API](#play-integrity-api).
 3. **Bind each token to the action** so a token minted for one request cannot be replayed for another (hash a canonical representation of the protected request; never put secrets in plaintext into the hash field).
 4. **Roll out enforcement gradually:** log verdicts and error rates first, then tighten rules so you avoid blocking legitimate users by surprise.
-5. **Combine with cryptography where appropriate:** Android Keystore–backed keys for device-bound signing or encryption of high-value operations (see [Android Keystore, TEE & StrongBox](#android-keystore-tee--strongbox)).
+5. **Combine with cryptography where appropriate:** Android Keystore-backed keys for device-bound signing or encryption of high-value operations (see [Android Keystore, TEE & StrongBox](#android-keystore-tee--strongbox)).
 6. **Treat optional runtime signals** (overlays, accessibility abuse patterns, automation) as **risk inputs** feeding your policy or fraud engine, not as the sole gate unless product requirements demand it.
 
 ### Official reference
@@ -784,7 +784,49 @@ See [Play Console Help - Data safety](https://support.google.com/googleplay/andr
 
 ## Play Integrity API
 
-Replaces SafetyNet Attestation API (deprecated). Verifies device integrity, app integrity, and licensing.
+Replaces SafetyNet Attestation API (deprecated). Verifies device integrity, app integrity, and licensing. Use **Standard** requests for most on-demand checks; reserve **Classic** for infrequent, high-value actions. Official docs: [Overview](https://developer.android.com/google/play/integrity/overview), [Setup](https://developer.android.com/google/play/integrity/setup), [Standard requests](https://developer.android.com/google/play/integrity/standard), [Classic requests](https://developer.android.com/google/play/integrity/classic).
+
+### Prerequisites and project setup
+
+1. **Google Cloud:** Create or select a project; enable the **Play Integrity API** ([Setup guide](https://developer.android.com/google/play/integrity/setup)).
+2. **Play Console:** Link that Cloud project to your app under **Test and release** > **App integrity** > **Play Integrity API** > **Link a Cloud project**. Linking is required for quota increases, response configuration in Console, and related tooling. Projects enabled only in Cloud Console but not linked get a limited integration path per Google.
+3. **Quotas (defaults):** Roughly **10,000** integrity token operations and **10,000** server-side decryptions per day for the linked Cloud project (shared across request types; see [Setup](https://developer.android.com/google/play/integrity/setup) for current numbers and how to request more).
+4. **Dependency:** Add `play-integrity` via the version catalog (see [Dependencies](#dependencies)); artifact `com.google.android.play:integrity` from Google's Maven.
+
+### Standard API vs Classic API
+
+|                                   | **Standard API**                                                                                                                                     | **Classic API**                                                                                                       |
+|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| **Warm-up**                       | Yes - call `prepareIntegrityToken` before you need tokens (typical warm-up a few seconds; allow a generous timeout, e.g. on the order of one minute) | No                                                                                                                    |
+| **Typical latency after warm-up** | Lower (often hundreds of ms for the token request)                                                                                                   | Higher (often a few seconds)                                                                                          |
+| **Use when**                      | Frequent checks tied to user actions or API calls                                                                                                    | Rare, high-value or sensitive actions                                                                                 |
+| **Client binding field**          | `requestHash` (digest of the protected request; max length per API)                                                                                  | `nonce` (server-chosen or derived; format per [Classic](https://developer.android.com/google/play/integrity/classic)) |
+| **Replay / tamper mitigation**    | Google Play mitigates replay for Standard; still bind with `requestHash` for request integrity                                                       | You must implement nonce handling and server checks                                                                   |
+| **Rate limits (documented)**      | Prepare: **5** warm-up calls per app instance per minute; token requests subject to product limits                                                   | **5** integrity token requests per app instance per minute for Classic                                                |
+
+Library `minSdk` for both follows the Play Integrity library version you ship (see release notes for the exact floor).
+
+### Standard API client flow
+
+- Create `StandardIntegrityManager` via `IntegrityManagerFactory.createStandard(context)`.
+- **Once per session (or after errors below):** call `prepareIntegrityToken` with `PrepareIntegrityTokenRequest` that sets your **Google Cloud project number**. Keep the resulting `StandardIntegrityTokenProvider` in memory.
+- **On each protected action:** build a stable digest of the data you need to bind (for example SHA-256 of a canonical string of request fields), pass it as **`requestHash`** in `StandardIntegrityTokenRequest`. Do not put sensitive values in plaintext in the hash input; hash them.
+- If you receive **`INTEGRITY_TOKEN_PROVIDER_INVALID`**, prepare a new provider and retry the token request.
+- Optional: use **`verdictOptOut`** on a Standard request to skip optional verdicts that add latency when you do not need them (see API reference / release notes).
+
+### Classic API client flow
+
+- Use `IntegrityManagerFactory.create(context)` and `IntegrityTokenRequest` with a **`nonce`** meeting Google's format (Base64 URL-safe, no wrap, length limits in the docs).
+- Apps **distributed through Google Play** usually do **not** need `setCloudProjectNumber` on the request because the app is linked in Play Console.
+- Apps **not** installed from Play (or SDK integrations as documented) may need **`setCloudProjectNumber`** - follow [Classic requests](https://developer.android.com/google/play/integrity/classic).
+- Use Classic **sparingly**; it is heavier and you own nonce and replay policy on the server.
+
+### Policy (enforcement)
+
+- **Do not** treat a decrypted verdict as a long-lived "device is trusted forever" flag in the client. Avoid caching integrity results to authorize unrelated later actions.
+- Apply **tiered** server rules: allow, allow with limits, step-up (OTP, delay), or deny **only** the sensitive operation - avoid locking the whole app on the first failure unless product requires it.
+- **Optional verdicts** (extra device labels, app access risk, Play Protect, recent device activity, device recall, etc.) require opting in under Play Console **App integrity** > **Play Integrity API** > **Settings** / **Change responses**. Only enforce signals you actually receive and have enabled.
+- Roll out **telemetry first** (log or soft-fail), then tighten enforcement as you understand your user base.
 
 ### Setup
 
