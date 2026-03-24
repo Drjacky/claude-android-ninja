@@ -788,10 +788,12 @@ Replaces SafetyNet Attestation API (deprecated). Verifies device integrity, app 
 
 ### Prerequisites and project setup
 
-1. **Google Cloud:** Create or select a project; enable the **Play Integrity API** ([Setup guide](https://developer.android.com/google/play/integrity/setup)).
-2. **Play Console:** Link that Cloud project to your app under **Test and release** > **App integrity** > **Play Integrity API** > **Link a Cloud project**. Linking is required for quota increases, response configuration in Console, and related tooling. Projects enabled only in Cloud Console but not linked get a limited integration path per Google.
+**Steps 1-2 need a human with Google Cloud and Play Console access.** An AI cannot log into those consoles. When implementing Play Integrity in code, **ask the engineer** to complete enablement and linking first, then obtain the value(**numeric Cloud project number**) below so the client and backend can be wired correctly.
+
+1. **Google Cloud (engineer):** Create or select a project; enable the **Play Integrity API** ([Setup guide](https://developer.android.com/google/play/integrity/setup)). The engineer should share the **Google Cloud project number** (numeric, shown in Cloud Console for the project). You pass it to `PrepareIntegrityTokenRequest.setCloudProjectNumber` (Standard API) and to Classic requests when the docs require it. Backend teams create a **service account** in this project with access to call the Play Integrity **decode** API (see [Google's server verification docs](https://developer.android.com/google/play/integrity/standard#decrypt-and-verify-the-integrity-verdict)); those credentials stay on the server.
+2. **Play Console (engineer):** Link that Cloud project to your app under **Test and release** > **App integrity** > **Play Integrity API** > **Link a Cloud project**. Linking is required for quota increases, response configuration in Console, and related tooling. Projects enabled only in Cloud Console but not linked get a limited integration path per Google.
 3. **Quotas (defaults):** Roughly **10,000** integrity token operations and **10,000** server-side decryptions per day for the linked Cloud project (shared across request types; see [Setup](https://developer.android.com/google/play/integrity/setup) for current numbers and how to request more).
-4. **Dependency:** Add `play-integrity` via the version catalog (see [Dependencies](#dependencies)); artifact `com.google.android.play:integrity` from Google's Maven.
+4. **Dependency:** Add the Play Integrity library via your Gradle version catalog. In this skill, the template is [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template): use `version.ref = "playIntegrity"` and the library alias `play-integrity` (`com.google.android.play:integrity`). Mirror that pattern in your project's `gradle/libs.versions.toml` and module `build.gradle.kts` (see [Dependencies](#dependencies)).
 
 ### Standard API vs Classic API
 
