@@ -832,38 +832,50 @@ Library `minSdk` for both follows the Play Integrity library version you ship (s
 
 ### Setup
 
-Add the Play Integrity dependency (see [Dependencies](#dependencies)).
+Add the Play Integrity dependency (see [Dependencies](#dependencies)). Call **`warmUp()`** once after launch (or in background) so the first protected action is not paying full prepare latency. Use **`requestIntegrityToken(requestHash)`** only with a digest built for that action (see [Standard API client flow](#standard-api-client-flow)).
 
 ```kotlin
 // core/data/integrity/PlayIntegrityChecker.kt
 import com.google.android.play.core.integrity.IntegrityManagerFactory
 import com.google.android.play.core.integrity.StandardIntegrityManager
+import kotlinx.coroutines.tasks.await
 
 class PlayIntegrityChecker @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private val integrityManager = IntegrityManagerFactory.createStandard(context)
 
-    suspend fun requestIntegrityToken(requestHash: String): Result<String> {
-        return try {
-            val request = StandardIntegrityManager.StandardIntegrityTokenRequest.builder()
-                .setRequestHash(requestHash)
-                .build()
+    @Volatile
+    private var tokenProvider: StandardIntegrityManager.StandardIntegrityTokenProvider? = null
 
-            val response = integrityManager
+    /** Call once (e.g. Application onCreate or before first sensitive call). */
+    suspend fun warmUp(): Result<Unit> {
+        if (tokenProvider != null) return Result.success(Unit)
+        return try {
+            tokenProvider = integrityManager
                 .prepareIntegrityToken(
                     StandardIntegrityManager.PrepareIntegrityTokenRequest.builder()
                         .setCloudProjectNumber(YOUR_CLOUD_PROJECT_NUMBER)
                         .build()
                 )
                 .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
-            val tokenResponse = response
-                .request(request)
-                .await()
-
+    /** Request a token bound to this server action via requestHash (Standard API). */
+    suspend fun requestIntegrityToken(requestHash: String): Result<String> {
+        warmUp().getOrElse { return Result.failure(it) }
+        return try {
+            val request = StandardIntegrityManager.StandardIntegrityTokenRequest.builder()
+                .setRequestHash(requestHash)
+                .build()
+            val tokenResponse = tokenProvider!!.request(request).await()
             Result.success(tokenResponse.token())
         } catch (e: Exception) {
+            tokenProvider = null
             Result.failure(e)
         }
     }
@@ -872,28 +884,19 @@ class PlayIntegrityChecker @Inject constructor(
 
 ### Server-Side Verification
 
-**The integrity token must be verified server-side.** Never trust client-side validation alone.
+**The integrity token must be verified server-side.** Never trust client-side validation alone. The backend calls Google's **`decodeIntegrityToken`** API with a service account (see [Decrypt and verify the integrity verdict](https://developer.android.com/google/play/integrity/standard#decrypt-and-verify-the-integrity-verdict)). Recompute **`requestHash`** the same way as the client and compare to **`requestDetails.requestHash`** in the decrypted payload.
 
 ```kotlin
-// Send token to your backend
+// Send token + the same requestHash your server will recompute for verification
 class IntegrityRepository @Inject constructor(
     private val api: IntegrityApi,
     private val integrityChecker: PlayIntegrityChecker
 ) {
-    suspend fun verifyDeviceIntegrity(): Result<IntegrityVerdict> {
-        val nonce = generateSecureNonce()
-        val token = integrityChecker.requestIntegrityToken(nonce).getOrElse {
+    suspend fun verifyProtectedAction(requestHash: String): Result<IntegrityVerdict> {
+        val token = integrityChecker.requestIntegrityToken(requestHash).getOrElse {
             return Result.failure(it)
         }
-
-        // Server decrypts and verifies the token
-        return api.verifyIntegrity(token, nonce)
-    }
-
-    private fun generateSecureNonce(): String {
-        val bytes = ByteArray(32)
-        java.security.SecureRandom().nextBytes(bytes)
-        return Base64.encodeToString(bytes, Base64.NO_WRAP)
+        return api.verifyIntegrity(token, requestHash)
     }
 }
 ```
