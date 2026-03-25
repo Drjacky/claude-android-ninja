@@ -901,6 +901,54 @@ class IntegrityRepository @Inject constructor(
 }
 ```
 
+### Server decode and verify checklist
+
+After your backend receives the integrity token string, call **`decodeIntegrityToken`** with a **service account** that has the **`playintegrity`** scope (see [Decrypt and verify the integrity verdict](https://developer.android.com/google/play/integrity/standard#decrypt-and-verify-the-integrity-verdict)). Validate the decrypted JSON **in order**:
+
+1. **`requestDetails`** - `requestPackageName` equals your application ID. For Standard requests, **`requestHash`** equals the value you computed for this action (same algorithm and canonical serialization as the client). Check **`timestampMillis`** is within a window you allow (reject stale tokens). For Classic requests, compare **`nonce`** to the value you issued for this request.
+2. **`appIntegrity`** - `appRecognitionVerdict` (for example `PLAY_RECOGNIZED` vs `UNRECOGNIZED_VERSION`).
+3. **`deviceIntegrity`** - `deviceRecognitionVerdict` labels (for example `MEETS_DEVICE_INTEGRITY`, optional labels if you opted in under Play Console).
+4. **`accountDetails`** - `appLicensingVerdict` (for example `LICENSED` vs `UNLICENSED`).
+5. **`environmentDetails`** - Only present if you enabled optional verdicts in Play Console; interpret **app access risk** and **Play Protect** per [Integrity verdicts](https://developer.android.com/google/play/integrity/verdicts).
+
+Repeated decryption of the **same** token can clear or weaken verdicts (Google documents replay protection). Issue one token per protected server request.
+
+### Standard API sequence (reference)
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant PlayServices as PlayIntegrity
+    participant Backend
+    participant GoogleAPI as GoogleDecode
+    App->>PlayServices: prepareIntegrityToken
+    PlayServices-->>App: StandardIntegrityTokenProvider
+    App->>PlayServices: request with requestHash
+    PlayServices-->>App: integrity token string
+    App->>Backend: HTTPS with token
+    Backend->>GoogleAPI: decodeIntegrityToken
+    GoogleAPI-->>Backend: verdict JSON
+```
+
+### Client errors and retries
+
+Use the official matrix: [Handle Play Integrity API error codes](https://developer.android.com/google/play/integrity/error-codes).
+
+- **Often retry with backoff** (transient): `NETWORK_ERROR`, `TOO_MANY_REQUESTS`, `GOOGLE_SERVER_UNAVAILABLE`, `CLIENT_TRANSIENT_ERROR`, `INTERNAL_ERROR`; follow Google guidance (initial delay, exponential backoff, cap attempts).
+- **Usually fix environment or config** (not a blind retry): `API_NOT_AVAILABLE`, `PLAY_STORE_NOT_FOUND`, `PLAY_STORE_VERSION_OUTDATED`, `PLAY_SERVICES_NOT_FOUND`, `PLAY_SERVICES_VERSION_OUTDATED`, `CLOUD_PROJECT_NUMBER_IS_INVALID`, `CANNOT_BIND_TO_SERVICE` - prompt user to update Play Store or Play services, or fix the Cloud project number you pass from the engineer.
+- **Standard only:** `INTEGRITY_TOKEN_PROVIDER_INVALID` - **invalidate the cached provider**, clear it, run **`warmUp()`** again, then retry the token request.
+- **`REQUEST_HASH_TOO_LONG`** - shorten the digest input or hash to a fixed-length string before sending.
+
+Treat persistent failures after retries as **failed integrity** for that action and apply your tiered policy (do not assume success).
+
+### Remediation dialogs
+
+Google Play can show **in-app dialogs** so users fix licensing, Play services, or integrity issues. See [Remediation dialogs](https://developer.android.com/google/play/integrity/remediation). Requires Play Integrity library **1.3.0 or higher** for `showDialog` on token responses; **1.5.0 or higher** for `GET_INTEGRITY` / `GET_STRONG_INTEGRITY` style flows on **remediable** exceptions.
+
+- **Your server** decides whether to ask the client to show a dialog (for example after a bad verdict or a specific error code).
+- **Your app** builds `StandardIntegrityDialogRequest` (or the Classic equivalent) with the **activity**, dialog **type code**, and the **token or exception** payload from the API.
+- After the user closes the dialog, **request a fresh token**; for Standard API, **prepare the token provider again** (warm up) before the next integrity request, as documented on the remediation page.
+
 ### Integrity Verdicts
 
 | Verdict                   | Meaning                                              |
