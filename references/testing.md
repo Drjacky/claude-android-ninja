@@ -1008,12 +1008,17 @@ fun `ViewModel without Hilt injection`() = runTest {
 
 ## Room Database Testing
 
+Room 3 requires a [`SQLiteDriver`](https://developer.android.com/kotlin/multiplatform/sqlite#sqlite-driver) on the database builder (the `app.android.room` convention adds `sqlite-bundled`). Use [`BundledSQLiteDriver`](https://developer.android.com/reference/kotlin/androidx/sqlite/driver/bundled/BundledSQLiteDriver) in tests the same way as in production code.
+
+For **migration** instrumentation tests, add **`androidTestImplementation(libs.room3.testing)`** and ensure exported schemas are available to the test APK (the Room Gradle plugin can copy schemas into `androidTest` assets; see [Test migrations](https://developer.android.com/training/data-storage/room/migrating-db-versions#test) and [`MigrationTestHelper`](https://developer.android.com/reference/kotlin/androidx/room3/testing/MigrationTestHelper)).
+
 ### In-Memory Database for Tests
 
 ```kotlin
 // core/database/src/androidTest/kotlin/com/example/database/AuthDaoTest.kt
 import android.content.Context
-import androidx.room.Room
+import androidx.room3.Room
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
@@ -1027,10 +1032,9 @@ class AuthDaoTest {
     @Before
     fun createDb() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        database = Room.inMemoryDatabaseBuilder(
-            context,
-            AppDatabase::class.java
-        ).build()
+        database = Room.inMemoryDatabaseBuilder<AppDatabase>(context)
+            .setDriver(BundledSQLiteDriver())
+            .build()
         authDao = database.authDao()
     }
 
@@ -1116,40 +1120,50 @@ class AuthDaoTest {
 
 ### Testing Database Migrations
 
+`MigrationTestHelper` APIs are **suspend** and return [`SQLiteConnection`](https://developer.android.com/reference/kotlin/androidx/sqlite/SQLiteConnection) (not `SupportSQLiteDatabase`). Use **`runBlocking`** (or another coroutine test harness) from instrumentation tests. Validate rows with **`prepare` / `step` / `getText`** (see [`SQLiteStatement`](https://developer.android.com/reference/kotlin/androidx/sqlite/SQLiteStatement)).
+
 ```kotlin
 // core/database/src/androidTest/kotlin/com/example/database/MigrationTest.kt
-import androidx.room.testing.MigrationTestHelper
+import androidx.room3.testing.MigrationTestHelper
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.execSQL
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.runBlocking
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
 
 class MigrationTest {
 
+    private val instrumentation = InstrumentationRegistry.getInstrumentation()
+
     @get:Rule
     val helper = MigrationTestHelper(
-        InstrumentationRegistry.getInstrumentation(),
-        AppDatabase::class.java
+        instrumentation = instrumentation,
+        file = instrumentation.targetContext.getDatabasePath(TEST_DB),
+        driver = BundledSQLiteDriver(),
+        databaseClass = AppDatabase::class,
     )
 
+    @Before
+    fun deleteDb() {
+        instrumentation.targetContext.deleteDatabase(TEST_DB)
+    }
+
     @Test
-    fun migrate1To2_containsCorrectData() {
-        // Create database at version 1
-        helper.createDatabase(TEST_DB, 1).apply {
+    fun migrate1To2_containsCorrectData() = runBlocking {
+        helper.createDatabase(1).apply {
             execSQL("INSERT INTO users VALUES ('1', 'test@example.com', 'Test User')")
             close()
         }
 
-        // Run migration
-        helper.runMigrationsAndValidate(TEST_DB, 2, true, MIGRATION_1_2)
-
-        // Validate data after migration
-        helper.runMigrationsAndValidate(TEST_DB, 2, true).apply {
-            query("SELECT * FROM users WHERE id = '1'").use { cursor ->
-                assertThat(cursor.moveToFirst()).isTrue()
-                assertThat(cursor.getString(cursor.getColumnIndex("email")))
-                    .isEqualTo("test@example.com")
-            }
-            close()
+        val migrated = helper.runMigrationsAndValidate(2, listOf(MIGRATION_1_2))
+        migrated.prepare("SELECT email FROM users WHERE id = '1'").use { stmt ->
+            assertThat(stmt.step()).isTrue()
+            assertThat(stmt.getText(0)).isEqualTo("test@example.com")
         }
+        migrated.close()
     }
 
     companion object {
@@ -2053,7 +2067,7 @@ object TestData {
 5. **UI Testing**: Test composable screens with fake ViewModels and navigators
 6. **No Feature Dependencies**: Test utilities in `core:testing` avoid feature-to-feature dependencies
 7. **Hilt for DI Tests**: Use `@HiltAndroidTest` for testing with dependency injection
-8. **In-Memory Database**: Use Room's in-memory database for DAO tests
+8. **In-Memory Database**: Use Room 3's in-memory builder with **`setDriver(BundledSQLiteDriver())`** for DAO tests; use **`room3-testing`** and **`MigrationTestHelper`** + **`SQLiteConnection`** for migration tests
 9. **SavedStateHandle**: Test navigation arguments and process death scenarios
 10. **Turbine for Flow**: Use Turbine for testing multiple Flow emissions over time
 
