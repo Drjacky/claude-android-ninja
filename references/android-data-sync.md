@@ -254,6 +254,8 @@ sealed interface SyncItemResult {
 
 ### Room Entity with Sync Metadata
 
+Room 3 (`androidx.room3`): keep using **`suspend`** and **`Flow`** on DAOs; configure `Room.databaseBuilder` with **`setDriver(BundledSQLiteDriver())`** (see `references/android-security.md` and `references/testing.md`).
+
 ```kotlin
 // core/data/database/TaskEntity.kt
 @Entity(tableName = "tasks")
@@ -311,6 +313,8 @@ interface TaskDao {
 Database operations can block the UI if not done correctly. A slow query can freeze your entire app.
 
 ### Room Database Best Practices
+
+Room 3 **disallows blocking DAO methods** except reactive types such as **`Flow`** (see [Room 3 release notes](https://developer.android.com/jetpack/androidx/releases/room3)).
 
 1. **Always Use Suspend Functions or Flow**: Never block the calling thread.
 ```kotlin
@@ -374,7 +378,11 @@ suspend fun getAllPosts(): List<Post>
 @Query("SELECT * FROM posts ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
 suspend fun getPostsPage(limit: Int, offset: Int): List<Post>
 
-// Best: Use Paging 3 Library
+// Best: Paging 3 + Room 3 - add dependency androidx.room3:room3-paging and register the converter:
+// @Dao
+// @DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)
+// interface PostDao { ... fun getPostsPaged(): PagingSource<Int, Post> }
+// See https://developer.android.com/jetpack/androidx/releases/room3
 @Query("SELECT * FROM posts ORDER BY created_at DESC")
 fun getPostsPaged(): PagingSource<Int, Post>
 ```
@@ -390,13 +398,7 @@ CREATE TABLE users (id TEXT, age TEXT, created_at TEXT);
 CREATE TABLE users (id INTEGER PRIMARY KEY, age INTEGER, created_at INTEGER);
 ```
 
-2. **EXPLAIN QUERY PLAN**: Use this to check if your queries are using indices.
-```kotlin
-// Output shows if index is used:
-// SCAN TABLE users (slow - no index)
-// SEARCH TABLE users USING INDEX idx_email (fast - using index)
-database.query("EXPLAIN QUERY PLAN SELECT * FROM users WHERE email = ?", arrayOf("test@example.com"))
-```
+2. **EXPLAIN QUERY PLAN**: Use this to check if your queries are using indices (run in Database Inspector, `sqlite3`, or a debug helper). Room 3 does not expose `SupportSQLiteDatabase.query`; ad hoc SQL uses [`SQLiteConnection`](https://developer.android.com/reference/kotlin/androidx/sqlite/SQLiteConnection) / driver APIs (see [Room 3 release notes](https://developer.android.com/jetpack/androidx/releases/room3)).
 
 ## Network State Monitoring
 
@@ -2385,7 +2387,8 @@ fun `syncState reflects WorkInfo state`() = runTest {
 - [Repository Pattern - Android Developers](https://developer.android.com/topic/architecture/data-layer)
 - [Offline-First Architecture - Android Developers](https://developer.android.com/topic/architecture/data-layer/offline-first)
 - [WorkManager - Android Developers](https://developer.android.com/topic/libraries/architecture/workmanager)
-- [Room Database](https://developer.android.com/training/data-storage/room)
+- [Save data in a local database with Room](https://developer.android.com/training/data-storage/room)
+- [Room 3 releases](https://developer.android.com/jetpack/androidx/releases/room3)
 - [ConnectivityManager](https://developer.android.com/reference/android/net/ConnectivityManager)
 - [Network Callbacks](https://developer.android.com/training/monitoring-device-state/connectivity-status-type)
 - [Exponential Backoff](https://cloud.google.com/iot/docs/how-tos/exponential-backoff)
