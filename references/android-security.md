@@ -1235,15 +1235,23 @@ fun PaymentScreen() {
 
 `FLAG_SECURE` also prevents the app from appearing in the recent apps screenshot.
 
-## Secure Database (Room)
+## Secure Database (Room 3)
 
-### SQLCipher Integration
+Room 3 requires a [`SQLiteDriver`](https://developer.android.com/kotlin/multiplatform/sqlite#sqlite-driver) on [`Room.databaseBuilder`](https://developer.android.com/jetpack/androidx/releases/room3). It does **not** support `SupportSQLiteOpenHelper.Factory` or `openHelperFactory` (removed with SupportSQLite).
 
-For encrypting the entire Room database:
+### Building the database (driver required)
 
 ```kotlin
 // core/database/di/DatabaseModule.kt
-import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
+import android.content.Context
+import androidx.room3.Room
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -1251,41 +1259,33 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideDatabase(
-        @ApplicationContext context: Context,
-        securePreferences: SecurePreferences
-    ): AppDatabase {
-        val passphrase = getOrCreatePassphrase(securePreferences)
-        val factory = SupportOpenHelperFactory(passphrase)
-
-        return Room.databaseBuilder(
-            context,
-            AppDatabase::class.java,
-            "app_database"
+    fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
+        return Room.databaseBuilder<AppDatabase>(
+            context = context,
+            name = "app_database",
         )
-            .openHelperFactory(factory)
+            .setDriver(BundledSQLiteDriver())
             .fallbackToDestructiveMigration()
             .build()
     }
-
-    private fun getOrCreatePassphrase(securePreferences: SecurePreferences): ByteArray {
-        val existing = securePreferences.getDatabasePassphrase()
-        if (existing != null) return existing
-
-        val passphrase = ByteArray(32).also {
-            java.security.SecureRandom().nextBytes(it)
-        }
-        securePreferences.saveDatabasePassphrase(passphrase)
-        return passphrase
-    }
 }
 ```
+
+`BundledSQLiteDriver` matches the `sqlite-bundled` dependency added by the `app.android.room` convention (see `assets/libs.versions.toml.template`).
+
+### SQLCipher / full-database encryption
+
+The Room 2 pattern `SupportOpenHelperFactory` + `openHelperFactory` does **not** apply to Room 3. To encrypt the whole database, follow **SQLCipher** (or your vendor) documentation for an **`SQLiteDriver`** (or supported integration) compatible with **`androidx.sqlite`**, then pass it to `.setDriver(...)`. The [`room3-sqlite-wrapper`](https://developer.android.com/jetpack/androidx/releases/room3) artifact is for bridging **legacy `SupportSQLite` call sites**, not for replacing a proper driver on the main `RoomDatabase` builder. See [Migrate from SupportSQLite](https://developer.android.com/kotlin/multiplatform/room#migrate) and [Room 3 release notes](https://developer.android.com/jetpack/androidx/releases/room3).
 
 ### Sensitive Field Encryption
 
 For encrypting specific fields (when full-database encryption is too heavy):
 
 ```kotlin
+import androidx.room3.ColumnInfo
+import androidx.room3.Entity
+import androidx.room3.PrimaryKey
+
 @Entity(tableName = "users")
 data class UserEntity(
     @PrimaryKey val id: String,
