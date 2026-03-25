@@ -39,7 +39,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Performance benchmarking (Macrobenchmark, Microbenchmark, Baseline Profiles, ProfileInstaller, System Tracing), Google Play Vitals context (crash/ANR bars, startup targets, frame budgets, battery/background), Compose recomposition optimization (three phases, deferred state reads, Strong Skipping Mode), and app startup optimization (App Startup library, splash screen, lazy initialization)
 - StrictMode guardrails and Compose compiler stability diagnostics
 - Code coverage with JaCoCo (unit + instrumented tests)
-- Security (certificate pinning, encryption, biometrics, Credential Manager and passkeys, device identifiers and privacy, Play Data safety, root detection, Play Integrity)
+- Security (certificate pinning, encryption, biometrics, Credential Manager and passkeys, device identifiers and privacy, Play Data safety, Play Integrity Standard/Classic with server `decodeIntegrityToken`, `requestHash`/`nonce` binding, tiered policy, remediation, local root/emulator checks as supplementary)
 - Retrofit/networking patterns (service interfaces, nullable JSON DTOs, Hilt NetworkModule, AuthInterceptor)
 - Haptic feedback, touch targets, and forms/input patterns (keyboard types, autofill, validation)
 - Debugging guide (Logcat levels, ANR timeouts, Gradle error patterns, LeakCanary, Compose recomposition, R8 mapping and manual de-obfuscation)
@@ -67,7 +67,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - [`references/crashlytics.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/crashlytics.md) - crash reporting with modular provider swaps
 - [`references/android-strictmode.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-strictmode.md) - StrictMode guardrails and Compose stability
 - [`references/android-code-coverage.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-code-coverage.md) - JaCoCo code coverage setup and CI integration
-- [`references/android-security.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-security.md) - security, Credential Manager, identifiers, Data safety, encryption, biometrics, pinning, root detection
+- [`references/android-security.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-security.md) - Play Integrity (Standard/Classic), server decode and verdict policy, `requestHash`/`nonce`, errors/remediation, device trust vs local root checks, Credential Manager, pinning, encryption, Data safety
 - [`references/code-quality.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/code-quality.md) - Detekt setup and code quality rules
 - [`references/dependencies.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/dependencies.md) - dependency rules and version catalog guidance
 - [`references/android-performance.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-performance.md) - Play Vitals context, benchmarking, recomposition, app startup, splash screen
