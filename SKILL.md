@@ -1,17 +1,17 @@
 ---
 name: android-kotlin-compose
-description: Create production-quality Android applications following Google's official Android architecture guidance with Kotlin, Jetpack Compose, MVVM architecture, Hilt dependency injection, Room database, and multi-module architecture. Triggers on requests to create Android projects, modules, screens, ViewModels, repositories, or when asked about Android architecture patterns and best practices.
+description: Create production-quality Android applications following Google's official Android architecture guidance with Kotlin, Jetpack Compose, MVVM architecture, Hilt dependency injection, Room 3 local persistence (KSP, SQLiteDriver, Flow/suspend DAOs), and multi-module architecture. Triggers on requests to create Android projects, modules, screens, ViewModels, repositories, or when asked about Android architecture patterns and best practices.
 license: Apache-2.0
 metadata:
   author: DrJacky
   version: 1.0.0
   documentation: https://github.com/DrJacky/claude-android-ninja
-  tags: [android, kotlin, compose, mvvm, hilt, room, datastore, paging, gradle, mobile]
+  tags: [android, kotlin, compose, mvvm, hilt, room, room3, datastore, paging, gradle, mobile]
 ---
 # Android Kotlin Compose Development
 
 Create production-quality Android applications following Google's official architecture guidance and best practices.
-Use when building Android apps with Kotlin, Jetpack Compose, MVVM architecture, Hilt dependency injection, Room database, DataStore, Paging 3, or Android multi-module projects.
+Use when building Android apps with Kotlin, Jetpack Compose, MVVM architecture, Hilt dependency injection, Room 3, DataStore, Paging 3, or Android multi-module projects.
 Triggers on requests to create Android projects, screens, ViewModels, repositories, feature modules, or when asked about Android architecture patterns.
 
 
@@ -44,7 +44,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Design patterns                                                                                                                                                       | [design-patterns.md](references/design-patterns.md)             |
 | Performance, Play Vitals, startup, recomposition, jank, battery                                                                                                       | [android-performance.md](references/android-performance.md)     |
 | Debugging, Logcat levels, ANR, Gradle error patterns, R8, memory leaks                                                                                                | [android-debugging.md](references/android-debugging.md)         |
-| Migration guides (XML, RxJava, Navigation, Compose)                                                                                                                   | [migration.md](references/migration.md)                         |
+| Migration guides (XML, RxJava, Navigation, Compose, Room 2→3)                                                                                                         | [migration.md](references/migration.md)                         |
 
 ## Workflow Decision Tree
 
@@ -105,8 +105,8 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Read [architecture.md](references/architecture.md)  
 → Hilt `@Binds`, scopes, and DI anti-patterns: [architecture.md](references/architecture.md) -> Domain Layer -> "Dependency Injection Setup"  
 → Create Repository interfaces in `core/domain`  
-→ Create implementations in `core/data` using Room/Retrofit/DataStore
-→ Use DataStore for simple key-value pairs, Room for complex datasets
+→ Create implementations in `core/data` using Room 3/Retrofit/DataStore
+→ Use DataStore for simple key-value pairs, Room 3 for complex relational data (`suspend` / `Flow` DAOs, `SQLiteDriver`)
 
 **Implementing Lists and Scrolling?**
 → Use `LazyColumn`/`LazyRow` with stable keys and `contentType` (see [compose-patterns.md](references/compose-patterns.md))
@@ -129,7 +129,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Implementing offline-first or data synchronization?**
 → Follow [android-data-sync.md](references/android-data-sync.md) for sync strategies, conflict resolution, and cache invalidation  
-→ Use Room as single source of truth with sync metadata (syncStatus, lastModified)  
+→ Use Room 3 as single source of truth with sync metadata (syncStatus, lastModified)  
 → Schedule background sync with WorkManager  
 → Monitor network state before syncing  
 
@@ -240,8 +240,8 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Use [android-permissions.md](references/android-permissions.md) for proper permission justification  
 → Check [android-strictmode.md](references/android-strictmode.md) for detecting cleartext network traffic  
 
-**Migrating legacy code (LiveData, Fragments, Accompanist, RxJava)?**
-→ Use [migration.md](references/migration.md) for all migration paths  
+**Migrating legacy code (LiveData, Fragments, Accompanist, RxJava, Room 2.x)?**
+→ Use [migration.md](references/migration.md) for all migration paths (including [Room 2.x → Room 3](references/migration.md#room-2x-to-room-3))  
 → Follow [architecture.md](references/architecture.md) for modern MVVM patterns  
 
 **Adding Compose animations?**
@@ -261,7 +261,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Order: size → padding → drawing → interaction  
 
 **Migrating from Accompanist or deprecated Compose APIs?**
-→ Use [migration.md](references/migration.md) for Accompanist, Compose API, Material, and Edge-to-Edge migrations  
+→ Use [migration.md](references/migration.md) for Accompanist, Compose API, Material, Edge-to-Edge, and Room upgrades  
 → See [compose-patterns.md](references/compose-patterns.md) → "Deprecated Patterns & Migrations" for a summary list  
 
 **Optimizing Compose recomposition or stability?**
@@ -270,10 +270,11 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Check [gradle-setup.md](references/gradle-setup.md) for Compose Compiler metrics and stability reports  
 → Use [kotlin-patterns.md](references/kotlin-patterns.md) for immutable data structures  
 
-**Working with databases (Room)?**
-→ Define DAOs and entities in `core/database` per [modularization.md](references/modularization.md)  
-→ Use [testing.md](references/testing.md) for in-memory database testing and migration tests  
-→ Follow [architecture.md](references/architecture.md) for repository patterns with Room  
+**Working with databases (Room 3)?**
+→ Define DAOs and entities in `core/database` per [modularization.md](references/modularization.md); use **`androidx.room3`**, KSP, and **`setDriver(BundledSQLiteDriver())`** on the builder (see `app.android.room` convention)  
+→ Use [testing.md](references/testing.md) for in-memory database testing and Room 3 migration tests  
+→ Follow [architecture.md](references/architecture.md) for repository patterns  
+→ Upgrading from Room 2.x: [migration.md → Room 2.x to Room 3](references/migration.md#room-2x-to-room-3)  
 
 **Need internationalization/localization (i18n/l10n)?**
 → Use [android-i18n.md](references/android-i18n.md) for string resources, plurals, and RTL support  
