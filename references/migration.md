@@ -13,6 +13,7 @@ pattern and its modern replacement.
 6. [Compose API Migrations](#compose-api-migrations)
 7. [Material 2 to Material 3](#material-2-to-material-3)
 8. [Edge-to-Edge](#edge-to-edge)
+9. [Room 2.x to Room 3](#room-2x-to-room-3)
 
 ## XML to Compose
 
@@ -568,3 +569,45 @@ Scaffold { innerPadding ->
 
 For full edge-to-edge setup including `WindowInsets` handling, see
 [compose-patterns.md](compose-patterns.md#edge-to-edge-mandatory-on-api-36).
+
+## Room 2.x to Room 3
+
+Jetpack **Room 2.x** (`androidx.room`) and **Room 3** (`androidx.room3`) use different Maven coordinates and runtime APIs. The target is **Room 3** on Android with **KSP**, a **`SQLiteDriver`**, and **coroutine-first DAOs** (`suspend`, **`Flow`**). Official background: [Room 3 release notes](https://developer.android.com/jetpack/androidx/releases/room3), [Room 3 announcement](https://android-developers.googleblog.com/2026/03/room-30-modernizing-room.html), and [Save data with Room](https://developer.android.com/training/data-storage/room).
+
+### Gradle and artifacts
+
+| Room 2.x                                                            | Room 3                                                                                             |
+|---------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| `androidx.room:room-runtime`, `room-compiler`, `room-gradle-plugin` | `androidx.room3:room3-runtime`, `room3-compiler`, `room3-gradle-plugin`                            |
+| Plugin id `androidx.room` + `room { schemaDirectory(...) }`         | Plugin id `androidx.room3` + `room3 { schemaDirectory(...) }`                                      |
+| Optional `room-ktx`                                                 | No separate KTX artifact for the same role; use **`Flow` / `suspend`** on DAOs                     |
+| KSP `ksp("androidx.room:room-compiler")`                            | KSP **`ksp("androidx.room3:room3-compiler")`** — Room 3 is **KSP-only** (no kapt/Java AP for Room) |
+
+Add **`androidx.sqlite:sqlite-bundled`** and call **`.setDriver(BundledSQLiteDriver())`** on `Room.databaseBuilder` / `Room.inMemoryDatabaseBuilder`. See `assets/libs.versions.toml.template` and the `app.android.room` convention plugin.
+
+**Paging:** If a DAO returns **`PagingSource`**, add **`androidx.room3:room3-paging`** and **`@DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)`** on the DAO or `@Database` ([release notes](https://developer.android.com/jetpack/androidx/releases/room3)).
+
+### Packages and generated code
+
+- Replace imports **`androidx.room.*`** with **`androidx.room3.*`** (`RoomDatabase`, `Room`, `@Database`, `@Entity`, `@Dao`, `@Query`, `Migration`, etc.).
+- Regenerate with KSP after changing coordinates; update **R8** rules to **`androidx.room3.RoomDatabase`** / **`@androidx.room3.Entity`** (`assets/proguard-rules.pro.template`).
+
+### SupportSQLite and `SQLiteDriver`
+
+Room 3 is backed by the **`androidx.sqlite`** driver APIs. **`SupportSQLiteDatabase`**, **`SupportSQLiteQuery`**, and **`openHelper` / `openHelperFactory`** are gone unless you use the compatibility **`androidx.room3:room3-sqlite-wrapper`** for specific legacy call sites ([release notes](https://developer.android.com/jetpack/androidx/releases/room3)).
+
+- **Callbacks and migrations** that took **`SupportSQLiteDatabase`** should use **`SQLiteConnection`** (or the types your Room 3 version documents for `Migration` / `RoomDatabase.Callback` / `AutoMigrationSpec`).
+- **Direct SQL / `Cursor`**: prefer **`RoomDatabase.useReaderConnection`** / **`useWriterConnection`** and prepared statements over raw Android `Cursor` ([release notes](https://developer.android.com/jetpack/androidx/releases/room3)).
+- **Transactions:** e.g. **`runInTransaction`**-style usage moves to **`withWriteTransaction`** (see [Room 3 release notes](https://developer.android.com/jetpack/androidx/releases/room3)).
+- **Builder options** (e.g. pre-packaged database, query callback, multi-instance invalidation): verify each against the current [Room 3](https://developer.android.com/jetpack/androidx/releases/room3) and [Room training guide](https://developer.android.com/training/data-storage/room) for your AGP/targets; some APIs differ or moved with the driver model.
+
+Step-by-step **SupportSQLite → driver** guidance: [Migrate from SupportSQLite](https://developer.android.com/kotlin/multiplatform/room#migrate) (Android-relevant parts apply even in Android-only apps).
+
+### Invalidation and tests
+
+- **`InvalidationTracker.Observer`** / **`addObserver`** are removed; use **`InvalidationTracker.createFlow`** ([release notes](https://developer.android.com/jetpack/androidx/releases/room3)).
+- **Instrumented tests:** `androidx.room3:room3-testing`, **`MigrationTestHelper`** with a **`SQLiteDriver`**, **`SQLiteConnection`**, and **suspend** APIs — see [Test migrations](https://developer.android.com/training/data-storage/room/migrating-db-versions#test) and [`MigrationTestHelper`](https://developer.android.com/reference/kotlin/androidx/room3/testing/MigrationTestHelper). In-repo examples: `references/testing.md`.
+
+### Room 2.x lifecycle (context only)
+
+Room 2.x remains in **maintenance** (bugfixes / dependency updates) while Room 3 is the active line ([blog](https://android-developers.googleblog.com/2026/03/room-30-modernizing-room.html)). Plan upgrades on a branch; align **Kotlin**, **KSP**, and **sqlite** versions with [Room 3 releases](https://developer.android.com/jetpack/androidx/releases/room3).
