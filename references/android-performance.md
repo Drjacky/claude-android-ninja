@@ -34,9 +34,118 @@ The [Play Developer Reporting API](https://developers.google.com/play/developer/
 
 **Implementation sketch:** call **`query`** on the relevant metric set (for example crash rate, ANR rate) with your timeline and metric names; map **`MetricsRow`** results into small **Kotlin data classes** per set; optionally compare values to the **Core thresholds** table above for a simple green/yellow/red summary; format markdown or blocks for Slack.
 
+#### Example (build-logic, schematic)
+
+Keep all of this **outside** `:app` (for example under `build-logic/convention/` or a dedicated `build-logic/play-vitals/` module). Pin the client in the version catalog; add **`kotlinx-coroutines-core`** to that module if you use **`suspend`** + **`withContext`**.
+
+Version pins live in **`gradle/libs.versions.toml`**. Check [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template): **`googlePlayDeveloperReporting`**, **`googleAuthLibraryOauth2Http`**, and the **`google-api-services-playdeveloperreporting`** / **`google-auth-library-oauth2-http`** library aliases, then bump **`googlePlayDeveloperReporting`** when you adopt a newer generated client.
+
+`build-logic` module `build.gradle.kts` (excerpt):
+
+```kotlin
+dependencies {
+    implementation(libs.google.api.services.playdeveloperreporting)
+    implementation(libs.google.auth.library.oauth2.http)
+    implementation(libs.kotlinx.coroutines.core)
+}
+```
+
+Domain-style models and a small repository: **suspend** functions perform HTTP on **`Dispatchers.IO`** (testable without a Gradle task). The generated client's **`execute()`** stays inside `withContext`.
+
+```kotlin
+// e.g. build-logic/.../reporting/AnrRateSummary.kt
+data class AnrRateSummary(
+    val dailyPercent: Float,
+    val weighted7dPercent: Float,
+    val weighted28dPercent: Float,
+)
+
+// e.g. build-logic/.../reporting/PlayVitalsRepository.kt
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
+import com.google.api.client.http.HttpRequestInitializer
+import com.google.api.client.json.gson.GsonFactory
+import com.google.api.services.playdeveloperreporting.Playdeveloperreporting
+import com.google.api.services.playdeveloperreporting.model.GooglePlayDeveloperReportingV1beta1QueryAnrRateMetricSetRequest
+import com.google.auth.http.HttpCredentialsAdapter
+import com.google.auth.oauth2.GoogleCredentials
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+private val PLAY_REPORTING_SCOPE = "https://www.googleapis.com/auth/playdeveloperreporting"
+
+class PlayVitalsRepository(
+    private val appName: String, // e.g. "apps/com.example.app" - resource name prefix for metric sets
+    private val serviceAccountJson: String,
+) {
+    private val transport = GoogleNetHttpTransport.newTrustedTransport()
+    private val jsonFactory = GsonFactory.getDefaultInstance()
+
+    private val http: HttpRequestInitializer =
+        HttpCredentialsAdapter(
+            GoogleCredentials
+                .fromStream(serviceAccountJson.byteInputStream())
+                .createScoped(PLAY_REPORTING_SCOPE),
+        )
+
+    private val api: Playdeveloperreporting by lazy {
+        Playdeveloperreporting.Builder(transport, jsonFactory, http)
+            .setApplicationName("play-vitals-reporting")
+            .build()
+    }
+
+    suspend fun queryAnrRates(request: GooglePlayDeveloperReportingV1beta1QueryAnrRateMetricSetRequest): AnrRateSummary =
+        withContext(Dispatchers.IO) {
+            val name = "$appName/anrRateMetricSet"
+            val row = api.vitals().anrrate().query(name, request).execute().rows?.firstOrNull()
+                ?: error("No ANR metrics row for the requested timeline")
+            val byMetric = row.metrics.associate { metric ->
+                metric.metric to (metric.decimalValue?.value?.toFloat()?.times(100f) ?: Float.NaN)
+            }
+            AnrRateSummary(
+                dailyPercent = byMetric["anrRate"] ?: Float.NaN,
+                weighted7dPercent = byMetric["anrRate7dUserWeighted"] ?: Float.NaN,
+                weighted28dPercent = byMetric["anrRate28dUserWeighted"] ?: Float.NaN,
+            )
+        }
+}
+```
+
+Build a **`TimelineSpec`** (aggregation period, start/end in **`America/Los_Angeles`** as **`GoogleTypeDateTime`**) per the REST reference; reuse the same pattern for **`crashRateMetricSet`**, **`slowStartRateMetricSet`**, etc., changing the vitals client path and metric names.
+
+Gradle task entry point: use **`runBlocking { … }`** and keep HTTP inside the repository's **`withContext(Dispatchers.IO)`** (avoid **`runBlocking(Dispatchers.IO)`** *and* another **`withContext(Dispatchers.IO)`**, pick one outer scope). Keep **`@TaskAction`** free of configuration-time work.
+
+```kotlin
+// e.g. build-logic/.../PlayVitalsReportingTask.kt
+import kotlinx.coroutines.runBlocking
+import org.gradle.api.DefaultTask
+import org.gradle.api.tasks.TaskAction
+
+abstract class PlayVitalsReportingTask : DefaultTask() {
+
+    @TaskAction
+    fun report() {
+        val json = System.getenv("PLAY_REPORTING_SERVICE_ACCOUNT_JSON")
+            ?: error("Set PLAY_REPORTING_SERVICE_ACCOUNT_JSON in CI/local env")
+        val app = System.getenv("PLAY_REPORTING_APP_RESOURCE")
+            ?: error("Set PLAY_REPORTING_APP_RESOURCE (e.g. apps/com.example.app)")
+        runBlocking {
+            val repository = PlayVitalsRepository(appName = app, serviceAccountJson = json)
+            // val timeline = buildTimelineSpecDaily(...) // GooglePlayDeveloperReportingV1beta1TimelineSpec
+            // val request = GooglePlayDeveloperReportingV1beta1QueryAnrRateMetricSetRequest()
+            //     .setTimelineSpec(timeline)
+            //     .setMetrics(listOf("anrRate", "anrRate7dUserWeighted", "anrRate28dUserWeighted", ...))
+            // val summary = repository.queryAnrRates(request)
+            // postToSlack(summary, ...)
+        }
+    }
+}
+```
+
+Register the task from your convention plugin's **`Project`** extension (see [gradle-setup.md](gradle-setup.md)); wire CI to run `./gradlew playVitalsReport` (or your task name) on a schedule.
+
 **CI/CD:** schedule a job (for example nightly) that runs `./gradlew <yourReportingTask>` and injects secrets at runtime: service account JSON, Slack token or webhook URL, and the **`apps/...`** resource name for the app you report on.
 
-**Kotlin and coroutines:** Gradle tasks run on the build JVM; I/O belongs in **`@TaskAction`** (or a worker). You may call the Java client's blocking **`execute()`** directly, or wrap suspend helpers with **`runBlocking(Dispatchers.IO) { … }`** so network work stays off unintended threads-see [coroutines-patterns.md](coroutines-patterns.md). Avoid heavy work during **configuration** phase.
+**Kotlin and coroutines:** Gradle tasks run on the build JVM; I/O belongs in **`@TaskAction`** (or a worker). Prefer **`suspend`** + **`withContext(Dispatchers.IO)`** in a dedicated class for clarity and tests; the task only **`runBlocking { … }`**. Avoid duplicate **`Dispatchers.IO`** if the task already uses **`runBlocking(Dispatchers.IO)`**. See [kotlin-patterns.md](kotlin-patterns.md) and [coroutines-patterns.md](coroutines-patterns.md). Avoid heavy work during **configuration** phase.
 
 ### Startup time (user experience)
 
