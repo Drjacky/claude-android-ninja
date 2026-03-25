@@ -34,7 +34,7 @@ Local database is the **single source of truth**. UI always reads from local dat
 
 ### Core Principles
 
-1. **Local database is source of truth** - Room database holds all data
+1. **Local database is source of truth** - Room 3 database holds all data
 2. **UI observes local data** - ViewModels collect Flow from Repository
 3. **Background sync** - WorkManager syncs with remote when connected
 4. **Optimistic updates** - Write to local first, sync to remote later

@@ -61,7 +61,7 @@ Four-layer architecture with strict module separation and unidirectional data fl
 │   │            │                     │                        │         │
 │   │  ┌─────────▼─────────┐  ┌────────▼──────────────┐         │         │
 │   │  │  Local DataSource │  │  Remote DataSource    │         │         │
-│   │  │   (Room + DAO)    │  │     (Retrofit)        │         │         │
+│   │  │   (Room 3 + DAO)  │  │     (Retrofit)        │         │         │
 │   │  └─────────┬─────────┘  └───────────────────────┘         │         │
 │   │            │                                              │         │
 │   │  ┌─────────▼──────────────────────────────────────┐       │         │
@@ -103,7 +103,7 @@ Four-layer architecture with strict module separation and unidirectional data fl
 
 ## Cross-cutting anti-patterns (quick reference)
 
-Domain-specific pitfalls (navigation, Room, Paging, etc.) live in their topic references. This table is a **layering and state-shape** checklist. Deeper guidance on recomposition and stability: `references/android-performance.md` and `references/compose-patterns.md`.
+Domain-specific pitfalls (navigation, Room 3, Paging, etc.) live in their topic references. This table is a **layering and state-shape** checklist. Deeper guidance on recomposition and stability: `references/android-performance.md` and `references/compose-patterns.md`.
 
 | Anti-pattern                                                                       | Why it hurts                                                             | Prefer instead                                                                                                      |
 |------------------------------------------------------------------------------------|--------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
@@ -213,15 +213,15 @@ internal class AuthRepositoryImpl @Inject constructor(
 
 | Type        | Module         | Implementation  | Purpose                             |
 |-------------|----------------|-----------------|-------------------------------------|
-| Local       | core/database  | Room DAO        | Persistent storage, source of truth |
+| Local       | core/database  | Room 3 DAO      | Persistent storage, source of truth |
 | Remote      | core/network   | Retrofit API    | Network data fetching               |
 | Preferences | core/datastore | Proto DataStore | User settings, simple key-value     |
 
 ### DataStore (Preferences & Typed)
 
 **When to use what:**
-- **Room:** Relational data, SQL queries (`WHERE` / `JOIN`), indexes, unbounded or **large** collections (order-of **~100+ entries** is a common threshold), partial updates, referential integrity.
-- **DataStore:** Small preference blobs: simple key-value pairs, typed settings objects, feature flags. Does **not** support partial updates, ad hoc queries, or relational integrity-use Room when you need those.
+- **Room 3:** Relational data, SQL queries (`WHERE` / `JOIN`), indexes, unbounded or **large** collections (order-of **~100+ entries** is a common threshold), partial updates, referential integrity.
+- **DataStore:** Small preference blobs: simple key-value pairs, typed settings objects, feature flags. Does **not** support partial updates, ad hoc queries, or relational integrity—use Room 3 when you need those.
 - **Files:** Large media, blobs.
 - **MultiProcessDataStoreFactory:** Only if accessing data across multiple processes-and then **every** reader/writer for that file must use the multi-process path (see Critical Rules).
 
@@ -578,7 +578,7 @@ Hilt provides **compile-time DI** across features and core modules: `@Module` / 
 
 | Annotation                | Lifetime                                       | Typical use                                          |
 |---------------------------|------------------------------------------------|------------------------------------------------------|
-| `@Singleton`              | Application                                    | Retrofit, `OkHttp`, `Room`, `DataStore`, dispatchers |
+| `@Singleton`              | Application                                    | Retrofit, `OkHttp`, Room 3, `DataStore`, dispatchers |
 | `@ActivityRetainedScoped` | Survives config change until activity finished | Session-like state (use sparingly)                   |
 | `@ViewModelScoped`        | Same as hosting `ViewModel`                    | Feature helpers (validators, calculators)            |
 | `@ActivityScoped`         | Activity instance                              | Rare in Compose-first apps                           |
@@ -842,7 +842,7 @@ User Action → Screen → Navigator Interface → App Module → Navigation3
 │  │                    DATA SOURCES / NAVIGATION ENGINE                          │  │
 │  │  ┌─────────────────┐  ┌─────────────────┐  ┌──────────────────────────────┐  │  │
 │  │  │  Local Storage  │  │  Remote API     │  │  Navigation3                 │  │  │
-│  │  │   (Room)        │  │   (Retrofit)    │  │  (NavController)             │  │  │
+│  │  │   (Room 3)      │  │   (Retrofit)    │  │  (NavController)             │  │  │
 │  │  └─────────────────┘  └─────────────────┘  └──────────────────────────────┘  │  │
 │  └──────────────────────────────────────────────────────────────────────────────┘  │
 │                                                                                    │

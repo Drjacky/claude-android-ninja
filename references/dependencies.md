@@ -70,7 +70,7 @@ Always check `assets/libs.versions.toml.template` before adding or changing depe
 - `core-ktx`, `lifecycle-runtime-ktx`
 - Provide Kotlin-friendly APIs and coroutine support
 
-**Room 3:** Use **`androidx.room3:room3-runtime`**, **`sqlite-bundled`**, and KSP **`room3-compiler`** (see version catalog). DAOs are **coroutine-first** (`suspend`, `Flow`); Optional **`room3-paging`** only when a DAO returns `PagingSource`; **`room3-testing`** for instrumented DB tests.
+**Room 3:** Use **`androidx.room3:room3-runtime`**, **`sqlite-bundled`**, and KSP **`room3-compiler`** (see version catalog). DAOs are **coroutine-first** (`suspend`, `Flow`). Optional **`room3-paging`** only when a DAO returns `PagingSource`; **`room3-testing`** for instrumented DB tests.
 
 **Never use legacy support libraries:**
 - ❌ `com.android.support.*` (deprecated)
@@ -234,7 +234,7 @@ kapt {
 
 dependencies {
     kapt(libs.hilt.compiler)
-    kapt(libs.room.compiler) // Room 2.x
+    kapt("androidx.room:room-compiler:<room2Version>") // Room 2.x only - not in this skillset catalog
 }
 
 // New

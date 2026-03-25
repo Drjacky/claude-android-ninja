@@ -231,7 +231,7 @@ inline fun <reified T> Retrofit.create(): T {
     return create(T::class.java)
 }
 
-// ✅ Room DAO with reified type
+// ✅ Room 3 DAO with reified type
 inline fun <reified T> Database.dao(): T {
     return when (T::class) {
         UserDao::class -> userDao() as T

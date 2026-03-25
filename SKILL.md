@@ -5,7 +5,7 @@ license: Apache-2.0
 metadata:
   author: DrJacky
   version: 1.0.0
-  documentation: https://github.com/DrJacky/claude-android-ninja
+  documentation: https://github.com/Drjacky/claude-android-ninja
   tags: [android, kotlin, compose, mvvm, hilt, room, room3, datastore, paging, gradle, mobile]
 ---
 # Android Kotlin Compose Development

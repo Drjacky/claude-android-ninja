@@ -23,7 +23,7 @@ This directory contains Gradle convention plugins for consistent build configura
 | `app.android.library.jacoco`        | `AndroidLibraryJacocoConventionPlugin.kt`               | Code coverage for library    | Libraries (when coverage needed) |
 | `app.android.feature`               | `AndroidFeatureConventionPlugin.kt`                     | Feature module               | `:feature:auth`, etc.            |
 | `app.android.test`                  | `AndroidTestConventionPlugin.kt`                        | Test-only module             | `:benchmark`                     |
-| `app.android.room`                  | `AndroidRoomConventionPlugin.kt`                        | Room database                | Modules with DB                  |
+| `app.android.room`                  | `AndroidRoomConventionPlugin.kt`                        | Room 3 database              | Modules with DB                  |
 | `app.android.lint`                  | `AndroidLintConventionPlugin.kt`                        | Lint analysis                | All Android modules              |
 | `app.hilt`                          | `HiltConventionPlugin.kt`                               | Hilt DI                      | All modules                      |
 | `app.detekt`                        | `DetektConventionPlugin.kt`                             | Detekt analysis              | All modules                      |

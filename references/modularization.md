@@ -56,16 +56,16 @@ See [Feature Module Structure](#feature-module-structure) for the full directory
 ### Core Modules (`core/`)
 Shared library code used across features with strict dependency direction.
 
-| Module           | Purpose                                         | Dependencies                                        | Key Classes                                                                            |
-|------------------|-------------------------------------------------|-----------------------------------------------------|----------------------------------------------------------------------------------------|
-| `core:domain`    | Domain models, use cases, repository interfaces | None (pure Kotlin)                                  | `AuthToken`, `User`, `LoginUseCase`, `AuthRepository` interface                        |
-| `core:data`      | Repository implementations, data coordination   | `core:domain`                                       | `AuthRepositoryImpl`, `AuthRemoteDataSource`, `AuthLocalDataSource`                    |
-| `core:database`  | Room database, DAOs, entities                   | `core:model` (if separate), otherwise `core:domain` | `AuthDatabase`, `AuthTokenDao`, `UserEntity`                                           |
-| `core:network`   | Retrofit API, network models                    | `core:model` (if separate), otherwise `core:domain` | `AuthApi`, `NetworkAuthResponse`                                                       |
-| `core:datastore` | Proto DataStore preferences                     | None                                                | `AuthPreferencesDataSource`                                                            |
-| `core:common`    | Shared utilities, extensions                    | None                                                | `AppDispatchers`, `ResultExtensions`                                                   |
-| `core:ui`        | Reusable UI components, themes, base ViewModels | `core:domain` (optional)                            | `AuthForm`, `AuthTheme`, `BaseViewModel`                                               |
-| `core:testing`   | Test utilities, test doubles                    | Depends on module being tested                      | `TestDispatcherRule`, `FakeAuthRepository`                                             |
+| Module           | Purpose                                         | Dependencies                                        | Key Classes                                                         |
+|------------------|-------------------------------------------------|-----------------------------------------------------|---------------------------------------------------------------------|
+| `core:domain`    | Domain models, use cases, repository interfaces | None (pure Kotlin)                                  | `AuthToken`, `User`, `LoginUseCase`, `AuthRepository` interface     |
+| `core:data`      | Repository implementations, data coordination   | `core:domain`                                       | `AuthRepositoryImpl`, `AuthRemoteDataSource`, `AuthLocalDataSource` |
+| `core:database`  | Room 3 database, DAOs, entities                 | `core:model` (if separate), otherwise `core:domain` | `AuthDatabase`, `AuthTokenDao`, `UserEntity`                        |
+| `core:network`   | Retrofit API, network models                    | `core:model` (if separate), otherwise `core:domain` | `AuthApi`, `NetworkAuthResponse`                                    |
+| `core:datastore` | Proto DataStore preferences                     | None                                                | `AuthPreferencesDataSource`                                         |
+| `core:common`    | Shared utilities, extensions                    | None                                                | `AppDispatchers`, `ResultExtensions`                                |
+| `core:ui`        | Reusable UI components, themes, base ViewModels | `core:domain` (optional)                            | `AuthForm`, `AuthTheme`, `BaseViewModel`                            |
+| `core:testing`   | Test utilities, test doubles                    | Depends on module being tested                      | `TestDispatcherRule`, `FakeAuthRepository`                          |
 
 ## Module Structure
 
@@ -84,7 +84,7 @@ core/
   ├── data/             # Data layer: Repository impl, DataSources, Data models
   ├── ui/               # Shared UI components, themes, base ViewModels
   ├── network/          # Retrofit, API models, network utilities
-  ├── database/         # Room DAOs, entities, migrations
+  ├── database/         # Room 3 DAOs, entities, migrations
   ├── datastore/        # Preferences storage
   ├── common/           # Shared utilities, extensions
   └── testing/          # Test utilities, test doubles
