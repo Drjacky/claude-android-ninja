@@ -20,11 +20,11 @@ Use Vitals alongside Firebase Crashlytics or similar to see stack traces and rel
 
 ### Optional: Play Vitals observability (Play Developer Reporting API)
 
-This is **opt-in**. Use it when you explicitly want **Play Console–grade aggregates** (ANR rate, crash rate, slow start, stuck background wakelocks, error counts, and related metric sets) **automated in your repo and CI**-for example a daily **Slack** (or similar) summary so the team sees health **without opening Play Console**. It does **not** replace in-app crash reporting ([Crashlytics/Sentry](crashlytics.md)); it complements it with **store-aggregated** signals.
+This is **opt-in**. Use it when you explicitly want **Play Console-grade aggregates** (ANR rate, crash rate, slow start, stuck background wakelocks, error counts, and related metric sets) **automated in your repo and CI** - for example a daily **Slack** (or similar) summary so the team sees health **without opening Play Console**. It does **not** replace in-app crash reporting ([Crashlytics/Sentry](crashlytics.md)); it complements it with **store-aggregated** signals.
 
-The [Play Developer Reporting API](https://developers.google.com/play/developer/reporting/reference/rest) exposes the same families of metrics as the console: each metric set supports **`get`** (describe the set) and **`query`** with a **`TimelineSpec`** (for example **`DAILY`** aggregation; the API commonly expects timezone such as **`America/Los_Angeles`** for timeline bounds-follow the reference for current rules).
+The [Play Developer Reporting API](https://developers.google.com/play/developer/reporting/reference/rest) exposes the same families of metrics as the console: each metric set supports **`get`** (describe the set) and **`query`** with a **`TimelineSpec`** (for example **`DAILY`** aggregation; the API commonly expects timezone such as **`America/Los_Angeles`** for timeline bounds - follow the reference for current rules).
 
-**Do not** put service account credentials or Reporting API calls inside the **`:app`** module or ship them in the APK. Align with this project's layout by implementing reporting as **Kotlin in `build-logic`** (or a small Gradle plugin module): a **`DefaultTask`** that queries the API and posts formatted output to Slack (Incoming Webhook or Slack Web API). That keeps secrets in **CI/environment variables** and leaves feature modules unchanged-see [modularization.md](modularization.md) and [gradle-setup.md](gradle-setup.md).
+**Do not** put service account credentials or Reporting API calls inside the **`:app`** module or ship them in the APK. Align with this project's layout by implementing reporting as **Kotlin in `build-logic`** (or a small Gradle plugin module): a **`DefaultTask`** that queries the API and posts formatted output to Slack (Incoming Webhook or Slack Web API). That keeps secrets in **CI/environment variables** and leaves feature modules unchanged - see [modularization.md](modularization.md) and [gradle-setup.md](gradle-setup.md).
 
 **Authentication:** use a Google Cloud **service account** with access to your Play Developer account; load JSON from an **environment variable** or CI secret (never commit keys). Request OAuth scope:
 
@@ -93,11 +93,14 @@ class PlayVitalsRepository(
             .build()
     }
 
-    suspend fun queryAnrRates(request: GooglePlayDeveloperReportingV1beta1QueryAnrRateMetricSetRequest): AnrRateSummary =
+    /** Returns null if the API returns no row (freshness lag, bad window) or on transport failure, do not fail the Gradle task. */
+    suspend fun queryAnrRates(request: GooglePlayDeveloperReportingV1beta1QueryAnrRateMetricSetRequest): AnrRateSummary? =
         withContext(Dispatchers.IO) {
             val name = "$appName/anrRateMetricSet"
-            val row = api.vitals().anrrate().query(name, request).execute().rows?.firstOrNull()
-                ?: error("No ANR metrics row for the requested timeline")
+            val row = runCatching {
+                api.vitals().anrrate().query(name, request).execute().rows?.firstOrNull()
+            }.getOrElse { return@withContext null }
+                ?: return@withContext null
             val byMetric = row.metrics.associate { metric ->
                 metric.metric to (metric.decimalValue?.value?.toFloat()?.times(100f) ?: Float.NaN)
             }
@@ -109,6 +112,8 @@ class PlayVitalsRepository(
         }
 }
 ```
+
+This runs only on the **build machine** (Gradle), not in the shipped app. Throwing **`error()`** / letting exceptions propagate would still **fail the task and can fail CI**. For optional health reporting, prefer **nullable / `Result`**, **`runCatching`**, Gradle **`logger.lifecycle` / `logger.warn`**, post "metrics unavailable" to Slack, and **return from `@TaskAction` without rethrowing** so the job exits successfully unless you explicitly want a red pipeline for misconfiguration.
 
 Build a **`TimelineSpec`** (aggregation period, start/end in **`America/Los_Angeles`** as **`GoogleTypeDateTime`**) per the REST reference; reuse the same pattern for **`crashRateMetricSet`**, **`slowStartRateMetricSet`**, etc., changing the vitals client path and metric names.
 
@@ -125,9 +130,11 @@ abstract class PlayVitalsReportingTask : DefaultTask() {
     @TaskAction
     fun report() {
         val json = System.getenv("PLAY_REPORTING_SERVICE_ACCOUNT_JSON")
-            ?: error("Set PLAY_REPORTING_SERVICE_ACCOUNT_JSON in CI/local env")
         val app = System.getenv("PLAY_REPORTING_APP_RESOURCE")
-            ?: error("Set PLAY_REPORTING_APP_RESOURCE (e.g. apps/com.example.app)")
+        if (json.isNullOrBlank() || app.isNullOrBlank()) {
+            logger.warn("Skipping play vitals report: set PLAY_REPORTING_SERVICE_ACCOUNT_JSON and PLAY_REPORTING_APP_RESOURCE")
+            return
+        }
         runBlocking {
             val repository = PlayVitalsRepository(appName = app, serviceAccountJson = json)
             // val timeline = buildTimelineSpecDaily(...) // GooglePlayDeveloperReportingV1beta1TimelineSpec
@@ -135,7 +142,7 @@ abstract class PlayVitalsReportingTask : DefaultTask() {
             //     .setTimelineSpec(timeline)
             //     .setMetrics(listOf("anrRate", "anrRate7dUserWeighted", "anrRate28dUserWeighted", ...))
             // val summary = repository.queryAnrRates(request)
-            // postToSlack(summary, ...)
+            // postToSlackAnr(summary) // if summary is null, post "ANR: n/a" or omit section; task still succeeds
         }
     }
 }
@@ -687,7 +694,7 @@ val locationRequest = LocationRequest.create().apply {
 
 ## Network Performance Optimization
 
-Network calls are slow (100–500ms), use battery, cost data, and can cause ANRs if done on the main thread.
+Network calls are slow (100-500ms), use battery, cost data, and can cause ANRs if done on the main thread.
 
 ### Best Practices
 
