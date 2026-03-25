@@ -3270,7 +3270,7 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
 
 #### Offline-first and `RemoteMediator`
 
-For **paged** lists backed by **Room** plus a remote API, use a [`RemoteMediator`](https://developer.android.com/topic/libraries/architecture/paging/v3-network-db) to load pages from the network into the local database and expose a `PagingSource` from Room to the `Pager`. That keeps the UI on a single `Flow<PagingData<T>>` while the database stays the source of truth. For broader sync, conflict handling, and invalidation patterns check `references/android-data-sync.md`.
+For **paged** lists backed by **Room 3** plus a remote API, use a [`RemoteMediator`](https://developer.android.com/topic/libraries/architecture/paging/v3-network-db) to load pages from the network into the local database and expose a `PagingSource` from the DAO to the `Pager`. In **Room 3**, add **`androidx.room3:room3-paging`** and **`@DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)`** on the DAO (or `@Database`) per [Room 3 release notes](https://developer.android.com/jetpack/androidx/releases/room3). That keeps the UI on a single `Flow<PagingData<T>>` while the database stays the source of truth. For broader sync, conflict handling, and invalidation patterns check `references/android-data-sync.md`.
 
 ### Flow Layouts
 

@@ -1684,6 +1684,8 @@ class AppNavigator(private val navigator: Navigator) : ProfileNavigator, AuthNav
 
 ## Room Database Patterns
 
+Guidance targets **Room 3** (`androidx.room3`): annotations such as `@Dao`, `@Entity`, `@Query` live in the `androidx.room3` package, and the database **must** be built with `.setDriver(...)` (for example [`BundledSQLiteDriver`](https://developer.android.com/reference/kotlin/androidx/sqlite/driver/bundled/BundledSQLiteDriver)). Invalidation is **Flow**-based (`InvalidationTracker.createFlow`); do not use removed `InvalidationTracker.Observer` APIs.
+
 ### The `@Upsert` Caveat
 Use `@Insert(onConflict = OnConflictStrategy.REPLACE)` instead of `@Upsert` if you need to return the inserted row ID. `@Upsert` returns `-1` on updates, which can break logic depending on the ID.
 
