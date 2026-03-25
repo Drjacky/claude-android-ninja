@@ -17,34 +17,34 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 ## Quick Reference
 
-| Task                                                                    | Reference File                                                  |
-|-------------------------------------------------------------------------|-----------------------------------------------------------------|
-| Project structure & modules                                             | [modularization.md](references/modularization.md)               |
-| Architecture layers, (Domain, Data, UI, Common, ...)                    | [architecture.md](references/architecture.md)                   |
-| Compose patterns, Material motion, animation, modifiers, stability      | [compose-patterns.md](references/compose-patterns.md)           |
-| Accessibility, TalkBack, label copy, live regions, Espresso a11y checks | [android-accessibility.md](references/android-accessibility.md) |
-| Notifications, foreground services, media/audio, PiP, sharesheet        | [android-notifications.md](references/android-notifications.md) |
-| Data sync & offline-first patterns                                      | [android-data-sync.md](references/android-data-sync.md)         |
-| Material 3 theming, spacing tokens, category fit, dynamic colors        | [android-theming.md](references/android-theming.md)             |
-| Navigation3, adaptive navigation, large-screen quality tiers            | [android-navigation.md](references/android-navigation.md)       |
-| Kotlin best practices, View lifecycle interop                           | [kotlin-patterns.md](references/kotlin-patterns.md)             |
-| Coroutines best practices                                               | [coroutines-patterns.md](references/coroutines-patterns.md)     |
-| Gradle, product flavors, BuildConfig, build performance                 | [gradle-setup.md](references/gradle-setup.md)                   |
-| Testing approach                                                        | [testing.md](references/testing.md)                             |
-| Internationalization & localization                                     | [android-i18n.md](references/android-i18n.md)                   |
-| Icons, adaptive launcher specs, custom drawing                          | [android-graphics.md](references/android-graphics.md)           |
-| Runtime permissions                                                     | [android-permissions.md](references/android-permissions.md)     |
-| Kotlin delegation patterns                                              | [kotlin-delegation.md](references/kotlin-delegation.md)         |
-| Crash reporting                                                         | [crashlytics.md](references/crashlytics.md)                     |
-| StrictMode guardrails                                                   | [android-strictmode.md](references/android-strictmode.md)       |
-| Multi-module dependencies                                               | [dependencies.md](references/dependencies.md)                   |
-| Code quality (Detekt)                                                   | [code-quality.md](references/code-quality.md)                   |
-| Code coverage (JaCoCo)                                                  | [android-code-coverage.md](references/android-code-coverage.md) |
-| Security, Credential Manager, identifiers, Play Data safety             | [android-security.md](references/android-security.md)           |
-| Design patterns                                                         | [design-patterns.md](references/design-patterns.md)             |
-| Performance, Play Vitals, startup, recomposition, jank, battery         | [android-performance.md](references/android-performance.md)     |
-| Debugging, Logcat levels, ANR, Gradle error patterns, R8, memory leaks  | [android-debugging.md](references/android-debugging.md)         |
-| Migration guides (XML, RxJava, Navigation, Compose)                     | [migration.md](references/migration.md)                         |
+| Task                                                                                                                                                                  | Reference File                                                  |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------|
+| Project structure & modules                                                                                                                                           | [modularization.md](references/modularization.md)               |
+| Architecture layers, (Domain, Data, UI, Common, ...)                                                                                                                  | [architecture.md](references/architecture.md)                   |
+| Compose patterns, Material motion, animation, modifiers, stability                                                                                                    | [compose-patterns.md](references/compose-patterns.md)           |
+| Accessibility, TalkBack, label copy, live regions, Espresso a11y checks                                                                                               | [android-accessibility.md](references/android-accessibility.md) |
+| Notifications, foreground services, media/audio, PiP, sharesheet                                                                                                      | [android-notifications.md](references/android-notifications.md) |
+| Data sync & offline-first patterns                                                                                                                                    | [android-data-sync.md](references/android-data-sync.md)         |
+| Material 3 theming, spacing tokens, category fit, dynamic colors                                                                                                      | [android-theming.md](references/android-theming.md)             |
+| Navigation3, adaptive navigation, large-screen quality tiers                                                                                                          | [android-navigation.md](references/android-navigation.md)       |
+| Kotlin best practices, View lifecycle interop                                                                                                                         | [kotlin-patterns.md](references/kotlin-patterns.md)             |
+| Coroutines best practices                                                                                                                                             | [coroutines-patterns.md](references/coroutines-patterns.md)     |
+| Gradle, product flavors, BuildConfig, build performance                                                                                                               | [gradle-setup.md](references/gradle-setup.md)                   |
+| Testing approach                                                                                                                                                      | [testing.md](references/testing.md)                             |
+| Internationalization & localization                                                                                                                                   | [android-i18n.md](references/android-i18n.md)                   |
+| Icons, adaptive launcher specs, custom drawing                                                                                                                        | [android-graphics.md](references/android-graphics.md)           |
+| Runtime permissions                                                                                                                                                   | [android-permissions.md](references/android-permissions.md)     |
+| Kotlin delegation patterns                                                                                                                                            | [kotlin-delegation.md](references/kotlin-delegation.md)         |
+| Crash reporting                                                                                                                                                       | [crashlytics.md](references/crashlytics.md)                     |
+| StrictMode guardrails                                                                                                                                                 | [android-strictmode.md](references/android-strictmode.md)       |
+| Multi-module dependencies                                                                                                                                             | [dependencies.md](references/dependencies.md)                   |
+| Code quality (Detekt)                                                                                                                                                 | [code-quality.md](references/code-quality.md)                   |
+| Code coverage (JaCoCo)                                                                                                                                                | [android-code-coverage.md](references/android-code-coverage.md) |
+| Security, Play Integrity (Standard/Classic), server decode, `requestHash`/`nonce`, tiered policy, remediation; Credential Manager; local root checks as supplementary | [android-security.md](references/android-security.md)           |
+| Design patterns                                                                                                                                                       | [design-patterns.md](references/design-patterns.md)             |
+| Performance, Play Vitals, startup, recomposition, jank, battery                                                                                                       | [android-performance.md](references/android-performance.md)     |
+| Debugging, Logcat levels, ANR, Gradle error patterns, R8, memory leaks                                                                                                | [android-debugging.md](references/android-debugging.md)         |
+| Migration guides (XML, RxJava, Navigation, Compose)                                                                                                                   | [migration.md](references/migration.md)                         |
 
 ## Workflow Decision Tree
 
@@ -300,3 +300,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Use [android-security.md](references/android-security.md) for comprehensive security guide  
 → Follow [android-permissions.md](references/android-permissions.md) for runtime permissions  
 → Check [crashlytics.md](references/crashlytics.md) for PII scrubbing and data privacy
+
+**Implementing fraud-resistant or high-value flows (payments, session bootstrap, integrity-gated APIs)?**
+→ Read [android-security.md](references/android-security.md): **Modern device trust and abuse resistance**, **Play Integrity API** (prerequisites, Standard vs Classic, server checklist, errors, remediation), **Root and Emulator Detection** (how this fits next to Play Integrity), **Security Checklist**  
+→ Ask the engineer for Cloud Console / Play Console steps and the **Google Cloud project number** before wiring client code (see prerequisites in that guide)
