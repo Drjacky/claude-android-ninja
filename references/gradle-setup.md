@@ -80,6 +80,7 @@ dependencies {
     compileOnly(libs.ksp.gradlePlugin)
     compileOnly(libs.room3.gradlePlugin)
     implementation(libs.plugin.detekt)
+    implementation(libs.kotlinx.coroutines.core)
 }
 
 gradlePlugin {
@@ -205,15 +206,7 @@ Optional **Play Vitals reporting** (see [android-performance.md](android-perform
 
 The plugin is already wired in [`assets/convention/build.gradle.kts`](../assets/convention/build.gradle.kts) (`gradlePlugin { register("playVitals") { ... } }`). **`gradle/libs.versions.toml`** should include **`app-play-vitals`** from [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template) (`[plugins]`).
 
-**Apply (optional):** in the **root** `build.gradle.kts`, uncomment the plugin line from [`assets/build.gradle.kts.template`](../assets/build.gradle.kts.template):
-
-```kotlin
-plugins {
-    alias(libs.plugins.app.play.vitals)
-}
-```
-
-Do **not** apply **`app.play.vitals`** in `app/build.gradle.kts` or feature modules. **Wire CI** to run `./gradlew playVitalsReport` on a schedule.
+**Apply (optional):** in the **root** `build.gradle.kts` only, add **`alias(libs.plugins.app.play.vitals)`** to the **`plugins { }`** block (see [QUICK_REFERENCE.md](../assets/convention/QUICK_REFERENCE.md) - "Root project (optional)"). Do **not** apply **`app.play.vitals`** in `app/build.gradle.kts` or feature modules. **Wire CI** to run `./gradlew playVitalsReport` on a schedule.
 
 **Alternatives:** avoid registering this task from **`subprojects`** / **`allprojects`** (duplicates or wrong scope). For **what** to query and HTTP code, use [android-performance.md](android-performance.md); this section only covers **Gradle wiring** and the shipped convention sources.
 

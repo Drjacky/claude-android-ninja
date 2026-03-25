@@ -27,6 +27,7 @@ dependencies {
     compileOnly(libs.ksp.gradlePlugin)
     compileOnly(libs.room3.gradlePlugin)
     implementation(libs.plugin.detekt)
+    implementation(libs.kotlinx.coroutines.core)
 }
 
 gradlePlugin {

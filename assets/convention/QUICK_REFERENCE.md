@@ -97,7 +97,7 @@ plugins {
     // alias(libs.plugins.app.play.vitals)
 }
 ```
-See `assets/build.gradle.kts.template` and `references/android-performance.md`.
+See `references/android-performance.md`.
 
 ## Setup Instructions
 

@@ -36,17 +36,16 @@ The [Play Developer Reporting API](https://developers.google.com/play/developer/
 
 #### Example (build-logic, schematic)
 
-Keep all of this **outside** `:app` (for example under `build-logic/convention/` or a dedicated `build-logic/play-vitals/` module). Pin the client in the version catalog; add **`kotlinx-coroutines-core`** to that module if you use **`suspend`** + **`withContext`**.
+Keep all of this **outside** `:app` (for example under `build-logic/convention/` or a dedicated `build-logic/play-vitals/` module). Pin the client in the version catalog. **`build-logic/convention`** already includes **`kotlinx-coroutines-core`** for **`PlayVitalsReportingTask`**; add **`suspend`** + **`withContext`** usage in **`PlayVitalsRepository`** as shown below.
 
 Version pins live in **`gradle/libs.versions.toml`**. Check [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template): **`googlePlayDeveloperReporting`**, **`googleAuthLibraryOauth2Http`**, and the **`google-api-services-playdeveloperreporting`** / **`google-auth-library-oauth2-http`** library aliases, then bump **`googlePlayDeveloperReporting`** when you adopt a newer generated client.
 
-`build-logic` module `build.gradle.kts` (excerpt):
+`build-logic` module `build.gradle.kts` - add these when you implement **`PlayVitalsRepository`** ( **`kotlinx-coroutines-core`** is already there for **`PlayVitalsReportingTask`**):
 
 ```kotlin
 dependencies {
     implementation(libs.google.api.services.playdeveloperreporting)
     implementation(libs.google.auth.library.oauth2.http)
-    implementation(libs.kotlinx.coroutines.core)
 }
 ```
 
@@ -117,38 +116,9 @@ This runs only on the **build machine** (Gradle), not in the shipped app. Throwi
 
 Build a **`TimelineSpec`** (aggregation period, start/end in **`America/Los_Angeles`** as **`GoogleTypeDateTime`**) per the REST reference; reuse the same pattern for **`crashRateMetricSet`**, **`slowStartRateMetricSet`**, etc., changing the vitals client path and metric names.
 
-Gradle task entry point: use **`runBlocking { … }`** and keep HTTP inside the repository's **`withContext(Dispatchers.IO)`** (avoid **`runBlocking(Dispatchers.IO)`** *and* another **`withContext(Dispatchers.IO)`**, pick one outer scope). Keep **`@TaskAction`** free of configuration-time work.
+**Gradle task entry point:** the canonical task body lives in **[`PlayVitalsReportingTask.kt`](../assets/convention/PlayVitalsReportingTask.kt)** - env check, then **`runBlocking { ... }`** with commented placeholders for **`PlayVitalsRepository`**, request, and Slack. Keep HTTP inside the repository's **`withContext(Dispatchers.IO)`** (avoid **`runBlocking(Dispatchers.IO)`** *and* another **`withContext(Dispatchers.IO)`** - pick one outer scope). Keep **`@TaskAction`** free of configuration-time work. **`build-logic/convention`** already depends on **`kotlinx-coroutines-core`** for **`runBlocking`**; add Reporting API artifacts when you uncomment the repository.
 
-```kotlin
-// e.g. build-logic/.../PlayVitalsReportingTask.kt
-import kotlinx.coroutines.runBlocking
-import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.TaskAction
-
-abstract class PlayVitalsReportingTask : DefaultTask() {
-
-    @TaskAction
-    fun report() {
-        val json = System.getenv("PLAY_REPORTING_SERVICE_ACCOUNT_JSON")
-        val app = System.getenv("PLAY_REPORTING_APP_RESOURCE")
-        if (json.isNullOrBlank() || app.isNullOrBlank()) {
-            logger.warn("Skipping play vitals report: set PLAY_REPORTING_SERVICE_ACCOUNT_JSON and PLAY_REPORTING_APP_RESOURCE")
-            return
-        }
-        runBlocking {
-            val repository = PlayVitalsRepository(appName = app, serviceAccountJson = json)
-            // val timeline = buildTimelineSpecDaily(...) // GooglePlayDeveloperReportingV1beta1TimelineSpec
-            // val request = GooglePlayDeveloperReportingV1beta1QueryAnrRateMetricSetRequest()
-            //     .setTimelineSpec(timeline)
-            //     .setMetrics(listOf("anrRate", "anrRate7dUserWeighted", "anrRate28dUserWeighted", ...))
-            // val summary = repository.queryAnrRates(request)
-            // postToSlackAnr(summary) // if summary is null, post "ANR: n/a" or omit section; task still succeeds
-        }
-    }
-}
-```
-
-**Registration:** sources ship under **`assets/convention/`** ([`PlayVitalsReportingConventionPlugin.kt`](../assets/convention/PlayVitalsReportingConventionPlugin.kt), [`PlayVitalsReportingTask.kt`](../assets/convention/PlayVitalsReportingTask.kt)), registered in [`assets/convention/build.gradle.kts`](../assets/convention/build.gradle.kts), optional root apply in [`assets/build.gradle.kts.template`](../assets/build.gradle.kts.template), catalog **`app-play-vitals`** in [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template). After you copy **`build-logic`**, uncomment **`alias(libs.plugins.app.play.vitals)`** in the root **`build.gradle.kts`**. Full steps: [gradle-setup.md](gradle-setup.md) - "Registering a root-level reporting task (Play Vitals)".
+**Registration:** sources ship under **`assets/convention/`** ([`PlayVitalsReportingConventionPlugin.kt`](../assets/convention/PlayVitalsReportingConventionPlugin.kt), [`PlayVitalsReportingTask.kt`](../assets/convention/PlayVitalsReportingTask.kt)), registered in [`assets/convention/build.gradle.kts`](../assets/convention/build.gradle.kts), catalog **`app-play-vitals`** in [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template). After you copy **`build-logic`**, add **`alias(libs.plugins.app.play.vitals)`** in the **root** **`build.gradle.kts`** only ([gradle-setup.md](gradle-setup.md), [QUICK_REFERENCE.md](../assets/convention/QUICK_REFERENCE.md)).
 
 **CI/CD:** schedule a job (for example nightly) that runs `./gradlew <yourReportingTask>` and injects secrets at runtime: service account JSON, Slack token or webhook URL, and the **`apps/...`** resource name for the app you report on.
 

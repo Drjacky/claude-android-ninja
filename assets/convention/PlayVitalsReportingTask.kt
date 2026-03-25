@@ -1,8 +1,9 @@
 /*
- * Optional Gradle task: placeholder for Play Developer Reporting API + Slack.
- * Add PlayVitalsRepository and API calls per references/android-performance.md
+ * Optional Gradle task: entry point for Play Developer Reporting API + Slack.
+ * Add PlayVitalsRepository, Reporting API deps, and timeline helpers per references/android-performance.md
  */
 
+import kotlinx.coroutines.runBlocking
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 
@@ -19,8 +20,18 @@ abstract class PlayVitalsReportingTask : DefaultTask() {
             )
             return
         }
-        logger.lifecycle(
-            "Play vitals: env present for $app. Wire PlayVitalsRepository per references/android-performance.md",
-        )
+        runBlocking {
+            logger.lifecycle(
+                "Play vitals: env OK for $app. Add PlayVitalsRepository and uncomment the lines below (see references/android-performance.md).",
+            )
+            // Add PlayVitalsRepository to this module and catalog deps, then uncomment:
+            // val repository = PlayVitalsRepository(appName = app, serviceAccountJson = json)
+            // val timeline = buildTimelineSpecDaily(...) // GooglePlayDeveloperReportingV1beta1TimelineSpec
+            // val request = GooglePlayDeveloperReportingV1beta1QueryAnrRateMetricSetRequest()
+            //     .setTimelineSpec(timeline)
+            //     .setMetrics(listOf("anrRate", "anrRate7dUserWeighted", "anrRate28dUserWeighted", ...))
+            // val summary = repository.queryAnrRates(request)
+            // postToSlackAnr(summary) // if summary is null, post "ANR: n/a" or omit section; task still succeeds
+        }
     }
 }
