@@ -148,7 +148,7 @@ abstract class PlayVitalsReportingTask : DefaultTask() {
 }
 ```
 
-Register the task from your convention plugin's **`Project`** extension (see [gradle-setup.md](gradle-setup.md)); wire CI to run `./gradlew playVitalsReport` (or your task name) on a schedule.
+**Registration:** sources ship under **`assets/convention/`** ([`PlayVitalsReportingConventionPlugin.kt`](../assets/convention/PlayVitalsReportingConventionPlugin.kt), [`PlayVitalsReportingTask.kt`](../assets/convention/PlayVitalsReportingTask.kt)), registered in [`assets/convention/build.gradle.kts`](../assets/convention/build.gradle.kts), optional root apply in [`assets/build.gradle.kts.template`](../assets/build.gradle.kts.template), catalog **`app-play-vitals`** in [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template). After you copy **`build-logic`**, uncomment **`alias(libs.plugins.app.play.vitals)`** in the root **`build.gradle.kts`**. Full steps: [gradle-setup.md](gradle-setup.md) - "Registering a root-level reporting task (Play Vitals)".
 
 **CI/CD:** schedule a job (for example nightly) that runs `./gradlew <yourReportingTask>` and injects secrets at runtime: service account JSON, Slack token or webhook URL, and the **`apps/...`** resource name for the app you report on.
 

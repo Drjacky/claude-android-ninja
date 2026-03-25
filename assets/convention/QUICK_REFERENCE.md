@@ -32,6 +32,7 @@ This directory contains Gradle convention plugins for consistent build configura
 | `app.kotlin.serialization`          | `KotlinSerializationConventionPlugin.kt`                | JSON serialization           | Network/data modules             |
 | `app.firebase`                      | `FirebaseConventionPlugin.kt`                           | Firebase Crashlytics         | `:app`                           |
 | `app.sentry`                        | `SentryConventionPlugin.kt`                             | Sentry crash reporting       | `:app`                           |
+| `app.play.vitals`                   | `PlayVitalsReportingConventionPlugin.kt`              | Optional Play Vitals task    | **Root** `build.gradle.kts` only |
 
 ## Common Plugin Combinations
 
@@ -88,6 +89,15 @@ plugins {
     alias(libs.plugins.app.detekt)
 }
 ```
+
+### Root project (optional)
+Play Vitals reporting task only - apply **only** in the **root** `build.gradle.kts`, not in `:app`:
+```kotlin
+plugins {
+    // alias(libs.plugins.app.play.vitals)
+}
+```
+See `assets/build.gradle.kts.template` and `references/android-performance.md`.
 
 ## Setup Instructions
 

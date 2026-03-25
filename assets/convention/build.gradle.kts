@@ -103,5 +103,9 @@ gradlePlugin {
             id = "app.sentry"
             implementationClass = "SentryConventionPlugin"
         }
+        register("playVitals") {
+            id = "app.play.vitals"
+            implementationClass = "PlayVitalsReportingConventionPlugin"
+        }
     }
 }

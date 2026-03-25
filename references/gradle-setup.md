@@ -20,7 +20,7 @@ Build system patterns following our modern Android multi-module architecture wit
 ## Table of Contents
 1. [Project Structure](#project-structure)
 2. [Version Catalog](#version-catalog)
-3. [Convention Plugins](#convention-plugins)
+3. [Convention Plugins](#convention-plugins) (includes [root-level reporting task registration](#registering-a-root-level-reporting-task-play-vitals-example))
 4. [Code Quality (Detekt)](#code-quality-detekt)
 5. [Module Build Files](#module-build-files)
 6. [Build Variants & Optimization](#build-variants--optimization)
@@ -45,7 +45,7 @@ Key points:
 ## Convention Plugins
 
 **Complete Convention Plugin Implementation**: All plugin source files are available in `assets/convention/` including:
-- All 18 convention plugins (`.kt` files)
+- All `*ConventionPlugin.kt` implementations (including optional `PlayVitalsReportingConventionPlugin.kt`), `PlayVitalsReportingTask.kt`, and related `.kt` files
 - Configuration files in `config/` subdirectory (KotlinAndroid.kt, AndroidCompose.kt, Jacoco.kt, etc.)
 - Build script (`build.gradle.kts`)
 - Setup guide and quick reference (`QUICK_REFERENCE.md`)
@@ -144,6 +144,10 @@ gradlePlugin {
             id = "app.firebase"
             implementationClass = "FirebaseConventionPlugin"
         }
+        register("playVitals") {
+            id = "app.play.vitals"
+            implementationClass = "PlayVitalsReportingConventionPlugin"
+        }
     }
 }
 ```
@@ -177,6 +181,7 @@ All convention plugin implementations are available in `assets/convention/`:
 - `KotlinSerializationConventionPlugin.kt` - JSON serialization
 - `FirebaseConventionPlugin.kt` - Firebase Crashlytics integration
 - `SentryConventionPlugin.kt` - Sentry crash reporting integration
+- `PlayVitalsReportingConventionPlugin.kt` - Optional root `playVitalsReport` task ([Play Vitals reporting](android-performance.md)); pairs with `PlayVitalsReportingTask.kt`
 
 **Configuration Files (in config/ subdirectory):**
 - `config/KotlinAndroid.kt` - Common Kotlin/Android setup
@@ -188,6 +193,29 @@ All convention plugin implementations are available in `assets/convention/`:
 - `config/Jacoco.kt` - Code coverage configuration
 
 See `assets/convention/QUICK_REFERENCE.md` for detailed setup instructions and usage examples.
+
+### Registering a root-level reporting task (Play Vitals)
+
+Optional **Play Vitals reporting** (see [android-performance.md](android-performance.md)) is implemented in this skillset as a real convention plugin you copy into **`build-logic`**:
+
+| Source (copy to `build-logic/convention/src/main/kotlin/`)                                                                | Role                                                                                                                              |
+|---------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| [`assets/convention/PlayVitalsReportingConventionPlugin.kt`](../assets/convention/PlayVitalsReportingConventionPlugin.kt) | Registers **`playVitalsReport`** on **`rootProject` only** (`id`: **`app.play.vitals`**)                                          |
+| [`assets/convention/PlayVitalsReportingTask.kt`](../assets/convention/PlayVitalsReportingTask.kt)                         | Default task body: env check + lifecycle log; add **`PlayVitalsRepository`** per [android-performance.md](android-performance.md) |
+
+The plugin is already wired in [`assets/convention/build.gradle.kts`](../assets/convention/build.gradle.kts) (`gradlePlugin { register("playVitals") { ... } }`). **`gradle/libs.versions.toml`** should include **`app-play-vitals`** from [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template) (`[plugins]`).
+
+**Apply (optional):** in the **root** `build.gradle.kts`, uncomment the plugin line from [`assets/build.gradle.kts.template`](../assets/build.gradle.kts.template):
+
+```kotlin
+plugins {
+    alias(libs.plugins.app.play.vitals)
+}
+```
+
+Do **not** apply **`app.play.vitals`** in `app/build.gradle.kts` or feature modules. **Wire CI** to run `./gradlew playVitalsReport` on a schedule.
+
+**Alternatives:** avoid registering this task from **`subprojects`** / **`allprojects`** (duplicates or wrong scope). For **what** to query and HTTP code, use [android-performance.md](android-performance.md); this section only covers **Gradle wiring** and the shipped convention sources.
 
 ## Module Build Files
 
