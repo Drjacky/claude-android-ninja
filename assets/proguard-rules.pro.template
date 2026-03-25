@@ -131,14 +131,14 @@
 
 
 # ==============================================================================
-# 7. ROOM
+# 7. ROOM 3
 # ==============================================================================
 # Room uses codegen (KSP), not reflection - no manual rules needed in most
 # cases. Add these if you reference Room types via reflection or custom logic.
 
--keep class * extends androidx.room.RoomDatabase
--keep @androidx.room.Entity class *
--dontwarn androidx.room.paging.**
+-keep class * extends androidx.room3.RoomDatabase
+-keep @androidx.room3.Entity class *
+-dontwarn androidx.room3.paging.**
 
 
 # ==============================================================================
