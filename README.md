@@ -36,7 +36,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Dependency management rules and templates
 - Crash reporting with provider-agnostic interfaces (Firebase/Sentry)
 - Runtime permissions with Compose patterns
-- Performance benchmarking (Macrobenchmark, Microbenchmark, Baseline Profiles, ProfileInstaller, System Tracing), Google Play Vitals context (crash/ANR bars, startup targets, frame budgets, battery/background), Compose recomposition optimization (three phases, deferred state reads, Strong Skipping Mode), and app startup optimization (App Startup library, splash screen, lazy initialization)
+- Performance benchmarking (Macrobenchmark, Microbenchmark, Baseline Profiles, ProfileInstaller, System Tracing), Google Play Vitals context (crash/ANR bars, startup targets, frame budgets, battery/background), optional Play Developer Reporting API vitals, Compose recomposition optimization (three phases, deferred state reads, Strong Skipping Mode), and app startup optimization (App Startup library, splash screen, lazy initialization)
 - StrictMode guardrails and Compose compiler stability diagnostics
 - Code coverage with JaCoCo (unit + instrumented tests)
 - Security (certificate pinning, encryption, biometrics, Credential Manager and passkeys, device identifiers and privacy, Play Data safety, Play Integrity Standard/Classic with server `decodeIntegrityToken`, `requestHash`/`nonce` binding, tiered policy, remediation, local root/emulator checks as supplementary)
@@ -59,7 +59,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - [`references/android-data-sync.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-data-sync.md) - offline-first, sync strategies, conflict resolution
 - [`references/kotlin-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/kotlin-patterns.md) - Kotlin best practices and View lifecycle interop (must-read for Kotlin code)
 - [`references/coroutines-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/coroutines-patterns.md) - coroutines best practices and patterns
-- [`references/gradle-setup.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/gradle-setup.md) - build logic, product flavors, BuildConfig, conventions, and build files
+- [`references/gradle-setup.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/gradle-setup.md) - build logic, product flavors, BuildConfig, conventions, build files, and registering optional root tasks (for example Play Vitals reporting)
 - [`references/testing.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/testing.md) - testing patterns with fakes, Hilt, Room 3, and Navigation3
 - [`references/android-graphics.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-graphics.md) - Material Symbols icons, adaptive launcher icons, Canvas drawing, Palette API
 - [`references/android-permissions.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-permissions.md) - runtime permissions and best practices
@@ -70,7 +70,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - [`references/android-security.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-security.md) - Play Integrity (Standard/Classic), server decode and verdict policy, `requestHash`/`nonce`, errors/remediation, device trust vs local root checks, Credential Manager, pinning, encryption, Data safety
 - [`references/code-quality.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/code-quality.md) - Detekt setup and code quality rules
 - [`references/dependencies.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/dependencies.md) - dependency rules and version catalog guidance
-- [`references/android-performance.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-performance.md) - Play Vitals context, benchmarking, recomposition, app startup, splash screen
+- [`references/android-performance.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-performance.md) - Play Vitals thresholds, optional Play Developer Reporting API (CI/Slack), benchmarking, recomposition, app startup, splash screen
 - [`references/android-debugging.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-debugging.md) - Logcat levels, ANR timeouts, LeakCanary, R8 de-obfuscation, Gradle errors, Compose recomposition
 - [`references/migration.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/migration.md) - XML to Compose, LiveData to StateFlow, RxJava, Navigation, Accompanist, Material, Edge-to-Edge, and Room 2.x → Room 3
 - [`references/design-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/design-patterns.md) - Android-focused design patterns
@@ -78,7 +78,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - [`assets/detekt.yml.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/assets/detekt.yml.template) - Detekt static analysis configuration
 - [`assets/libs.versions.toml.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/assets/libs.versions.toml.template) - Version catalog with all dependencies
 - [`assets/settings.gradle.kts.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/assets/settings.gradle.kts.template) - Project settings with repositories
-- [`assets/convention/`](https://github.com/Drjacky/claude-android-ninja/tree/master/assets/convention) - Convention plugin implementations (18 plugins + 7 config files)
+- [`assets/convention/`](https://github.com/Drjacky/claude-android-ninja/tree/master/assets/convention) - Gradle convention plugins, `config/` helpers, and [`QUICK_REFERENCE.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/assets/convention/QUICK_REFERENCE.md)
 
 ## Scope
 This skill is focused on Android app development using:
