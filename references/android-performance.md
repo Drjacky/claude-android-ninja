@@ -18,6 +18,26 @@ Google publishes bad-behavior thresholds for **user-perceived** crash rate and A
 
 Use Vitals alongside Firebase Crashlytics or similar to see stack traces and release correlation.
 
+### Optional: Play Vitals observability (Play Developer Reporting API)
+
+This is **opt-in**. Use it when you explicitly want **Play Console–grade aggregates** (ANR rate, crash rate, slow start, stuck background wakelocks, error counts, and related metric sets) **automated in your repo and CI**-for example a daily **Slack** (or similar) summary so the team sees health **without opening Play Console**. It does **not** replace in-app crash reporting ([Crashlytics/Sentry](crashlytics.md)); it complements it with **store-aggregated** signals.
+
+The [Play Developer Reporting API](https://developers.google.com/play/developer/reporting/reference/rest) exposes the same families of metrics as the console: each metric set supports **`get`** (describe the set) and **`query`** with a **`TimelineSpec`** (for example **`DAILY`** aggregation; the API commonly expects timezone such as **`America/Los_Angeles`** for timeline bounds-follow the reference for current rules).
+
+**Do not** put service account credentials or Reporting API calls inside the **`:app`** module or ship them in the APK. Align with this project's layout by implementing reporting as **Kotlin in `build-logic`** (or a small Gradle plugin module): a **`DefaultTask`** that queries the API and posts formatted output to Slack (Incoming Webhook or Slack Web API). That keeps secrets in **CI/environment variables** and leaves feature modules unchanged-see [modularization.md](modularization.md) and [gradle-setup.md](gradle-setup.md).
+
+**Authentication:** use a Google Cloud **service account** with access to your Play Developer account; load JSON from an **environment variable** or CI secret (never commit keys). Request OAuth scope:
+
+`https://www.googleapis.com/auth/playdeveloperreporting`
+
+**Dependency:** add the generated client **`com.google.apis:google-api-services-playdeveloperreporting`** for API version **`v1beta1`**, with the revision pinned in **`gradle/libs.versions.toml`** (or `assets/libs.versions.toml.template` when creating a new project from this repo).
+
+**Implementation sketch:** call **`query`** on the relevant metric set (for example crash rate, ANR rate) with your timeline and metric names; map **`MetricsRow`** results into small **Kotlin data classes** per set; optionally compare values to the **Core thresholds** table above for a simple green/yellow/red summary; format markdown or blocks for Slack.
+
+**CI/CD:** schedule a job (for example nightly) that runs `./gradlew <yourReportingTask>` and injects secrets at runtime: service account JSON, Slack token or webhook URL, and the **`apps/...`** resource name for the app you report on.
+
+**Kotlin and coroutines:** Gradle tasks run on the build JVM; I/O belongs in **`@TaskAction`** (or a worker). You may call the Java client's blocking **`execute()`** directly, or wrap suspend helpers with **`runBlocking(Dispatchers.IO) { … }`** so network work stays off unintended threads-see [coroutines-patterns.md](coroutines-patterns.md). Avoid heavy work during **configuration** phase.
+
 ### Startup time (user experience)
 
 Targets below are practical goals for **cold / warm / hot** start. If cold start routinely exceeds about **2 seconds** on mid-range hardware, show a splash or inline progress so the user sees feedback (see "App Startup & Initialization" elsewhere in this file).
@@ -480,7 +500,7 @@ stability_check:
 
 ## CPU Optimization
 
-CPU is like your app’s brain. Too much thinking leads to battery drain and heat.
+CPU is like your app's brain. Too much thinking leads to battery drain and heat.
 
 ### Common CPU Hogs
 

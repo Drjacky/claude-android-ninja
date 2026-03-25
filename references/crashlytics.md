@@ -8,6 +8,7 @@ can be swapped without touching feature code.
 - Keep SDK-specific code **out of feature modules**
 - Use an interface in `core` and inject implementations
 - Allow easy provider swaps or dual reporting
+- Optional: **store-level** Play Vitals (Reporting API in `build-logic`/CI, e.g. Slack)-not a substitute for Crashlytics; see [android-performance.md](android-performance.md) → **Optional: Play Vitals observability (Play Developer Reporting API)**.
 
 ## Architecture Placement
 

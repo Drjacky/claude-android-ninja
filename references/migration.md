@@ -581,7 +581,7 @@ Jetpack **Room 2.x** (`androidx.room`) and **Room 3** (`androidx.room3`) use dif
 | `androidx.room:room-runtime`, `room-compiler`, `room-gradle-plugin` | `androidx.room3:room3-runtime`, `room3-compiler`, `room3-gradle-plugin`                            |
 | Plugin id `androidx.room` + `room { schemaDirectory(...) }`         | Plugin id `androidx.room3` + `room3 { schemaDirectory(...) }`                                      |
 | Optional `room-ktx`                                                 | No separate KTX artifact for the same role; use **`Flow` / `suspend`** on DAOs                     |
-| KSP `ksp("androidx.room:room-compiler")`                            | KSP **`ksp("androidx.room3:room3-compiler")`** — Room 3 is **KSP-only** (no kapt/Java AP for Room) |
+| KSP `ksp("androidx.room:room-compiler")`                            | KSP **`ksp("androidx.room3:room3-compiler")`** - Room 3 is **KSP-only** (no kapt/Java AP for Room) |
 
 Add **`androidx.sqlite:sqlite-bundled`** and call **`.setDriver(BundledSQLiteDriver())`** on `Room.databaseBuilder` / `Room.inMemoryDatabaseBuilder`. See `assets/libs.versions.toml.template` and the `app.android.room` convention plugin.
 
@@ -606,7 +606,7 @@ Step-by-step **SupportSQLite → driver** guidance: [Migrate from SupportSQLite]
 ### Invalidation and tests
 
 - **`InvalidationTracker.Observer`** / **`addObserver`** are removed; use **`InvalidationTracker.createFlow`** ([release notes](https://developer.android.com/jetpack/androidx/releases/room3)).
-- **Instrumented tests:** `androidx.room3:room3-testing`, **`MigrationTestHelper`** with a **`SQLiteDriver`**, **`SQLiteConnection`**, and **suspend** APIs — see [Test migrations](https://developer.android.com/training/data-storage/room/migrating-db-versions#test) and [`MigrationTestHelper`](https://developer.android.com/reference/kotlin/androidx/room3/testing/MigrationTestHelper). In-repo examples: `references/testing.md`.
+- **Instrumented tests:** `androidx.room3:room3-testing`, **`MigrationTestHelper`** with a **`SQLiteDriver`**, **`SQLiteConnection`**, and **suspend** APIs - see [Test migrations](https://developer.android.com/training/data-storage/room/migrating-db-versions#test) and [`MigrationTestHelper`](https://developer.android.com/reference/kotlin/androidx/room3/testing/MigrationTestHelper). In-repo examples: `references/testing.md`.
 
 ### Room 2.x lifecycle (context only)
 

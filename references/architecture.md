@@ -221,7 +221,7 @@ internal class AuthRepositoryImpl @Inject constructor(
 
 **When to use what:**
 - **Room 3:** Relational data, SQL queries (`WHERE` / `JOIN`), indexes, unbounded or **large** collections (order-of **~100+ entries** is a common threshold), partial updates, referential integrity.
-- **DataStore:** Small preference blobs: simple key-value pairs, typed settings objects, feature flags. Does **not** support partial updates, ad hoc queries, or relational integrity—use Room 3 when you need those.
+- **DataStore:** Small preference blobs: simple key-value pairs, typed settings objects, feature flags. Does **not** support partial updates, ad hoc queries, or relational integrity-use Room 3 when you need those.
 - **Files:** Large media, blobs.
 - **MultiProcessDataStoreFactory:** Only if accessing data across multiple processes-and then **every** reader/writer for that file must use the multi-process path (see Critical Rules).
 

@@ -42,7 +42,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Code coverage (JaCoCo)                                                                                                                                                | [android-code-coverage.md](references/android-code-coverage.md) |
 | Security, Play Integrity (Standard/Classic), server decode, `requestHash`/`nonce`, tiered policy, remediation; Credential Manager; local root checks as supplementary | [android-security.md](references/android-security.md)           |
 | Design patterns                                                                                                                                                       | [design-patterns.md](references/design-patterns.md)             |
-| Performance, Play Vitals, startup, recomposition, jank, battery                                                                                                       | [android-performance.md](references/android-performance.md)     |
+| Performance, Play Vitals, optional CI reporting (Play Developer Reporting API), startup, recomposition, jank, battery                                                 | [android-performance.md](references/android-performance.md)     |
 | Debugging, Logcat levels, ANR, Gradle error patterns, R8, memory leaks                                                                                                | [android-debugging.md](references/android-debugging.md)         |
 | Migration guides (XML, RxJava, Navigation, Compose, Room 2→3)                                                                                                         | [migration.md](references/migration.md)                         |
 
@@ -118,6 +118,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Optimizing Performance?**
 → Follow the Performance Checklist in [android-performance.md](references/android-performance.md)
+→ If the user asks for **automated Play Console vitals** (CI/Slack, no Play Console UI), use [android-performance.md](references/android-performance.md) → **Optional: Play Vitals observability (Play Developer Reporting API)**
 → Use `BasicTextField2` for high-frequency text input
 
 **Testing?**
