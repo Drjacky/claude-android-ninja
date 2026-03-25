@@ -53,7 +53,7 @@ playIntegrity = "1.4.0"
 profileinstaller = "1.4.1"
 retrofit2 = "3.0.0"
 robolectric = "4.13"
-room = "2.6.1"
+room3 = "3.0.0-alpha01"
 screenshot = "0.0.1-alpha13"
 savedstateCompose = "1.2.1"
 splashscreen = "1.0.1"
@@ -62,6 +62,7 @@ sentry = "8.30.0"
 sentryPlugin = "5.12.2"
 slf4j = "2.0.3"
 spotless = "6.25.0"
+sqlite = "2.6.2"
 sqlcipher = "4.6.1"
 targetSdk = "36"
 tracing = "2.0.0-alpha03"
@@ -108,6 +109,7 @@ androidx-palette = { group = "androidx.palette", name = "palette", version.ref =
 androidx-profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
 androidx-savedstate-compose-serialization = { group = "androidx.savedstate", name = "savedstate-compose", version.ref = "savedstateCompose" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "androidxSecurityCrypto" }
+androidx-sqlite-bundled = { group = "androidx.sqlite", name = "sqlite-bundled", version.ref = "sqlite" }
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 androidx-startup-runtime = { group = "androidx.startup", name = "startup-runtime", version.ref = "startup" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
@@ -152,11 +154,11 @@ retrofit2 = { group = "com.squareup.retrofit2", name = "retrofit", version.ref =
 retrofit2-kotlinx-serialization-converter = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit2" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 screenshot-validation-api = { group = "com.android.tools.screenshot", name = "screenshot-validation-api", version.ref = "screenshot" }
-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
-room-gradlePlugin = { group = "androidx.room", name = "room-gradle-plugin", version.ref = "room" }
-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
+room3-compiler = { group = "androidx.room3", name = "room3-compiler", version.ref = "room3" }
+room3-gradlePlugin = { group = "androidx.room3", name = "room3-gradle-plugin", version.ref = "room3" }
+room3-paging = { group = "androidx.room3", name = "room3-paging", version.ref = "room3" }
+room3-runtime = { group = "androidx.room3", name = "room3-runtime", version.ref = "room3" }
+room3-testing = { group = "androidx.room3", name = "room3-testing", version.ref = "room3" }
 sentry-android = { group = "io.sentry", name = "sentry-android", version.ref = "sentry" }
 sentry-compose-android = { group = "io.sentry", name = "sentry-compose-android", version.ref = "sentry" }
 sentry-kotlin-compiler-plugin = { group = "io.sentry", name = "sentry-kotlin-compiler-plugin", version.ref = "sentryPlugin" }
@@ -204,7 +206,7 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 android-test = { id = "com.android.test", version.ref = "agp" }
 androidx-baselineprofile = { id = "androidx.baselineprofile", version.ref = "baselineprofile" }
-androidx-room = { id = "androidx.room", version.ref = "room" }
+androidx-room3 = { id = "androidx.room3", version.ref = "room3" }
 compose-stability-analyzer = { id = "com.github.skydoves.compose.stability.analyzer", version.ref = "composeStabilityAnalyzer" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
