@@ -67,8 +67,10 @@ Always check `assets/libs.versions.toml.template` before adding or changing depe
 ### AndroidX Libraries
 
 **Prefer `-ktx` extensions:**
-- `core-ktx`, `lifecycle-runtime-ktx`, `room-ktx`
+- `core-ktx`, `lifecycle-runtime-ktx`
 - Provide Kotlin-friendly APIs and coroutine support
+
+**Room 3:** Use **`androidx.room3:room3-runtime`**, **`sqlite-bundled`**, and KSP **`room3-compiler`** (see version catalog). DAOs are **coroutine-first** (`suspend`, `Flow`); Optional **`room3-paging`** only when a DAO returns `PagingSource`; **`room3-testing`** for instrumented DB tests.
 
 **Never use legacy support libraries:**
 - ❌ `com.android.support.*` (deprecated)
@@ -79,9 +81,10 @@ Always check `assets/libs.versions.toml.template` before adding or changing depe
 ### Stability Requirements
 
 **Production apps:**
-- ✅ Use **stable** versions only (e.g., `2.6.1`, `1.0.0`)
-- ✅ Exception: AndroidX alpha/beta when required for critical features (Navigation3)
-- ❌ Avoid alpha/beta/RC for core dependencies (Hilt, Room, Coroutines)
+- ✅ Use **stable** versions only (e.g., `1.0.0`) for libraries that offer a stable channel
+- ✅ Exception: AndroidX alpha/beta when required for critical features (e.g. Navigation3 during its preview cycle)
+- ❌ Avoid alpha/beta/RC for **Hilt** and **Coroutines** in production
+- **Room 3:** Prefer a **stable** `androidx.room3` release when available on [Room 3 releases](https://developer.android.com/jetpack/androidx/releases/room3). If you must ship on a preview Room 3 version, pin the version from that page and plan to upgrade to stable when it ships
 
 **Experimental projects:**
 - ✅ Can use alpha/beta for evaluation
@@ -214,7 +217,7 @@ dependencies {
 
 **Prefer KSP (Kotlin Symbol Processing):**
 - ✅ 2x faster than kapt
-- ✅ Room 2.6+ supports KSP
+- ✅ **Room 3 is KSP-only** (no kapt/Java annotation processing for Room)
 - ✅ Hilt supports KSP
 
 **Migrate from kapt to KSP:**
@@ -231,7 +234,7 @@ kapt {
 
 dependencies {
     kapt(libs.hilt.compiler)
-    kapt(libs.room.compiler)
+    kapt(libs.room.compiler) // Room 2.x
 }
 
 // New
@@ -241,13 +244,14 @@ plugins {
 
 dependencies {
     ksp(libs.hilt.compiler)
-    ksp(libs.room.compiler)
+    ksp(libs.room3.compiler)
+    // Room 3 also requires a SQLite driver at runtime, e.g. sqlite-bundled (see app.android.room convention)
 }
 ```
 
 ## ProGuard/R8 Considerations
 
-Use `assets/proguard-rules.pro.template` as the source of truth for all keep rules. It includes rules for every library in the version catalog (Retrofit, kotlinx-serialization, Room, OkHttp, Hilt, SQLCipher, etc.).
+Use `assets/proguard-rules.pro.template` as the source of truth for all keep rules. It includes rules for every library in the version catalog (Retrofit, kotlinx-serialization, Room 3, OkHttp, Hilt, SQLCipher, etc.).
 
 Copy the template to `app/proguard-rules.pro` and adjust `com.example.*` package names. See [gradle-setup.md](gradle-setup.md#r8--proguard-configuration) for build configuration.
 

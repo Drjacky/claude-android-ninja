@@ -197,11 +197,11 @@ com.example.core.model.*
 - Adaptive layouts (adaptive, adaptive-layout, adaptive-navigation, navigation-suite)
 - Managed devices
 
-### Room Plugin
-- Room plugin + KSP
-- Room runtime + KTX
-- Room compiler (KSP)
-- Schema directory for migrations
+### Room Plugin (Room 3)
+- `androidx.room3` Gradle plugin + KSP
+- `room3-runtime` + `sqlite-bundled` (for `BundledSQLiteDriver()` on `Room.databaseBuilder`)
+- `room3-compiler` (KSP); DAOs use **`suspend`** and **`Flow`** (no separate Room KTX artifact)
+- `room3 { schemaDirectory(...) }` for schema export and auto-migrations
 
 ### Hilt Plugin
 - Hilt Android + KSP compiler
@@ -289,18 +289,21 @@ Reports will be generated in:
 
 ## Troubleshooting
 
-| Issue                           | Solution                                                                     |
-|---------------------------------|------------------------------------------------------------------------------|
-| Plugin not found                | Check `includeBuild("build-logic")` in root `settings.gradle.kts`            |
-| Version catalog not accessible  | Verify `build-logic/settings.gradle.kts` references correct path             |
-| Type resolution fails in Detekt | Stop Gradle daemon, clean build, ensure Android/Kotlin plugins applied first |
-| Resource prefix errors          | Verify module path follows convention (`:feature:auth` → `feature_auth_`)    |
-| Compose metrics not generated   | Add flags to `gradle.properties` and enable in individual modules            |
-| Hilt compiler errors            | Ensure KSP is applied before Hilt plugin                                     |
-| Room schemas not found          | Check `$projectDir/schemas/` directory exists                                |
+| Issue                           | Solution                                                                                           |
+|---------------------------------|----------------------------------------------------------------------------------------------------|
+| Plugin not found                | Check `includeBuild("build-logic")` in root `settings.gradle.kts`                                  |
+| Version catalog not accessible  | Verify `build-logic/settings.gradle.kts` references correct path                                   |
+| Type resolution fails in Detekt | Stop Gradle daemon, clean build, ensure Android/Kotlin plugins applied first                       |
+| Resource prefix errors          | Verify module path follows convention (`:feature:auth` → `feature_auth_`)                          |
+| Compose metrics not generated   | Add flags to `gradle.properties` and enable in individual modules                                  |
+| Hilt compiler errors            | Ensure KSP is applied before Hilt plugin                                                           |
+| Room schemas not found          | Check `$projectDir/schemas/` directory exists                                                      |
+| Room 3 build fails (driver)     | Ensure `Room.databaseBuilder` uses `.setDriver(BundledSQLiteDriver())` (or another `SQLiteDriver`) |
 
 ## Migration Checklist
-.
+
+See [migration.md](../../references/migration.md) for consolidated migration guides (including Room 2→3 when that section is present).
+
 ## Setup Checklist
 
 - [ ] Copy all `.kt` files to `build-logic/convention/src/main/kotlin/`

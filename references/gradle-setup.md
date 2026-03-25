@@ -38,6 +38,7 @@ Use it to generate or update `gradle/libs.versions.toml` for each project.
 
 Key points:
 - **KSP over kapt**: This SKILL uses KSP for annotation processing (2x faster than kapt)
+- **Room 3**: Catalog uses `androidx.room3` artifacts, plugin id `androidx.room3`, and `sqlite-bundled` for `BundledSQLiteDriver()`; see `app.android.room` convention plugin
 - **Kotlin Compose Plugin**: Compose compiler is managed via `kotlin-compose` plugin (Kotlin 2.0+)
 - **Bundles**: Use `unit-test` and `android-test` bundles for consistent testing dependencies
 
@@ -77,7 +78,7 @@ dependencies {
     compileOnly(libs.kotlin.gradlePlugin)
     compileOnly(libs.kotlin.composeGradlePlugin)
     compileOnly(libs.ksp.gradlePlugin)
-    compileOnly(libs.room.gradlePlugin)
+    compileOnly(libs.room3.gradlePlugin)
     implementation(libs.plugin.detekt)
 }
 
@@ -161,7 +162,7 @@ All convention plugin implementations are available in `assets/convention/`:
 - `AndroidApplicationComposeConventionPlugin.kt` - Compose for application
 - `AndroidLibraryComposeConventionPlugin.kt` - Compose for libraries
 - `AndroidApplicationBaselineProfileConventionPlugin.kt` - Baseline profiles
-- `AndroidRoomConventionPlugin.kt` - Room database
+- `AndroidRoomConventionPlugin.kt` - Room 3 database (`androidx.room3`, KSP, `sqlite-bundled`)
 - `AndroidLintConventionPlugin.kt` - Android Lint configuration
 
 **Testing & Quality Plugins:**
@@ -445,7 +446,7 @@ android {
 dependencies {
     implementation(project(":core:domain"))
     
-    // Room (configured by convention plugin)
+    // Room 3 runtime + sqlite-bundled + compiler via app.android.room convention
     // Testing
     testImplementation(libs.bundles.unit.test)
 }
