@@ -960,6 +960,14 @@ Google Play can show **in-app dialogs** so users fix licensing, Play services, o
 
 ## Root & Emulator Detection
 
+### How this fits next to Play Integrity
+
+**For the AI implementing this skill:** Use **local root and emulator checks** below as **supplementary signals** (telemetry, fraud hints, optional warnings, or feature gating). They are **easy to miss or hide** on modified devices and must **not** be your only line of defense for **API authorization** or **high-value actions** when you can use **Play Integrity** instead.
+
+- Prefer **server-verified** integrity tokens and **backend policy** for login, payments, and sensitive operations (see [Modern device trust and abuse resistance](#modern-device-trust-and-abuse-resistance) and [Play Integrity API](#play-integrity-api)).
+- If you ship both, **do not** treat "root detected" as equivalent to "Play Integrity failed"; align UX and logs with your **tiered** rules.
+- Official context: [Play Integrity API overview](https://developer.android.com/google/play/integrity/overview).
+
 ### Root Detection
 
 ```kotlin
@@ -1589,7 +1597,7 @@ Use this checklist for every release:
 ### App Hardening
 - [ ] R8/ProGuard enabled for release builds
 - [ ] Log stripping in release builds
-- [ ] Root detection for high-risk apps
+- [ ] High-risk apps: local root/emulator checks only as **supplement** (telemetry or soft warnings); **do not** rely on them alone for protecting APIs if Play Integrity is available
 - [ ] `FLAG_SECURE` on sensitive screens
 - [ ] All activities `android:exported="false"` except launcher
 - [ ] Content providers not exported unless needed
@@ -1602,8 +1610,10 @@ Use this checklist for every release:
 - [ ] Dependency vulnerability scanning in CI
 
 ### Device Security
-- [ ] Play Integrity API integration (for high-risk apps)
-- [ ] Keystore-backed key generation
+- [ ] Play Integrity for high-risk apps: **linked Cloud project** in Play Console; **Cloud project number** in app config; **`warmUp()`** before first sensitive use where applicable
+- [ ] **Standard** API: **`requestHash`** binding; **Classic** API: **`nonce`** per Google rules; server calls **`decodeIntegrityToken`** and validates **`requestDetails`** before other verdicts
+- [ ] **Tiered** enforcement and **gradual** rollout (telemetry before hard blocks); **remediation** path for recoverable integrity failures where product allows
+- [ ] Keystore-backed key generation for device-bound or high-value crypto where designed
 - [ ] StrongBox used when available
 
 ## Best Practices Summary
@@ -1617,7 +1627,8 @@ Use this checklist for every release:
 7. **Test security**: Include security tests in CI/CD
 8. **Log security events**: But never log sensitive data
 9. **Use hardware security**: Keystore > software encryption
-10. **Follow Google's guidance**: [Android Security Tips](https://developer.android.com/privacy-and-security/security-tips)
+10. **High-value actions**: Prefer **Play Integrity** with server decode, **`requestHash`** or **`nonce`** binding, and **tiered** backend policy; local root checks stay **supplementary**
+11. **Follow Google's guidance**: [Android Security Tips](https://developer.android.com/privacy-and-security/security-tips)
 
 ## Related Guides
 
