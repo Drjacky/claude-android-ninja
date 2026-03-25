@@ -30,7 +30,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Data synchronization & offline-first (sync strategies, conflict resolution, cache invalidation)
 - Material Symbols icons, adaptive launcher icon specs, graphics, custom drawing with Canvas, and Coil3 image loading patterns (AsyncImage, SubcomposeAsyncImage, Hilt ImageLoader)
 - Gradle/build conventions, product flavors and BuildConfig, version catalog usage, KSP migration, and build performance optimization (diagnostics, lazy tasks, configuration cache)
-- Testing practices with fakes, Hilt testing, Room testing, and Compose Preview Screenshot Testing
+- Testing practices with fakes, Hilt testing, Room 3 testing (`SQLiteDriver`, `room3-testing`), and Compose Preview Screenshot Testing
 - Coroutines patterns, structured concurrency, Flow (callbackFlow, backpressure, combine, shareIn), and common pitfalls
 - Kotlin delegation patterns and composition over inheritance
 - Dependency management rules and templates
@@ -43,7 +43,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Retrofit/networking patterns (service interfaces, nullable JSON DTOs, Hilt NetworkModule, AuthInterceptor)
 - Haptic feedback, touch targets, and forms/input patterns (keyboard types, autofill, validation)
 - Debugging guide (Logcat levels, ANR timeouts, Gradle error patterns, LeakCanary, Compose recomposition, R8 mapping and manual de-obfuscation)
-- Consolidated migration guide (XML to Compose, LiveData to StateFlow, RxJava to Coroutines, Navigation 2.x to Navigation3, Accompanist to official APIs, Material 2 to 3, Edge-to-Edge)
+- Consolidated migration guide (XML to Compose, LiveData to StateFlow, RxJava to Coroutines, Navigation 2.x to Navigation3, Accompanist to official APIs, Material 2 to 3, Edge-to-Edge, Room 2.x to Room 3)
 - Code quality with Detekt and Compose rules
 
 ## Key Files
@@ -60,7 +60,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - [`references/kotlin-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/kotlin-patterns.md) - Kotlin best practices and View lifecycle interop (must-read for Kotlin code)
 - [`references/coroutines-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/coroutines-patterns.md) - coroutines best practices and patterns
 - [`references/gradle-setup.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/gradle-setup.md) - build logic, product flavors, BuildConfig, conventions, and build files
-- [`references/testing.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/testing.md) - testing patterns with fakes, Hilt, Room, and Navigation3
+- [`references/testing.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/testing.md) - testing patterns with fakes, Hilt, Room 3, and Navigation3
 - [`references/android-graphics.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-graphics.md) - Material Symbols icons, adaptive launcher icons, Canvas drawing, Palette API
 - [`references/android-permissions.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-permissions.md) - runtime permissions and best practices
 - [`references/kotlin-delegation.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/kotlin-delegation.md) - delegation patterns and composition guidance
@@ -72,7 +72,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - [`references/dependencies.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/dependencies.md) - dependency rules and version catalog guidance
 - [`references/android-performance.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-performance.md) - Play Vitals context, benchmarking, recomposition, app startup, splash screen
 - [`references/android-debugging.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-debugging.md) - Logcat levels, ANR timeouts, LeakCanary, R8 de-obfuscation, Gradle errors, Compose recomposition
-- [`references/migration.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/migration.md) - XML to Compose, LiveData to StateFlow, RxJava, Navigation, Accompanist, Material migrations
+- [`references/migration.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/migration.md) - XML to Compose, LiveData to StateFlow, RxJava, Navigation, Accompanist, Material, Edge-to-Edge, and Room 2.x → Room 3
 - [`references/design-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/design-patterns.md) - Android-focused design patterns
 - [`assets/proguard-rules.pro.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/assets/proguard-rules.pro.template) - R8/ProGuard rules for all libraries
 - [`assets/detekt.yml.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/assets/detekt.yml.template) - Detekt static analysis configuration
@@ -88,7 +88,7 @@ This skill is focused on Android app development using:
 - **Navigation3** (type-safe routing)
 - **Material 3**
 - **Hilt** (dependency injection)
-- **Room** (database with KSP)
+- **Room 3** (`androidx.room3`, KSP, `SQLiteDriver` / `sqlite-bundled`, Flow and `suspend` DAOs)
 - **Retrofit** + **OkHttp** (networking)
 - **Coil3** (image loading)
 - **Firebase Crashlytics** / **Sentry** (crash reporting)
