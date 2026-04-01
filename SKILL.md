@@ -65,7 +65,6 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
    - It is about Play Store policy, marketing, or non-development topics.
    - It is about platforms outside Android (Wear OS, Android TV, Android Auto) unless the pattern is universally applicable.
    - It is about cross-platform, KMP, CMP, or KMM, unless the entry covers Android-specific features or guides within a KMP context (e.g., Room 3 KMP with Android-only setup).
-   - It is about NDK, native (C/C++), or JNI development.
    - Its summary indicates only cosmetic documentation changes (formatting, link/URL updates, whitespace) with no substantive guidance or API changes.
 → If relevant entries are found, **briefly summarize** them (1-2 lines each).
 → If an entry looks significant enough to affect current guidance, read its diff by fetching `https://raw.githubusercontent.com/fornewid/android-developers-changelog/refs/heads/main/pages/diffs/{diff_file}` for deeper analysis.
