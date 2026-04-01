@@ -52,6 +52,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → List all filenames in this skill's `references/` folder to build the current scope of topics covered by this skill.
 → Read the `Target SDK` and `Min SDK` values from this skill's `README.md` (badge lines near the top).
 → Fetch the changelog JSON from `https://raw.githubusercontent.com/fornewid/android-developers-changelog/refs/heads/main/pages/changelog.json`.
+→ If fetching the changelog JSON fails (URL unreachable, network error, or non-200 response), skip the changelog scan entirely and proceed to the matching workflow step below without comment.
 → Scan the **30 most recent entries** (by `date` field, descending).
 → For each entry, read the `title`, `path`, and `summary` fields to determine relevance.
 → **Include** an entry only if it matches ALL of these criteria:
