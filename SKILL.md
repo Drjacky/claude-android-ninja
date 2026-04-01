@@ -48,6 +48,27 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 ## Workflow Decision Tree
 
+**[ALWAYS FIRST] Scan Android Developers Changelog**
+→ List all filenames in this skill's `references/` folder to build the current scope of topics covered by this skill.
+→ Read the `Target SDK` and `Min SDK` values from this skill's `README.md` (badge lines near the top).
+→ Fetch the changelog JSON from `https://raw.githubusercontent.com/fornewid/android-developers-changelog/refs/heads/main/pages/changelog.json`.
+→ Scan the **30 most recent entries** (by `date` field, descending).
+→ For each entry, read the `title`, `path`, and `summary` fields to determine relevance.
+→ **Include** an entry only if it matches ALL of these criteria:
+   - Relates to topics covered by the reference files discovered above.
+   - Applies to the project's Target SDK (from README.md) or lower. Ignore entries whose changes are exclusively for behavior changes or features introduced in a higher SDK level.
+→ **Exclude** an entry if ANY of these apply:
+   - It is solely about RxJava, unless the entry is a migration guide from RxJava to Coroutines.
+   - It is solely about Java-only APIs with no Kotlin equivalent or relevance.
+   - It covers deprecated View-system patterns that the skill already migrates away from (XML layouts, Fragments for UI, Accompanist), unless the entry is a migration guide.
+   - It is about Play Store policy, marketing, or non-development topics.
+   - It is about platforms outside Android (Wear OS, Android TV, Android Auto) unless the pattern is universally applicable.
+   - It is about cross-platform, KMP, CMP, or KMM, unless the entry covers Android-specific features or guides within a KMP context (e.g., Room 3 KMP with Android-only setup).
+→ If relevant entries are found, **briefly summarize** them (1-2 lines each).
+→ If an entry looks significant enough to affect current guidance, read its diff by fetching `https://raw.githubusercontent.com/fornewid/android-developers-changelog/refs/heads/main/pages/diffs/{diff_file}` for deeper analysis.
+→ After the scan, proceed to the matching workflow step below.
+→ If no relevant entries are found, proceed directly without comment.
+
 **Creating a new project?**
 → Start with `assets/settings.gradle.kts.template` for settings and module includes  
 → Start with `assets/libs.versions.toml.template` for the version catalog  
