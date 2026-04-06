@@ -1088,35 +1088,25 @@ suspend fun authenticate(biometricManager: BiometricManager): AuthResult =
 
 #### Common Use Cases
 
+For Google Play Services and Firebase APIs that return `Task<T>`, prefer the official coroutine
+adapter from `kotlinx-coroutines-play-services` (`import kotlinx.coroutines.tasks.await`) instead of
+maintaining custom `Task<T>.await()` bridges.
+
 ```kotlin
-// One-shot location request
+import kotlinx.coroutines.tasks.await
+
+// One-shot location request via official Task.await()
 suspend fun getLastLocation(
     fusedLocationClient: FusedLocationProviderClient
-): Location = suspendCancellableCoroutine { cont ->
-    fusedLocationClient.lastLocation
-        .addOnSuccessListener { location ->
-            if (location != null) cont.resume(location)
-            else cont.resumeWithException(LocationNotFoundException())
-        }
-        .addOnFailureListener { e ->
-            cont.resumeWithException(e)
-        }
-
-    cont.invokeOnCancellation {
-        // FusedLocationProviderClient tasks auto-cancel
-    }
-}
-
-// Play Services Task to suspend
-suspend fun <T> Task<T>.await(): T = suspendCancellableCoroutine { cont ->
-    addOnSuccessListener { cont.resume(it) }
-    addOnFailureListener { cont.resumeWithException(it) }
-    addOnCanceledListener { cont.cancel() }
-}
+): Location =
+    fusedLocationClient.lastLocation.await()
+        ?: throw LocationNotFoundException()
 ```
 
 #### Rules
 
+- **For APIs returning `Task<T>`, use official `await()` adapters** - prefer `kotlinx.coroutines.tasks.await` over custom bridge extensions.
+- **Use `suspendCancellableCoroutine` for one-shot callbacks that are not `Task<T>`** - custom bridging still applies when no official adapter exists.
 - **Use `suspendCancellableCoroutine`, not `suspendCoroutine`** - `suspendCoroutine` ignores cancellation, leaking work and preventing structured concurrency from cleaning up.
 - **Call `resume`/`resumeWithException` exactly once** - multiple calls throw `IllegalStateException`. Use `cont.isActive` check if the callback might fire after cancellation.
 - **Always implement `invokeOnCancellation`** - clean up resources (cancel requests, unregister listeners) when the coroutine is cancelled.
