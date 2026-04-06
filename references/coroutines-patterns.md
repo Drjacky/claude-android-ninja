@@ -1128,6 +1128,13 @@ Use `suspendCancellableCoroutine` to convert a **single-result** callback into a
 
 **Always prefer `suspendCancellableCoroutine` over `suspendCoroutine`** - it supports cancellation, which is critical for structured concurrency.
 
+`suspendCoroutine` is acceptable only for narrow cases where all of the following are true:
+
+- The API is truly one-shot and guaranteed to invoke exactly one terminal callback.
+- There is no meaningful cancellation or cleanup path to execute.
+- The operation is short-lived and does not hold scarce resources while waiting.
+- You still enforce exact-once resume semantics.
+
 #### Core Pattern
 
 ```kotlin
@@ -1196,7 +1203,7 @@ suspend fun openFileHandle(api: FileApi): FileHandle =
 - **For APIs returning `Task<T>`, use official `await()` adapters** - prefer `kotlinx.coroutines.tasks.await` over custom bridge extensions.
 - **Use `suspendCancellableCoroutine` for one-shot callbacks that are not `Task<T>`** - custom bridging still applies when no official adapter exists.
 - **When resuming with closeable resources, use `resume(value) { ... }`** - ensures cancellation-time cleanup if the coroutine is cancelled before the caller observes the resource.
-- **Use `suspendCancellableCoroutine`, not `suspendCoroutine`** - `suspendCoroutine` ignores cancellation, leaking work and preventing structured concurrency from cleaning up.
+- **Treat `suspendCoroutine` as an exception, not a default** - use it only for truly non-cancellable, short-lived one-shot callbacks with no cleanup requirements.
 - **Call `resume`/`resumeWithException` exactly once** - multiple calls throw `IllegalStateException`. Use `cont.isActive` check if the callback might fire after cancellation.
 - **Always implement `invokeOnCancellation`** - clean up resources (cancel requests, unregister listeners) when the coroutine is cancelled.
 - **Cancellation cleanup must be thread-safe** - callbacks may fire concurrently with `invokeOnCancellation`, so cancellation/unregister logic must tolerate races.
