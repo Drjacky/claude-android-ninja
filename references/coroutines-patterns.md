@@ -1202,6 +1202,50 @@ suspend fun openFileHandle(api: FileApi): FileHandle =
 - **Cancellation cleanup must be thread-safe** - callbacks may fire concurrently with `invokeOnCancellation`, so cancellation/unregister logic must tolerate races.
 - **Never block inside the lambda** - the lambda runs synchronously on the caller's thread. Register the callback and return immediately.
 
+#### One-Shot Bridge Checklist
+
+Before merging any `suspendCancellableCoroutine` bridge, confirm:
+
+- Every success/error/disconnect callback path either `resume(...)` or `resumeWithException(...)`.
+- No path can resume twice (guard multi-fire callbacks with `cont.isActive` and idempotent cleanup).
+- Cancellation unregisters/cancels underlying work via `invokeOnCancellation`.
+- If the API can stall indefinitely, wrap the bridge call with `withTimeout`/`withTimeoutOrNull`.
+- Cleanup/unregister logic is race-safe between callback thread and cancellation thread.
+
+```kotlin
+suspend fun awaitConnectSafe(client: LegacyClient): Connection =
+    withTimeout(5.seconds) {
+        suspendCancellableCoroutine { cont ->
+            val cleanedUp = java.util.concurrent.atomic.AtomicBoolean(false)
+
+            fun cleanupOnce() {
+                if (cleanedUp.compareAndSet(false, true)) {
+                    client.disconnect()
+                }
+            }
+
+            client.connect(
+                onConnected = { connection ->
+                    if (cont.isActive) cont.resume(connection)
+                    cleanupOnce()
+                },
+                onError = { error ->
+                    if (cont.isActive) cont.resumeWithException(error)
+                    cleanupOnce()
+                },
+                onDisconnected = {
+                    if (cont.isActive) {
+                        cont.resumeWithException(IllegalStateException("Disconnected before connect"))
+                    }
+                    cleanupOnce()
+                }
+            )
+
+            cont.invokeOnCancellation { cleanupOnce() }
+        }
+    }
+```
+
 #### Anti-Patterns
 
 ```kotlin
