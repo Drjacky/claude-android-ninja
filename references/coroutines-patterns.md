@@ -1338,6 +1338,80 @@ suspend fun goodCleanup(): Result = suspendCancellableCoroutine { cont ->
 }
 ```
 
+### Preserve Error Shape in Bridge APIs
+
+When bridging callback APIs to suspend functions, keep the callback's data shape and error semantics
+intact instead of flattening everything to generic `Exception(message)`.
+
+#### Multi-Value Success -> Wrapper Result Type
+
+If success callbacks return multiple values, wrap them in a single result type so the suspend API
+stays explicit and strongly typed.
+
+```kotlin
+data class PurchaseBridgeResult(
+    val transaction: StoreTransaction,
+    val customerInfo: CustomerInfo
+)
+
+suspend fun purchase(params: PurchaseParams): PurchaseBridgeResult =
+    suspendCancellableCoroutine { cont ->
+        sdk.purchase(
+            params = params,
+            onSuccess = { tx, info ->
+                cont.resume(PurchaseBridgeResult(tx, info))
+            },
+            onError = { error ->
+                cont.resumeWithException(PurchaseBridgeException(error))
+            }
+        )
+    }
+```
+
+#### Typed Exceptions -> Preserve Programmatic Handling
+
+Map SDK/domain errors to typed exceptions that keep machine-readable fields (codes, cancellation
+reason, retryability) so callers can branch safely.
+
+```kotlin
+open class PurchaseBridgeException(
+    val error: PurchaseError
+) : Exception(error.message)
+
+class PurchaseCancelledException(
+    error: PurchaseError
+) : PurchaseBridgeException(error)
+
+suspend fun restorePurchases(): CustomerInfo =
+    suspendCancellableCoroutine { cont ->
+        sdk.restore(
+            onSuccess = { info -> cont.resume(info) },
+            onError = { error ->
+                val exception = if (error.code == PurchaseErrorCode.UserCancelled) {
+                    PurchaseCancelledException(error)
+                } else {
+                    PurchaseBridgeException(error)
+                }
+                cont.resumeWithException(exception)
+            }
+        )
+    }
+```
+
+#### Anti-Pattern: Losing Error Metadata
+
+```kotlin
+// BAD: Throws away typed error code/cause metadata
+onError = { error ->
+    cont.resumeWithException(Exception(error.message))
+}
+
+// GOOD: Preserve structured error for caller handling
+onError = { error ->
+    cont.resumeWithException(PurchaseBridgeException(error))
+}
+```
+
 ## Common Pitfalls
 
 Quick-reference table of coroutine and Flow mistakes that are easy to miss during code review.
