@@ -912,8 +912,8 @@ Android and third-party SDKs expose many callback-based APIs. Use the right brid
 | Scenario                                               | Use                           |
 |--------------------------------------------------------|-------------------------------|
 | Callback fires **multiple times** (listener, observer) | `callbackFlow`                |
-| Callback fires **once** (completion, result)           | `suspendCancellableCoroutine` |
 | Need **multiple concurrent coroutine producers**       | `channelFlow`                 |
+| Callback fires **once** (completion, result)           | `suspendCancellableCoroutine` |
 
 
 ### `callbackFlow` - Callback Stream to Flow
@@ -1011,20 +1011,6 @@ fun observeStableNetworkStatus(
         .flowOn(Dispatchers.IO)
 ```
 
-#### `channelFlow` - Multiple Coroutine Producers
-
-Use `channelFlow` when you need multiple coroutines producing into the same Flow. No `awaitClose` requirement.
-
-```kotlin
-fun mergeFeeds(repos: List<FeedRepository>): Flow<FeedItem> = channelFlow {
-    repos.forEach { repo ->
-        launch {
-            repo.getFeed().collect { send(it) }
-        }
-    }
-}
-```
-
 #### `callbackFlow` Anti-Patterns
 
 ```kotlin
@@ -1057,6 +1043,20 @@ fun goodFlow(): Flow<Event> = callbackFlow {
         trySend(event) // Non-suspending, thread-safe
     }
     awaitClose { api.unregisterListener() }
+}
+```
+
+#### `channelFlow` - Multiple Coroutine Producers
+
+Use `channelFlow` when you need multiple coroutines producing into the same Flow. No `awaitClose` requirement.
+
+```kotlin
+fun mergeFeeds(repos: List<FeedRepository>): Flow<FeedItem> = channelFlow {
+    repos.forEach { repo ->
+        launch {
+            repo.getFeed().collect { send(it) }
+        }
+    }
 }
 ```
 
