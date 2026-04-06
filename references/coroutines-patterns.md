@@ -1023,9 +1023,15 @@ fun badFlow(): Flow<Event> = callbackFlow {
 
 // GOOD: Always include awaitClose
 fun goodFlow(): Flow<Event> = callbackFlow {
+    val cleanedUp = java.util.concurrent.atomic.AtomicBoolean(false)
     val listener = EventListener { trySend(it) }
+    fun cleanupOnce() {
+        if (cleanedUp.compareAndSet(false, true)) {
+            api.unregisterListener(listener)
+        }
+    }
     api.registerListener(listener)
-    awaitClose { api.unregisterListener(listener) }
+    awaitClose { cleanupOnce() }
 }
 ```
 
@@ -1044,6 +1050,61 @@ fun goodFlow(): Flow<Event> = callbackFlow {
         trySend(event) // Non-suspending, thread-safe
     }
     awaitClose { api.unregisterListener() }
+}
+```
+
+```kotlin
+// BAD: Non-thread-safe awaitClose cleanup (races with callback thread cleanup)
+fun badCleanupFlow(): Flow<Event> = callbackFlow {
+    var cleanedUp = false
+
+    val callback = object : StreamingCallback<Event> {
+        override fun onNext(event: Event) {
+            trySend(event)
+        }
+
+        override fun onClosed() {
+            if (!cleanedUp) {
+                cleanedUp = true
+                api.unregisterCallback(this) // can race with awaitClose path
+            }
+            channel.close()
+        }
+    }
+
+    api.registerCallback(callback)
+
+    awaitClose {
+        if (!cleanedUp) { // Race: callback thread may pass this check too
+            cleanedUp = true
+            api.unregisterCallback(callback)
+        }
+    }
+}
+
+// GOOD: Idempotent cleanup shared by callback and awaitClose
+fun goodCleanupFlow(): Flow<Event> = callbackFlow {
+    val cleanedUp = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    val callback = object : StreamingCallback<Event> {
+        override fun onNext(event: Event) {
+            trySend(event)
+        }
+
+        override fun onClosed() {
+            cleanupOnce()
+            channel.close()
+        }
+    }
+
+    fun cleanupOnce() {
+        if (cleanedUp.compareAndSet(false, true)) {
+            api.unregisterCallback(callback)
+        }
+    }
+
+    api.registerCallback(callback)
+    awaitClose { cleanupOnce() }
 }
 ```
 
@@ -1143,6 +1204,66 @@ suspend fun bad(): String = suspendCancellableCoroutine { cont ->
 suspend fun good(): String = suspendCancellableCoroutine { cont ->
     api.onSuccess { if (cont.isActive) cont.resume(it) }
     api.onRetry { if (cont.isActive) cont.resume(it) }
+}
+```
+
+```kotlin
+// BAD: Non-thread-safe invokeOnCancellation cleanup (races with callback thread)
+suspend fun badCleanup(): Result = suspendCancellableCoroutine { cont ->
+    var cleanedUp = false
+
+    val callback = object : ApiCallback<Result> {
+        override fun onSuccess(value: Result) {
+            if (cont.isActive) cont.resume(value)
+            if (!cleanedUp) {
+                cleanedUp = true
+                api.unregister(this)
+            }
+        }
+
+        override fun onError(error: Throwable) {
+            if (cont.isActive) cont.resumeWithException(error)
+            if (!cleanedUp) {
+                cleanedUp = true
+                api.unregister(this)
+            }
+        }
+    }
+
+    api.register(callback)
+
+    cont.invokeOnCancellation {
+        if (!cleanedUp) { // Race: callback thread may pass this check too
+            cleanedUp = true
+            api.unregister(callback)
+        }
+    }
+}
+
+// GOOD: Idempotent cleanup shared by callback and cancellation paths
+suspend fun goodCleanup(): Result = suspendCancellableCoroutine { cont ->
+    val cleanedUp = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    val callback = object : ApiCallback<Result> {
+        override fun onSuccess(value: Result) {
+            if (cont.isActive) cont.resume(value)
+            cleanupOnce()
+        }
+
+        override fun onError(error: Throwable) {
+            if (cont.isActive) cont.resumeWithException(error)
+            cleanupOnce()
+        }
+    }
+
+    fun cleanupOnce() {
+        if (cleanedUp.compareAndSet(false, true)) {
+            api.unregister(callback)
+        }
+    }
+
+    api.register(callback)
+    cont.invokeOnCancellation { cleanupOnce() }
 }
 ```
 
