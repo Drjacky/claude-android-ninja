@@ -957,6 +957,7 @@ fun observeNetworkStatus(
 
 - **Always call `awaitClose {}`** - even if cleanup is empty. Without it, the flow closes immediately after the builder block completes.
 - **Use `trySend()` from callbacks, not `send()`** - `trySend` is non-suspending and safe to call from any thread. `send()` is suspending and will throw if called from a non-coroutine context.
+- **Callback registration APIs must be thread-safe** - `awaitClose` cleanup can race callback delivery, so `register`/`unregister` must be safe under concurrent calls.
 - **Emit initial state before registering callback** - prevents collectors from missing the current value.
 - **Unregister/cleanup in `awaitClose`** - mirrors the lifecycle of the collector.
 
@@ -1110,6 +1111,7 @@ suspend fun getLastLocation(
 - **Use `suspendCancellableCoroutine`, not `suspendCoroutine`** - `suspendCoroutine` ignores cancellation, leaking work and preventing structured concurrency from cleaning up.
 - **Call `resume`/`resumeWithException` exactly once** - multiple calls throw `IllegalStateException`. Use `cont.isActive` check if the callback might fire after cancellation.
 - **Always implement `invokeOnCancellation`** - clean up resources (cancel requests, unregister listeners) when the coroutine is cancelled.
+- **Cancellation cleanup must be thread-safe** - callbacks may fire concurrently with `invokeOnCancellation`, so cancellation/unregister logic must tolerate races.
 - **Never block inside the lambda** - the lambda runs synchronously on the caller's thread. Register the callback and return immediately.
 
 #### Anti-Patterns
