@@ -1165,10 +1165,37 @@ suspend fun getLastLocation(
         ?: throw LocationNotFoundException()
 ```
 
+#### Returning Closeable Resources Safely
+
+`suspendCancellableCoroutine` has prompt cancellation guarantees. If a callback returns a closeable
+resource, cancellation may happen after `resume(resource)` but before the caller receives it. Use
+`resume(value) { ... }` to close the resource in that race window.
+
+```kotlin
+suspend fun openFileHandle(api: FileApi): FileHandle =
+    suspendCancellableCoroutine { cont ->
+        api.openAsync(
+            onSuccess = { handle ->
+                cont.resume(handle) { _, handleToClose, _ ->
+                    handleToClose.close()
+                }
+            },
+            onError = { error ->
+                cont.resumeWithException(error)
+            }
+        )
+
+        cont.invokeOnCancellation {
+            api.cancelOpen()
+        }
+    }
+```
+
 #### Rules
 
 - **For APIs returning `Task<T>`, use official `await()` adapters** - prefer `kotlinx.coroutines.tasks.await` over custom bridge extensions.
 - **Use `suspendCancellableCoroutine` for one-shot callbacks that are not `Task<T>`** - custom bridging still applies when no official adapter exists.
+- **When resuming with closeable resources, use `resume(value) { ... }`** - ensures cancellation-time cleanup if the coroutine is cancelled before the caller observes the resource.
 - **Use `suspendCancellableCoroutine`, not `suspendCoroutine`** - `suspendCoroutine` ignores cancellation, leaking work and preventing structured concurrency from cleaning up.
 - **Call `resume`/`resumeWithException` exactly once** - multiple calls throw `IllegalStateException`. Use `cont.isActive` check if the callback might fire after cancellation.
 - **Always implement `invokeOnCancellation`** - clean up resources (cancel requests, unregister listeners) when the coroutine is cancelled.
