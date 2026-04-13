@@ -227,22 +227,32 @@ class AuthViewModel @Inject constructor(
 // Bad: StateFlow holds the value forever. You have to manually reset it to null after showing the snackbar.
 private val _snackbarMessage = MutableStateFlow<String?>(null)
 
-// Good: SharedFlow or Channel delivers it once and forgets it.
-private val _snackbarMessage = MutableSharedFlow<String>(extraBufferCapacity = 1)
+// Good: same patterns as other one-shot commands (Channel preferred; SharedFlow if you accept its tradeoffs)
+private val _snackbarMessage = Channel<String>(Channel.BUFFERED)
+val snackbarMessages: Flow<String> = _snackbarMessage.receiveAsFlow()
+// Or: MutableSharedFlow<String>(replay = 0, extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 ```
 
 Note on buffering with SharedFlow:
 
 - `replay` controls how many values new subscribers receive.
 - `extraBufferCapacity` adds temporary queue space for bursts from active emitters.
-If you want new subscribers to receive only the latest value, use `replay = 1` and optionally
-add `extraBufferCapacity` for bursty emissions.
+- For **one-shot commands**, `replay = 1` (or higher) is often the wrong default: every new collector
+  receives the replayed value again. Prefer `replay = 0` plus an explicit buffer/overflow policy, or
+  use a `Channel` instead of fighting multicast semantics.
+If you genuinely need **late subscribers** to see only the **latest** value (state-like behavior),
+`replay = 1` plus optional `extraBufferCapacity` can be appropriate; treat that as sticky state, not
+a consumed command.
 
 Guidance for events vs state:
 
-- Use `SharedFlow(replay = 0)` or `Channel` for one-shot, lossy UI events (toasts, dialogs, navigation).
+- Prefer **`Channel` + `receiveAsFlow()`** for strict one-shot commands (navigation, snackbars,
+  one-time dialogs). Use **`SharedFlow`** when multiple collectors should observe the same stream or
+  when replay to new subscribers is intended; size buffers and pick `onBufferOverflow` on purpose.
+- **Best-effort** UI (some toasts, debug banners) may use a small `SharedFlow` if occasional drops are
+  acceptable; do not label navigation that way unless the product truly allows missing the action.
 - If an event must survive the UI being stopped, persist it as state and render it on resume
-(StateFlow/ViewModel state/persistence), rather than relying on buffering.
+  (`StateFlow` / `ViewModel` state / persistence), rather than relying only on in-memory buffering.
 
 ### Convert Cold Flows to Hot StateFlows with `stateIn`
 
