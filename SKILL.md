@@ -111,7 +111,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Use shared components from `core/ui` when possible
 
 **Handling State and Events?**
-→ Use `StateFlow` for state, `SharedFlow` for events (see [coroutines-patterns.md](references/coroutines-patterns.md))
+→ Use `StateFlow` for state; `Channel` + `receiveAsFlow()` for strict one-shot UI commands; `SharedFlow` for multicast or replay-intended events (see [coroutines-patterns.md](references/coroutines-patterns.md))
 → Survive process death with `SavedStateHandle` (see [compose-patterns.md](references/compose-patterns.md))
 
 **Setting up app theme (colors, typography, shapes)?**
@@ -225,7 +225,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Implementing complex coroutine flows or background work?**
 → Follow [coroutines-patterns.md](references/coroutines-patterns.md) for structured concurrency patterns  
 → Use appropriate dispatchers (IO, Default, Main) and proper cancellation handling  
-→ Prefer `StateFlow`/`SharedFlow` over channels for state management  
+→ Prefer `StateFlow` (and `SharedFlow` where appropriate) over `Channel` for observable **state**; use `Channel` for one-shot commands as in [coroutines-patterns.md](references/coroutines-patterns.md)  
 → Use `callbackFlow` to wrap Android callback APIs (connectivity, sensors, location) into Flow  
 → Use `suspendCancellableCoroutine` for one-shot callbacks (Play Services tasks, biometrics)  
 → Use `combine()` to merge multiple Flows in ViewModels, `shareIn` to share expensive upstream  

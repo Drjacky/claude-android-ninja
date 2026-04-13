@@ -313,17 +313,17 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.LoginForm())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
     
-    // Recommended: One-time navigation events using SharedFlow
-    private val _navigationEvents = MutableSharedFlow<AuthNavigationEvent>(
-        replay = 0,
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-    val navigationEvents: SharedFlow<AuthNavigationEvent> = _navigationEvents.asSharedFlow()
+    // Preferred for one-shot navigation commands (unicast); see coroutines-patterns.md
+    private val _navigationEvents = Channel<AuthNavigationEvent>(Channel.BUFFERED)
+    val navigationEvents: Flow<AuthNavigationEvent> = _navigationEvents.receiveAsFlow()
 
-    // Alternative: Using Channel for guaranteed delivery (buffers if no collectors)
-    // private val _navigationEvents = Channel<AuthNavigationEvent>(Channel.BUFFERED)
-    // val navigationEvents: Flow<AuthNavigationEvent> = _navigationEvents.receiveAsFlow()
+    // Alternative: SharedFlow when several collectors need the same stream or replay is intended
+    // private val _navigationEvents = MutableSharedFlow<AuthNavigationEvent>(
+    //     replay = 0,
+    //     extraBufferCapacity = 1,
+    //     onBufferOverflow = BufferOverflow.DROP_OLDEST
+    // )
+    // val navigationEvents: SharedFlow<AuthNavigationEvent> = _navigationEvents.asSharedFlow()
     
     // Process-death survival: persist form state
     private val email = savedStateHandle.getStateFlow("email", "")
@@ -380,8 +380,8 @@ class AuthViewModel @Inject constructor(
             loginUseCase(currentState.email, currentState.password).fold(
                 onSuccess = { user -> 
                     // Emit navigation event - AuthRoute will call authNavigator.navigateToMainApp()
-                    _navigationEvents.emit(AuthNavigationEvent.LoginSuccess) // For SharedFlow
-                    // _navigationEvents.send(AuthNavigationEvent.LoginSuccess) // For Channel
+                    _navigationEvents.send(AuthNavigationEvent.LoginSuccess) // Channel
+                    // _navigationEvents.emit(AuthNavigationEvent.LoginSuccess) // SharedFlow
                 },
                 onFailure = { error ->
                     _uiState.update { 
