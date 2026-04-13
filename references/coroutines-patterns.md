@@ -185,8 +185,9 @@ Treat "session invalidated", "theme changed", or global bus-style signals as **d
 **`SharedFlow` details worth getting right**
 
 - `replay = 1` (or higher) fixes "missed last value" for late subscribers but **re-fires** that value whenever a new collector appears. That is often wrong for one-shot commands after configuration change.
-- Default-style `MutableSharedFlow` plus `emit()` tends to **suspend** when there is no capacity, not silently drop. Dropping is more tied to `tryEmit`, overflow policies like `DROP_OLDEST`, or insufficient buffer when you choose a non-suspending strategy.
-- Forcing queue-like behavior with larger buffers and `BufferOverflow.SUSPEND` reduces drops but can leave `emit()` suspended until a collector drains the buffer (usually fine in `viewModelScope`; cancel when the `ViewModel` clears).
+- `MutableSharedFlow` defaults to `onBufferOverflow = BufferOverflow.SUSPEND`. You do not need to pass `SUSPEND` unless you want the call site to document intent; you pass a **non-default** overflow (for example `DROP_OLDEST`) when you intentionally prefer loss or conflation over blocking the emitter.
+- With the default `SUSPEND`, `emit()` tends to **suspend** when there is no capacity, not silently drop. Loss is more tied to `tryEmit`, choosing `DROP_OLDEST` / `DROP_LATEST`, or tight buffer sizing under load.
+- Larger `replay` or `extraBufferCapacity` with the default `SUSPEND` adds queue space before `emit()` suspends; the emitter can still wait until collectors drain the buffer (usually fine in `viewModelScope`; cancel when the `ViewModel` clears).
 
 **Recommendation:** Prefer **`Channel` + `receiveAsFlow()`** for strict one-shot UI commands. Use **`SharedFlow`** when multiple collectors should see the same emissions or when controlled replay is part of the product semantics.
 
