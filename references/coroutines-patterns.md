@@ -170,14 +170,25 @@ or legacy code that still requires it. **Migration Priority:** If the project pl
 
 #### StateFlow vs SharedFlow vs Channel
 
-| Type         | Best For                                   | Behavior                                                                     |
-|--------------|--------------------------------------------|------------------------------------------------------------------------------|
-| `StateFlow`  | UI State (forms, loading, data)            | Holds exactly one value. New collectors get current value immediately.       |
-| `SharedFlow` | Broadcast events (logout, theme change)    | Can replay N values. Drops events if no one is collecting (unless buffered). |
-| `Channel`    | One-shot UI events (navigation, snackbars) | Guarantees delivery exactly once. Buffers events if UI is in background.     |
+| Type         | Best For                                   | Behavior |
+|--------------|--------------------------------------------|----------|
+| `StateFlow`  | UI state (forms, loading, data)            | Always holds one value. New collectors get the current value immediately. |
+| `SharedFlow` | Data or signals many observers need at once | **Multicast:** every active collector can see the same emissions. Optional `replay` re-delivers the last N values to **new** collectors (watch for duplicate handling after rotation or back stack). With defaults similar to `MutableSharedFlow()`, `emit()` often **suspends** until there is subscriber capacity rather than dropping; **loss** usually comes from `tryEmit`, `DROP_OLDEST` / `DROP_LATEST` when the buffer is under pressure, or tight `replay` / buffer sizing. |
+| `Channel`    | One-shot **commands** (navigate, snackbar) | **Unicast:** each element is consumed once by one receiver. Buffered channels hold work until a collector runs; expose with `receiveAsFlow()` for lifecycle-aware collection. Design for **one** consumer (typical single UI collector). |
 
-**One-shot UI Events (SharedFlow vs Channel):**
-We recommend using `SharedFlow` for one-shot events, but it requires careful configuration to avoid dropping events when the UI is in the background (e.g., during a configuration change). Alternatively, you can use a `Channel` which guarantees delivery.
+**Commands vs data, unicast vs multicast**
+
+Treat navigation, snackbars, and dialogs as **commands**: they should run once per logical occurrence, not replay to every new observer. A `Channel` matches that shape: queued delivery to a single consumer, no accidental replay when a new collector starts.
+
+Treat "session invalidated", "theme changed", or global bus-style signals as **data** or **broadcasts**: several layers may need the same event. That is the natural fit for `SharedFlow` (multicast).
+
+**`SharedFlow` details worth getting right**
+
+- `replay = 1` (or higher) fixes "missed last value" for late subscribers but **re-fires** that value whenever a new collector appears. That is often wrong for one-shot commands after configuration change.
+- Default-style `MutableSharedFlow` plus `emit()` tends to **suspend** when there is no capacity, not silently drop. Dropping is more tied to `tryEmit`, overflow policies like `DROP_OLDEST`, or insufficient buffer when you choose a non-suspending strategy.
+- Forcing queue-like behavior with larger buffers and `BufferOverflow.SUSPEND` reduces drops but can leave `emit()` suspended until a collector drains the buffer (usually fine in `viewModelScope`; cancel when the `ViewModel` clears).
+
+**Recommendation:** Prefer **`Channel` + `receiveAsFlow()`** for strict one-shot UI commands. Use **`SharedFlow`** when multiple collectors should see the same emissions or when controlled replay is part of the product semantics.
 
 ```kotlin
 @HiltViewModel
@@ -188,25 +199,24 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Loading)
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
-    // Recommended: One-shot events using SharedFlow
-    // replay is for new collectors; extraBufferCapacity is for bursts from existing collectors
-    private val _events = MutableSharedFlow<AuthEvent>(
-        replay = 0,
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-    val events: SharedFlow<AuthEvent> = _events.asSharedFlow()
+    // Preferred for one-shot commands: unicast, consumed once, buffers until UI collects
+    private val _events = Channel<AuthEvent>(Channel.BUFFERED)
+    val events: Flow<AuthEvent> = _events.receiveAsFlow()
 
-    // Alternative: Using Channel for guaranteed delivery (buffers if no collectors)
-    // private val _events = Channel<AuthEvent>(Channel.BUFFERED)
-    // val events: Flow<AuthEvent> = _events.receiveAsFlow()
+    // Alternative: SharedFlow when several observers need the same event, or you accept replay/buffer tradeoffs
+    // private val _events = MutableSharedFlow<AuthEvent>(
+    //     replay = 0,
+    //     extraBufferCapacity = 1,
+    //     onBufferOverflow = BufferOverflow.DROP_OLDEST
+    // )
+    // val events: SharedFlow<AuthEvent> = _events.asSharedFlow()
 
     fun login() {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             // ... do login ...
-            _events.emit(AuthEvent.LoginSuccess) // For SharedFlow
-            // _events.send(AuthEvent.LoginSuccess) // For Channel
+            _events.send(AuthEvent.LoginSuccess) // Channel: suspends if buffer is full
+            // _events.emit(AuthEvent.LoginSuccess) // SharedFlow
         }
     }
 }
