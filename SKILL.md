@@ -1,5 +1,5 @@
 ---
-name: claude-android-ninja
+name: android-ninja
 description: Create production-quality Android applications following Google's official Android architecture guidance with Kotlin, Jetpack Compose, MVVM architecture, Hilt dependency injection, Room 3 local persistence (KSP, SQLiteDriver, Flow/suspend DAOs), and multi-module architecture. Triggers on requests to create Android projects, modules, screens, ViewModels, repositories, or when asked about Android architecture patterns and best practices.
 license: Apache-2.0
 metadata:
