@@ -1,9 +1,9 @@
 # Android Security
 
-Security guide for Android apps, aligned with our modular architecture.
+Required: server is the trust boundary; the client only collects credentials and forwards integrity tokens. Layer Play Integrity (server-decoded) + Android Keystore + EncryptedSharedPreferences/EncryptedFile + network security config. Heuristic root/emulator checks are telemetry only — never the sole gate.
 
 ## Table of Contents
-1. [Modern device trust and abuse resistance](#modern-device-trust-and-abuse-resistance)
+1. [Device trust and abuse resistance](#device-trust-and-abuse-resistance)
 2. [Network Security](#network-security)
 3. [Certificate Pinning](#certificate-pinning)
 4. [Data Encryption at Rest](#data-encryption-at-rest)
@@ -35,37 +35,33 @@ Security-related libraries available in the version catalog:
 
 Add them to your module as needed, following [dependencies.md → Adding a New Dependency](/references/dependencies.md#adding-a-new-dependency).
 
-## Modern device trust and abuse resistance
+## Device trust and abuse resistance
 
-Use this section when you need **strong assurance** that a sensitive action (login, payment, account change) really comes from **your Play-distributed app** on a **trustworthy device**, not from a modified client or replayed token.
+Apply for high-value flows: login, payment, account change. Establish that *this app binary* on *this device* is trustworthy *for this specific request* — not a single client-side boolean.
 
-### Why client-only "root" style checks are not enough
+### Client-only heuristics are insufficient
 
-Heuristics that look for `su`, Magisk paths, or suspicious packages can still be useful as **telemetry**, but they are **easy to evade** and **tamperable** on the client. An implementation that only does local checks and then allows or blocks in the app is a weak trust boundary. **Do not** treat "root detected" / "not detected" as the only input for high-value flows.
+Local `su` / Magisk / package checks are evadable and tamperable. Use them only as telemetry. Never treat "root detected" / "not detected" as the sole authorization signal.
 
-### What to decide instead
+### Trust inputs (server-verifiable)
 
-Ask whether you can trust **this combination** for **this action**:
+- App binary matches what Play expects (**app integrity**).
+- Install/account context is legitimate (**licensing / account signals**).
+- Device environment meets policy (**device integrity** and optional signals).
+- Integrity token binds to this exact server request (`requestHash` for Standard API, `nonce` for Classic — see [Play Integrity API](#play-integrity-api)).
 
-- The **app binary** matches what Play expects (**app integrity**).
-- The **install and account context** are legitimate (**licensing / account signals**).
-- The **device environment** meets your policy (**device integrity** and optional signals).
-- The **integrity token** applies to **this specific server request** (binding via `requestHash` for Standard API or `nonce` for Classic - see [Play Integrity API](#play-integrity-api)).
+[Play Integrity API](https://developer.android.com/google/play/integrity/overview) emits these as server-verifiable signals.
 
-That matches how [Play Integrity API](https://developer.android.com/google/play/integrity/overview) is designed: **server-verifiable** signals, not a single client-side boolean.
+### Implementation order
 
-### What to implement (order of responsibility)
+1. Backend is authoritative. Decrypt/verify tokens server-side; apply **tiered** policy (allow / step-up / rate-limit / deny the specific operation). Never let the client be the only enforcer.
+2. Use Play Integrity for Play-distributed apps. Integrate **Standard** for frequent checks (prepare provider, request with `requestHash`); use **Classic** for rare high-value checks (`nonce`). See [Play Integrity API](#play-integrity-api).
+3. Bind every token to the action: hash a canonical request representation. Never put secrets in plaintext into the hash input.
+4. Roll out enforcement gradually: log verdicts first, then tighten rules.
+5. Combine with Android Keystore-backed keys for device-bound signing/encryption of high-value operations (see [Android Keystore, TEE & StrongBox](#android-keystore-tee--strongbox)).
+6. Treat optional runtime signals (overlays, accessibility abuse, automation) as risk inputs to policy/fraud engines — not the sole gate unless product requires it.
 
-1. **Backend is authoritative.** Decrypt and verify tokens on the server; apply **tiered** policy (allow, step-up auth, rate limits, or deny **only** the sensitive operation). The client must not be the only place that enforces access to protected APIs.
-2. **Use Play Integrity** for apps distributed on Google Play when you need that assurance. Integrate the **Standard** flow for frequent checks (prepare token provider, then request with `requestHash`) or **Classic** for rare, high-value checks (`nonce`) - details in [Play Integrity API](#play-integrity-api).
-3. **Bind each token to the action** so a token minted for one request cannot be replayed for another (hash a canonical representation of the protected request; never put secrets in plaintext into the hash field).
-4. **Roll out enforcement gradually:** log verdicts and error rates first, then tighten rules so you avoid blocking legitimate users by surprise.
-5. **Combine with cryptography where appropriate:** Android Keystore-backed keys for device-bound signing or encryption of high-value operations (see [Android Keystore, TEE & StrongBox](#android-keystore-tee--strongbox)).
-6. **Treat optional runtime signals** (overlays, accessibility abuse patterns, automation) as **risk inputs** feeding your policy or fraud engine, not as the sole gate unless product requirements demand it.
-
-### Official reference
-
-- [Play Integrity API overview](https://developer.android.com/google/play/integrity/overview) (what the API provides and recommended practices)
+Reference: [Play Integrity API overview](https://developer.android.com/google/play/integrity/overview).
 
 ## Network Security
 
@@ -897,7 +893,7 @@ Replaces SafetyNet Attestation API (deprecated). Verifies device integrity, app 
 1. **Google Cloud (engineer):** Create or select a project; enable the **Play Integrity API** ([Setup guide](https://developer.android.com/google/play/integrity/setup)). The engineer should share the **Google Cloud project number** (numeric, shown in Cloud Console for the project). You pass it to `PrepareIntegrityTokenRequest.setCloudProjectNumber` (Standard API) and to Classic requests when the docs require it. Backend teams create a **service account** in this project with access to call the Play Integrity **decode** API (see [Google's server verification docs](https://developer.android.com/google/play/integrity/standard#decrypt-and-verify-the-integrity-verdict)); those credentials stay on the server.
 2. **Play Console (engineer):** Link that Cloud project to your app under **Test and release** > **App integrity** > **Play Integrity API** > **Link a Cloud project**. Linking is required for quota increases, response configuration in Console, and related tooling. Projects enabled only in Cloud Console but not linked get a limited integration path per Google.
 3. **Quotas (defaults):** Roughly **10,000** integrity token operations and **10,000** server-side decryptions per day for the linked Cloud project (shared across request types; see [Setup](https://developer.android.com/google/play/integrity/setup) for current numbers and how to request more).
-4. **Dependency:** Add the Play Integrity library via your Gradle version catalog. In this skill, the template is [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template): use `version.ref = "playIntegrity"` and the library alias `play-integrity` (`com.google.android.play:integrity`). Mirror that pattern in your project's `gradle/libs.versions.toml` and module `build.gradle.kts` (see [Dependencies](#dependencies)).
+4. **Dependency:** add the Play Integrity library via the version catalog [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template) — `version.ref = "playIntegrity"`, library alias `play-integrity` (`com.google.android.play:integrity`). Mirror in `gradle/libs.versions.toml` and module `build.gradle.kts` (see [Dependencies](#dependencies)).
 
 ### Standard API vs Classic API
 
@@ -1064,13 +1060,15 @@ Google Play can show **in-app dialogs** so users fix licensing, Play services, o
 
 ## Root & Emulator Detection
 
-### How this fits next to Play Integrity
+### Relationship to Play Integrity
 
-**For the AI implementing this skill:** Use **local root and emulator checks** below as **supplementary signals** (telemetry, fraud hints, optional warnings, or feature gating). They are **easy to miss or hide** on modified devices and must **not** be your only line of defense for **API authorization** or **high-value actions** when you can use **Play Integrity** instead.
+Local root/emulator checks are supplementary signals only (telemetry, fraud hints, optional warnings, feature gating). They are easy to evade on modified devices.
 
-- Prefer **server-verified** integrity tokens and **backend policy** for login, payments, and sensitive operations (see [Modern device trust and abuse resistance](#modern-device-trust-and-abuse-resistance) and [Play Integrity API](#play-integrity-api)).
-- If you ship both, **do not** treat "root detected" as equivalent to "Play Integrity failed"; align UX and logs with your **tiered** rules.
-- Official context: [Play Integrity API overview](https://developer.android.com/google/play/integrity/overview).
+Required:
+- Use server-verified Play Integrity tokens for login, payments, and sensitive operations (see [Device trust and abuse resistance](#device-trust-and-abuse-resistance) and [Play Integrity API](#play-integrity-api)).
+- If both ship, never equate "root detected" with "Play Integrity failed"; route through tiered policy.
+
+Reference: [Play Integrity API overview](https://developer.android.com/google/play/integrity/overview).
 
 ### Root Detection
 
@@ -1720,25 +1718,19 @@ Use this checklist for every release:
 - [ ] Keystore-backed key generation for device-bound or high-value crypto where designed
 - [ ] StrongBox used when available
 
-## Best Practices Summary
+## Rules
 
-1. **Defense in depth**: Layer multiple security controls
-2. **Least privilege**: Request only necessary permissions
-3. **Fail securely**: Default to denying access on errors
-4. **Don't trust the client**: All critical validation must happen server-side
-5. **Encrypt everything sensitive**: At rest and in transit
-6. **Keep dependencies updated**: Monitor for CVEs
-7. **Test security**: Include security tests in CI/CD
-8. **Log security events**: But never log sensitive data
-9. **Use hardware security**: Keystore > software encryption
-10. **High-value actions**: Prefer **Play Integrity** with server decode, **`requestHash`** or **`nonce`** binding, and **tiered** backend policy; local root checks stay **supplementary**
-11. **Follow Google's guidance**: [Android Security Tips](https://developer.android.com/privacy-and-security/security-tips)
+Required:
+- Server is the trust boundary; client never makes the final authorization decision.
+- Layer controls (defense in depth); fail closed on errors.
+- Request the minimum permission set; encrypt sensitive data at rest and in transit.
+- Use Android Keystore over software-managed keys; require StrongBox where available.
+- For high-value actions: Play Integrity (server-decoded) with `requestHash`/`nonce` binding + tiered backend policy.
+- Track CVEs in dependencies; run security checks in CI.
 
-## Related Guides
+Forbidden:
+- Logging tokens, PII, or any sensitive payload.
+- Treating local root/emulator checks as authoritative.
+- Hardcoding API keys, signing material, or secrets in source.
 
-- [Crash Reporting](/references/crashlytics.md) - CrashReporter interface and PII scrubbing
-- [Permissions Guide](/references/android-permissions.md) - Runtime permission patterns
-- [Network Configuration](/references/gradle-setup.md) - Network security config setup
-- [Architecture Guide](/references/architecture.md) - Repository patterns for secure data access
-- [Data Sync Guide](/references/android-data-sync.md) - Offline-first with encrypted local storage
-- [StrictMode Guide](/references/android-strictmode.md) - Detecting cleartext traffic
+Reference: [Android Security Tips](https://developer.android.com/privacy-and-security/security-tips). Cross-links: [crashlytics.md](/references/crashlytics.md), [android-permissions.md](/references/android-permissions.md), [gradle-setup.md](/references/gradle-setup.md), [architecture.md](/references/architecture.md), [android-data-sync.md](/references/android-data-sync.md), [android-strictmode.md](/references/android-strictmode.md).
