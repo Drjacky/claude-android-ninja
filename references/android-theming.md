@@ -13,6 +13,7 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 - [Dynamic Color (Material You)](#dynamic-color-material-you)
 - [Typography Scales](#typography-scales)
 - [Shape Theming](#shape-theming)
+- [Material 3 Expressive](#material-3-expressive)
 - [Dark/Light Mode Switching](#darklight-mode-switching)
 - [Theme Preferences](#theme-preferences)
 - [Custom Theme Attributes](#custom-theme-attributes)
@@ -665,6 +666,79 @@ fun ProductCard(product: Product) {
     }
 }
 ```
+
+## Material 3 Expressive
+
+Material 3 Expressive is the 2025+ refresh of Material 3. It adds a **motion scheme**, expressive color tokens, and shape/typography updates. In Compose it is exposed via `MaterialExpressiveTheme` and sibling color-scheme builders.
+
+### Status
+
+- API lives in `androidx.compose.material3` and is marked `@ExperimentalMaterial3ExpressiveApi`.
+- Shipped in `androidx.compose.material3:material3:1.5.0-alpha16` and later.
+- The pinned catalog version (`material3` in `assets/libs.versions.toml.template`) determines whether these APIs are available in this project. If the pin is still on stable 1.4.x, Expressive is **not** available and the existing `MaterialTheme` flow in this guide stays canonical.
+- Do not mix `MaterialTheme` and `MaterialExpressiveTheme` in the same tree. Pick one per Activity/Composable root.
+
+### Opt-in
+
+Enable the opt-in at the file or module level:
+
+```kotlin
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+```
+
+Module-wide (library modules, not `:app` per `references/kotlin-patterns.md`):
+
+```kotlin
+// build.gradle.kts (module)
+kotlin {
+    compilerOptions {
+        optIn.add("androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")
+    }
+}
+```
+
+### Wiring
+
+```kotlin
+@Composable
+fun AppTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val context = LocalContext.current
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        darkTheme -> expressiveDarkColorScheme()
+        else -> expressiveLightColorScheme()
+    }
+
+    MaterialExpressiveTheme(
+        colorScheme = colorScheme,
+        motionScheme = MotionScheme.expressive(),
+        typography = Typography,
+        shapes = Shapes,
+        content = content
+    )
+}
+```
+
+### What changes vs `MaterialTheme`
+
+| Slot       | `MaterialTheme`                            | `MaterialExpressiveTheme`                                      |
+|------------|--------------------------------------------|----------------------------------------------------------------|
+| Color      | `lightColorScheme()` / `darkColorScheme()` | `expressiveLightColorScheme()` / `expressiveDarkColorScheme()` |
+| Motion     | Not a theme slot; per-component defaults   | `MotionScheme.expressive()` / `MotionScheme.standard()`        |
+| Typography | `Typography`                               | Same `Typography` slot; expressive defaults differ             |
+| Shapes     | `Shapes`                                   | Same `Shapes` slot; expressive defaults use larger corners     |
+
+The `motionScheme` slot is the distinguishing feature: it centralises duration and easing tokens that Material 3 components (FAB, dialogs, switches, segmented buttons) pick up automatically.
+
+### When to adopt
+
+- Adopt when the catalog's `material3` is pinned to a version that ships the API as stable, or when the product explicitly signs off on using an experimental API.
+- Until then, use stable `MaterialTheme` plus the token overrides shown elsewhere in this guide. The migration path is a direct swap of `MaterialTheme(...)` for `MaterialExpressiveTheme(...)` plus a `MotionScheme` argument.
 
 ## Dark/Light Mode Switching
 
