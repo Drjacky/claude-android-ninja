@@ -1,12 +1,8 @@
 # Android Notifications
 
-Modern notification patterns following Material Design 3 guidelines with proper channel management, actions, and foreground services.
+Notification patterns aligned with Material Design 3: channel management, actions, and foreground services.
 
-All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
-
-**Related guides:** 
-- See `references/android-permissions.md` for POST_NOTIFICATIONS permission handling
-- See `references/android-data-sync.md` for WorkManager background sync patterns
+All Kotlin code must align with `references/kotlin-patterns.md`. Permission handling lives in `references/android-permissions.md`. WorkManager-backed background sync lives in `references/android-data-sync.md`.
 
 ## Table of Contents
 
@@ -795,7 +791,7 @@ context.startActivity(Intent.createChooser(send, null))
 ### Background work vs long-running services
 
 - **Deferrable work** (sync, uploads, cleanup): **WorkManager** (see `references/android-data-sync.md`).
-- **User-visible ongoing work**: foreground service with notification (this guide).
+- **User-visible ongoing work**: foreground service with notification.
 - **Push-triggered updates**: **FCM** or high-priority pushes where appropriate, not a permanent background socket unless the product truly requires it.
 
 Avoid holding wake locks or silent background services for tasks WorkManager can schedule.
@@ -811,7 +807,7 @@ Treat notification taps like cold entry: resolve the target destination, then pu
 
 ## Notification Manager Interface
 
-Follow our architecture patterns with testable interfaces:
+Wrap notification dispatch behind an interface in `core/notifications`. Inject the interface, never `NotificationManagerCompat`, into ViewModels and use cases. This keeps the dispatcher swappable for fakes in unit tests.
 
 ```kotlin
 // core/notifications/NotificationManager.kt
