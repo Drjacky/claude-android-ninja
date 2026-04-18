@@ -1,8 +1,6 @@
 # Android Accessibility (Compose)
 
-Modern accessibility patterns for Jetpack Compose applications. Target **WCAG 2.2 Level AA** plus Android accessibility requirements. WCAG 2.2 is backwards-compatible with 2.1; everything in 2.1 AA still applies.
-
-Accessibility is not optional - it is required for Google Play, benefits all users, and is often a legal requirement. Build it in from the start.
+Required target: **WCAG 2.2 Level AA** plus the Android-specific rules below (48dp touch targets, TalkBack semantics, Material 3 contrast tokens). WCAG 2.2 is backwards-compatible with 2.1; every 2.1 AA criterion still applies.
 
 ## Table of Contents
 1. [WCAG 2.2 Criteria That Apply Here](#wcag-22-criteria-that-apply-here)
@@ -16,7 +14,7 @@ Accessibility is not optional - it is required for Google Play, benefits all use
 
 ## WCAG 2.2 Criteria That Apply Here
 
-WCAG 2.2 adds nine success criteria on top of 2.1. The ones that land on Android Compose most often:
+WCAG 2.2 adds nine success criteria on top of 2.1. Required on Android Compose:
 
 | Criterion                                 | Rule                                                                                                                                                               | Where it is handled                                                                                                  |
 |-------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
@@ -31,11 +29,11 @@ Always-applicable 2.1 AA criteria still in force: **1.4.3 Contrast (Minimum)** a
 
 ## Semantic Properties
 
-Compose provides semantic properties that screen readers (TalkBack) use to describe UI to users.
+Set semantics on every interactive composable. TalkBack reads only the semantics tree.
 
 ### Content Description
 
-The most important semantic property. Describes non-text elements to screen readers.
+Required on every non-text interactive element (icons, image buttons, decorative-but-tappable surfaces). Set `contentDescription = null` only when an adjacent text label already conveys the action.
 
 ```kotlin
 // ✅ Good: Descriptive, action-oriented
