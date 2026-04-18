@@ -13,6 +13,7 @@ All Kotlin code must align with `references/kotlin-patterns.md`. Theme usage in 
 - [Surface Container Hierarchy](#surface-container-hierarchy)
 - [Tonal Elevation vs Shadows](#tonal-elevation-vs-shadows)
 - [Dynamic Color (Material You)](#dynamic-color-material-you)
+- [User Contrast Preference (Android 14+)](#user-contrast-preference-android-14)
 - [Typography Scales](#typography-scales)
 - [Shape Theming](#shape-theming)
 - [Material 3 Expressive](#material-3-expressive)
@@ -737,6 +738,132 @@ fun AppTheme(
     )
 }
 ```
+
+## User Contrast Preference (Android 14+)
+
+Android 14 (API 34) added a system-wide **Contrast** slider in *Settings → Accessibility → Color and motion*. Users pick Standard / Medium / High, and the OS exposes the result via `UiModeManager.getContrast()` returning a `Float`:
+
+| `getContrast()` value | Setting  | Use the scheme variant                         |
+|-----------------------|----------|------------------------------------------------|
+| `0.0f`                | Standard | Default `LightColorScheme` / `DarkColorScheme` |
+| `0.5f`                | Medium   | Medium-contrast variant                        |
+| `1.0f`                | High     | High-contrast variant                          |
+
+Honoring this is one of the cheapest accessibility wins in M3: the user already opted in at the OS level, you just have to read the value and pick the right scheme.
+
+### Generate the contrast scheme variants
+
+Use [Material Theme Builder](https://m3.material.io/theme-builder) → **Export** → it ships six schemes: `Light`, `LightMediumContrast`, `LightHighContrast`, `Dark`, `DarkMediumContrast`, `DarkHighContrast`. Drop them into `Color.kt` next to the existing pair.
+
+### Compose helper: read contrast reactively
+
+`UiModeManager.getContrast()` is API 34+ only, and the value can change while the app is foregrounded (user toggles the slider). Listen to `UiModeManager.ContrastChangeListener` and surface it through state.
+
+```kotlin
+import android.app.UiModeManager
+import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.getSystemService
+
+enum class ContrastLevel { Standard, Medium, High }
+
+@Composable
+fun rememberContrastLevel(): ContrastLevel {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        return ContrastLevel.Standard
+    }
+    val context = LocalContext.current
+    val uiModeManager = remember(context) { context.getSystemService<UiModeManager>()!! }
+    var level by remember { mutableStateOf(uiModeManager.contrastLevel()) }
+
+    DisposableEffect(uiModeManager) {
+        val executor = ContextCompat.getMainExecutor(context)
+        val listener = UiModeManager.ContrastChangeListener { level = uiModeManager.contrastLevel() }
+        uiModeManager.addContrastChangeListener(executor, listener)
+        onDispose { uiModeManager.removeContrastChangeListener(listener) }
+    }
+    return level
+}
+
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+private fun UiModeManager.contrastLevel(): ContrastLevel = when {
+    contrast >= 0.75f -> ContrastLevel.High
+    contrast >= 0.25f -> ContrastLevel.Medium
+    else              -> ContrastLevel.Standard
+}
+```
+
+The bucket boundaries (`0.25` / `0.75`) are intentional — the API is documented to return `0.0` / `0.5` / `1.0` today, but bucketing leaves room for future intermediate values without breaking the picker.
+
+### Plug into `AppTheme`
+
+Slot the contrast pick into the same `colorScheme` decision tree from [Conditional Dynamic Color Support](#conditional-dynamic-color-support) — pick the static variant that matches `(isDark, contrast)`. With **dynamic color**, `dynamicLightColorScheme(context)` / `dynamicDarkColorScheme(context)` already honor the user contrast on API 34+, so leave them alone.
+
+```kotlin
+@Composable
+fun AppTheme(
+    themeConfig: ThemeConfig,
+    content: @Composable () -> Unit,
+) {
+    val isDarkTheme = when (themeConfig.themePreference) {
+        ThemePreference.LIGHT -> false
+        ThemePreference.DARK -> true
+        ThemePreference.SYSTEM -> isSystemInDarkTheme()
+    }
+    val dynamicColorActive =
+        themeConfig.useDynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val contrast = rememberContrastLevel()
+
+    val colorScheme = when {
+        dynamicColorActive -> {
+            val context = LocalContext.current
+            if (isDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        isDarkTheme -> when (contrast) {
+            ContrastLevel.High     -> DarkHighContrastColorScheme
+            ContrastLevel.Medium   -> DarkMediumContrastColorScheme
+            ContrastLevel.Standard -> DarkColorScheme
+        }
+        else -> when (contrast) {
+            ContrastLevel.High     -> LightHighContrastColorScheme
+            ContrastLevel.Medium   -> LightMediumContrastColorScheme
+            ContrastLevel.Standard -> LightColorScheme
+        }
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = AppTypography,
+        shapes = AppShapes,
+        content = content,
+    )
+}
+```
+
+### What this does **not** replace
+
+User contrast scales the **color scheme**. It is not a substitute for:
+
+- WCAG contrast checks on hard-coded brand colors (still required — see `references/android-accessibility.md`).
+- A larger-text / display-density preference (those are separate system settings).
+- Honoring user font scale (`fontScale` in `Configuration`) — that affects typography, not color.
+
+### Testing
+
+`adb shell settings put secure contrast_level 0.5` toggles the system value without going through the slider. Pair with the existing dark-mode preview pattern:
+
+```kotlin
+@Preview(name = "Light · Standard")
+@Preview(name = "Light · Medium",  group = "contrast")
+@Preview(name = "Light · High",    group = "contrast")
+@Preview(name = "Dark · Standard", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Dark · High",     uiMode = Configuration.UI_MODE_NIGHT_YES, group = "contrast")
+```
+
+Previews can't read the live `UiModeManager`, so wrap your composable in a small test theme that takes `ContrastLevel` as a parameter.
 
 ## Typography Scales
 
