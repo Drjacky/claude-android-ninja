@@ -1,11 +1,10 @@
 # Android Performance
 
-Performance guidance for this multi-module, Compose-first architecture. Use this when you need
-repeatable metrics for startup, navigation, or UI rendering changes.
+Required: measure with Macrobenchmark + Baseline Profiles before and after every change to startup, navigation, or list rendering. Track production via Play Vitals + Crashlytics/Sentry. Apply StrictMode guardrails ([android-strictmode.md](/references/android-strictmode.md)).
 
 ## Google Play Vitals and production targets
 
-Ship quality is measured in production, not only in local benchmarks. [Android vitals](https://developer.android.com/topic/performance/vitals) in Play Console surface behavior that affects visibility and ranking.
+[Android vitals](https://developer.android.com/topic/performance/vitals) reports user-perceived crash rate, ANR rate, and slow-start metrics; exceeding bad-behavior thresholds reduces distribution and discovery.
 
 ### Core thresholds (Play Console)
 
@@ -146,34 +145,29 @@ Rendering should stay within the display's frame budget:
 | 90 Hz   | ~11.1 ms per frame     |
 | 120 Hz  | ~8.3 ms per frame      |
 
-**Slow frames** exceed the budget; **frozen frames** are long stalls (often hundreds of ms or more) and strongly harm perceived quality. Investigate with `FrameTimingMetric()`, Profetto, and the system GPU/profile tools described later in this guide.
+**Slow frames** exceed the budget; **frozen frames** are long stalls (typically hundreds of ms or more). Investigate with `FrameTimingMetric()`, Perfetto, and Android Studio profilers.
 
 ### Background work and battery
 
-- Prefer **WorkManager** for deferrable background work; avoid long-lived services unless required (foreground service with user-visible notification when applicable).
-- **Doze** and **App Standby** limit background execution; design for batched work and FCM for push where needed.
-- Release **WakeLocks** promptly; avoid holding partial wake locks across idle periods.
+Required:
+- Use **WorkManager** for deferrable background work; foreground service only with a user-visible notification.
+- Design for **Doze** and **App Standby**: batch work; use FCM for push.
+- Release **WakeLocks** with timeouts; never hold partial wake locks across idle.
 
-For StrictMode and main-thread guardrails, see `references/android-strictmode.md`.
+StrictMode and main-thread guardrails: [android-strictmode.md](/references/android-strictmode.md).
 
 ## Benchmark
 
-Benchmarking is for measuring **real performance** (not just profiling). Use it to detect
-regressions and compare changes objectively. Android provides two libraries:
-- **Macrobenchmark**: end-to-end user journeys (startup, scrolling, navigation).
-- **Microbenchmark**: small, isolated code paths.
-
-This guide focuses on **Macrobenchmark** for Compose apps.
+Required: Macrobenchmark for end-to-end journeys (startup, scrolling, navigation). Microbenchmark for isolated code paths only.
 
 ### Macrobenchmark (Compose)
 
-#### When to Use
-- Startup time regressions (cold/warm start).
-- Compose screen navigation and list scrolling.
-- Animation/jank investigations that need repeatable results.
+Use when:
+- Investigating cold/warm start regressions.
+- Measuring Compose navigation, list scrolling, or animation jank.
+- Producing repeatable numbers for CI gating.
 
-#### Module Setup
-Create a dedicated `:benchmark` test module. See `references/gradle-setup.md` → "Benchmark Module (Optional)" for the complete module setup and app build type configuration.
+Module setup: see [gradle-setup.md](/references/gradle-setup.md) → "Benchmark Module (Optional)".
 
 #### Compose Macrobenchmark Example
 ```kotlin
@@ -236,11 +230,9 @@ Use these in CI to detect regressions and track changes over time.
 
 #### Custom System Tracing
 
-While Macrobenchmark generates system traces automatically, they often lack visibility into specific app-level functions. Adding custom trace sections significantly improves your ability to identify jank and startup bottlenecks.
+Required: wrap app-level critical sections in `trace { }`. Macrobenchmark traces alone rarely surface in-app hotspots.
 
-**Setup:**
-
-Add the dependency to your app module. For the latest low-overhead Kotlin API (Tracing 2.0) that supports context propagation for Coroutines, use `tracing-wire-android`:
+Use Tracing 2.0 (`tracing-wire-android`) for low overhead and Coroutine context propagation:
 ```kotlin
 // app/build.gradle.kts
 dependencies {
@@ -512,13 +504,8 @@ class StartupBenchmark {
 
 #### ProfileInstaller
 
-While Baseline Profiles are generated during the build, the `androidx.profileinstaller` library ensures they are correctly compiled by the Android Runtime (ART) on the user's device immediately after install or update. It acts as the delivery and installation crew for your performance blueprints.
+Required: add `androidx.profileinstaller` so ART compiles Baseline Profiles on first launch (mandatory for non-Play distribution; redundant only when Play Store cloud profiles cover every install path).
 
-Without it, users might experience sluggish startup or janky scrolling on the very first run until ART compiles the app in the background.
-
-**Setup:**
-
-Add the dependency to your app module:
 ```kotlin
 // app/build.gradle.kts
 dependencies {
@@ -526,28 +513,17 @@ dependencies {
 }
 ```
 
-**Why it's essential:**
-- **Instant Speed:** Guarantees immediate performance benefits on the first launch.
-- **Outside Play Store:** Crucial for apps distributed via other channels (e.g., direct APK download, enterprise MDM) where Play Store's cloud profiles aren't available.
-- **Consistency:** Ensures all users get the baseline profile optimizations regardless of how they installed the app.
-
 ## Compose Stability Validation (Optional)
 
-The [Compose Stability Analyzer](https://github.com/skydoves/compose-stability-analyzer) provides real-time analysis and CI guardrails for Jetpack Compose stability.
+Use [Compose Stability Analyzer](https://github.com/skydoves/compose-stability-analyzer) for CI gating on composable skippability.
 
 ### IDE Plugin (Optional)
 
-The Compose Stability Analyzer IntelliJ Plugin provides real-time visual feedback in Android Studio:
-- **Gutter Icons**: Colored dots showing if a composable is skippable.
-- **Hover Tooltips**: Detailed stability information and reasons.
-- **Inline Parameter Hints**: Badges showing parameter stability.
-- **Code Inspections**: Quick fixes and warnings for unstable composables.
-
-Install via: **Settings** → **Plugins** → **Marketplace** → "Compose Stability Analyzer"
+Install: **Settings** → **Plugins** → **Marketplace** → "Compose Stability Analyzer". Surfaces gutter icons, hover tooltips, inline parameter stability hints, and inspections.
 
 ### Gradle Plugin for CI/CD
 
-For setup instructions, see `references/gradle-setup.md` → "Compose Stability Analyzer (Optional)".
+Setup: [gradle-setup.md](/references/gradle-setup.md) → "Compose Stability Analyzer (Optional)".
 
 #### Generate Baseline
 
@@ -586,89 +562,77 @@ stability_check:
 
 ## CPU Optimization
 
-CPU is like your app's brain. Too much thinking leads to battery drain and heat.
+Required:
 
-### Common CPU Hogs
-
-1. **Unnecessary Work in Loops**: Avoid recalculating values or accessing properties repeatedly inside a loop.
+1. **Hoist invariants out of loops.**
 ```kotlin
-// Bad: Recalculates in every iteration
-for (i in 0 until items.size) { // items.size called multiple times
+// Bad
+for (i in 0 until items.size) {
     process(items[i])
 }
 
-// Good: Calculate once or use forEach
-items.forEach { item ->
-    process(item)
-}
+// Good
+items.forEach(::process)
 ```
 
-2. **String Concatenation in Loops**: Avoid using `+=` for strings in loops as it creates new String objects each time. Use `StringBuilder` instead.
+2. **Use `StringBuilder` for any concatenation in a loop.**
 ```kotlin
-// Bad: Creates new String object 1000 times
+// Bad
 var result = ""
 for (i in 1..1000) {
     result += "Item $i\n"
 }
 
-// Good: Use StringBuilder
+// Good
 val result = StringBuilder()
 for (i in 1..1000) {
     result.append("Item $i\n")
 }
 ```
 
-3. **Regex in Performance-Critical Code**: Compiling a regex is expensive. Compile it once and reuse it.
+3. **Cache compiled `Regex` instances.**
 ```kotlin
-// Bad: Compiles regex every time
-fun validateEmail(email: String): Boolean {
-    return email.matches(Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"))
-}
+// Bad
+fun validateEmail(email: String): Boolean =
+    email.matches(Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"))
 
-// Good: Compile once
-companion object {
-    private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")
-}
-fun validateEmail(email: String): Boolean {
-    return email.matches(EMAIL_REGEX)
-}
+// Good
+private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")
+
+fun validateEmail(email: String): Boolean = email.matches(EMAIL_REGEX)
 ```
 
 ## Battery Optimization
 
-Users uninstall apps that drain battery. Android shows battery usage stats, and your app will be blamed!
+Required:
 
-### Common Battery Drains
-
-1. **Wakelocks (Keeping Device Awake)**: Ensure wakelocks are always released or use a timeout.
+1. **Always release `WakeLock` or acquire with a timeout.**
 ```kotlin
-// Bad: Device never sleeps if not released manually!
-wakeLock.acquire() 
+// Bad
+wakeLock.acquire()
 
-// Good: Auto-release after a timeout
-wakeLock.acquire(10 * 60 * 1000L) // 10 minutes
+// Good
+wakeLock.acquire(10 * 60 * 1000L)
 ```
 
-2. **Location Updates**: Avoid requesting high accuracy updates too frequently.
+2. **Use `PRIORITY_BALANCED_POWER_ACCURACY` and intervals ≥ 30 s for foreground location.**
 ```kotlin
-// Bad: High accuracy every second kills battery
+// Bad
 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0f, listener)
 
-// Good: Balanced power and accuracy with reasonable intervals
+// Good
 val locationRequest = LocationRequest.create().apply {
-    interval = 60000 // 1 minute
-    fastestInterval = 30000 // 30 seconds
+    interval = 60000
+    fastestInterval = 30000
     priority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY
 }
 ```
 
 ## Network Performance Optimization
 
-Network calls are slow (100-500ms), use battery, cost data, and can cause ANRs if done on the main thread.
+Required: never run network on the main thread; cache responses; batch requests; enable HTTP/2.
 
-### Best Practices
-
-1. **Use OkHttp/Retrofit with Caching**: Cache responses to save data and improve load times when offline.
+1. **OkHttp/Retrofit with `Cache`.**
 ```kotlin
 val cacheSize = 10 * 1024 * 1024L // 10 MB
 val cache = Cache(context.cacheDir, cacheSize)
@@ -703,37 +667,29 @@ val okHttpClient = OkHttpClient.Builder()
 
 ## Image Optimization
 
-Images are the biggest memory consumers in apps. Unoptimized images can cause `OutOfMemoryError`, janky scrolling, and slow loading.
+Required:
 
-### Best Practices
-
-1. **Use Image Loading Libraries**: Never use `BitmapFactory` directly for loading images from the network. Use Coil.
+1. **Coil for all network images.** Forbidden: direct `BitmapFactory.decodeStream` from network.
 ```kotlin
-// Coil (Kotlin-first, uses Coroutines)
 imageView.load(imageUrl) {
     crossfade(true)
     placeholder(R.drawable.placeholder)
 }
 ```
 
-2. **Resize Images**: Don't load a 4000x3000 image to display in a 200x200 view. Let the image loading library resize it to the actual display size.
+2. **Decode at display size.** Never decode a 4000×3000 bitmap into a 200 dp view; let Coil size it.
 
-3. **Use Appropriate Image Formats**:
-   - **JPEG**: Photos (smaller file size, lossy compression)
-   - **PNG**: Icons/logos with transparency (larger, lossless)
-   - **WebP**: Modern format (smaller than JPEG, supports transparency)
+3. **Format selection:** JPEG for photos, PNG for transparent icons, **WebP** for everything else (smaller than JPEG, supports transparency).
 
-4. **Vector Drawables for Icons**: Use Vector Drawables (`.xml`) instead of multiple PNG sizes (`mdpi`, `hdpi`, `xhdpi`, etc.) to save significant space.
+4. **Vector drawables for icons.** Forbidden: shipping per-density PNG sets when an `.xml` vector exists.
 
 ## APK Size Optimization
 
-Smaller APKs lead to faster downloads, more installs, and better retention for users on limited data plans.
+Required:
 
-### Size Reduction Techniques
-
-1. **Enable Code Shrinking (R8)**: Removes unused code/resources and obfuscates code (can reduce size by 30-60%). Ensure `isMinifyEnabled` and `isShrinkResources` are true for release builds.
-2. **Use Android App Bundle (AAB)**: Upload AABs to the Play Store instead of APKs. The Play Store generates optimized APKs containing only the resources, code, and languages needed for a specific user's device.
-3. **Remove Unused Resources**: Use `resConfigs` to keep only the languages your app actually supports.
+1. **Enable R8.** `isMinifyEnabled = true` and `isShrinkResources = true` on every release build.
+2. **Ship AAB, not APK.** Play Store generates per-device splits.
+3. **Filter resources via `resConfigs`** to ship only supported languages.
 ```kotlin
 android {
     defaultConfig {
@@ -741,8 +697,8 @@ android {
     }
 }
 ```
-4. **Use WebP Instead of PNG**: Convert PNG images to WebP to reduce size by up to 70% without losing quality.
-5. **Remove Native Library Variants**: If you use NDK, filter ABIs to only include common architectures.
+4. **Convert PNG → WebP** wherever it preserves quality.
+5. **Filter NDK ABIs** to common architectures.
 ```kotlin
 android {
     defaultConfig {
@@ -755,11 +711,11 @@ android {
 
 ## App Startup & Initialization
 
-Optimize cold start time by controlling when and how components initialize. Avoid ContentProvider-based auto-initialization and use the App Startup library for explicit control.
+Required: control component initialization explicitly. Forbidden: per-library `ContentProvider` auto-initialization. Use `androidx.startup` or lazy initialization.
 
 ### ContentProvider Anti-Pattern
 
-Many libraries auto-initialize via `ContentProvider.onCreate()`, which runs before `Application.onCreate()` on the main thread. Each ContentProvider adds overhead to cold start. Instead, disable auto-initialization and use the App Startup library or lazy initialization.
+Library `ContentProvider.onCreate()` runs before `Application.onCreate()` on the main thread; each one adds cold-start cost. Disable per-library auto-initialization and route through `androidx.startup`.
 
 **Disable a library's auto-initialization** (e.g., WorkManager):
 ```xml
@@ -1014,14 +970,14 @@ Every frame runs three phases. State reads in each phase only trigger work for t
 Read state in the layout or draw phase instead of composition to avoid recomposition:
 
 ```kotlin
-// Bad: reads in composition - recomposes every frame during animation
+// Bad: read in composition phase
 @Composable
 fun AnimatedBox(offsetState: State<Float>) {
     val x = offsetState.value
     Box(modifier = Modifier.offset(x.dp, 0.dp))
 }
 
-// Good: reads in layout phase - no recomposition
+// Good: deferred to layout phase
 @Composable
 fun AnimatedBox(offsetState: State<Float>) {
     Box(
@@ -1031,7 +987,7 @@ fun AnimatedBox(offsetState: State<Float>) {
     )
 }
 
-// Best: reads in draw phase via graphicsLayer - no recomposition, no relayout
+// Best: deferred to draw phase
 @Composable
 fun AnimatedBox(offsetState: State<Float>) {
     Box(
@@ -1049,14 +1005,14 @@ Key lambda-based modifiers that defer reads:
 
 ### Strong Skipping Mode
 
-Enabled by default in modern Compose compiler. Changes how recomposition skipping works:
+Enabled by default on the current Compose compiler. Recomposition skipping rules:
 
 - Composables skip recomposition if all parameters are unchanged
 - Lambdas are stable if all captured variables are stable
 - `@Stable` and `@Immutable` annotations are critical for custom types
 
 ```kotlin
-// Stable lambda - count is a stable type (Int)
+// Good: stable lambda (captures only stable Int)
 @Composable
 fun Counter(count: Int) {
     Button(onClick = { println(count) }) {
@@ -1064,25 +1020,25 @@ fun Counter(count: Int) {
     }
 }
 
-// Unstable parameter - causes recomposition every time
+// Bad: unstable parameter
 @Composable
-fun UserCard(config: Config) { // Config not annotated = unstable
+fun UserCard(config: Config) {
     Text(config.title)
 }
 
-// Fix: annotate or cache
+// Fix
 @Immutable
 data class Config(val title: String, val color: Color)
 ```
 
-For stability annotations (`@Immutable`, `@Stable`), see [Performance Optimization > Stability Annotations](../references/compose-patterns.md#stability-annotations-immutable-vs-stable) in compose-patterns.md.
+Stability annotations (`@Immutable`, `@Stable`): [compose-patterns.md → Stability Annotations](/references/compose-patterns.md#stability-annotations-immutable-vs-stable).
 
 ### derivedStateOf - Reducing Recomposition Frequency
 
 Only recomposes when the derived result actually changes, not on every input change:
 
 ```kotlin
-// Bad: filters on every recomposition
+// Bad: filter recomputed every recomposition
 @Composable
 fun FilteredList(items: List<Item>, query: String) {
     val filtered = items.filter { query in it.title }
@@ -1091,7 +1047,7 @@ fun FilteredList(items: List<Item>, query: String) {
     }
 }
 
-// Good: only recomposes when the filtered result changes
+// Good
 @Composable
 fun FilteredList(items: List<Item>, query: String) {
     val filtered by remember(items, query) {
@@ -1117,17 +1073,17 @@ Only use `derivedStateOf` for non-trivial computations. For cheap operations (st
 ### remember with Keys
 
 ```kotlin
-// Recalculates on every recomposition - bad for expensive ops
+// Bad: recomputed every recomposition
 val metadata = computeMetadata(id)
 
-// Recalculates only when id changes
+// Good
 val metadata = remember(id) { computeMetadata(id) }
 
 // Multiple keys
 val data = remember(id, userId) { fetchData(id, userId) }
 ```
 
-Skip `remember` for cheap operations (string literals, simple objects). Over-wrapping adds memory overhead.
+Forbidden: wrapping cheap values (literals, primitives, single-property data classes) in `remember`.
 
 ### R8/ProGuard Compose Rules
 
@@ -1160,7 +1116,7 @@ android {
 }
 ```
 
-See `assets/proguard-rules.pro.template` for the full R8 rules file.
+Full R8 rules: `assets/proguard-rules.pro.template`.
 
 ### Layout Inspector - Recomposition Counts
 
@@ -1180,17 +1136,13 @@ High recomposition counts indicate:
 ### Common Hot Paths
 
 ```kotlin
-// Bad: allocates string every recomposition
-Text("Count: ${count}")
-// Acceptable: Compose handles this efficiently for simple interpolation
-
-// Bad: creates new ButtonColors every recomposition
+// Bad: new ButtonColors per recomposition
 Button(
     colors = ButtonDefaults.buttonColors(
         containerColor = if (isPressed) Color.Red else Color.Blue
     )
 ) { Text("Click") }
-// Good: cache the colors
+// Good
 val buttonColors = remember(isPressed) {
     ButtonDefaults.buttonColors(
         containerColor = if (isPressed) Color.Red else Color.Blue
@@ -1198,11 +1150,11 @@ val buttonColors = remember(isPressed) {
 }
 Button(colors = buttonColors) { Text("Click") }
 
-// Bad: filters without derivedStateOf - runs on every recomposition
+// Bad: filter inside items()
 LazyColumn {
     items(items.filter(predicate)) { ItemRow(it) }
 }
-// Good: derive the filtered list
+// Good
 val filtered by remember(items, predicate) {
     derivedStateOf { items.filter(predicate) }
 }
@@ -1210,14 +1162,14 @@ LazyColumn {
     items(filtered) { ItemRow(it) }
 }
 
-// Bad: creating objects in item scope
+// Bad: per-item remember + missing key
 LazyColumn {
     items(users) { user ->
-        val state = remember { mutableStateOf(user) } // new state per recomposition
+        val state = remember { mutableStateOf(user) }
         UserRow(state.value)
     }
 }
-// Good: pass data directly with stable keys
+// Good
 LazyColumn {
     items(users, key = { it.id }) { user ->
         UserRow(user)
@@ -1227,14 +1179,14 @@ LazyColumn {
 
 ### Text Input Performance
 
+`BasicTextField2` (`rememberTextFieldState()`) is required for high-frequency input; `TextField` / `OutlinedTextField` round-trip through the ViewModel and drop keystrokes under load.
+
 ```kotlin
-// Bad: using BasicTextField or OutlinedTextField for high-frequency input
-// This can cause dropped keystrokes and jank because state updates must round-trip through the ViewModel.
+// Bad
 var text by remember { mutableStateOf("") }
 TextField(value = text, onValueChange = { text = it })
 
-// Good: use BasicTextField2 for all text input
-// BasicTextField2 manages its own internal state, preventing dropped keystrokes.
+// Good
 val state = rememberTextFieldState()
 BasicTextField2(state = state)
 ```
