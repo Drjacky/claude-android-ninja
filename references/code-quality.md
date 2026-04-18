@@ -1,7 +1,6 @@
 # Code Quality (Detekt)
 
-Detekt is the primary static analysis tool for this multi-module Android project.
-We integrate it through build-logic convention plugins so every module is configured consistently.
+Detekt is the required static analysis tool. Apply it to every module through the `build-logic` convention plugin so configuration stays identical across modules.
 
 ## Goals
 - Single source of truth for rules (`plugins/detekt.yml`) with optional per-module overrides.
@@ -176,7 +175,7 @@ For compatibility information and latest rules, see: [Compose rules + detekt com
 
 ### Acceptable Suppressions for Compose
 
-Jetpack Compose composables are declarative UI functions that naturally differ from imperative code. The following suppressions are acceptable when applied to `@Composable` functions:
+The following suppressions are acceptable on `@Composable` functions only.
 
 #### `@Suppress("LongMethod")`
 Composable UI functions declare layout trees and are naturally longer than business logic functions.
@@ -298,10 +297,15 @@ Avoid suppressing these without fixing the underlying issue:
 - `TooGenericExceptionCaught` when you can handle specific exceptions → Use specific catches
 - `UnusedPrivateProperty` → Remove the property
 
-## Best Practices
+## Suppression rules
 
-1. **Fix, don't suppress**: Suppressions should be rare. Refactor code instead.
-2. **Justify suppressions**: Add a comment explaining why the suppression is necessary.
-3. **Be specific**: Use targeted suppressions (catch parameters, single functions) over file-level.
-4. **Review suppressions**: Suppressions added "temporarily" tend to become permanent. Review regularly.
-5. **Compose is different**: Accept that Compose composables naturally violate some imperative code rules.
+Required:
+- Fix the violation. Suppress only when the rule does not apply (e.g., `LongMethod` on a `@Composable`).
+- Add a one-line `// Suppressed because <reason>` comment next to every `@Suppress`.
+- Use the narrowest scope: catch parameter > single declaration > `@file:Suppress`.
+- Re-audit suppressions on every CI baseline regeneration.
+
+Forbidden:
+- Suppressing rules in ViewModel, repository, use case, or other non-`@Composable` code without refactor.
+- File-level suppression of `MagicNumber`, `ComplexMethod`, `LongParameterList` in data/domain layers.
+- Adding a suppression labeled "temporary" without a tracked follow-up.
