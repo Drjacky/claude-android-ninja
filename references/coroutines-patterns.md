@@ -2,8 +2,7 @@
 
 ## Coroutines Best Practices (Android)
 
-Use coroutines in a testable, lifecycle-aware way. Highlights from Android guidance:
-[https://developer.android.com/kotlin/coroutines/coroutines-best-practices](https://developer.android.com/kotlin/coroutines/coroutines-best-practices)
+Use coroutines in a testable, lifecycle-aware way. Reference: [developer.android.com/kotlin/coroutines/coroutines-best-practices](https://developer.android.com/kotlin/coroutines/coroutines-best-practices).
 
 **Data Synchronization:** For retry mechanisms with exponential backoff and background sync patterns, see `references/android-data-sync.md`.
 
@@ -586,14 +585,15 @@ class RelayConnectionService : Service() {
 
 Without the `CoroutineExceptionHandler`, an unhandled exception from any child would crash the app - `SupervisorJob` only prevents sibling cancellation, it does not swallow exceptions.
 
-#### Decision Guide
+#### Use when
 
+| Scenario                                    | Use                                           |
+|---------------------------------------------|-----------------------------------------------|
+| Suspend function, parallel independent work | `supervisorScope`                             |
+| Long-lived scope (Service, Repository)      | `SupervisorJob` + `CoroutineExceptionHandler` |
+| `withContext` + supervision needed          | `supervisorScope` inside `withContext`        |
 
-| Scenario                                    | Use                                           | Why                                           |
-|---------------------------------------------|-----------------------------------------------|-----------------------------------------------|
-| Suspend function, parallel independent work | `supervisorScope`                             | Scoped, automatic exception containment       |
-| Long-lived scope (Service, Repository)      | `SupervisorJob` + `CoroutineExceptionHandler` | Explicit lifecycle, explicit error handling   |
-| `withContext` + supervision needed          | `supervisorScope` inside `withContext`        | Never pass `SupervisorJob()` to `withContext` |
+Forbidden: `withContext(SupervisorJob())` — see anti-pattern below.
 
 
 #### Anti-Pattern: `withContext(SupervisorJob())`
@@ -739,17 +739,16 @@ accelerometerFlow()
     .collect { reading -> updateDisplay(reading) }
 ```
 
-#### Decision Guide
+#### Use when
 
-
-| Scenario                                         | Operator                 | Effect                    |
-|--------------------------------------------------|--------------------------|---------------------------|
-| Slow collector, fast producer, all values matter | `buffer(capacity)`       | Queues emissions          |
-| Slow collector, only latest value matters        | `conflate()`             | Skips intermediate        |
-| Fast producer, drop old when full                | `buffer(n, DROP_OLDEST)` | Bounded buffer, drops old |
-| User input (search, text)                        | `debounce(ms)`           | Waits for pause           |
-| Continuous stream, periodic sampling             | `sample(ms)`             | Fixed-rate snapshots      |
-| Suppress consecutive duplicates                  | `distinctUntilChanged()` | Filters equal             |
+| Scenario                                         | Operator                 |
+|--------------------------------------------------|--------------------------|
+| Slow collector, fast producer, all values matter | `buffer(capacity)`       |
+| Slow collector, only latest value matters        | `conflate()`             |
+| Fast producer, drop old when full                | `buffer(n, DROP_OLDEST)` |
+| User input (search, text)                        | `debounce(ms)`           |
+| Continuous stream, periodic sampling             | `sample(ms)`             |
+| Suppress consecutive duplicates                  | `distinctUntilChanged()` |
 
 
 #### Anti-Pattern
@@ -921,7 +920,7 @@ Warning: Never wrap normal business logic in `NonCancellable`. It should only gu
 
 Use `withTimeout` or `withTimeoutOrNull` for operations that can hang indefinitely when interacting with hardware or third-party SDKs without built-in timeout mechanisms.
 
-Note: Modern HTTP clients (OkHttp, Ktor) have sophisticated timeout configuration. Configure those at the client level instead of wrapping each call. Use explicit timeouts only when the underlying API has no timeout control.
+Configure HTTP timeouts at the client level (OkHttp, Ktor). Use `withTimeout`/`withTimeoutOrNull` only for APIs that expose no timeout control of their own (hardware SDKs, third-party callbacks).
 
 ```kotlin
 class BiometricAuthRepository(
@@ -953,11 +952,9 @@ class HardwarePrinterRepository(
 }
 ```
 
-Important notes:
-
-- `withTimeout` throws `TimeoutCancellationException` (a subclass of `CancellationException`), which will cancel the coroutine unless caught and handled
-- Wrap `withContext` inside `withTimeout`, not the other way around, so the timeout covers the full operation including dispatcher switch
-- Use `withTimeoutOrNull` when a null result is acceptable; use `withTimeout` with explicit timeout handling when you need to distinguish timeout from other failures
+- `withTimeout` throws `TimeoutCancellationException` (a `CancellationException`); it cancels the coroutine unless caught.
+- Always wrap `withContext` *inside* `withTimeout`, never the reverse. The timeout must cover the dispatcher switch.
+- Use `withTimeoutOrNull` when `null` is an acceptable outcome. Use `withTimeout` when timeout must be distinguished from other failures.
 
 ## Bridging Imperative Callbacks to Coroutines
 
@@ -1594,12 +1591,9 @@ class SearchViewModel : ViewModel() {
 
 ### `emit` vs `tryEmit`
 
-When sending data to a `MutableSharedFlow` or `MutableStateFlow`, you have two options:
+`emit` suspends until the value is delivered. `tryEmit` returns `Boolean` (`false` = dropped because the buffer was full). Inside a coroutine, default to `emit`. Use `tryEmit` only from non-suspending contexts, or when dropping a value is acceptable.
 
-- **`emit`**: A `suspend` function. It will suspend the execution of your coroutine if the flow's buffer is full, waiting until the value can be safely delivered. **Use this by default** when you are inside a coroutine to ensure no data is dropped due to backpressure.
-- **`tryEmit`**: A non-suspending function. It returns `true` if the value was emitted successfully, and `false` if the buffer was full and the value was dropped. **Use this only** when you are outside a coroutine (and thus cannot suspend) or when it is perfectly acceptable to drop the value if the subscribers can't keep up.
-
-**Note on BufferOverflow:** If you configure a `MutableSharedFlow` with `onBufferOverflow = BufferOverflow.DROP_OLDEST` or `DROP_LATEST`, `tryEmit` will always succeed and return `true`, because the buffer never technically "fills up" in a way that blocks emission. However, `emit` is still preferred inside coroutines for consistency and safety if buffer strategies change.
+With `BufferOverflow.DROP_OLDEST`/`DROP_LATEST`, `tryEmit` always returns `true`. Still prefer `emit` inside coroutines so the call stays correct if the overflow strategy changes.
 
 ### Using emit() on MutableStateFlow
 
