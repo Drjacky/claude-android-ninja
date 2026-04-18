@@ -1,7 +1,6 @@
 # Testing Patterns
 
-Testing approach following our multi-module architecture with test doubles strategy (no mocking libraries)
-and Google Truth for assertions.
+Required: hand-written fakes (no mocking libraries) in feature/core modules; Google Truth for assertions; Turbine for `Flow`; Hilt + Robolectric/Compose UI for integration. MockK is permitted only inside the `app` module for Navigation 3 framework types. Layered targets follow [architecture.md](/references/architecture.md) and [modularization.md](/references/modularization.md).
 
 ## Table of Contents
 1. [Testing Philosophy](#testing-philosophy)
@@ -18,22 +17,20 @@ and Google Truth for assertions.
 12. [Screenshot Testing](#screenshot-testing)
 13. [Performance Benchmarks](#performance-benchmarks)
 14. [Test Utilities](#test-utilities)
-15. [Paging 3 Testing](#paging-3-testing)
-16. [Localization Testing](#localization-testing)
+15. [Rules](#rules)
+16. [Paging 3 Testing](#paging-3-testing)
+17. [Localization Testing](#localization-testing)
 
 ## Testing Philosophy
 
 ### No Mocking Libraries
 
-Our architecture avoids mocking libraries in feature and core modules, using test doubles instead.
-We make an exception in the app module for navigation testing, where MockK is used to mock framework classes.
-- **Feature modules**: No mocking libraries - use fake implementations that implement interfaces
-- **Core modules**: No mocking libraries - use fakes and in-memory databases
-- **App module**: **Use MockK** for Navigation3 testing only (NavigationState, Navigator)
-- Create fake implementations that provide realistic behavior with test hooks
-- Fakes provide working implementations, not just stubs
-- Results in less brittle tests that exercise more production code
-- Use Google Truth for fluent, readable assertions
+Required:
+- **Feature modules**: hand-written fakes implementing the production interface; no mocking libraries.
+- **Core modules**: fakes plus Room in-memory databases.
+- **App module**: MockK is permitted **only** for Navigation 3 framework types (`NavigationState`, `Navigator`).
+- Fakes carry real state and test hooks; never stub-only.
+- Use Google Truth for assertions.
 
 ### Test Doubles Naming Convention
 
@@ -322,7 +319,7 @@ class AuthViewModelTest {
         viewModel.onAction(AuthAction.LoginClicked)
         advanceUntilIdle()
 
-        // Verify we're in error state
+        // Verify error state
         assertThat(viewModel.uiState.value).isInstanceOf(AuthUiState.Error::class.java)
 
         // Act
@@ -379,7 +376,7 @@ See [Coroutine Testing → Test Dispatcher Rule](#test-dispatcher-rule-in-corete
 
 ### Testing StateFlow with Turbine and Truth
 
-Turbine is best for testing Flow emissions over time. Use `advanceUntilIdle()` for simple async operations.
+Required: Turbine for multi-emission `Flow` assertions; `advanceUntilIdle()` for simple async completion.
 
 **When to use Turbine:**
 - Testing multiple emissions from a Flow
@@ -890,25 +887,24 @@ fun `camera cleanup happens even when cancelled`() = runTest {
 }
 ```
 
-### Key Coroutine Testing Principles
+### Coroutine test rules
 
-1. **Always use `runTest`**: Provides virtual time and automatic completion waiting
-2. **Share test scheduler**: Use `UnconfinedTestDispatcher(testScheduler)` or `StandardTestDispatcher()`
-3. **Inject dispatchers**: Never hardcode dispatchers in production code - always inject for testability
-4. **Use `advanceUntilIdle()`**: Wait for all pending coroutines before assertions
-5. **Use `advanceTimeBy()`**: Fast-forward time for delay/timeout testing without actually waiting
-6. **Test cancellation**: Verify coroutines handle cancellation correctly
-7. **Test cleanup**: Ensure resources are released even on cancellation
+Required:
+- Wrap every coroutine test in `runTest { }`.
+- Share the scheduler: `UnconfinedTestDispatcher(testScheduler)` or `StandardTestDispatcher(testScheduler)`.
+- Inject dispatchers in production code; never hardcode `Dispatchers.IO` / `Dispatchers.Default`.
+- `advanceUntilIdle()` before assertions; `advanceTimeBy(...)` for delay/timeout coverage.
+- Cover cancellation paths and cleanup of resources held inside `NonCancellable`/`finally` blocks.
 
 ### Dispatcher Choices in Tests
 
-```kotlin
-// UnconfinedTestDispatcher: Executes coroutines immediately (eager)
-// Good for: Most tests, when you want synchronous behavior
-val unconfinedDispatcher = UnconfinedTestDispatcher(testScheduler)
+| Dispatcher                  | Use when                                                      |
+|-----------------------------|---------------------------------------------------------------|
+| `UnconfinedTestDispatcher`  | Default — eager execution, synchronous-style assertions.      |
+| `StandardTestDispatcher`    | Need explicit ordering or virtual-time stepping.              |
 
-// StandardTestDispatcher: Queues coroutines (requires advanceUntilIdle)
-// Good for: Testing execution order, complex timing scenarios
+```kotlin
+val unconfinedDispatcher = UnconfinedTestDispatcher(testScheduler)
 val standardDispatcher = StandardTestDispatcher(testScheduler)
 ```
 
@@ -1741,11 +1737,7 @@ class AuthScreenTest {
 
 ## Screenshot Testing
 
-Use [Compose Preview Screenshot Testing](https://developer.android.com/studio/preview/compose-screenshot-testing)
-to catch visual regressions. It runs on the host JVM (no emulator needed), reuses `@Preview` composables,
-and generates HTML diff reports on failure.
-
-Write one screenshot test per meaningful UI state (loading, error, success, empty) for key screens.
+Required: use [Compose Preview Screenshot Testing](https://developer.android.com/studio/preview/compose-screenshot-testing) (host JVM, reuses `@Preview`). One test per meaningful state (loading, success, error, empty) for every key screen.
 
 ### Setup
 
@@ -1878,25 +1870,22 @@ android {
 ./gradlew :feature:auth:validateDebugScreenshotTest
 ```
 
-Reference images are saved to `{module}/src/screenshotTestDebug/reference/`.
-Commit these to version control alongside your code.
-
-Validation reports are generated at `{module}/build/reports/screenshotTest/preview/debug/index.html`.
+Reference images: `{module}/src/screenshotTestDebug/reference/` — commit to VCS. Validation report: `{module}/build/reports/screenshotTest/preview/debug/index.html`.
 
 ### Requirements
 
-- AGP 8.5+ for Gradle tasks, AGP 9.0+ for full Android Studio IDE integration (gutter icons, visual diff viewer)
-- JDK 17+
-- `com.android.compose.screenshot` plugin 0.0.1-alpha13+
+- AGP 8.5+ (Gradle tasks); AGP 9.0+ for full IDE integration.
+- JDK 17+.
+- `com.android.compose.screenshot` plugin 0.0.1-alpha13+.
 
-### Best Practices
+### Rules
 
-1. **One test per meaningful state**: Cover loading, success, error, and empty states
-2. **Always wrap in your app theme**: Ensure `AppTheme { }` surrounds the composable
-3. **Test light and dark modes**: Use `uiMode` parameter or multi-preview annotations
-4. **Test font scaling**: Catch overflow/layout issues at larger font sizes
-5. **Commit reference images**: They are the baseline for CI validation
-6. **Keep tests in `screenshotTest` source set**: Separate from unit and instrumented tests
+Required:
+- Wrap every preview in the app theme (`AppTheme { }`).
+- Cover light and dark via `uiMode` or a multi-preview annotation.
+- Cover at least one large `fontScale` to catch overflow.
+- Keep tests in the `screenshotTest` source set; do not mix with unit or instrumented tests.
+- Commit reference images alongside source.
 
 ## Performance Benchmarks
 
@@ -2014,62 +2003,23 @@ object TestData {
 ./gradlew test --info
 ```
 
-## Key Testing Principles with Google Truth
+## Rules
 
-1. **Fluent Assertions**: Use Truth's fluent API for readable, maintainable tests:
-   ```kotlin
-   // Instead of: assertEquals(expected, actual)
-   assertThat(actual).isEqualTo(expected)
-   
-   // Instead of: assertTrue(condition)
-   assertThat(condition).isTrue()
-   
-   // Instead of: assertNotNull(value)
-   assertThat(value).isNotNull()
-   ```
+Required:
+- Use Google Truth (`assertThat(actual).isEqualTo(expected)`); never JUnit `assertEquals` / `assertTrue` / `assertNotNull`.
+- Prefer Truth subject methods (`hasSize`, `contains`, `isInstanceOf`, `isNull`, `isNotNull`) over manual boolean checks.
+- Hand-written fakes mirror production behaviour with state and test hooks; never stub-only.
+- Test each feature module's ViewModel and UI in isolation; never depend on another feature module from tests.
+- Test `Navigator` interfaces with fakes; MockK only for Navigation 3 framework types in `app`.
+- Use `@HiltAndroidTest` with a test-scoped `@Module` for DI tests.
+- Use Room 3 in-memory builder with `setDriver(BundledSQLiteDriver())` for DAO tests; use `room3-testing` + `MigrationTestHelper` + `SQLiteConnection` for migration tests.
+- Cover `SavedStateHandle` paths (navigation args + process-death restore).
+- Use Turbine for any `Flow` that emits more than once.
 
-2. **Rich Failure Messages**: Truth provides detailed failure messages:
-   ```kotlin
-   // Failure message shows both values
-   assertThat(actualUser.email).isEqualTo("expected@email.com")
-   // Output: Not true that <actual@email.com> is equal to <expected@email.com>
-   ```
-
-3. **Collection Assertions**: Easy collection testing:
-   ```kotlin
-   assertThat(userList).hasSize(3)
-   assertThat(userList).contains(user1)
-   assertThat(userList).doesNotContain(invalidUser)
-   ```
-
-4. **Nullability Support**: Kotlin-friendly null checks:
-   ```kotlin
-   assertThat(nullableValue).isNull()
-   assertThat(nonNullValue).isNotNull()
-   ```
-
-5. **Custom Subjects**: Extend Truth for domain-specific assertions:
-   ```kotlin
-   // In TestData.kt
-   fun assertUserEquals(expected: User, actual: User) {
-       assertThat(actual.id).isEqualTo(expected.id)
-       assertThat(actual.email).isEqualTo(expected.email)
-       assertThat(actual.name).isEqualTo(expected.name)
-   }
-   ```
-
-## Key Testing Principles in Our Architecture
-
-1. **Fakes Over Mocks**: Create realistic fake implementations that mirror production behavior
-2. **Feature Isolation**: Each feature module tests its own ViewModel and UI independently  
-3. **Navigation Testing**: Test navigator interfaces with fakes, not MockK
-4. **Integration Testing**: Test repository implementations with fake data sources
-5. **UI Testing**: Test composable screens with fake ViewModels and navigators
-6. **No Feature Dependencies**: Test utilities in `core:testing` avoid feature-to-feature dependencies
-7. **Hilt for DI Tests**: Use `@HiltAndroidTest` for testing with dependency injection
-8. **In-Memory Database**: Use Room 3's in-memory builder with **`setDriver(BundledSQLiteDriver())`** for DAO tests; use **`room3-testing`** and **`MigrationTestHelper`** + **`SQLiteConnection`** for migration tests
-9. **SavedStateHandle**: Test navigation arguments and process death scenarios
-10. **Turbine for Flow**: Use Turbine for testing multiple Flow emissions over time
+Forbidden:
+- Mocking libraries in `feature:*` and `core:*` modules.
+- Sharing test fixtures across feature modules (place them in `core:testing`).
+- Relying on `Dispatchers.Main` directly; always use the project's `MainDispatcherRule`.
 
 ## Paging 3 Testing
 
@@ -2221,31 +2171,18 @@ fun `paging data contains expected items`() = runTest {
 }
 ```
 
-### Best Practices
+### Paging rules
 
-1. **Keep it simple**: Use `PagingData.from()` for most tests
-2. **Test error handling separately**: Don't rely on PagingData flows for error scenarios
-3. **Use separate state flows**: Combine `PagingData` with `StateFlow<Error>` or `StateFlow<Loading>` for testable error/loading states
-4. **Avoid testing pagination logic**: Focus on ViewModel business logic, not Paging library internals
-5. **Use `advanceUntilIdle()`**: Ensure all coroutines complete before assertions
+Required:
+- Use `PagingData.from(list)` for the common path.
+- Hold error and loading state in a sibling `StateFlow`; do not assert errors through `PagingData` because `cachedIn` swallows them.
+- Use `AsyncPagingDataDiffer` only when verifying actual loaded items.
+- `advanceUntilIdle()` before every assertion.
+
+Forbidden:
+- Testing the Paging library's internal pagination logic.
 
 ## Localization Testing
 
-For testing internationalization and localization (i18n/l10n), including:
-- Testing different locales and languages
-- Testing plurals and quantity strings
-- Testing RTL (Right-to-Left) layouts
-- Parameterized tests for multiple locales
-- Screenshot testing for RTL
-- Testing date/time/currency formatting
-
-See [Internationalization & Localization Guide](/references/android-i18n.md#testing-localization) for detailed examples and strategies.
-
-## Related Guides
-
-- [Architecture Guide](/references/architecture.md) - Repository patterns and testing layers
-- [Modularization Guide](/references/modularization.md) - Multi-module testing strategies
-- [Code Coverage Guide](/references/android-code-coverage.md) - JaCoCo setup and CI integration
-- [Internationalization & Localization Guide](/references/android-i18n.md) - Localization testing strategies
-- [Android Testing Docs](https://developer.android.com/training/testing) - Official testing documentation
+See [android-i18n.md](/references/android-i18n.md#testing-localization) for locales, plurals, RTL, parameterized locale tests, RTL screenshots, and date/time/currency formatting.
 - [Hilt Testing](https://developer.android.com/training/dependency-injection/hilt-testing) - Official Hilt testing guide
