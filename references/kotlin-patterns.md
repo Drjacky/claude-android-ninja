@@ -8,18 +8,74 @@ This guide focuses on intermediate and advanced Kotlin patterns. Basic language 
 **Note**: All time-related examples use Kotlin Duration API (`kotlin.time.Duration`) and `kotlinx.datetime.Clock` for type-safe, readable time operations.
 
 ## Table of Contents
-1. [Delegation (Composition over Inheritance)](#delegation-composition-over-inheritance)
-2. [Pragmatic layering & import hygiene](#pragmatic-layering--import-hygiene)
-3. [Collection APIs](#collection-apis)
-4. [Sealed Classes & Exhaustive When](#sealed-classes--exhaustive-when)
-5. [Generics & Reified Types](#generics--reified-types)
-6. [Extension Functions](#extension-functions)
-7. [Inline Value Classes](#inline-value-classes)
-8. [Sequences for Lazy Evaluation](#sequences-for-lazy-evaluation)
-9. [Companion Objects](#companion-objects)
-10. [Type Aliases](#type-aliases)
-11. [Android View Lifecycle (Interop)](#android-view-lifecycle-interop)
-12. [Coroutines Best Practices](#coroutines-best-practices)
+1. [Kotlin 2.x and the K2 Compiler](#kotlin-2x-and-the-k2-compiler)
+2. [Delegation (Composition over Inheritance)](#delegation-composition-over-inheritance)
+3. [Pragmatic layering & import hygiene](#pragmatic-layering--import-hygiene)
+4. [Collection APIs](#collection-apis)
+5. [Sealed Classes & Exhaustive When](#sealed-classes--exhaustive-when)
+6. [Generics & Reified Types](#generics--reified-types)
+7. [Extension Functions](#extension-functions)
+8. [Inline Value Classes](#inline-value-classes)
+9. [Sequences for Lazy Evaluation](#sequences-for-lazy-evaluation)
+10. [Companion Objects](#companion-objects)
+11. [Type Aliases](#type-aliases)
+12. [Android View Lifecycle (Interop)](#android-view-lifecycle-interop)
+13. [Coroutines Best Practices](#coroutines-best-practices)
+
+## Kotlin 2.x and the K2 Compiler
+
+Target **Kotlin 2.x**. Pinned version lives in `assets/libs.versions.toml.template`. K2 is the default and only supported frontend on Kotlin 2.0+. All patterns below assume K2.
+
+### Behavioural differences vs K1
+
+- Stricter nullability in generic chains. Prefer explicit nullability over relying on inference.
+- More aggressive smart-casts inside lambdas and local functions. Do not add redundant `!!` or re-checks.
+- Tighter exhaustiveness checking on `when`. Treat new warnings as errors.
+- New diagnostics may surface latent bugs in previously-compiling code. Fix them; do not downgrade.
+
+### Compose compiler
+
+Compose compiler ships with Kotlin 2.x. Apply it as a Gradle plugin. Do not depend on `androidx.compose.compiler:compiler` and do not set `kotlinCompilerExtensionVersion`.
+
+```kotlin
+plugins {
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+}
+```
+
+Plugin id: `org.jetbrains.kotlin.plugin.compose`. Its version always matches `kotlin` in the catalog (see `kotlin-compose` in `assets/libs.versions.toml.template`).
+
+Configure Compose-specific options via the plugin block, never via `freeCompilerArgs`:
+
+```kotlin
+composeCompiler {
+    reportsDestination = layout.buildDirectory.dir("compose_compiler")
+    stabilityConfigurationFiles.add(
+        rootProject.layout.projectDirectory.file("compose_compiler_config.conf")
+    )
+}
+```
+
+Stability-report usage: `references/compose-patterns.md`. Convention plugin wiring: `references/gradle-setup.md`.
+
+### Explicit API mode
+
+Enable explicit API mode in every non-`:app` module. Required for `core:*` and `feature:*`. Skip for `:app`.
+
+```kotlin
+kotlin {
+    explicitApi()
+}
+```
+
+Per-compilation form: `explicitApi = ExplicitApiMode.Strict`.
+
+### Things to remove on Kotlin 2.x
+
+- `kotlinCompilerExtensionVersion = "…"` inside `composeOptions { }` — ignored, warns.
+- `languageVersion = "1.9"` — obsolete.
+- `useK2 = true` — obsolete; K2 is default.
 
 ## Delegation (Composition over Inheritance)
 
