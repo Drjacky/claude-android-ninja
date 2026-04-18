@@ -1,10 +1,8 @@
 # Android Theming
 
-Modern Material Design 3 theming with dynamic colors, custom color schemes, typography scales, shape theming, and dark/light mode switching.
+Material Design 3 theming: dynamic color, custom color schemes, typography scales, shape theming, dark/light mode.
 
-All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
-
-**Related guides:** See `references/compose-patterns.md` for theme usage in composables and `references/android-accessibility.md` for color contrast requirements.
+All Kotlin code must align with `references/kotlin-patterns.md`. Theme usage in composables: `references/compose-patterns.md`. Color contrast targets: `references/android-accessibility.md`.
 
 ## Table of Contents
 
@@ -675,7 +673,7 @@ Material 3 Expressive is the 2025+ refresh of Material 3. It adds a **motion sch
 
 - API lives in `androidx.compose.material3` and is marked `@ExperimentalMaterial3ExpressiveApi`.
 - Shipped in `androidx.compose.material3:material3:1.5.0-alpha16` and later.
-- The pinned catalog version (`material3` in `assets/libs.versions.toml.template`) determines whether these APIs are available in this project. If the pin is still on stable 1.4.x, Expressive is **not** available and the existing `MaterialTheme` flow in this guide stays canonical.
+- The pinned catalog version (`material3` in `assets/libs.versions.toml.template`) gates availability. On stable 1.4.x, Expressive APIs are **not** available; keep `MaterialTheme` as the canonical entry point.
 - Do not mix `MaterialTheme` and `MaterialExpressiveTheme` in the same tree. Pick one per Activity/Composable root.
 
 ### Opt-in
@@ -738,7 +736,7 @@ The `motionScheme` slot is the distinguishing feature: it centralises duration a
 ### When to adopt
 
 - Adopt when the catalog's `material3` is pinned to a version that ships the API as stable, or when the product explicitly signs off on using an experimental API.
-- Until then, use stable `MaterialTheme` plus the token overrides shown elsewhere in this guide. The migration path is a direct swap of `MaterialTheme(...)` for `MaterialExpressiveTheme(...)` plus a `MotionScheme` argument.
+- Until then, use stable `MaterialTheme` plus the token overrides shown above. Migration path: swap `MaterialTheme(...)` for `MaterialExpressiveTheme(...)` and add a `MotionScheme` argument.
 
 ## Dark/Light Mode Switching
 
@@ -1353,7 +1351,7 @@ In Kotlin, prefer descriptive names (`screenBackground`) over labels that read l
 
 ## Visual Style by App Category
 
-Match **density, color, motion, and typography** to what the product is for. A banking app should feel calm and trustworthy; a kids app needs larger targets and simpler language.
+Match **density, color, motion, and typography** to product category. Use the table below to pick defaults; deviate only with explicit product sign-off.
 
 | App category           | Visual direction                                        | Interaction notes                                        |
 |------------------------|---------------------------------------------------------|----------------------------------------------------------|
