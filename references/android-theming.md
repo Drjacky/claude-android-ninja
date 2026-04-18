@@ -8,6 +8,7 @@ All Kotlin code must align with `references/kotlin-patterns.md`. Theme usage in 
 
 - [Material 3 Theme System](#material-3-theme-system)
 - [Color Schemes](#color-schemes)
+- [Surface Container Hierarchy](#surface-container-hierarchy)
 - [Dynamic Color (Material You)](#dynamic-color-material-you)
 - [Typography Scales](#typography-scales)
 - [Shape Theming](#shape-theming)
@@ -417,6 +418,63 @@ fun ProfileCard(user: User) {
     }
 }
 ```
+
+## Surface Container Hierarchy
+
+M3 expresses depth through **container tone**, not shadows. Pick the surface role that matches the component's job, not its visual weight. Nest by stepping **one level up** at each layer (`surface` → `surfaceContainerLow` → `surfaceContainer` → ...) so depth reads cleanly under any contrast or theme.
+
+### Which level for what
+
+| Container role            | Use for                                                                  |
+|---------------------------|--------------------------------------------------------------------------|
+| `surface`                 | Default screen background                                                |
+| `surfaceContainerLowest`  | Component on a **busy** background that should recede (rare)             |
+| `surfaceContainerLow`     | Cards laid out in flow on a `surface` background                         |
+| `surfaceContainer`        | Persistent containers (navigation bar, side rail, bottom sheet at rest)  |
+| `surfaceContainerHigh`    | Menus, scrolled top app bar, sheets while dragging                       |
+| `surfaceContainerHighest` | Filled cards, deepest nested container (chip on a card on a sheet)       |
+| `surfaceDim`              | Hero/empty-state surface that should always read as the dimmest area     |
+| `surfaceBright`           | Hero/empty-state surface that should always read as the brightest area   |
+
+### Compose nesting example
+
+```kotlin
+@Composable
+fun NestedSurfacesDemo() {
+    Surface(color = MaterialTheme.colorScheme.surface) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Card on surface",
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        modifier = Modifier.padding(top = 12.dp)
+                    ) {
+                        Text(
+                            text = "Chip nested inside the card",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+The nested chip sits at `surfaceContainerHighest` so it stays distinguishable from the card (`surfaceContainerLow`) and the page (`surface`) regardless of light/dark, dynamic color, or user contrast.
+
+### Avoid `surfaceVariant` for new containers
+
+`surfaceVariant` predates the container hierarchy. Keep it only for **legacy** screens or for tinted decorative surfaces (e.g. inactive switch tracks). For any new container, pick a `surfaceContainer*` level instead.
 
 ## Dynamic Color (Material You)
 
