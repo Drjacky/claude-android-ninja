@@ -1,24 +1,14 @@
 # Kotlin Delegation (Composition over Inheritance)
 
-Use Kotlin's class and property delegation (`by`) to share behavior across ViewModels and classes without relying on base classes or inheritance.
-This keeps responsibilities explicit, improves testability, and avoids deep inheritance chains.
+Use Kotlin's class and property delegation (`by`) to share behavior across ViewModels and other classes. Forbidden: open base classes (`BaseViewModel`, `BaseActivity`, etc.) for cross-cutting concerns like logging, validation, crash reporting, or feature flags.
 
 ## Table of Contents
-1. [Why Delegation in Android](#why-delegation-in-android)
-2. [When to Use Delegation](#when-to-use-delegation)
-3. [Class Delegation](#class-delegation)
-4. [Property Delegation](#property-delegation)
-5. [Advanced Patterns](#advanced-patterns)
-6. [Testing with Delegation](#testing-with-delegation)
-7. [Best Practices](#best-practices)
-
-## Why Delegation in Android
-
-- **Avoid base class bloat**: Split cross-cutting concerns (logging, validation, feature flags) into focused interfaces.
-- **Swap implementations easily**: Delegates are injected, so tests can replace them with fakes.
-- **Keep ViewModels lean**: Behavior is composed instead of inherited.
-- **Enable decorators**: Layer additional behavior without modifying original classes.
-- **No performance overhead**: Delegation creates minimal wrapper objects with negligible impact.
+1. [When to Use Delegation](#when-to-use-delegation)
+2. [Class Delegation](#class-delegation)
+3. [Property Delegation](#property-delegation)
+4. [Advanced Patterns](#advanced-patterns)
+5. [Testing with Delegation](#testing-with-delegation)
+6. [Best Practices](#best-practices)
 
 ## When to Use Delegation
 
@@ -710,12 +700,6 @@ When migrating from inheritance-based patterns to delegation, audit base classes
 4. **Check flow collection**: For each `Flow`/`Channel`, verify UI collects from it
 5. **Delete aggressively**: Dead code in base classes is hard to spot because it compiles fine and appears intentional
 
-**Why this matters:**
-- Base classes centralize dead code, making it invisible to static analysis
-- Unused `@Inject` fields add unnecessary dependencies to every subclass
-- Unused flows/channels consume memory and add complexity
-- Dead code survives refactors because "it might be used somewhere"
-
 **Example audit:**
 ```kotlin
 // Before (BaseViewModel with dead code)
@@ -754,7 +738,7 @@ class AuthViewModel @Inject constructor(
 - **Crash Reporting**: For `CrashReporter` interface and implementations, see `references/crashlytics.md`
 - **Design Patterns**: See `references/design-patterns.md` for Decorator pattern with delegation
 - **ViewModel Patterns**: Use with ViewModel patterns in `references/compose-patterns.md`
-- **Architecture**: Fits into our layered architecture in `references/architecture.md`
+- **Architecture**: `references/architecture.md`
 
 ## Sources
 
