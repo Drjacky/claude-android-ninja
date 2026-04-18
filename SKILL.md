@@ -92,9 +92,15 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Setting up app theme (colors, typography, shapes)?**
 → Follow [android-theming.md](references/android-theming.md) for Material 3 theming and dynamic colors  
-→ Use semantic color roles from `MaterialTheme.colorScheme` (never hardcoded colors)  
+→ Use semantic color roles from `MaterialTheme.colorScheme` (never hardcoded colors); pair every fill with its `on*` partner — see [Color Pairing Rules](references/android-theming.md#color-pairing-rules)  
+→ Declare the **full** M3 color set in `Color.kt` (surface containers, dim/bright, `*Fixed`/`*FixedDim`) so dynamic color and contrast variants stay consistent — see [Full Color Role Reference](references/android-theming.md#full-color-role-reference-m3) and [Surface Container Hierarchy](references/android-theming.md#surface-container-hierarchy)  
+→ Express depth via container tone first, shadows only for components that float over arbitrary content — see [Tonal Elevation vs Shadows](references/android-theming.md#tonal-elevation-vs-shadows)  
+→ Use `outline` for interactive borders/focus, `outlineVariant` for decorative dividers — see [`outline` vs `outlineVariant`](references/android-theming.md#outline-vs-outlinevariant)  
 → Support light/dark themes with user preference toggle  
-→ Enable dynamic color (Material You) for API 31+  
+→ Enable dynamic color (Material You) for API 31+, harmonize brand/extended colors against `primary` — see [Brand Color Harmonization](references/android-theming.md#brand-color-harmonization)  
+→ Honor the system contrast slider on Android 14+ (API 34) by shipping Medium/High-contrast scheme variants and reading `UiModeManager.getContrast()` — see [User Contrast Preference](references/android-theming.md#user-contrast-preference-android-14)  
+→ For region-local palette overrides (destructive scopes, on-media toolbars), use a nested `MaterialTheme` with `colorScheme.copy(...)` — see [Scoped Themes](references/android-theming.md#scoped-themes)  
+→ Pick `Card` / `OutlinedCard` / `ElevatedCard` by surface separation, not importance, and override shapes at the **token** level — see [Card Variants](references/compose-patterns.md#card-variants-filled--outlined--elevated) and [Component Shape Defaults](references/compose-patterns.md#component-shape-defaults)  
 
 **Writing any Kotlin code?**
 → **Always** follow [kotlin-patterns.md](references/kotlin-patterns.md)  
