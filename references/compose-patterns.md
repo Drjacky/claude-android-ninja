@@ -1172,6 +1172,60 @@ fun ErrorContent(
 }
 ```
 
+### Card Variants (Filled / Outlined / Elevated)
+
+M3 ships three `Card` variants. Picking the right one is purely a function of how much the card needs to **separate from its background**, not how "important" the content is. Mixing variants on the same surface is the most common slip-up — pick one per region and stick with it.
+
+| Variant  | Composable     | Surface role at rest                | Use when                                                                                      |
+|----------|----------------|-------------------------------------|-----------------------------------------------------------------------------------------------|
+| Filled   | `Card`         | `surfaceContainerHighest`           | Card sits directly on `surface`; default choice for list items, content tiles                 |
+| Outlined | `OutlinedCard` | `surface` + `outlineVariant` border | Low-emphasis grouping; content-heavy lists where elevation noise hurts (table rows, settings) |
+| Elevated | `ElevatedCard` | `surfaceContainerLow` + 1dp shadow  | Card must read as floating over a busy/photo background; rarely needed otherwise              |
+
+```kotlin
+@Composable
+fun ProductCard(product: Product, onClick: () -> Unit) {
+    Card(onClick = onClick) {
+        ProductCardContent(product)
+    }
+}
+
+@Composable
+fun SettingRow(setting: Setting, onClick: () -> Unit) {
+    OutlinedCard(onClick = onClick) {
+        SettingRowContent(setting)
+    }
+}
+
+@Composable
+fun FloatingHero(item: Item, onClick: () -> Unit) {
+    ElevatedCard(onClick = onClick) {
+        HeroContent(item)
+    }
+}
+```
+
+`Card` / `OutlinedCard` / `ElevatedCard` already pull the right surface, content color, border, and (for Elevated) shadow from `MaterialTheme`. Don't pass `colors = CardDefaults.cardColors(containerColor = ...)` to swap variants — use the dedicated composable instead, otherwise the on-color and border defaults silently drift out of sync. See [Color Pairing Rules](/references/android-theming.md#color-pairing-rules) and [Surface Container Hierarchy](/references/android-theming.md#surface-container-hierarchy) for the underlying tokens.
+
+#### Clickable card → use the `onClick` overload
+
+`Card { ... }` is a static container. The moment the card is tappable, switch to the `Card(onClick = ...)` overload (same for `OutlinedCard` / `ElevatedCard`) — it wires up the M3 ripple, focus ring, hover state, and `Role.Button` semantics that a `.clickable { }` modifier on a static card silently misses.
+
+```kotlin
+Card(
+    onClick = onClick,
+    modifier = Modifier.semantics { contentDescription = product.name },
+) {
+    ProductCardContent(product)
+}
+```
+
+#### Variant anti-patterns
+
+- **Don't elevate by default.** `ElevatedCard` adds a real shadow; using it for every list item produces the cluttered MD2-style look M3 was designed to retire. Default to `Card`.
+- **Don't mix variants in the same list.** A grid of `Card`s with one `ElevatedCard` reads as a bug, not emphasis. Use selection state, a badge, or a `surfaceContainerHigh` background instead.
+- **Don't outline a card that already sits on `surfaceContainer*`.** The border vanishes against the tonal step. Use `OutlinedCard` only when the parent is `surface`.
+
 ### Touch Targets
 
 Every interactive element must have a minimum touch area of **48x48dp**. If the visual element is
