@@ -796,6 +796,16 @@ fun ScrollableContentWithInsets(modifier: Modifier = Modifier) {
 }
 ```
 
+**Picking the right `safe*Padding` modifier:**
+
+| Modifier                         | Insets applied                                          | Use for                                                                                                                                          |
+|----------------------------------|---------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Modifier.safeDrawingPadding()`  | System bars + IME (keyboard)                            | Default for **text input screens** and any surface that must stay clear of the keyboard.                                                         |
+| `Modifier.safeContentPadding()`  | System bars + IME + display cutouts + waterfall         | Default for **top-level content surfaces** (AnimatedPane, full-screen hosts). Use when content could land behind a camera cutout or curved edge. |
+| `Modifier.safeGesturesPadding()` | System gesture regions (back-gesture edges, nav handle) | **Draggable** UI (sliders, pull-to-refresh, horizontal pagers near screen edges) to avoid gesture conflicts.                                     |
+
+Rule of thumb: start with `safeDrawingPadding()` for form screens, `safeContentPadding()` for hosts/panes, and add `safeGesturesPadding()` on any composable that consumes drag gestures. Do not stack more than one `safe*Padding` on the same node.
+
 **Do NOT:**
 
 - Set `fitsSystemWindows` in XML
