@@ -21,6 +21,7 @@ All Kotlin code must align with `references/kotlin-patterns.md`. Theme usage in 
 - [Theme Preferences](#theme-preferences)
 - [Custom Theme Attributes](#custom-theme-attributes)
   - [Brand Color Harmonization](#brand-color-harmonization)
+- [Scoped Themes](#scoped-themes)
 - [Architecture Integration](#architecture-integration)
 - [Testing](#testing)
 - [Layout Spacing and Component Dimensions](#layout-spacing-and-component-dimensions)
@@ -1734,6 +1735,57 @@ fun AppTheme(
 - **Harmonize**: brand accents (`success`, `warning`, `info`), partner-tinted illustrations, a custom `notification` color, third-party SDK accent overrides.
 - **Do not harmonize**: `error` (already part of `colorScheme`, must stay unmistakably red), pure neutrals (white, black, grays), brand colors with **legal/identity constraints** where the exact hex matters (logos, regulated marks).
 - For static-only apps (no dynamic color anywhere), there's nothing to harmonize against — skip it entirely and keep the original brand values.
+
+## Scoped Themes
+
+Sometimes a single screen needs its own slice of theming — a settings *Danger Zone* whose primary is `error`, an "on-media" toolbar that sits over a dark hero image, an embedded brand surface inside a partner section. The right tool is **a nested `MaterialTheme`** that derives from the outer one with `colorScheme.copy(...)`. This keeps dynamic color, user contrast, and dark mode intact for the rest of the app while overriding only the roles you actually care about.
+
+### Rule: `copy()` from the outer scheme, never rebuild
+
+Always start from `MaterialTheme.colorScheme` and `.copy(...)` the roles you want to change. Re-instantiating `lightColorScheme(...)` from scratch silently throws away the user's dynamic palette and contrast pick.
+
+```kotlin
+@Composable
+fun ErrorScope(content: @Composable () -> Unit) {
+    val outer = MaterialTheme.colorScheme
+    MaterialTheme(
+        colorScheme = outer.copy(
+            primary           = outer.error,
+            onPrimary         = outer.onError,
+            primaryContainer  = outer.errorContainer,
+            onPrimaryContainer = outer.onErrorContainer,
+        ),
+        typography = MaterialTheme.typography,
+        shapes     = MaterialTheme.shapes,
+        content    = content,
+    )
+}
+
+@Composable
+fun DangerZone() {
+    ErrorScope {
+        Button(onClick = { /* ... */ }) {
+            Text("Delete account")
+        }
+    }
+}
+```
+
+The `Button` reads `colorScheme.primary` like any other M3 component — it just sees `error` because of the scope. No custom `ButtonColors`, no per-component overrides, no leakage outside the `ErrorScope` block.
+
+### Common scoped-theme patterns
+
+- **Destructive scope**: map `primary` → `error`, `primaryContainer` → `errorContainer` (above). Wrap the dangerous CTA only, not the whole screen.
+- **On-media scope**: a toolbar over a photo can switch to `inverseSurface` / `inverseOnSurface` so icons stay legible regardless of the underlying image.
+- **Brand-tinted section**: an embedded partner area can swap `primary` and `secondary` for the partner's harmonized brand color, keeping the surface hierarchy intact.
+- **Forced light/dark**: a media player that should always render dark UI can pass a frozen dark `colorScheme` to its subtree without touching the rest of the app.
+
+### Don'ts
+
+- **Don't scope shapes or typography** unless the design genuinely diverges — those rebuild the visual identity, not just the palette, and rarely belong in a scope.
+- **Don't scope to override a single component**. If only one `Button` needs a different fill, pass `ButtonDefaults.buttonColors(containerColor = ...)`. Reach for a scoped theme when **multiple** components in a subtree need the override.
+- **Don't nest more than one level deep**. Two layered scopes are almost always a sign the inner scope should just consume the outer one's roles directly.
+- **Don't introduce a scoped theme for accessibility-critical actions** without re-checking contrast — the new pairing must still satisfy WCAG. Run the same checks as for the base scheme (see `references/android-accessibility.md`).
 
 ## Architecture Integration
 
