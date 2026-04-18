@@ -1,9 +1,6 @@
-# Architecture Guide
+# Architecture
 
-Based on Google's official Android architecture guidance with modern Jetpack Compose, Navigation3, and our modular best practices.
-All Kotlin code in this architecture must align with `references/kotlin-patterns.md`.
-
-**Data Synchronization:** For offline-first patterns, sync strategies, and conflict resolution, see `references/android-data-sync.md`.
+Layer rules for Android apps using Jetpack Compose, Navigation 3, Hilt, and a multi-module setup. All Kotlin code must align with `references/kotlin-patterns.md`. Offline-first sync, conflict resolution, and retry policy: `references/android-data-sync.md`.
 
 ## Table of Contents
 1. [Architecture Overview](#architecture-overview)
@@ -105,7 +102,7 @@ Four-layer architecture with strict module separation and unidirectional data fl
 
 Domain-specific pitfalls (navigation, Room 3, Paging, etc.) live in their topic references. This table is a **layering and state-shape** checklist. Deeper guidance on recomposition and stability: `references/android-performance.md` and `references/compose-patterns.md`.
 
-| Anti-pattern                                                                       | Why it hurts                                                             | Prefer instead                                                                                                                                                                                 |
+| Anti-pattern                                                                       | Failure mode                                                             | Prefer instead                                                                                                                                                                                 |
 |------------------------------------------------------------------------------------|--------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Business logic in composables                                                      | Competing sources of truth, hard to test, work reruns during composition | ViewModel / domain services / repositories; composables map state → UI                                                                                                                         |
 | Oversized "god" ViewModel                                                          | Hard to own and change safely                                            | One ViewModel per screen or one coherent flow                                                                                                                                                  |
@@ -562,7 +559,7 @@ dependencies {
 }
 ```
 
-**Note:** `androidx.compose.runtime` is a Kotlin-only library despite the `androidx` namespace. It contains `@Immutable` and `@Stable` annotations used for Compose compiler optimizations. See [compose-patterns.md](/references/compose-patterns.md#stability-annotations-immutable-vs-stable) for details.
+`androidx.compose.runtime` is Kotlin-only despite its namespace. Use it from `core/domain` to access `@Immutable` and `@Stable` without pulling in Android dependencies. See [compose-patterns.md](/references/compose-patterns.md#stability-annotations-immutable-vs-stable).
 
 ### Dependency Injection Setup
 
@@ -590,7 +587,7 @@ Over-scoping wastes memory; under-scoping duplicates heavy types or breaks singl
 
 **Anti-patterns:**
 
-| Problem                                                  | Why it hurts                   | Prefer                                                                    |
+| Problem                                                  | Failure mode                   | Prefer                                                                    |
 |----------------------------------------------------------|--------------------------------|---------------------------------------------------------------------------|
 | `Activity` / `Fragment` in a `ViewModel`                 | Leaks, lifecycle mismatch      | Ids via `SavedStateHandle`, navigation args, repositories                 |
 | Raw `Context` in a `ViewModel`                           | Same                           | `@ApplicationContext` in data/repository wiring, not in `ViewModel`       |
@@ -925,13 +922,6 @@ Call navigate() → Contract → Implementation → Routing → Render New UI
 7. UI: Shows registration form
 ```
 
-This architecture ensures:
-- **Responsive UI**: Immediate optimistic updates
-- **Data consistency**: Single source of truth in local database
-- **Offline support**: Works without network connection
-- **Testability**: Each layer can be tested independently
-- **Scalability**: Modular structure supports feature growth
-- **Modern patterns**: Navigation3, Material3 adaptive design, predictive back gestures
 - **Features are independent** (no feature-to-feature dependencies)
 - **Navigation is coordinated centrally** (app module)
 - **Data flows through defined layers** (UI → Domain → Data)
