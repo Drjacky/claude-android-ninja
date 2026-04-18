@@ -9,6 +9,7 @@ All Kotlin code must align with `references/kotlin-patterns.md`. Theme usage in 
 - [Material 3 Theme System](#material-3-theme-system)
 - [Color Schemes](#color-schemes)
 - [Color Pairing Rules](#color-pairing-rules)
+- [`outline` vs `outlineVariant`](#outline-vs-outlinevariant)
 - [Surface Container Hierarchy](#surface-container-hierarchy)
 - [Tonal Elevation vs Shadows](#tonal-elevation-vs-shadows)
 - [Dynamic Color (Material You)](#dynamic-color-material-you)
@@ -478,6 +479,54 @@ On any `surface` / `surfaceContainer*` role, use **two** content roles, not one:
 
 - These pairs are also enforced by `Card`, `Button`, `Chip`, `NavigationBar` etc. via `*Defaults.colors(...)` — see `references/compose-patterns.md`.
 - Anti-patterns for breaking pairing live in [Best Practices → Never Do](#-never-do).
+
+## `outline` vs `outlineVariant`
+
+M3 has two outline roles, and they are not interchangeable. Picking the wrong one is the difference between a focusable, accessible boundary and a decorative hairline that disappears for low-vision users.
+
+| Role             | Contrast                                | Use for                                                                                                    |
+|------------------|-----------------------------------------|------------------------------------------------------------------------------------------------------------|
+| `outline`        | High — meets non-text contrast (3:1)    | Interactive borders: outlined button/text field/chip, focus indicators, important dividers between regions |
+| `outlineVariant` | Low — decorative, **does not** meet 3:1 | Subtle dividers between items in a list, decorative separators, disabled-state borders                     |
+
+Rule of thumb: if a sighted user is supposed to **act on** the bordered thing, use `outline`. If the line is purely visual rhythm inside a single region, use `outlineVariant`.
+
+### Compose: pick the role that matches the job
+
+```kotlin
+@Composable
+fun OutlineDemo() {
+    OutlinedTextField(
+        value = "",
+        onValueChange = {},
+        label = { Text("Email") },
+    )
+
+    HorizontalDivider(
+        color = MaterialTheme.colorScheme.outlineVariant,
+    )
+
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Text(
+            text = "Region boundary the user can tab to",
+            modifier = Modifier
+                .padding(16.dp)
+                .focusable(),
+        )
+    }
+}
+```
+
+`OutlinedTextField` already pulls `outline` (and `outlineVariant` for its disabled state) internally — that's the model to follow when you write your own outlined components: take `outline` for the resting interactive border, `outlineVariant` for disabled/decorative.
+
+### Cross-references
+
+- Anti-pattern lives in [Best Practices → Never Do](#-never-do).
+- Custom outlined components: see `references/compose-patterns.md` → component patterns.
 
 ## Surface Container Hierarchy
 
@@ -1718,6 +1767,7 @@ Match **density, color, motion, and typography** to product category. Use the ta
 10. **Never test theme in emulator only** - test on real devices with different wallpapers
 11. **Never mix color pairs** - `onPrimary` only goes on `primary`, `onPrimaryContainer` only on `primaryContainer` (see [Color Pairing Rules](#color-pairing-rules)); pulling content roles off their partner silently breaks contrast under dark mode, dynamic color, and user contrast
 12. **Never use `onSurface` for everything on a surface** - secondary text, icons, dividers, and helper text belong on `onSurfaceVariant`; using `onSurface` everywhere flattens the visual hierarchy
+13. **Never use `outlineVariant` for interactive borders** - it's a decorative role and does not meet 3:1 non-text contrast; outlined buttons, text fields, focus indicators, and region boundaries the user can tab to must use `outline` (see [`outline` vs `outlineVariant`](#outline-vs-outlinevariant))
 
 ### Color Naming Convention
 
