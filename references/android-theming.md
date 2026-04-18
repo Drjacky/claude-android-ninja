@@ -9,6 +9,7 @@ All Kotlin code must align with `references/kotlin-patterns.md`. Theme usage in 
 - [Material 3 Theme System](#material-3-theme-system)
 - [Color Schemes](#color-schemes)
 - [Surface Container Hierarchy](#surface-container-hierarchy)
+- [Tonal Elevation vs Shadows](#tonal-elevation-vs-shadows)
 - [Dynamic Color (Material You)](#dynamic-color-material-you)
 - [Typography Scales](#typography-scales)
 - [Shape Theming](#shape-theming)
@@ -475,6 +476,64 @@ The nested chip sits at `surfaceContainerHighest` so it stays distinguishable fr
 ### Avoid `surfaceVariant` for new containers
 
 `surfaceVariant` predates the container hierarchy. Keep it only for **legacy** screens or for tinted decorative surfaces (e.g. inactive switch tracks). For any new container, pick a `surfaceContainer*` level instead.
+
+## Tonal Elevation vs Shadows
+
+In M3, depth is communicated through **container tone first**. Reach for a shadow only when a component must visually float over content the surface tone can't separate from (a FAB over a photo, a sheet over a busy feed). Stacking shadows for ordinary depth produces the cluttered, MD2-style look M3 was designed to retire.
+
+### Map elevation level to surface role
+
+| Elevation level | Tonal role                  | Components at rest                                                       |
+|-----------------|-----------------------------|--------------------------------------------------------------------------|
+| 0               | `surface`                   | Most resting components, top app bar (flat), filled/outlined/text button |
+| 1               | `surfaceContainerLow`       | Elevated card, banner, modal bottom sheet                                |
+| 2               | `surfaceContainer`          | Navigation bar, scrolled top app bar, menus, toolbar                     |
+| 3               | `surfaceContainerHigh`      | FAB, dialogs, search bar, date/time pickers                              |
+| 4–5             | `surfaceContainerHighest`   | Hover/focus increase only — never a resting state                        |
+
+Setting `Surface(tonalElevation = 3.dp)` blends `surfaceTint` into `surface` to approximate level 3. Prefer **picking the explicit `surfaceContainer*` role** instead — it's clearer, survives dynamic color and user contrast, and matches what M3 components do internally.
+
+### Compose: prefer container role, add shadow only when needed
+
+```kotlin
+@Composable
+fun ElevationDemo() {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+    ) {
+        Text(
+            text = "Menu surface — tone alone communicates level 2",
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shadowElevation = 6.dp,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Add,
+            contentDescription = "Compose",
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+}
+```
+
+The menu uses tone only. The FAB adds `shadowElevation` because it floats over arbitrary content — exactly the case where a shadow is justified.
+
+### Hover/focus, not resting
+
+Levels 4 and 5 are **interaction** levels. Bump elevation by **one step** on hover/focus (e.g. FAB level 3 → 4 on hover) and return to rest on release. Never ship a component at rest above level 3.
+
+### Cross-references
+
+- M3 Expressive components consume tonal/elevation tokens through `MaterialExpressiveTheme` and `MotionScheme.expressive()` — see [Material 3 Expressive](#material-3-expressive).
+- Animation/feel of elevation transitions belongs in `references/compose-patterns.md` → "Animation".
 
 ## Dynamic Color (Material You)
 
