@@ -1,11 +1,8 @@
-# Kotlin Patterns & Best Practices
+# Kotlin Patterns
 
-Concise Kotlin guidance for Android projects. Each item includes a short example so it is easy
-to apply. If a topic is large, it lives in a dedicated reference and is linked here.
+Intermediate and advanced Kotlin rules for Android. Basic language features (data classes, null safety, scope functions) are assumed. Each item ships with a runnable example; large topics link to dedicated references.
 
-This guide focuses on intermediate and advanced Kotlin patterns. Basic language features (data classes, null safety, scope functions like `let`/`apply`/`run`) are assumed knowledge.
-
-**Note**: All time-related examples use Kotlin Duration API (`kotlin.time.Duration`) and `kotlinx.datetime.Clock` for type-safe, readable time operations.
+Time-related examples use `kotlin.time.Duration` and `kotlinx.datetime.Clock`. Do not use `java.util.Date`/`Calendar` or `Long` millis in domain code.
 
 ## Table of Contents
 1. [Kotlin 2.x and the K2 Compiler](#kotlin-2x-and-the-k2-compiler)
@@ -97,7 +94,7 @@ class AuthViewModel @Inject constructor(
 }
 ```
 
-See: `references/kotlin-delegation.md` for complete patterns, testing, and best practices.
+Full delegation patterns and tests: `references/kotlin-delegation.md`.
 
 ## Pragmatic layering & import hygiene
 
@@ -142,9 +139,11 @@ Keep a **use case** (or domain service) when logic is multi-step, reused across 
 
 ### State updates without extra type layers
 
-This skill uses **sealed actions**, **`UiState`**, and **one-shot events** (`SharedFlow` / similar) from the ViewModel. Avoid introducing a **fourth** parallel type (e.g. `Result` / `PartialState` / mandatory pure `reduce`) when every event maps **1:1** to a small state change - `when (action) { … }` with `update` is simpler and easier to follow.
+Use **sealed actions**, **`UiState`**, and **one-shot events** (`SharedFlow` or `Channel`) from the ViewModel. Apply state changes with `when (action) { ... }` + `MutableStateFlow.update`.
 
-Add a dedicated reducer or intermediate "result" type only when many sources (events, async completions, pushes, sockets) must funnel through **one** centralized transition function.
+Forbidden: a fourth parallel type (`Result`, `PartialState`, a mandatory pure `reduce`) when every action maps 1:1 to a state change.
+
+Add a dedicated reducer or intermediate "result" type only when many sources (events, async completions, pushes, sockets) must funnel through one centralized transition function.
 
 ### Composable boundaries
 
@@ -381,10 +380,10 @@ fun UserCard(user: User) {
 }
 ```
 
-**Best Practices:**
-- Keep extensions in the same module as the type or in `core:common`
-- Prefer extension functions over utility classes
-- Use descriptive names that read naturally: `user.displayName()` not `UserUtils.getDisplayName(user)`
+**Rules:**
+- Keep extensions in the same module as the type, or in `core:common`.
+- Use extension functions instead of `*Utils` classes.
+- Name them so the call reads naturally: `user.displayName()`, never `UserUtils.getDisplayName(user)`.
 
 See: `references/design-patterns.md` → "Kotlin-Specific Patterns" → "Extension Functions for Domain Logic".
 
@@ -452,12 +451,12 @@ Use `Sequence` for large collections or chained operations to avoid intermediate
 
 ### Avoid Memory Churn
 
-Memory churn occurs when you create lots of temporary objects that are quickly garbage collected. This triggers frequent GC pauses, causing jank.
+Allocating short-lived objects inside hot loops triggers GC pauses and causes jank. Reuse buffers, or hoist the allocation out of the loop.
 
 ```kotlin
-// ❌ Creates new String objects in loop
+// ❌ Allocates a new String per iteration (10,001 objects)
 for (i in 0..10000) {
-    val text = "Item number: $i" // 10,000 objects created!
+    val text = "Item number: $i"
     processText(text)
 }
 
@@ -1026,19 +1025,22 @@ suspend fun <T> withTimeoutResult(
 
 **Full coroutine patterns**: See `references/coroutines-patterns.md` for dispatchers, structured concurrency, cancellation, Flow patterns, testing, and more.
 
-## Best Practices Summary
+## Rules Summary
 
-1. **Delegation over inheritance**: Use `by` for composition
-2. **Read-only collections**: Expose immutable APIs, keep mutation private
-3. **Sealed classes**: For exhaustive state modeling
-4. **Generics**: Use `Result<T>` not raw `Result`; generic repositories and wrappers
-5. **Reified types**: For type-safe runtime operations with `inline`
-6. **Extension functions**: For domain logic on existing types
-7. **Inline value classes**: For zero-cost type-safe wrappers
-8. **Sequences**: For large collections with multiple transformations
-9. **Named arguments**: For clarity with multiple parameters
-10. **Avoid `GlobalScope`**: Always use scoped coroutines
-11. **View lifecycle**: Pair `addObserver` with `removeObserver` for custom `View` code (see [Android View Lifecycle (Interop)](#android-view-lifecycle-interop))
+Required:
+- Delegation over inheritance: use `by` for composition.
+- Expose read-only collections; keep mutation private.
+- Model UI/state with sealed classes for exhaustive `when`.
+- Use `Result<T>`, generic repositories, and generic wrappers — never raw `Result`.
+- Use `inline fun <reified T>` for type-safe runtime ops.
+- Add behavior via extension functions, never `*Utils` objects.
+- Wrap primitives in `@JvmInline value class` for IDs, tokens, and units.
+- Use `Sequence` for chained transformations on large collections.
+- Pass named arguments when a call has 3+ parameters or any boolean.
+- For custom `View` code, pair `addObserver` with `removeObserver` (see [Android View Lifecycle (Interop)](#android-view-lifecycle-interop)).
+
+Forbidden:
+- `GlobalScope.launch` and `runBlocking` outside `main()` and tests.
 
 For detailed patterns, see:
 - **Delegation**: `references/kotlin-delegation.md`
