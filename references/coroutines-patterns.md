@@ -502,6 +502,40 @@ class AuthLegacyKeyStore(
 }
 ```
 
+### `coroutineScope` vs `supervisorScope` - Failure Propagation
+
+Both are scope builders for use inside suspend functions. They differ on **what happens when one child fails**.
+
+| Aspect                         | `coroutineScope { }`                                        | `supervisorScope { }`                                   |
+|--------------------------------|-------------------------------------------------------------|---------------------------------------------------------|
+| Child failure cancels siblings | Yes                                                         | No                                                      |
+| Failure rethrown to caller     | Yes (first failure)                                         | No (contained per-child)                                |
+| Use when                       | Children form one atomic unit. Partial results are useless. | Children are independent. Partial results are valuable. |
+
+```kotlin
+suspend fun loadDashboard() = coroutineScope {
+    val user = async { api.fetchUser() }
+    val orders = async { api.fetchOrders() }
+    Dashboard(user.await(), orders.await())
+}
+```
+
+If `fetchOrders()` fails, `fetchUser()` is cancelled and the exception is rethrown to the caller. Correct: there is no partial dashboard.
+
+```kotlin
+suspend fun warmCaches() = supervisorScope {
+    launch { cache.warmTokens() }
+    launch { cache.warmFeatures() }
+    launch { cache.warmConfig() }
+}
+```
+
+If `warmFeatures()` fails, `warmTokens` and `warmConfig` keep running. The function returns normally. Correct: a partially warmed cache is still a win.
+
+**Decision rule:** ask "if one child fails, is there any value in the others' results?" Yes → `supervisorScope`. No → `coroutineScope`.
+
+**With `async`:** in `supervisorScope`, exceptions thrown inside `async` are stored on the `Deferred` and only raised when you call `await()`. Always `await()` (or `awaitAll()`) every `async` you launch — see [Unawaited async in supervisorScope](#unawaited-async-in-supervisorscope).
+
 ### `supervisorScope` vs `SupervisorJob` - Independent Child Failures
 
 Both let children fail independently without cancelling siblings. The difference is **where you use them** and **how exceptions are handled**.
