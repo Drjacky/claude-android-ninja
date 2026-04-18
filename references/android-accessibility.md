@@ -1,17 +1,33 @@
 # Android Accessibility (Compose)
 
-Modern accessibility patterns for Jetpack Compose applications. Following WCAG 2.1 Level AA guidelines and Android accessibility best practices for production apps.
+Modern accessibility patterns for Jetpack Compose applications. Target **WCAG 2.2 Level AA** plus Android accessibility requirements. WCAG 2.2 is backwards-compatible with 2.1; everything in 2.1 AA still applies.
 
 Accessibility is not optional - it is required for Google Play, benefits all users, and is often a legal requirement. Build it in from the start.
 
 ## Table of Contents
-1. [Semantic Properties](#semantic-properties)
-2. [Touch Target Sizes](#touch-target-sizes)
-3. [Screen Reader Navigation](#screen-reader-navigation)
-4. [Color & Visual Accessibility](#color--visual-accessibility)
-5. [Focus Management](#focus-management)
-6. [Common Patterns](#common-patterns)
-7. [Testing Accessibility](#testing-accessibility)
+1. [WCAG 2.2 Criteria That Apply Here](#wcag-22-criteria-that-apply-here)
+2. [Semantic Properties](#semantic-properties)
+3. [Touch Target Sizes](#touch-target-sizes)
+4. [Screen Reader Navigation](#screen-reader-navigation)
+5. [Color & Visual Accessibility](#color--visual-accessibility)
+6. [Focus Management](#focus-management)
+7. [Common Patterns](#common-patterns)
+8. [Testing Accessibility](#testing-accessibility)
+
+## WCAG 2.2 Criteria That Apply Here
+
+WCAG 2.2 adds nine success criteria on top of 2.1. The ones that land on Android Compose most often:
+
+| Criterion                                 | Rule                                                                                                                                                               | Where it is handled                                                                                                  |
+|-------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| 2.4.11 Focus Not Obscured (Minimum)       | A focused element must not be fully hidden by author-created overlays (bottom sheets, IME, snackbars).                                                             | `#focus-management`; apply `Modifier.imePadding()` and inset-aware Scaffolds (see `references/compose-patterns.md`). |
+| 2.5.7 Dragging Movements                  | Every drag gesture must have a single-pointer alternative (tap, long-press, button).                                                                               | Sliders, reorderable lists, maps, swipe-to-dismiss. Provide explicit buttons.                                        |
+| 2.5.8 Target Size (Minimum)               | Interactive targets must be at least 24 × 24 CSS px.                                                                                                               | Android's 48dp × 48dp rule is stricter; enforce 48dp. See `#touch-target-sizes`.                                     |
+| 3.2.6 Consistent Help                     | Help mechanisms (contact, chat, FAQ) must appear in the same relative order on every screen.                                                                       | App-level navigation, not per-screen.                                                                                |
+| 3.3.7 Redundant Entry                     | Do not ask the user for the same info twice in one session. Prefill or pull from state.                                                                            | Multi-step forms, signup-then-onboarding flows.                                                                      |
+| 3.3.8 Accessible Authentication (Minimum) | Do not require a cognitive test (puzzle, exact recall, captcha without alternative) unless another factor exists. Paste and autofill must work on password fields. | Login, signup, password reset. Use Credential Manager — see `references/android-security.md`.                        |
+
+Always-applicable 2.1 AA criteria still in force: **1.4.3 Contrast (Minimum)** and **2.4.7 Focus Visible** — see `#color--visual-accessibility` and `#focus-management`.
 
 ## Semantic Properties
 
@@ -639,10 +655,10 @@ Ensure sufficient color contrast and don't rely on color alone.
 
 ### Color Contrast Requirements
 
-**WCAG 2.1 Level AA:**
+**WCAG 2.2 Level AA (1.4.3 Contrast Minimum, 1.4.11 Non-text Contrast):**
 - **Normal text:** 4.5:1 contrast ratio
 - **Large text** (18pt+/14pt+ bold): 3:1 contrast ratio
-- **UI components:** 3:1 contrast ratio
+- **UI components and graphical objects:** 3:1 contrast ratio
 
 ```kotlin
 @Composable
@@ -1462,7 +1478,7 @@ fun AppContent() {
 **Test Color Contrast:**
 1. Enable high contrast mode (Android 14+)
 2. Use Accessibility Scanner app
-3. Verify contrast ratios meet WCAG AA standards
+3. Verify contrast ratios meet WCAG 2.2 AA (1.4.3, 1.4.11)
 
 ### Integration with CI/CD
 
@@ -1506,6 +1522,7 @@ android {
 
 - Official Android Accessibility: https://developer.android.com/guide/topics/ui/accessibility
 - Compose Accessibility: https://developer.android.com/jetpack/compose/accessibility
-- WCAG 2.1 Guidelines: https://www.w3.org/WAI/WCAG21/quickref/
+- WCAG 2.2 Guidelines: https://www.w3.org/WAI/WCAG22/quickref/
+- WCAG 2.2 What's New: https://www.w3.org/WAI/standards-guidelines/wcag/new-in-22/
 - Material Design Accessibility: https://m3.material.io/foundations/accessible-design/overview
 - TalkBack User Guide: https://support.google.com/accessibility/android/answer/6283677
