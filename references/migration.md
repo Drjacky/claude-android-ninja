@@ -19,7 +19,7 @@ pattern and its modern replacement.
 
 ### Strategy: Screen-by-Screen
 
-Migrate one screen at a time. Do not attempt a full rewrite. The recommended order:
+Migrate one screen at a time. Do not attempt a full rewrite. Required order:
 
 1. **Leaf screens first** - screens with no child Fragments or complex navigation
 2. **Shared components** - extract reusable Composables to `core/ui` as you go
@@ -208,7 +208,7 @@ fun ProductsRoute(viewModel: ProductsViewModel = hiltViewModel()) {
 
 ### Disposal Management
 
-**Option 1: CompositeDisposable (recommended)**
+**Option 1: CompositeDisposable** — default. Use unless an existing module already wires AutoDispose.
 
 ```kotlin
 class ProductsViewModel : ViewModel() {
@@ -308,15 +308,15 @@ When planning RxJava to Coroutines migration:
 3. Finally ViewModels
 4. UI layer already uses `StateFlow.collectAsStateWithLifecycle()`, so no changes needed
 
-### Coexistence Best Practices
+### Coexistence rules
 
-1. **Unified UI layer**: Always use `StateFlow` for UI state, even when ViewModels use RxJava
-2. **Isolate RxJava**: Keep RxJava usage in data/domain layers, convert to `StateFlow` at ViewModel boundary
-3. **Dispose properly**: Use AutoDispose or `CompositeDisposable` to prevent leaks
-4. **Don't mix in same function**: A function should be either fully Coroutines or fully RxJava, not both
-5. **Prefer Coroutines for new code**: Only use RxJava for existing legacy code that won't be migrated
+- Use `StateFlow` for UI state. Never expose `Observable`/`Single` from a ViewModel.
+- Confine RxJava to data/domain layers. Convert to `StateFlow` at the ViewModel boundary.
+- Dispose every subscription via `CompositeDisposable.clear()` in `onCleared()`, or AutoDispose.
+- Forbidden: mixing RxJava and coroutines inside the same function.
+- New code: coroutines + Flow only. RxJava is permitted only inside legacy modules pending migration.
 
-See [RxJava to Coroutines migration guide](https://developer.android.com/kotlin/coroutines/coroutines-adv#additional-resources) for detailed migration strategies.
+Reference: [RxJava to Coroutines migration guide](https://developer.android.com/kotlin/coroutines/coroutines-adv#additional-resources).
 
 ## Navigation 2.x to Navigation3
 
@@ -522,7 +522,7 @@ Since Compose 1.6, `Scaffold` requires using `innerPadding`. Ignoring it causes 
 with system bars.
 
 ```kotlin
-// Bad: ignoring innerPadding (won't compile in modern Compose)
+// Bad: ignoring innerPadding (does not compile on Compose 1.6+)
 Scaffold(topBar = { TopAppBar { } }) {
     LazyColumn { }
 }
