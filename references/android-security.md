@@ -33,7 +33,7 @@ Security-related libraries available in the version catalog:
 - `play-integrity` - Play Integrity API (device/app attestation)
 - `sqlcipher-android` - SQLCipher for encrypted Room databases
 
-Add them to your module as needed, following [dependencies.md → Adding a New Dependency](dependencies.md#adding-a-new-dependency).
+Add them to your module as needed, following [dependencies.md → Adding a New Dependency](/references/dependencies.md#adding-a-new-dependency).
 
 ## Modern device trust and abuse resistance
 
@@ -1558,7 +1558,7 @@ Use `assets/proguard-rules.pro.template` as the source of truth for all keep rul
 - **Crash report readability** - `SourceFile,LineNumberTable` attributes preserved
 - **Mapping file upload** - Firebase and Sentry Gradle plugins handle this automatically
 
-See [gradle-setup.md](gradle-setup.md#r8--proguard-configuration) for build configuration and debugging shrunk builds.
+See [gradle-setup.md](/references/gradle-setup.md#r8--proguard-configuration) for build configuration and debugging shrunk builds.
 
 ### Manifest Security
 
@@ -1736,9 +1736,9 @@ Use this checklist for every release:
 
 ## Related Guides
 
-- [Crash Reporting](crashlytics.md) - CrashReporter interface and PII scrubbing
-- [Permissions Guide](android-permissions.md) - Runtime permission patterns
-- [Network Configuration](gradle-setup.md) - Network security config setup
-- [Architecture Guide](architecture.md) - Repository patterns for secure data access
-- [Data Sync Guide](android-data-sync.md) - Offline-first with encrypted local storage
-- [StrictMode Guide](android-strictmode.md) - Detecting cleartext traffic
+- [Crash Reporting](/references/crashlytics.md) - CrashReporter interface and PII scrubbing
+- [Permissions Guide](/references/android-permissions.md) - Runtime permission patterns
+- [Network Configuration](/references/gradle-setup.md) - Network security config setup
+- [Architecture Guide](/references/architecture.md) - Repository patterns for secure data access
+- [Data Sync Guide](/references/android-data-sync.md) - Offline-first with encrypted local storage
+- [StrictMode Guide](/references/android-strictmode.md) - Detecting cleartext traffic

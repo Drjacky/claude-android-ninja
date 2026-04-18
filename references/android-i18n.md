@@ -594,7 +594,7 @@ fun ProductsListView(state: ProductsUiState) {
 - Use import aliases (`as CoreUiR`) for clarity when accessing cross-module resources
 - If multiple features need the same string, move it to `core:common` or `core:ui`
 - Feature modules should depend on `core:ui` for shared UI strings
-- See [gradle-setup.md](gradle-setup.md#non-transitive-r-classes) for technical details on non-transitive R classes
+- See [gradle-setup.md](/references/gradle-setup.md#non-transitive-r-classes) for technical details on non-transitive R classes
 
 ## Architecture Integration
 
@@ -1039,9 +1039,9 @@ German and Finnish translations can be 30-40% longer. Test UI flexibility.
 
 ## Related Guides
 
-- [Compose Patterns](compose-patterns.md) - Compose UI patterns including RTL support
-- [Testing Guide](testing.md) - Testing strategies including localization tests
-- [Kotlin Patterns](kotlin-patterns.md) - String formatting and handling
+- [Compose Patterns](/references/compose-patterns.md) - Compose UI patterns including RTL support
+- [Testing Guide](/references/testing.md) - Testing strategies including localization tests
+- [Kotlin Patterns](/references/kotlin-patterns.md) - String formatting and handling
 
 ## External Resources
 

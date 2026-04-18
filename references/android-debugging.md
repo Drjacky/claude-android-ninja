@@ -121,7 +121,7 @@ Open the `.hprof` file in Android Studio's Memory Profiler for analysis.
 R8 (the default code shrinker/obfuscator in AGP) renames classes, methods, and fields in release
 builds. Crash stack traces from production are obfuscated and unreadable without the mapping file.
 
-For R8 build configuration and keep rules, see [gradle-setup.md](gradle-setup.md#r8--proguard-configuration).
+For R8 build configuration and keep rules, see [gradle-setup.md](/references/gradle-setup.md#r8--proguard-configuration).
 
 ### R8 Output Files
 
@@ -282,8 +282,8 @@ fun MyScreen(state: UiState) {
   by default since Compose Compiler 2.0+/Kotlin 2.0+, which auto-memoizes lambdas)
 
 For stability annotations (`@Immutable`, `@Stable`) and Compose compiler metrics, see
-[compose-patterns.md](compose-patterns.md#stability-annotations-immutable-vs-stable) and
-[android-performance.md](android-performance.md).
+[compose-patterns.md](/references/compose-patterns.md#stability-annotations-immutable-vs-stable) and
+[android-performance.md](/references/android-performance.md).
 
 ## Multi-Layer Boundary Debugging
 

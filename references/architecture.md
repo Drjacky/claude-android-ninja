@@ -562,7 +562,7 @@ dependencies {
 }
 ```
 
-**Note:** `androidx.compose.runtime` is a Kotlin-only library despite the `androidx` namespace. It contains `@Immutable` and `@Stable` annotations used for Compose compiler optimizations. See [compose-patterns.md](compose-patterns.md#stability-annotations-immutable-vs-stable) for details.
+**Note:** `androidx.compose.runtime` is a Kotlin-only library despite the `androidx` namespace. It contains `@Immutable` and `@Stable` annotations used for Compose compiler optimizations. See [compose-patterns.md](/references/compose-patterns.md#stability-annotations-immutable-vs-stable) for details.
 
 ### Dependency Injection Setup
 

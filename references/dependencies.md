@@ -62,7 +62,7 @@ Always check `assets/libs.versions.toml.template` before adding or changing depe
 - ✅ Built on Dagger, Android-optimized
 - ✅ Compile-time safety, ViewModel integration
 - ✅ This SKILL requires Hilt for all projects
-- Module patterns, scopes, and anti-patterns: `references/architecture.md` (Domain Layer - [Dependency Injection Setup](architecture.md#dependency-injection-setup))
+- Module patterns, scopes, and anti-patterns: `references/architecture.md` (Domain Layer - [Dependency Injection Setup](/references/architecture.md#dependency-injection-setup))
 
 ### AndroidX Libraries
 
@@ -253,7 +253,7 @@ dependencies {
 
 Use `assets/proguard-rules.pro.template` as the source of truth for all keep rules. It includes rules for every library in the version catalog (Retrofit, kotlinx-serialization, Room 3, OkHttp, Hilt, SQLCipher, etc.).
 
-Copy the template to `app/proguard-rules.pro` and adjust `com.example.*` package names. See [gradle-setup.md](gradle-setup.md#r8--proguard-configuration) for build configuration.
+Copy the template to `app/proguard-rules.pro` and adjust `com.example.*` package names. See [gradle-setup.md](/references/gradle-setup.md#r8--proguard-configuration) for build configuration.
 
 ## Adding a New Dependency
 

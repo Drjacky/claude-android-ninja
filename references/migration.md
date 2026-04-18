@@ -83,7 +83,7 @@ Use `AndroidView` only for views that have no Compose equivalent (e.g., `MapView
 - Replace `ViewBinding` / `DataBinding` with Compose state
 - Replace `RecyclerView` with `LazyColumn` / `LazyRow`
 - Replace `ConstraintLayout` with Compose `Row`, `Column`, `Box` (or `ConstraintLayout` for Compose)
-- Replace `styles.xml` theming with `MaterialTheme` (see [android-theming.md](android-theming.md))
+- Replace `styles.xml` theming with `MaterialTheme` (see `references/android-theming.md`)
 - Replace XML string resources usage with `stringResource()` in Compose
 
 ## LiveData to StateFlow
@@ -341,8 +341,7 @@ See [RxJava to Coroutines migration guide](https://developer.android.com/kotlin/
 6. Use `NavigationSuiteScaffold` for adaptive navigation (it handles switching automatically)
 7. Use `NavigableListDetailPaneScaffold` / `NavigableSupportingPaneScaffold` for tablet-optimized layouts
 
-For complete Navigation3 architecture, state management, deep links, and adaptive patterns, see
-[android-navigation.md](android-navigation.md).
+For complete Navigation3 architecture, state management, deep links, and adaptive patterns, see `references/android-navigation.md`.
 
 ## Accompanist to Official APIs
 
@@ -473,7 +472,7 @@ fun Modifier.myModifier(value: Int) = composed {
 }
 
 // New: Modifier.Node API (no composition scope)
-// See compose-patterns.md > Modifiers > Custom Modifiers with Modifier.Node
+// See references/compose-patterns.md → Modifiers → Custom Modifiers with Modifier.Node
 ```
 
 ### String Routes -> Type-Safe Routes -> Navigation3
@@ -486,7 +485,7 @@ navController.navigate("details/$itemId")
 @Serializable data class Details(val itemId: Int)
 navController.navigate(Details(itemId = 42))
 
-// Current: Navigation3 (see android-navigation.md)
+// Current: Navigation3 (see references/android-navigation.md)
 @Serializable data class ProductDetail(val productId: String) : NavKey
 backStack.add(ProductDetail(productId = "42"))
 ```
@@ -550,7 +549,7 @@ Key changes when migrating from `androidx.compose.material` to `androidx.compose
 
 Never mix Material 2 and Material 3 imports in the same module.
 
-For theming setup, see [android-theming.md](android-theming.md).
+For theming setup, see `references/android-theming.md`.
 
 ## Edge-to-Edge
 
@@ -567,8 +566,7 @@ Scaffold { innerPadding ->
 }
 ```
 
-For full edge-to-edge setup including `WindowInsets` handling, see
-[compose-patterns.md](compose-patterns.md#edge-to-edge-mandatory-on-api-36).
+For full edge-to-edge setup including `WindowInsets` handling, see `references/compose-patterns.md` → "Edge-to-Edge (Mandatory on API 36)".
 
 ## Room 2.x to Room 3
 

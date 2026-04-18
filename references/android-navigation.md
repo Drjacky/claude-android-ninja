@@ -80,7 +80,7 @@ Use `WindowSizeClass` / `currentWindowAdaptiveInfo()` for custom splits; prefer 
 
 Handle **configuration changes** without losing user context: rotation, fold/unfold, multi-window resize, split-screen enter/exit, hardware keyboard attach/detach.
 
-- Keep UI state in **ViewModel** and process death in **SavedStateHandle** (see [compose-patterns.md](compose-patterns.md) and modularization docs).
+- Keep UI state in **ViewModel** and process death in **SavedStateHandle** (see [compose-patterns.md](/references/compose-patterns.md) and modularization docs).
 - Test with **Don't keep activities** during development to flush out lost state.
 
 ### Foldables
@@ -503,7 +503,7 @@ Flow section in `references/architecture.md`.
 ## Migration Note
 
 For step-by-step migration from Navigation 2.x to Navigation3, see
-[migration.md](migration.md#navigation-2x-to-navigation3).
+[migration.md](/references/migration.md#navigation-2x-to-navigation3).
 
 ## Animations
 

@@ -2239,13 +2239,13 @@ For testing internationalization and localization (i18n/l10n), including:
 - Screenshot testing for RTL
 - Testing date/time/currency formatting
 
-See [Internationalization & Localization Guide](android-i18n.md#testing-localization) for detailed examples and strategies.
+See [Internationalization & Localization Guide](/references/android-i18n.md#testing-localization) for detailed examples and strategies.
 
 ## Related Guides
 
-- [Architecture Guide](architecture.md) - Repository patterns and testing layers
-- [Modularization Guide](modularization.md) - Multi-module testing strategies
-- [Code Coverage Guide](android-code-coverage.md) - JaCoCo setup and CI integration
-- [Internationalization & Localization Guide](android-i18n.md) - Localization testing strategies
+- [Architecture Guide](/references/architecture.md) - Repository patterns and testing layers
+- [Modularization Guide](/references/modularization.md) - Multi-module testing strategies
+- [Code Coverage Guide](/references/android-code-coverage.md) - JaCoCo setup and CI integration
+- [Internationalization & Localization Guide](/references/android-i18n.md) - Localization testing strategies
 - [Android Testing Docs](https://developer.android.com/training/testing) - Official testing documentation
 - [Hilt Testing](https://developer.android.com/training/dependency-injection/hilt-testing) - Official Hilt testing guide

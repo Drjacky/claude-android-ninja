@@ -8,7 +8,7 @@ can be swapped without touching feature code.
 - Keep SDK-specific code **out of feature modules**
 - Use an interface in `core` and inject implementations
 - Allow easy provider swaps or dual reporting
-- Optional: **store-level** Play Vitals (Reporting API in `build-logic`/CI, e.g. Slack)-not a substitute for Crashlytics; see [android-performance.md](android-performance.md) → **Optional: Play Vitals observability (Play Developer Reporting API)**.
+- Optional: **store-level** Play Vitals (Reporting API in `build-logic`/CI, e.g. Slack)-not a substitute for Crashlytics; see [android-performance.md](/references/android-performance.md) → **Optional: Play Vitals observability (Play Developer Reporting API)**.
 
 ## Architecture Placement
 
@@ -427,7 +427,7 @@ plugins {
 
 ## ProGuard/R8 Mapping Upload
 
-Both providers require mapping file upload for symbolicated crashes in release builds. See [gradle-setup.md](gradle-setup.md#r8--proguard-configuration) for R8 build configuration and `assets/proguard-rules.pro.template` for all keep rules.
+Both providers require mapping file upload for symbolicated crashes in release builds. See [gradle-setup.md](/references/gradle-setup.md#r8--proguard-configuration) for R8 build configuration and `assets/proguard-rules.pro.template` for all keep rules.
 
 ### Firebase Crashlytics
 

@@ -313,7 +313,7 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.LoginForm())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
     
-    // Preferred for one-shot navigation commands (unicast); see coroutines-patterns.md
+    // Preferred for one-shot navigation commands (unicast); see references/coroutines-patterns.md
     private val _navigationEvents = Channel<AuthNavigationEvent>(Channel.BUFFERED)
     val navigationEvents: Flow<AuthNavigationEvent> = _navigationEvents.receiveAsFlow()
 
@@ -1657,7 +1657,7 @@ Compose can skip recomposition when inputs are stable. Use these annotations to 
       implementation(libs.androidx.compose.runtime)  // For @Immutable/@Stable
   }
   ```
-- **Option 2**: Only annotate UI-layer models (e.g., `UserUi` in feature modules) and use a stability configuration file for domain models (see [android-strictmode.md](android-strictmode.md#compose-stability-guardrails))
+- **Option 2**: Only annotate UI-layer models (e.g., `UserUi` in feature modules) and use a stability configuration file for domain models (see [android-strictmode.md](/references/android-strictmode.md#compose-stability-guardrails))
 
 #### When to Use `@Immutable`
 
@@ -3639,7 +3639,7 @@ fun ProductCard(product: Product, onClick: () -> Unit) { }
 
 ## Deprecated Patterns & Migrations
 
-All migration guides have been consolidated into [migration.md](migration.md). It covers:
+All migration guides have been consolidated into [migration.md](/references/migration.md). It covers:
 
 - Accompanist to official APIs
 - Compose API migrations (`collectAsStateWithLifecycle`, `mutableIntStateOf`, `animateItem`, `Modifier.Node`)
@@ -3770,13 +3770,13 @@ fun ValidatedEmailField(
 
 ## Related Guides
 
-- [Architecture Guide](architecture.md) - ViewModel patterns and state management
-- [Modularization Guide](modularization.md) - Feature modules and dependency rules
-- [Navigation Guide](android-navigation.md) - Navigation3 architecture and adaptive navigation
-- [Android Accessibility](android-accessibility.md) - Semantic properties and TalkBack support
-- [Android Theming](android-theming.md) - Material 3 theming, dynamic colors, typography
-- [Android i18n](android-i18n.md) - Localization, RTL support, and string resources
-- [Kotlin Patterns](kotlin-patterns.md) - Immutability and data class usage
-- [Testing Guide](testing.md) - UI testing with Compose
-- [Migration Guide](migration.md) - Accompanist, Compose API, Material, RxJava, and Navigation migrations
+- [Architecture Guide](/references/architecture.md) - ViewModel patterns and state management
+- [Modularization Guide](/references/modularization.md) - Feature modules and dependency rules
+- [Navigation Guide](/references/android-navigation.md) - Navigation3 architecture and adaptive navigation
+- [Android Accessibility](/references/android-accessibility.md) - Semantic properties and TalkBack support
+- [Android Theming](/references/android-theming.md) - Material 3 theming, dynamic colors, typography
+- [Android i18n](/references/android-i18n.md) - Localization, RTL support, and string resources
+- [Kotlin Patterns](/references/kotlin-patterns.md) - Immutability and data class usage
+- [Testing Guide](/references/testing.md) - UI testing with Compose
+- [Migration Guide](/references/migration.md) - Accompanist, Compose API, Material, RxJava, and Navigation migrations
 

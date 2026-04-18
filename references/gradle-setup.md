@@ -182,7 +182,7 @@ All convention plugin implementations are available in `assets/convention/`:
 - `KotlinSerializationConventionPlugin.kt` - JSON serialization
 - `FirebaseConventionPlugin.kt` - Firebase Crashlytics integration
 - `SentryConventionPlugin.kt` - Sentry crash reporting integration
-- `PlayVitalsReportingConventionPlugin.kt` - Optional root `playVitalsReport` task ([Play Vitals reporting](android-performance.md)); pairs with `PlayVitalsReportingTask.kt`
+- `PlayVitalsReportingConventionPlugin.kt` - Optional root `playVitalsReport` task ([Play Vitals reporting](/references/android-performance.md)); pairs with `PlayVitalsReportingTask.kt`
 
 **Configuration Files (in config/ subdirectory):**
 - `config/KotlinAndroid.kt` - Common Kotlin/Android setup
@@ -197,18 +197,18 @@ See `assets/convention/QUICK_REFERENCE.md` for detailed setup instructions and u
 
 ### Registering a root-level reporting task (Play Vitals)
 
-Optional **Play Vitals reporting** (see [android-performance.md](android-performance.md)) is implemented in this skillset as a real convention plugin you copy into **`build-logic`**:
+Optional **Play Vitals reporting** (see [android-performance.md](/references/android-performance.md)) is implemented in this skillset as a real convention plugin you copy into **`build-logic`**:
 
 | Source (copy to `build-logic/convention/src/main/kotlin/`)                                                                | Role                                                                                                                              |
 |---------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
 | [`assets/convention/PlayVitalsReportingConventionPlugin.kt`](../assets/convention/PlayVitalsReportingConventionPlugin.kt) | Registers **`playVitalsReport`** on **`rootProject` only** (`id`: **`app.play.vitals`**)                                          |
-| [`assets/convention/PlayVitalsReportingTask.kt`](../assets/convention/PlayVitalsReportingTask.kt)                         | Default task body: env check + lifecycle log; add **`PlayVitalsRepository`** per [android-performance.md](android-performance.md) |
+| [`assets/convention/PlayVitalsReportingTask.kt`](../assets/convention/PlayVitalsReportingTask.kt)                         | Default task body: env check + lifecycle log; add **`PlayVitalsRepository`** per [android-performance.md](/references/android-performance.md) |
 
 The plugin is already wired in [`assets/convention/build.gradle.kts`](../assets/convention/build.gradle.kts) (`gradlePlugin { register("playVitals") { ... } }`). **`gradle/libs.versions.toml`** should include **`app-play-vitals`** from [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template) (`[plugins]`).
 
 **Apply (optional):** in the **root** `build.gradle.kts` only, add **`alias(libs.plugins.app.play.vitals)`** to the **`plugins { }`** block (see [QUICK_REFERENCE.md](../assets/convention/QUICK_REFERENCE.md) - "Root project (optional)"). Do **not** apply **`app.play.vitals`** in `app/build.gradle.kts` or feature modules. **Wire CI** to run `./gradlew playVitalsReport` on a schedule.
 
-**Alternatives:** avoid registering this task from **`subprojects`** / **`allprojects`** (duplicates or wrong scope). For **what** to query and HTTP code, use [android-performance.md](android-performance.md); this section only covers **Gradle wiring** and the shipped convention sources.
+**Alternatives:** avoid registering this task from **`subprojects`** / **`allprojects`** (duplicates or wrong scope). For **what** to query and HTTP code, use [android-performance.md](/references/android-performance.md); this section only covers **Gradle wiring** and the shipped convention sources.
 
 ## Module Build Files
 
@@ -685,7 +685,7 @@ With `android.nonTransitiveRClass=true`, each module generates its own R class c
 **Best practices:**
 - Use import aliases (`as CoreUiR`) for readability when accessing multiple resources from another module
 - Group cross-module resource imports at the top of the file
-- See [android-i18n.md](android-i18n.md#string-resource-ownership) for guidance on which module should own which strings
+- See [android-i18n.md](/references/android-i18n.md#string-resource-ownership) for guidance on which module should own which strings
 
 ### R8 / ProGuard Configuration
 
@@ -725,7 +725,7 @@ retrace build/outputs/mapping/release/mapping.txt stacktrace.txt
 
 Check `build/outputs/mapping/release/` for the mapping file after each release build.
 
-See [android-security.md](android-security.md#proguard--r8-hardening) for security-specific hardening rules (log stripping, aggressive obfuscation, manifest settings).
+See [android-security.md](/references/android-security.md#proguard--r8-hardening) for security-specific hardening rules (log stripping, aggressive obfuscation, manifest settings).
 
 ## Build Performance
 

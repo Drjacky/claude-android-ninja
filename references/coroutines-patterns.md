@@ -1622,4 +1622,4 @@ actually matters (it suspends when the buffer is full).
 ## Coexisting with RxJava (Legacy Code)
 
 For RxJava coexistence patterns (StateFlow bridge, disposal management, paging) and the
-RxJava-to-Coroutines migration path, see [migration.md](migration.md#rxjava-to-coroutines).
+RxJava-to-Coroutines migration path, see [migration.md](/references/migration.md#rxjava-to-coroutines).
