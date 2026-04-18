@@ -1,8 +1,6 @@
 # Android Runtime Permissions
 
-Practical, Compose-first patterns for requesting permissions in Android apps. This guide follows modern Android best practices and our modular architecture.
-
-All code must align with `references/kotlin-patterns.md` and `references/compose-patterns.md`.
+Compose-first runtime permission patterns. Declare in the `:app` manifest only; request contextually from Screen composables. All code must align with `references/kotlin-patterns.md` and `references/compose-patterns.md`.
 
 ## Table of Contents
 1. [Where Permissions Live](#where-permissions-live)
@@ -67,7 +65,7 @@ Prefer Photo Picker when possible to avoid permission requests entirely.
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 ```
 
-**Note:** See `references/android-notifications.md` for notification implementation patterns, channels, and foreground services.
+Notification implementation, channels, and foreground services: `references/android-notifications.md`.
 
 ### Location (Runtime)
 
@@ -80,11 +78,11 @@ Prefer Photo Picker when possible to avoid permission requests entirely.
 
 Use `rememberLauncherForActivityResult` with `ActivityResultContracts.RequestPermission` or `RequestMultiplePermissions`.
 
-**Note**: Accompanist library is deprecated. Use native Compose APIs shown below.
+Accompanist permission helpers are deprecated. Use the native Compose APIs below.
 
 ### Single Permission (Camera)
 
-Place permission logic in Screen composables (not ViewModels) following our architecture.
+Place permission logic in Screen composables, never in ViewModels.
 
 ```kotlin
 @Composable
@@ -225,7 +223,7 @@ fun NotificationSettingsScreen(
 
 Photo Picker avoids permission requests entirely. Use this instead of requesting media permissions when possible.
 
-**Note:** Photo Picker requires API 33+. For API 24-32, use the legacy media permission approach (READ_EXTERNAL_STORAGE).
+Photo Picker requires API 33+. On API 24-32, fall back to the legacy media permission flow (`READ_EXTERNAL_STORAGE`).
 
 ```kotlin
 @Composable
@@ -444,11 +442,17 @@ fun FileManagerScreen(
 
 ## Rationale and Don't Ask Again
 
-### Best Practices
-- Request permissions **contextually** (when user taps "Take Photo", not on app startup).
-- Show rationale explaining **why** the permission is needed and **what benefits** it provides.
-- If user denies multiple times, guide them to settings.
-- Track denial count in ViewModel/SavedStateHandle (not with `shouldShowRationale` which is unreliable).
+### Rules
+
+Required:
+- Request only inside the user action that needs the capability (e.g., the "Take Photo" tap). Never on app startup or screen entry.
+- Show a rationale dialog before the system prompt when `shouldShowRequestPermissionRationale()` returns `true`.
+- After denial-then-rationale-then-denial, route to system Settings via `Settings.ACTION_APPLICATION_DETAILS_SETTINGS`.
+- Track denial count in `SavedStateHandle` (or a repository). `shouldShowRequestPermissionRationale` alone is unreliable across process death.
+
+Forbidden:
+- Requesting batches of unrelated permissions in a single launcher call.
+- Re-prompting in a loop after the user denies — wait for the next contextual action.
 
 ### Open App Settings
 
