@@ -1,14 +1,12 @@
 # Internationalization & Localization (i18n/l10n)
 
-This guide covers internationalization (i18n) and localization (l10n) for Android apps, with a Compose-first approach.
+Required for every user-visible string and date/time/number value in Compose:
 
-## Goals
-
-- Support multiple languages and locales
-- Handle RTL (Right-to-Left) layouts automatically
-- Format dates, times, and currencies correctly for each locale
-- Use plurals and quantity strings correctly
-- Test localization thoroughly
+- Move all user-visible text to `strings.xml`. No hardcoded literals in composables.
+- Use `LocalLayoutDirection` and `Modifier.padding(start = ..., end = ...)`. Never `left`/`right`.
+- Format dates, times, currencies, and numbers via `kotlinx-datetime` + `NumberFormat.getInstance(locale)`. Never string-concatenate.
+- Use `pluralStringResource` (or ICU `plurals`) for any quantity-bearing string. Never `"%d items"`.
+- Test every screen with pseudo-locale `en-XA` and an RTL locale (`ar` or `he`).
 
 ## String Resources
 
@@ -1036,12 +1034,6 @@ Different languages have different grammar rules. Use placeholders:
 ### 5. Not Testing Text Expansion
 
 German and Finnish translations can be 30-40% longer. Test UI flexibility.
-
-## Related Guides
-
-- [Compose Patterns](/references/compose-patterns.md) - Compose UI patterns including RTL support
-- [Testing Guide](/references/testing.md) - Testing strategies including localization tests
-- [Kotlin Patterns](/references/kotlin-patterns.md) - String formatting and handling
 
 ## External Resources
 
