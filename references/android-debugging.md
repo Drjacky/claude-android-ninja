@@ -92,20 +92,15 @@ In the trace file, find the `main` thread and check its state:
 
 ### LeakCanary
 
-**Android Studio Panda 3+** includes a built-in LeakCanary integration in the Profiler
-(a dedicated "Analyze Leaks" task). If you are on Panda 3 or newer, no dependency is needed -
-use the Profiler task directly. See the
-[Android Studio Panda 3 release notes](https://developer.android.com/studio/preview/features#leakcanary).
+On Android Studio Panda 3+, use the Profiler "Analyze Leaks" task. No LeakCanary dependency required ([reference](https://developer.android.com/studio/preview/features#leakcanary)).
 
-For older Android Studio versions, add the dependency to `debugImplementation` only:
+On older Android Studio versions, add to `debugImplementation` only:
 
 ```kotlin
 debugImplementation(libs.leakcanary)
 ```
 
-LeakCanary surfaces leak traces automatically via a notification. Read the trace top-to-bottom:
-the first bold entry is the leaking object, and the path shows what holds the reference. Fix by
-clearing the reference in the appropriate lifecycle callback.
+Reading a leak trace: the first bold entry is the leaking object; the path shows what holds the reference. Fix by clearing the reference in the matching lifecycle callback.
 
 ### Manual Heap Dump
 
@@ -173,47 +168,22 @@ Format:
 - `    returnType methodName(params) -> obfuscatedName` - method mapping (indented)
 - `    startLine:endLine:returnType methodName(params):originalStart:originalEnd -> obfuscatedName` - line number mapping
 
-#### Step-by-Step Manual Decode
+#### Manual decode (when retrace is unavailable)
 
-Given an obfuscated crash:
+For each obfuscated frame `obfuscated.Class.method(SourceFile:N)`:
 
-```
-java.lang.NullPointerException
-    at a.b.c.b(SourceFile:2)
-    at d.e.a(SourceFile:5)
-```
+1. Find `-> obfuscated.Class:` in `mapping.txt` → class name on the left.
+2. Under that class block, find `-> method` → method signature on the left.
+3. Compute the original line from the line-range entry `start:end:signature:origStart:origEnd -> method`: `origLine = origStart + (N - start)`.
 
-1. **Find the class**: Search `mapping.txt` for `-> a.b.c:` to find the original class name
-2. **Find the method**: Under that class entry, search for `-> b` to find the original method
-3. **Find the line**: Match the obfuscated line number (`2`) against the line mapping range (`1:3:...:42:44`) to compute the original line: `originalStart + (obfuscatedLine - startLine)` = `42 + (2 - 1)` = line `43`
-4. Repeat for each frame in the stack trace
-
-#### Example Walkthrough
-
-Obfuscated trace:
-
-```
-Fatal Exception: java.lang.IllegalStateException: User not found
-    at a.b.c.b(SourceFile:2)
-```
-
-Mapping entry:
+Worked example. Frame `a.b.c.b(SourceFile:2)` against mapping:
 
 ```
 com.example.app.data.UserRepository -> a.b.c:
     1:3:com.example.app.domain.User fetchUser(java.lang.String):42:44 -> b
 ```
 
-Decoded:
-- Class `a.b.c` = `com.example.app.data.UserRepository`
-- Method `b` at line `2` = `fetchUser(String)` at original line `43` (42 + (2 - 1))
-
-Result:
-
-```
-Fatal Exception: java.lang.IllegalStateException: User not found
-    at com.example.app.data.UserRepository.fetchUser(UserRepository.kt:43)
-```
+Resolves to `com.example.app.data.UserRepository.fetchUser(UserRepository.kt:43)` (`42 + (2 - 1) = 43`).
 
 ### Debugging Unexpected Removal
 
@@ -275,15 +245,11 @@ fun MyScreen(state: UiState) {
 
 ### Common Causes
 
-- `State` objects created inside composition without `remember`
-- Missing `equals()` on state data classes - a new instance with the same values still triggers
-  recomposition if structural equality is not implemented
-- Unstable lambda references (relevant only if Strong Skipping Mode is disabled - it is enabled
-  by default since Compose Compiler 2.0+/Kotlin 2.0+, which auto-memoizes lambdas)
+- `State` objects created inside composition without `remember`.
+- Missing `equals()` on state data classes — a new instance with identical values still triggers recomposition without structural equality.
+- Unstable lambda references when Strong Skipping is disabled. With Compose Compiler 2.0+ / Kotlin 2.0+ defaults, this is rare — verify before chasing.
 
-For stability annotations (`@Immutable`, `@Stable`) and Compose compiler metrics, see
-[compose-patterns.md](/references/compose-patterns.md#stability-annotations-immutable-vs-stable) and
-[android-performance.md](/references/android-performance.md).
+Stability annotations (`@Immutable`, `@Stable`) and Compose compiler metrics: [compose-patterns.md](/references/compose-patterns.md#stability-annotations-immutable-vs-stable), [android-performance.md](/references/android-performance.md).
 
 ## Multi-Layer Boundary Debugging
 
