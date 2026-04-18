@@ -1,13 +1,6 @@
 # Jetpack Compose Patterns
 
-Modern UI patterns following Google's Material 3 guidelines with Navigation3, adaptive layouts, and our modular architecture.
-All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
-
-**Accessibility:** All UI components must be accessible. See `references/android-accessibility.md` for semantic properties, touch targets, and TalkBack support.
-
-**Theming:** Use Material 3 theming with semantic color roles and typography. See `references/android-theming.md` for theme setup, dynamic colors, and dark/light mode.
-
-**Internationalization:** Use string resources for all text. See `references/android-i18n.md` for localization, RTL support, and plurals.
+Required: Material 3, Navigation 3, adaptive layouts, edge-to-edge, lifecycle-aware state collection. Kotlin code aligns with [kotlin-patterns.md](/references/kotlin-patterns.md). Accessibility (semantics, touch targets, TalkBack) is mandatory — [android-accessibility.md](/references/android-accessibility.md). Theming via Material 3 semantic roles — [android-theming.md](/references/android-theming.md). All user-facing text via string resources — [android-i18n.md](/references/android-i18n.md).
 
 ## Table of Contents
 
@@ -32,12 +25,10 @@ All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
 
 ### Feature Screen Pattern
 
-Separate navigation, state management, and pure UI concerns with our modular approach:
+Split each feature screen into a `Route` (state collection + navigation glue) and a stateless `Screen` (pure UI). `Navigator` interfaces live in the feature module; implementations live in `app` (see [modularization.md](/references/modularization.md)).
 
 ```kotlin
 // feature-auth/presentation/AuthRoute.kt
-// Note: AuthNavigator is defined in feature-auth/navigation/AuthNavigator.kt
-// and implemented in the app module. See references/modularization.md
 @Composable
 fun AuthRoute(
     authNavigator: AuthNavigator,
@@ -97,16 +88,7 @@ fun LoginScreen(
 }
 ```
 
-### Benefits with Our Architecture:
-
-- **Feature Isolation**: Screens are self-contained within feature modules
-- **Testable Components**: Pure UI without ViewModel dependencies
-- **Navigation Decoupling**: Screens call Navigator interfaces, not NavController directly
-- **Lifecycle Awareness**: Built-in support with `collectAsStateWithLifecycle()`
-- **Adaptive Ready**: Designed for `NavigationSuiteScaffold` and responsive layouts
-
-Navigation setup, destination definitions, and navigator interfaces live in
-`references/android-navigation.md`.
+Navigation setup, destinations, and `Navigator` interfaces: [android-navigation.md](/references/android-navigation.md).
 
 ## Naming Conventions
 
@@ -168,7 +150,7 @@ Prefer **stable layout** and **preserved context** while data loads or refreshes
 **Do not:** replace the whole screen with a spinner on every refresh, clear forms when a reload runs, or drop the last good result on transient errors.
 
 ```kotlin
-// Bad - content disappears, layout jumps, user loses context
+// Bad
 @Composable
 fun SummarySection(summary: SummaryUi?, isLoading: Boolean) {
     if (isLoading) {
@@ -178,7 +160,7 @@ fun SummarySection(summary: SummaryUi?, isLoading: Boolean) {
     }
 }
 
-// Good - stable slot; previous data stays visible while refreshing
+// Good
 @Composable
 fun SummarySection(summary: SummaryUi?, isLoading: Boolean) {
     SummaryCardSlot {
@@ -271,10 +253,9 @@ sealed class AuthAction {
 }
 ```
 
-### Modern ViewModel with Form State
+### ViewModel with Form State
 
-Use delegation for shared behavior (validation, analytics, feature flags) instead of base classes.
-See `references/kotlin-delegation.md` for guidance and tradeoffs.
+Use delegation for shared behaviour (validation, analytics, feature flags); never an inheritance base class. See [kotlin-delegation.md](/references/kotlin-delegation.md).
 
 For process-death survival, include `SavedStateHandle` in ViewModels and persist critical UI state (forms, in-progress flows) using `savedStateHandle.getStateFlow()` for automatic restoration.
 
@@ -398,50 +379,40 @@ class AuthViewModel @Inject constructor(
 
 ### Initial Data Load Strategies
 
-There is no single "correct" answer for where initial load logic should live in Jetpack Compose-the decision depends on your specific constraints and context. Here are the four established patterns:
+| Pattern                            | Use when                                                                          | Avoid when                                       |
+|------------------------------------|-----------------------------------------------------------------------------------|--------------------------------------------------|
+| ViewModel `init {}`                | Data is always needed; no retry / refresh; one-shot fetch.                        | You need pull-to-refresh, retry, or trigger UI. |
+| `LaunchedEffect(Unit)`             | Trivial, UI-scoped one-shot load with no retry.                                  | Logic must survive config change or be retried. |
+| `.onStart + stateIn`               | Reactive screen backed by a `Flow`; survives config changes.                      | Users need explicit retry / refresh.            |
+| Reactive trigger + `flatMapLatest` | Pull-to-refresh, retry, action-driven reload; reactive screen.                    | Trivial one-shot screens (overkill).            |
 
-#### 1. ViewModel `init {}` Block
-- **How it works:** Executes when the ViewModel is created.
-- **Pros:** Decouples logic from the composable, making it more testable and reusable. Best when data is always needed.
-- **Cons:** Limited control over re-triggering; harder to test timing.
+Default: reactive trigger + `flatMapLatest` for any screen that may need retry or refresh; `.onStart + stateIn` otherwise.
+
+#### ViewModel `init {}`
 
 ```kotlin
 class MyViewModel(private val repository: MyRepository) : ViewModel() {
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
     val uiState = _uiState.asStateFlow()
 
-    init {
-        loadData()
-    }
+    init { loadData() }
 
     private fun loadData() {
-        viewModelScope.launch {
-            _uiState.value = repository.getData()
-        }
+        viewModelScope.launch { _uiState.value = repository.getData() }
     }
 }
 ```
 
-#### 2. `LaunchedEffect(Unit)` in Composable
-- **How it works:** Ties data fetching to the composable's composition lifecycle.
-- **Pros:** Simple and intuitive with minimal boilerplate. Lifecycle-aware.
-- **Cons:** Couples fetching logic to UI; risk of multiple triggers.
+#### `LaunchedEffect(Unit)`
 
 ```kotlin
 @Composable
 fun MyScreen(viewModel: MyViewModel = hiltViewModel()) {
-    LaunchedEffect(Unit) {
-        viewModel.loadData() // Triggered when composable enters composition
-    }
-    
-    // ... UI rendering
+    LaunchedEffect(Unit) { viewModel.loadData() }
 }
 ```
 
-#### 3. `.onStart` + `stateIn` Pattern (Without Retry)
-- **How it works:** A reactive approach using Flow operators, triggering on first collection.
-- **Pros:** Excellent for handling configuration changes and persistent state. Fully reactive.
-- **Cons:** Can be more complex to set up for simple one-shot loads. Lacks an easy way to retry failed requests.
+#### `.onStart + stateIn`
 
 ```kotlin
 class MyViewModel(repository: MyRepository) : ViewModel() {
@@ -457,21 +428,17 @@ class MyViewModel(repository: MyRepository) : ViewModel() {
 }
 ```
 
-#### 4. Reactive Trigger / Action-driven (`flatMapLatest`) (With Retry)
-- **How it works:** Uses a trigger state (e.g., a refresh counter or action intent) combined with `flatMapLatest` to fetch data.
-- **Pros:** Makes retrying, pull-to-refresh, and error recovery trivial. Retains all the benefits of the reactive `.onStart` approach.
-- **Cons:** Slightly more boilerplate than a simple `init` block or `.onStart`.
+#### Reactive trigger + `flatMapLatest`
 
 ```kotlin
 class MyViewModel(private val repository: MyRepository) : ViewModel() {
-    // Trigger for initial load and subsequent retries/refreshes
     private val loadTrigger = MutableSharedFlow<Unit>(
-        replay = 1, 
+        replay = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
 
     val uiState: StateFlow<UiState> = loadTrigger
-        .onStart { emit(Unit) } // Fire initial load
+        .onStart { emit(Unit) }
         .flatMapLatest {
             repository.dataFlow()
                 .map { UiState.Success(it) }
@@ -484,18 +451,9 @@ class MyViewModel(private val repository: MyRepository) : ViewModel() {
             initialValue = UiState.Loading
         )
 
-    fun retry() {
-        loadTrigger.tryEmit(Unit)
-    }
+    fun retry() { loadTrigger.tryEmit(Unit) }
 }
 ```
-
-#### Decision Framework
-Choose your approach based on:
-- **Retry logic / Pull-to-refresh:** Use the **Reactive Trigger (`flatMapLatest`)** approach (Pattern 4) if you anticipate needing to retry failed requests or support pull-to-refresh.
-- **Screen complexity:** Reactive-heavy screens benefit from `.onStart + stateIn` (Pattern 3) or the Reactive Trigger approach (Pattern 4).
-- **Configuration changes:** Prefer `ViewModel init` (Pattern 1) or `.onStart + stateIn` (Patterns 3 & 4) if data must persist across configuration changes without reloading.
-- **Simplicity:** For simple, one-shot loads tied to the UI lifecycle without retries, `LaunchedEffect` (Pattern 2) is acceptable but often less robust than ViewModel-driven approaches.
 
 ### State Collection with Lifecycle
 
@@ -638,14 +596,14 @@ fun SearchScreen(viewModel: SearchViewModel) {
 ```
 
 ```kotlin
-// Bad: accessing state directly in LaunchedEffect doesn't track changes
+// Bad: captures initial value only
 LaunchedEffect(Unit) {
-    viewModel.search(query) // captures initial value only
+    viewModel.search(query)
 }
 
-// Bad: using query as key restarts the entire effect on every keystroke
+// Bad: restarts the effect on every keystroke
 LaunchedEffect(query) {
-    delay(300) // crude debounce, cancelled on every change
+    delay(300)
     viewModel.search(query)
 }
 ```
@@ -668,10 +626,10 @@ cache["key"] = user
 **Gotcha:** In-place mutation of elements does NOT trigger recomposition:
 
 ```kotlin
-// Bad: mutating in place - Compose won't see the change
+// Bad: in-place mutation
 items[0].name = "Updated"
 
-// Good: replace with copy
+// Good: replace via copy
 items[0] = items[0].copy(name = "Updated")
 ```
 
@@ -1467,7 +1425,7 @@ fun ThreePaneScaffoldPaneScope.MainPane(
 
 ## Theming & Design System
 
-### Modern Material 3 Theme
+### Material 3 Theme
 
 ```kotlin
 // core/ui/theme/AppTheme.kt
@@ -2010,7 +1968,7 @@ fun AuthEventCard(
 }
 ```
 
-**Key takeaway:** Start simple. Only optimize if profiling shows actual performance issues. Premature optimization adds complexity without benefit.
+Optimize only when profiling identifies a real recomposition or allocation hotspot.
 
 ## Animation
 
@@ -2380,18 +2338,18 @@ Image(
 - `sharedElement` - exact match (same content, animates position/size)
 - `sharedBounds` - bounds morph (different content, animates container bounds)
 
-For Navigation3-specific shared elements, see `references/android-navigation.md`.
+Navigation 3 shared elements: [android-navigation.md](/references/android-navigation.md).
 
 ### graphicsLayer for Animation Performance
 
 GPU-accelerated transforms that skip recomposition and relayout.
 
 ```kotlin
-// Good: GPU-accelerated, no recomposition or relayout
+// Good
 val offset by animateFloatAsState(targetValue = 100f, label = "offset")
 Box(modifier = Modifier.graphicsLayer(translationX = offset))
 
-// Bad: triggers relayout every frame
+// Bad: relayout every frame
 val offsetDp by animateDpAsState(targetValue = 100.dp, label = "offset")
 Box(modifier = Modifier.offset(x = offsetDp))
 ```
@@ -2403,32 +2361,32 @@ Box(modifier = Modifier.offset(x = offsetDp))
 ### Animation Anti-Patterns
 
 ```kotlin
-// Bad: no animation on visibility change
+// Bad: instant visibility flip
 if (visible) { Text("Content") }
-// Good: animated
+// Good
 AnimatedVisibility(visible = visible) { Text("Content") }
 
-// Bad: Animatable recreated every recomposition
+// Bad: recreated every recomposition
 val animatable = Animatable(0f)
-// Good: wrapped in remember
+// Good
 val animatable = remember { Animatable(0f) }
 
-// Bad: animating state in composition phase (infinite recomposition loop)
+// Bad: state mutation during composition (infinite loop)
 var position by remember { mutableFloatStateOf(0f) }
 position += 10f
-// Good: animate in a coroutine
+// Good: drive from a coroutine
 LaunchedEffect(Unit) {
     repeat(10) { position += 10f; delay(16) }
 }
 
-// Bad: missing label (harder to debug in Layout Inspector)
+// Bad: missing label
 val size by animateDpAsState(targetValue = 100.dp)
-// Good: labeled
+// Good
 val size by animateDpAsState(targetValue = 100.dp, label = "card_size")
 
-// Bad: ignoring user's reduced motion preference
+// Bad: ignores reduced-motion preference
 AnimatedVisibility(visible = visible, enter = fadeIn() + slideInVertically()) { Content() }
-// Good: respect reduced motion
+// Good
 val reducedMotion = LocalReducedMotion.current
 AnimatedVisibility(
     visible = visible,
@@ -2585,7 +2543,7 @@ Button(onClick = {
     runBlocking { fetchData() }
 }) { Text("Fetch") }
 
-// Good: launches on proper scope
+// Good
 val scope = rememberCoroutineScope()
 Button(onClick = {
     scope.launch { fetchData() }
@@ -2615,16 +2573,16 @@ fun TimedMessage(
 Without it, changing `onTimeout` either restarts the effect (if used as key) or calls a stale callback (if captured directly):
 
 ```kotlin
-// Bad: effect restarts when onTimeout changes (common with lambda parameters)
+// Bad: restarts on every lambda identity change
 LaunchedEffect(onTimeout) {
     delay(5000)
     onTimeout()
 }
 
-// Bad: captures initial onTimeout, ignores later changes
+// Bad: captures stale onTimeout
 LaunchedEffect(Unit) {
     delay(5000)
-    onTimeout() // stale reference
+    onTimeout()
 }
 ```
 
@@ -2772,53 +2730,49 @@ LifecycleResumeEffect(Unit) {
 ### Side Effect Anti-Patterns
 
 ```kotlin
-// Bad: LaunchedEffect(Unit) when key should change - only loads first userId
+// Bad: wrong key — never re-runs on userId change
 @Composable
 fun UserProfile(userId: String) {
     var user by remember { mutableStateOf<User?>(null) }
     LaunchedEffect(Unit) {
-        user = repository.loadUser(userId) // never re-runs when userId changes
+        user = repository.loadUser(userId)
     }
 }
-// Good: use userId as key
+// Good
 LaunchedEffect(userId) {
     user = repository.loadUser(userId)
 }
 
-// Bad: forgetting onDispose (resource leak)
+// Bad: missing onDispose
 DisposableEffect(Unit) {
     val listener = Listener()
     manager.register(listener)
-    // missing onDispose!
 }
-// Good: always clean up
+// Good
 DisposableEffect(Unit) {
     val listener = Listener()
     manager.register(listener)
     onDispose { manager.unregister(listener) }
 }
 
-// Bad: reading state directly in LaunchedEffect(Unit) - captures initial value only
+// Bad: stale capture
 var count by remember { mutableIntStateOf(0) }
 LaunchedEffect(Unit) {
     delay(1000)
-    println(count) // always prints 0
+    println(count)
 }
-// Good: use snapshotFlow to observe state changes in effects
+// Good
 LaunchedEffect(Unit) {
-    snapshotFlow { count }
-        .collect { println("Count: $it") }
+    snapshotFlow { count }.collect { println("Count: $it") }
 }
 
-// Bad: navigating during composition (runs on every recomposition)
+// Bad: navigation during composition
 if (isLoggedIn) {
     navigator.navigateToHome()
 }
-// Good: navigate in a LaunchedEffect
+// Good
 LaunchedEffect(isLoggedIn) {
-    if (isLoggedIn) {
-        navigator.navigateToHome()
-    }
+    if (isLoggedIn) navigator.navigateToHome()
 }
 ```
 
@@ -2940,7 +2894,7 @@ Place `clickable` AFTER `clip` (for ripple bounds) but BEFORE `padding` (for lar
 Use `Modifier.then()` for conditional chaining:
 
 ```kotlin
-// Good: conditional modifier with then()
+// Good
 Box(
     Modifier
         .fillMaxWidth()
@@ -2948,7 +2902,7 @@ Box(
         .padding(16.dp)
 )
 
-// Bad: breaks chain readability
+// Bad
 val mod = if (isSelected) Modifier.background(selectedColor) else Modifier
 Box(mod.padding(16.dp))
 ```
@@ -3047,14 +3001,14 @@ Box(Modifier.testTag("submit_button"))
 composeTestRule.onNodeWithTag("submit_button").performClick()
 ```
 
-For comprehensive accessibility patterns, see `references/android-accessibility.md`.
+Comprehensive accessibility patterns: [android-accessibility.md](/references/android-accessibility.md).
 
 ### Always Accept Modifier Parameter
 
-Every public composable must accept a `modifier` parameter with `Modifier` as default:
+Every public composable must accept `modifier: Modifier = Modifier`.
 
 ```kotlin
-// Good: accepts and applies modifier
+// Good
 @Composable
 fun UserCard(
     user: User,
@@ -3066,7 +3020,7 @@ fun UserCard(
     }
 }
 
-// Bad: no modifier parameter - caller cannot customize layout
+// Bad
 @Composable
 fun UserCard(user: User, onClick: () -> Unit) {
     Card { Text(user.name) }
@@ -3076,27 +3030,27 @@ fun UserCard(user: User, onClick: () -> Unit) {
 ### Modifier Anti-Patterns
 
 ```kotlin
-// Bad: size after padding - padding excluded from final size
+// Bad: padding before size
 Modifier.padding(16.dp).size(100.dp)
-// Good: size first
+// Good
 Modifier.size(100.dp).padding(16.dp)
 
-// Bad: clickable before clip - ripple extends beyond bounds
+// Bad: clickable before clip (ripple overflows)
 Modifier.clickable { }.clip(RoundedCornerShape(8.dp))
-// Good: clip before clickable
+// Good
 Modifier.clip(RoundedCornerShape(8.dp)).clickable { }
 
-// Bad: background before clip - background extends beyond shape
+// Bad: background before clip
 Modifier.background(Color.Blue).clip(RoundedCornerShape(8.dp))
-// Good: clip before background
+// Good
 Modifier.clip(RoundedCornerShape(8.dp)).background(Color.Blue)
 
-// Bad: hardcoded modifier in composable body
+// Bad: hardcoded modifier
 @Composable
 fun BadCard() {
     Box(Modifier.padding(16.dp).background(Color.Blue)) { }
 }
-// Good: accept modifier parameter
+// Good
 @Composable
 fun GoodCard(modifier: Modifier = Modifier) {
     Box(modifier.padding(16.dp).background(Color.Blue)) { }
@@ -3182,13 +3136,13 @@ Values are scoped to descendants. Inner providers override outer ones.
 ### CompositionLocal Anti-Patterns
 
 ```kotlin
-// Bad: using CompositionLocal as generic DI container
+// Bad: generic DI container
 val LocalEverything = compositionLocalOf { AppContainer() }
 
-// Bad: storing MutableState in CompositionLocal - changes won't propagate correctly
+// Bad: MutableState inside CompositionLocal
 val LocalCounter = compositionLocalOf { mutableStateOf(0) }
 
-// Good: provide the value, not the State
+// Good: provide the value, hoist the state
 val LocalCount = compositionLocalOf { 0 }
 @Composable
 fun Parent() {
@@ -3280,7 +3234,7 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
 
 #### Offline-first and `RemoteMediator`
 
-For **paged** lists backed by **Room 3** plus a remote API, use a [`RemoteMediator`](https://developer.android.com/topic/libraries/architecture/paging/v3-network-db) to load pages from the network into the local database and expose a `PagingSource` from the DAO to the `Pager`. In **Room 3**, add **`androidx.room3:room3-paging`** and **`@DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)`** on the DAO (or `@Database`) per [Room 3 release notes](https://developer.android.com/jetpack/androidx/releases/room3). That keeps the UI on a single `Flow<PagingData<T>>` while the database stays the source of truth. For broader sync, conflict handling, and invalidation patterns check `references/android-data-sync.md`.
+For **paged** lists backed by **Room 3** plus a remote API, use a [`RemoteMediator`](https://developer.android.com/topic/libraries/architecture/paging/v3-network-db) to load pages from the network into the local database and expose a `PagingSource` from the DAO to the `Pager`. In **Room 3**, add **`androidx.room3:room3-paging`** and **`@DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)`** on the DAO (or `@Database`) per [Room 3 release notes](https://developer.android.com/jetpack/androidx/releases/room3). That keeps the UI on a single `Flow<PagingData<T>>` while the database stays the source of truth. Broader sync, conflict handling, and invalidation patterns: [android-data-sync.md](/references/android-data-sync.md).
 
 ### Flow Layouts
 
@@ -3474,7 +3428,7 @@ Button(onClick = { scope.launch { pagerState.animateScrollToPage(2) } }) {
 ### Nested Scrolling Pitfalls
 
 ```kotlin
-// Bad: scrollable modifier inside LazyColumn - two scroll containers fight
+// Bad: nested same-axis scrollables fight
 LazyColumn {
     item {
         Column(Modifier.verticalScroll(rememberScrollState())) {
@@ -3483,7 +3437,7 @@ LazyColumn {
     }
 }
 
-// OK: nested LazyRow inside LazyColumn (different scroll axes)
+// OK: nested LazyRow in LazyColumn (different axes)
 LazyColumn {
     item {
         LazyRow {
@@ -3571,7 +3525,7 @@ Pass `@Composable` lambdas, not pre-composed values. Optional slots use nullable
 Composables execute during composition at unpredictable times. Always use callbacks:
 
 ```kotlin
-// Bad: composables don't return values
+// Bad: composables must not return values
 @Composable
 fun UserInput(): String {
     var text by remember { mutableStateOf("") }
@@ -3579,7 +3533,7 @@ fun UserInput(): String {
     return text
 }
 
-// Good: callback pattern
+// Good
 @Composable
 fun UserInput(onValueChange: (String) -> Unit) {
     var text by remember { mutableStateOf("") }
@@ -3615,11 +3569,11 @@ private fun ProductDetailContent(
     // Pure UI rendering - no ViewModel dependency
 }
 
-// Bad: passing ViewModel to children
+// Bad: ViewModel reaches a child
 @Composable
-fun ProductCard(viewModel: ProductDetailViewModel) { } // couples child to ViewModel
+fun ProductCard(viewModel: ProductDetailViewModel) { }
 
-// Good: pass only data
+// Good: child takes only data + callbacks
 @Composable
 fun ProductCard(product: Product, onClick: () -> Unit) { }
 ```
