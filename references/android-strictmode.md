@@ -1,7 +1,10 @@
 # Android StrictMode (Compose + Multi-Module)
 
-StrictMode is a three-tier guardrail in modern Compose apps:
-1) classic thread/VM checks, 2) Compose compiler stability diagnostics, 3) CI guardrails.
+StrictMode is a three-tier guardrail. Required in debug builds; optional with `penaltyListener` in production.
+
+1. Classic thread/VM checks.
+2. Compose compiler stability diagnostics.
+3. CI guardrails.
 
 ## 1) Classic StrictMode (Thread + VM)
 
@@ -141,7 +144,7 @@ Create `stability_config.conf` in your **root project directory** to mark extern
 
 This follows Google's recommended filename convention (see [Compose Compiler documentation](https://developer.android.com/develop/ui/compose/performance/stability/fix#configuration-file)).
 
-**Why use this?** Third-party libraries or generated code may have immutable types that aren't annotated with `@Stable` or `@Immutable`. Without annotation, Compose treats them as unstable, causing unnecessary recompositions.
+Use this when third-party or generated types are immutable in fact but lack `@Stable`/`@Immutable`. Without an entry here, Compose marks them unstable and recomposes unnecessarily.
 
 `stability_config.conf`:
 
@@ -207,8 +210,7 @@ StrictMode.setVmPolicy(
         .penaltyListener(mainExecutor) { violation ->
             // Ship to Firebase Crashlytics:
             FirebaseCrashlytics.getInstance().recordException(violation)
-            // Or ship to Sentry:
-            Sentry.captureException(violation)
+            // Or: Sentry.captureException(violation)
         }
         .build()
 )
