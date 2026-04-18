@@ -1541,6 +1541,64 @@ val AppTypography = Typography(
 )
 ```
 
+### Component Shape Defaults
+
+Every M3 component reads its corner radius from `MaterialTheme.shapes` via a `*Defaults.shape` constant. Override at the **token** level (in `AppShapes`) to retheme everything consistently; override at the **component** level (`shape = ...`) only for genuine one-offs. Mixing radii across components on the same screen is the most common visual-polish bug.
+
+| Component                                                                       | `*Defaults.shape` source                                                   | Token                                                               | Notes                                                                        |
+|---------------------------------------------------------------------------------|----------------------------------------------------------------------------|---------------------------------------------------------------------|------------------------------------------------------------------------------|
+| `Button`, `FilledTonalButton`, `OutlinedButton`, `TextButton`, `ElevatedButton` | `ButtonDefaults.shape`                                                     | `shapes.full` (pill)                                                | M3 Expressive ships pill-shaped buttons                                      |
+| `IconButton`, `FilledIconButton`, etc.                                          | `IconButtonDefaults.*Shape`                                                | `shapes.full`                                                       | Always circular at rest                                                      |
+| `FloatingActionButton`                                                          | `FloatingActionButtonDefaults.shape`                                       | `shapes.large`                                                      | 16dp corners                                                                 |
+| `ExtendedFloatingActionButton`                                                  | `FloatingActionButtonDefaults.extendedFabShape`                            | `shapes.large`                                                      |                                                                              |
+| `Card`, `OutlinedCard`, `ElevatedCard`                                          | `CardDefaults.shape` / `outlinedShape` / `elevatedShape`                   | `shapes.medium`                                                     | 12dp corners; see [Card Variants](#card-variants-filled--outlined--elevated) |
+| `AssistChip`, `FilterChip`, `InputChip`, `SuggestionChip`                       | `ChipDefaults.*Shape`                                                      | `shapes.small`                                                      | 8dp corners                                                                  |
+| `TextField`, `OutlinedTextField`                                                | `TextFieldDefaults.shape` / `OutlinedTextFieldDefaults.shape`              | top-only `extraSmall` (filled), `extraSmall` all corners (outlined) | Filled rounds **top corners only**                                           |
+| `AlertDialog`, `BasicAlertDialog`                                               | `AlertDialogDefaults.shape`                                                | `shapes.extraLarge`                                                 | 28dp corners                                                                 |
+| `ModalBottomSheet`, `BottomSheetScaffold`                                       | `BottomSheetDefaults.ExpandedShape`                                        | top-only `extraLarge`                                               | Top corners only; bottom is flush                                            |
+| `ModalNavigationDrawer`, `DismissibleNavigationDrawer`                          | `DrawerDefaults.shape`                                                     | end-only `extraLarge`                                               | Right edge corners only                                                      |
+| `Snackbar`                                                                      | `SnackbarDefaults.shape`                                                   | `shapes.extraSmall`                                                 | 4dp corners                                                                  |
+| `Menu` (`DropdownMenu`, `ExposedDropdownMenu`)                                  | `MenuDefaults.shape`                                                       | `shapes.extraSmall`                                                 |                                                                              |
+| `Tooltip` (`PlainTooltip`, `RichTooltip`)                                       | `TooltipDefaults.plainTooltipContainerShape` / `richTooltipContainerShape` | `shapes.extraSmall` (plain), `shapes.medium` (rich)                 |                                                                              |
+| `SearchBar`, `DockedSearchBar`                                                  | `SearchBarDefaults.inputFieldShape`                                        | `shapes.full`                                                       | Pill                                                                         |
+| `Switch`, `RadioButton`, `Checkbox`                                             | (handle-driven, no public shape token)                                     | —                                                                   | Don't override; baked into the component                                     |
+| `TopAppBar`, `BottomAppBar`, `NavigationBar`, `NavigationRail`                  | (none — full-bleed)                                                        | —                                                                   | Never round these                                                            |
+
+#### Override at the token level, not per component
+
+```kotlin
+val AppShapes = Shapes(
+    extraSmall = RoundedCornerShape(2.dp),
+    small      = RoundedCornerShape(6.dp),
+    medium     = RoundedCornerShape(10.dp),
+    large      = RoundedCornerShape(14.dp),
+    extraLarge = RoundedCornerShape(24.dp),
+)
+
+MaterialTheme(colorScheme = colorScheme, typography = AppTypography, shapes = AppShapes) {
+    // Card → 10dp, Dialog → 24dp, Snackbar → 2dp, etc. — automatic.
+}
+```
+
+#### Per-component override is for one-offs only
+
+```kotlin
+Card(
+    shape = MaterialTheme.shapes.large,
+) {
+    HeroContent()
+}
+```
+
+Reach for `shape = ...` only when a single instance must visually break the system rhythm — a hero card on a marketing screen, a custom-shaped CTA. Doing this across every `Card` / `Button` is the same as not having a shape system at all.
+
+#### Shape anti-patterns
+
+- **Don't `RoundedCornerShape(8.dp)` directly on a component.** Use `MaterialTheme.shapes.small` so a future token bump rethemes the whole app.
+- **Don't round full-bleed bars.** `TopAppBar`, `BottomAppBar`, `NavigationBar`, `NavigationRail` are designed to sit edge-to-edge — corners on them clip incorrectly under gesture insets.
+- **Don't round all four corners on `ModalBottomSheet` / drawers.** Use the `*ExpandedShape` / `*Shape` defaults; the asymmetric corners are load-bearing for the affordance.
+- **Don't override `Switch` / `RadioButton` / `Checkbox` shape.** They're not derived from `MaterialTheme.shapes`; the visual is baked in by spec.
+
 ### Component-Specific Themes
 
 ```kotlin
