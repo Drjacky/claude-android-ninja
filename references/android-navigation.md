@@ -1,70 +1,49 @@
-# Navigation Guide
+# Navigation
 
-Navigation3 architecture with type-safe routing, adaptive navigation, and multi-module coordination.
-All Kotlin code in this guide must align with `references/kotlin-patterns.md`.
-**Dependencies**: See `assets/libs.versions.toml.template` for Navigation 3 versions and the `navigation3` bundle.
+Required: Navigation 3 with type-safe `@Serializable` `NavKey` destinations, feature-defined `Navigator` interfaces, app-module wiring. Kotlin code must align with [kotlin-patterns.md](/references/kotlin-patterns.md). Versions live in `assets/libs.versions.toml.template` (`navigation3` bundle).
+
+Navigation 3 is still under active development; pin a stable version from [Navigation 3 releases](https://developer.android.com/jetpack/androidx/releases/navigation3) before shipping.
 
 ## Table of Contents
 1. [Navigation3 Architecture](#navigation3-architecture)
-2. [When to Use Navigation3](#when-to-use-navigation3)
-3. [Key Benefits](#key-benefits-of-navigation3-architecture)
-4. [Quick Start](#navigation-3-quick-start)
-5. [App Navigation Setup](#app-navigation-setup)
-6. [Navigation State Management](#navigation-3-state-management)
-7. [Key Principles](#key-principles)
-8. [Navigation Flow](#navigation-flow)
-9. [Migration Note](#migration-note)
-10. [Animations](#animations)
-11. [Scenes & Custom Layouts](#scenes--custom-layouts)
-12. [Deep Links](#deep-links)
-13. [Conditional Navigation](#conditional-navigation)
-14. [Returning Results](#returning-results)
-15. [ViewModel Scoping](#viewmodel-scoping)
-16. [Adaptive Quality and Large Screens](#adaptive-quality-and-large-screens)
+2. [Quick Start](#navigation-3-quick-start)
+3. [App Navigation Setup](#app-navigation-setup)
+4. [Navigation State Management](#navigation-3-state-management)
+5. [Key Principles](#key-principles)
+6. [Navigation Flow](#navigation-flow)
+7. [Migration Note](#migration-note)
+8. [Animations](#animations)
+9. [Scenes & Custom Layouts](#scenes--custom-layouts)
+10. [Deep Links](#deep-links)
+11. [Conditional Navigation](#conditional-navigation)
+12. [Returning Results](#returning-results)
+13. [ViewModel Scoping](#viewmodel-scoping)
+14. [Adaptive Quality and Large Screens](#adaptive-quality-and-large-screens)
 
 ## Navigation3 Architecture
 
-Feature-level navigation components (`AuthDestination`, `AuthNavigator`, `AuthGraph`) are created as part
-of the feature module setup in `references/modularization.md` → "Create Feature Module" → Step 4.
+Feature-level navigation components (`AuthDestination`, `AuthNavigator`, `AuthGraph`) are created as part of the feature module setup in [modularization.md → Create Feature Module → Step 4](/references/modularization.md).
 
-### When to Use Navigation3:
-- **All new Compose projects should use Navigation3** as it's the modern navigation API
-- Building responsive UIs for phones, tablets, foldables, or desktop
-- Need automatic navigation adaptation with `NavigationSuiteScaffold`
-- Want Material 3 adaptive navigation patterns and list-detail layouts
-- **Important**: Navigation3 is in active development; check current stability status before production use
-
-### Key Benefits of Navigation3 Architecture:
-
-1. **Feature Independence**: Features don't depend on each other; only app module coordinates navigation via `Navigator` interfaces
-2. **Type-Safe Navigation**: Sealed `Destination` classes with `createRoute()` functions
-3. **Testable Navigation**: `Navigator` interfaces allow easy mocking without NavController dependencies
-4. **Adaptive UI**: `NavigationSuiteScaffold` auto-switches between navigation bar, rail, and drawer based on window size class
-5. **Single Backstack**: One `NavHost` controls entire app flow within `NavigationSuiteScaffold`
-6. **Material 3 Integration**: Built-in support for Material 3 adaptive design with `NavigableListDetailPaneScaffold` and `NavigableSupportingPaneScaffold`
-7. **Modern API**: Latest navigation patterns including support for predictive back gestures
-8. **Multi-pane Support**: `NavigableListDetailPaneScaffold` and `NavigableSupportingPaneScaffold` for tablets and foldables
-9. **Predictive Back Gestures**: Built-in support for Android's predictive back gesture system (mandatory on API 36)
-10. **Compose-First Design**: Designed specifically for Jetpack Compose, not adapted from View system
-11. **`NavigableListDetailPaneScaffold`**: For tablet/foldable list-detail layouts with built-in navigation and predictive back
-12. **`NavigableSupportingPaneScaffold`**: For main + supporting content layouts
-13. **`NavHost` from `androidx.navigation3`**: The Navigation3 version of NavHost
+Required:
+- Each feature owns its `Destination` sealed interface (implements `NavKey`, `@Serializable`) and a `Navigator` interface.
+- App module owns the back stack, implements every feature's `Navigator`, and registers entries in a single `NavDisplay`.
+- Top-level chrome uses `NavigationSuiteScaffold` so bar/rail/drawer tracks window size automatically.
+- Multi-pane layouts use `NavigableListDetailPaneScaffold` / `NavigableSupportingPaneScaffold` from Material 3 Adaptive — never hand-rolled width branching.
+- Predictive back is on by default (required on API 36).
 
 ## Adaptive Quality and Large Screens
 
-Large-screen and [adaptive app](https://developer.android.com/large-screens) guidance complements Navigation3. `NavigationSuiteScaffold` and pane scaffolds handle **where** to put navigation chrome; the tiers below describe **how complete** the experience is across form factors.
+`NavigationSuiteScaffold` and pane scaffolds decide *where* navigation chrome lives; the [Adaptive app guidance](https://developer.android.com/large-screens) defines *how complete* the experience is per form factor.
 
-### Quality tiers (summary)
+### Quality tiers
 
-Google frames progressive expectations for adaptive apps:
+Required floor: tier 3 on every build. Target tier 2 for productivity and tablet-heavy audiences. Target tier 1 only when foldables, Chromebooks, or stylus-first workflows are first-class.
 
-| Tier                            | Focus                                                                                            |
+| Tier                            | Required behaviour                                                                               |
 |---------------------------------|--------------------------------------------------------------------------------------------------|
 | **3 - Adaptive ready**          | No letterboxing, handles rotation and resizing, split-screen works, basic keyboard/mouse         |
 | **2 - Adaptive optimized**      | Responsive layouts at all widths, stronger keyboard shortcuts and hover, state survives resize   |
-| **1 - Adaptive differentiated** | Multitasking (e.g. drag and drop where relevant), fold postures, stylus, desktop-style windowing |
-
-Aim for at least **tier 3** everywhere; invest in **tier 2** for productivity and tablet-heavy audiences; **tier 1** when you target foldables, Chromebooks, or stylus-first workflows.
+| **1 - Adaptive differentiated** | Multitasking (drag and drop where relevant), fold postures, stylus, desktop-style windowing      |
 
 ### Width and layout (with Navigation3)
 
@@ -1316,9 +1295,9 @@ fun ConditionalNavExample() {
 
 Pass data back from one screen to another. Navigation 3 offers two patterns: event-based (one-shot delivery) and callback-based (via Navigator interface).
 
-### Callback-Based Results (Recommended)
+### Callback-Based Results
 
-The simplest approach - define result callbacks in the Navigator interface. This fits our multi-module architecture naturally:
+Define the result callback on the Navigator interface and let the app module own the hoisted state.
 
 **1. Feature module defines the callback:**
 ```kotlin
@@ -1412,14 +1391,14 @@ fun EventResultExample() {
 }
 ```
 
-**Trade-offs:**
+### Choosing a pattern
 
-| Pattern        | Pros                                                | Cons                                                                                |
-|----------------|-----------------------------------------------------|-------------------------------------------------------------------------------------|
-| Callback-based | Type-safe, fits Navigator interface pattern, simple | Requires state hoisting in app module                                               |
-| Event-based    | Decoupled, works without Navigator                  | Not observable by Compose (uses plain `MutableMap`), requires manual key management |
+| Pattern        | Use when                                                                          | Avoid when                                              |
+|----------------|-----------------------------------------------------------------------------------|---------------------------------------------------------|
+| Callback-based | Default. Result is type-safe and the caller already exposes hoisted state.        | Caller cannot hold the receiving state (cross-feature). |
+| Event-based    | Receiver is decoupled from the Navigator and you only need a one-shot delivery.   | You need Compose-observable updates or shared state.    |
 
-**Recommendation:** Use the callback-based pattern for most cases. It integrates with the Navigator interface pattern used throughout this guide and is inherently type-safe.
+Default to callback-based; it stays type-safe and matches the `Navigator` interface pattern used everywhere else.
 
 ## ViewModel Scoping
 
