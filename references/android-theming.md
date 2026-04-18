@@ -212,6 +212,29 @@ val md_theme_light_surfaceTint = Color(0xFF6750A4)
 val md_theme_light_outlineVariant = Color(0xFFCAC4D0)
 val md_theme_light_scrim = Color(0xFF000000)
 
+// Surface containers (M3) — tonal hierarchy for nested surfaces
+val md_theme_light_surfaceContainerLowest = Color(0xFFFFFFFF)
+val md_theme_light_surfaceContainerLow = Color(0xFFF7F2FA)
+val md_theme_light_surfaceContainer = Color(0xFFF3EDF7)
+val md_theme_light_surfaceContainerHigh = Color(0xFFECE6F0)
+val md_theme_light_surfaceContainerHighest = Color(0xFFE6E0E9)
+val md_theme_light_surfaceDim = Color(0xFFDED8E1)
+val md_theme_light_surfaceBright = Color(0xFFFEF7FF)
+
+// Fixed accent roles (M3) — same color in light and dark
+val md_theme_primaryFixed = Color(0xFFEADDFF)
+val md_theme_primaryFixedDim = Color(0xFFD0BCFF)
+val md_theme_onPrimaryFixed = Color(0xFF21005D)
+val md_theme_onPrimaryFixedVariant = Color(0xFF4F378B)
+val md_theme_secondaryFixed = Color(0xFFE8DEF8)
+val md_theme_secondaryFixedDim = Color(0xFFCCC2DC)
+val md_theme_onSecondaryFixed = Color(0xFF1D192B)
+val md_theme_onSecondaryFixedVariant = Color(0xFF4A4458)
+val md_theme_tertiaryFixed = Color(0xFFFFD8E4)
+val md_theme_tertiaryFixedDim = Color(0xFFEFB8C8)
+val md_theme_onTertiaryFixed = Color(0xFF31111D)
+val md_theme_onTertiaryFixedVariant = Color(0xFF633B48)
+
 // Dark theme colors
 val md_theme_dark_primary = Color(0xFFD0BCFF)
 val md_theme_dark_onPrimary = Color(0xFF381E72)
@@ -243,6 +266,15 @@ val md_theme_dark_surfaceTint = Color(0xFFD0BCFF)
 val md_theme_dark_outlineVariant = Color(0xFF49454F)
 val md_theme_dark_scrim = Color(0xFF000000)
 
+// Surface containers (M3) — tonal hierarchy for nested surfaces
+val md_theme_dark_surfaceContainerLowest = Color(0xFF0F0D13)
+val md_theme_dark_surfaceContainerLow = Color(0xFF1D1B20)
+val md_theme_dark_surfaceContainer = Color(0xFF211F26)
+val md_theme_dark_surfaceContainerHigh = Color(0xFF2B2930)
+val md_theme_dark_surfaceContainerHighest = Color(0xFF36343B)
+val md_theme_dark_surfaceDim = Color(0xFF141218)
+val md_theme_dark_surfaceBright = Color(0xFF3B383E)
+
 val LightColorScheme = lightColorScheme(
     primary = md_theme_light_primary,
     onPrimary = md_theme_light_onPrimary,
@@ -272,7 +304,26 @@ val LightColorScheme = lightColorScheme(
     inversePrimary = md_theme_light_inversePrimary,
     surfaceTint = md_theme_light_surfaceTint,
     outlineVariant = md_theme_light_outlineVariant,
-    scrim = md_theme_light_scrim
+    scrim = md_theme_light_scrim,
+    surfaceContainerLowest = md_theme_light_surfaceContainerLowest,
+    surfaceContainerLow = md_theme_light_surfaceContainerLow,
+    surfaceContainer = md_theme_light_surfaceContainer,
+    surfaceContainerHigh = md_theme_light_surfaceContainerHigh,
+    surfaceContainerHighest = md_theme_light_surfaceContainerHighest,
+    surfaceDim = md_theme_light_surfaceDim,
+    surfaceBright = md_theme_light_surfaceBright,
+    primaryFixed = md_theme_primaryFixed,
+    primaryFixedDim = md_theme_primaryFixedDim,
+    onPrimaryFixed = md_theme_onPrimaryFixed,
+    onPrimaryFixedVariant = md_theme_onPrimaryFixedVariant,
+    secondaryFixed = md_theme_secondaryFixed,
+    secondaryFixedDim = md_theme_secondaryFixedDim,
+    onSecondaryFixed = md_theme_onSecondaryFixed,
+    onSecondaryFixedVariant = md_theme_onSecondaryFixedVariant,
+    tertiaryFixed = md_theme_tertiaryFixed,
+    tertiaryFixedDim = md_theme_tertiaryFixedDim,
+    onTertiaryFixed = md_theme_onTertiaryFixed,
+    onTertiaryFixedVariant = md_theme_onTertiaryFixedVariant
 )
 
 val DarkColorScheme = darkColorScheme(
@@ -304,7 +355,26 @@ val DarkColorScheme = darkColorScheme(
     inversePrimary = md_theme_dark_inversePrimary,
     surfaceTint = md_theme_dark_surfaceTint,
     outlineVariant = md_theme_dark_outlineVariant,
-    scrim = md_theme_dark_scrim
+    scrim = md_theme_dark_scrim,
+    surfaceContainerLowest = md_theme_dark_surfaceContainerLowest,
+    surfaceContainerLow = md_theme_dark_surfaceContainerLow,
+    surfaceContainer = md_theme_dark_surfaceContainer,
+    surfaceContainerHigh = md_theme_dark_surfaceContainerHigh,
+    surfaceContainerHighest = md_theme_dark_surfaceContainerHighest,
+    surfaceDim = md_theme_dark_surfaceDim,
+    surfaceBright = md_theme_dark_surfaceBright,
+    primaryFixed = md_theme_primaryFixed,
+    primaryFixedDim = md_theme_primaryFixedDim,
+    onPrimaryFixed = md_theme_onPrimaryFixed,
+    onPrimaryFixedVariant = md_theme_onPrimaryFixedVariant,
+    secondaryFixed = md_theme_secondaryFixed,
+    secondaryFixedDim = md_theme_secondaryFixedDim,
+    onSecondaryFixed = md_theme_onSecondaryFixed,
+    onSecondaryFixedVariant = md_theme_onSecondaryFixedVariant,
+    tertiaryFixed = md_theme_tertiaryFixed,
+    tertiaryFixedDim = md_theme_tertiaryFixedDim,
+    onTertiaryFixed = md_theme_onTertiaryFixed,
+    onTertiaryFixedVariant = md_theme_onTertiaryFixedVariant
 )
 ```
 
