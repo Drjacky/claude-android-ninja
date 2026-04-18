@@ -1,13 +1,6 @@
 # Code Coverage with JaCoCo
 
-JaCoCo provides code coverage reports for Android projects, combining data from both unit tests and instrumented tests.
-
-## When to Use
-
-- **CI/CD pipelines**: Enforce minimum coverage thresholds
-- **Code review**: Identify untested code paths
-- **Quality metrics**: Track coverage trends over time
-- **Team standards**: Maintain consistent test coverage
+Required: combined unit + instrumented coverage on every PR. Apply via the JaCoCo convention plugins in `assets/convention/`.
 
 ## Setup
 
@@ -41,34 +34,19 @@ The JaCoCo convention plugins (from `assets/convention/`) automatically:
 
 ## Generating Coverage Reports
 
-### Step 1: Run Tests
-
-Run unit tests and instrumented tests:
-```bash
-# Unit tests
-./gradlew testDebugUnitTest
-
-# Instrumented tests (requires connected device/emulator)
-./gradlew connectedDebugAndroidTest
-```
-
-### Step 2: Generate Coverage Report
+Run tests then the combined report task. Instrumented tests require a connected device or emulator:
 
 ```bash
-# For app module
+./gradlew testDebugUnitTest connectedDebugAndroidTest
 ./gradlew createDebugCombinedCoverageReport
-
-# For library module
+# library module variant:
 ./gradlew :core:data:createDebugCombinedCoverageReport
 ```
 
-### Step 3: View Reports
+Output paths (per module under `build/reports/jacoco/createDebugCombinedCoverageReport/`):
 
-Reports are generated in:
-- **XML**: `build/reports/jacoco/createDebugCombinedCoverageReport/createDebugCombinedCoverageReport.xml`
-- **HTML**: `build/reports/jacoco/createDebugCombinedCoverageReport/html/index.html`
-
-Open the HTML report in a browser to view coverage by package, class, and method.
+- `createDebugCombinedCoverageReport.xml` — feed to CI/Codecov.
+- `html/index.html` — per-package, class, method drilldown.
 
 ## Coverage Exclusions
 
@@ -129,51 +107,36 @@ jobs:
 
 ### Enforcing Minimum Coverage
 
-Add coverage verification to your build:
-
 ```kotlin
 // build.gradle.kts (project level or in a convention plugin)
 tasks.withType<JacocoCoverageVerification>().configureEach {
     violationRules {
         rule {
-            limit {
-                minimum = "0.80".toBigDecimal() // 80% coverage
-            }
+            limit { minimum = "0.80".toBigDecimal() }
         }
     }
 }
 ```
 
-## Best Practices
+## Rules
 
-1. **Run coverage regularly**: Include in CI pipeline
-2. **Focus on business logic**: Don't obsess over 100% coverage
-3. **Exclude UI code**: UI tests provide better coverage for Compose
-4. **Review trends**: Track coverage changes over time
-5. **Don't game the metrics**: Write meaningful tests, not just for coverage
+Required:
+- Run `createDebugCombinedCoverageReport` on every PR.
+- Target ≥ 80% line coverage on `core/domain` and `core/data`. UI modules are measured but not gated.
+- Keep instrumented tests under `src/androidTest/` and unit tests under `src/test/`. Coverage tasks read both paths.
+- Cover Compose UI through Compose UI tests and screenshot tests, not by gating composable line coverage.
+
+Forbidden:
+- Adding tests solely to lift the coverage number (assertion-free `assertTrue(true)`, `runBlocking { fn() }` with no checks).
+- Disabling exclusion patterns in `assets/convention/config/Jacoco.kt` to inflate coverage.
 
 ## Troubleshooting
 
-### No coverage data generated
-
-- Ensure tests are actually running and passing
-- Check that tests are in the correct directories (`src/test/` for unit, `src/androidTest/` for instrumented)
-- Verify debug build is being used (coverage only enabled for debug)
-
-### Missing classes in report
-
-- Check exclusion patterns in `config/Jacoco.kt`
-- Ensure the module has the JaCoCo plugin applied
-
-### Robolectric compatibility issues
-
-The convention plugin automatically configures:
-```kotlin
-isIncludeNoLocationClasses = true
-excludes = listOf("jdk.internal.*")
-```
-
-This fixes compatibility with Robolectric and JDK 11+.
+| Symptom                             | Fix                                                                                                                                                                                                |
+|-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| No coverage data generated          | Confirm tests run and pass; confirm `src/test/` vs `src/androidTest/` placement; coverage runs on `debug` only.                                                                                    |
+| Classes missing from report         | Check exclusion patterns in `assets/convention/config/Jacoco.kt`; confirm module applies the JaCoCo convention plugin.                                                                             |
+| Robolectric / JDK 11+ class loading | Convention plugin already sets `isIncludeNoLocationClasses = true` and `excludes = listOf("jdk.internal.*")`. If overriding, keep both.                                                            |
 
 ## References
 
