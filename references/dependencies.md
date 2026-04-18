@@ -1,13 +1,6 @@
-# Dependencies Guide
+# Dependencies
 
-Use this guide for dependency selection, versioning strategy, and best practices for Android projects using the version catalog.
-
-## When to Use This Guide
-- **New project**: Start by reviewing the version catalog template
-- **New feature**: Confirm required libraries are already defined
-- **Any new code**: Verify you are using approved dependencies and current versions
-- **Dependency conflicts**: Resolve version mismatches
-- **Library evaluation**: Decide between competing libraries
+Required: every dependency goes through `assets/libs.versions.toml.template`. Do not hard-code coordinates or versions in module `build.gradle.kts`.
 
 ## Version Catalog Source of Truth
 Always check `assets/libs.versions.toml.template` before adding or changing dependencies.
@@ -19,62 +12,20 @@ Always check `assets/libs.versions.toml.template` before adding or changing depe
 4. **Use bundles** when multiple libraries are typically used together (e.g., Compose, Navigation, Testing)
 5. **Use platform dependencies** (BOMs) for coordinated version management (Compose, Firebase)
 
-## Dependency Selection Criteria
+## Dependency Selection
 
-### Network Libraries
+| Concern              | Use                                                                          | Avoid / Only-if-migrating                          |
+|----------------------|------------------------------------------------------------------------------|----------------------------------------------------|
+| REST networking      | Retrofit + OkHttp + `retrofit2-kotlinx-serialization-converter`              | Ktor Client (reserve for Kotlin Multiplatform)     |
+| Image loading        | Coil 3.x (`coil-compose` + `coil-network-okhttp`)                            | Glide (only when migrating heavy View-based usage) |
+| JSON serialization   | `kotlinx-serialization`                                                      | Gson (only with deep existing investment)          |
+| Dependency injection | Hilt (required)                                                              | Manual DI, Koin                                    |
+| AndroidX             | `-ktx` artifacts (`core-ktx`, `lifecycle-runtime-ktx`, …)                    | `com.android.support.*` (deprecated)               |
 
-**Retrofit + OkHttp (Recommended for REST APIs)**
-- ✅ Use for: Traditional REST APIs, existing projects
-- ✅ Mature, stable, extensive ecosystem
-- ✅ Interceptor support for logging, auth, retries
-- Use `retrofit2-kotlinx-serialization-converter` for Kotlin serialization
+Hilt module patterns, scopes, and anti-patterns: [architecture.md → Dependency Injection Setup](/references/architecture.md#dependency-injection-setup).
 
-**Ktor Client (Alternative)**
-- ✅ Use for: Pure Kotlin multiplatform projects
-- ❌ Avoid for: Android-only apps (Retrofit is more established)
-
-### Image Loading
-
-**Coil 3.x (Recommended)**
-- ✅ Use for: All Compose projects
-- ✅ Kotlin-first, Compose-native, smallest APK impact
-- ✅ Built-in support for OkHttp, async image loading
-- Use `coil-compose` + `coil-network-okhttp`
-
-**Glide (Legacy)**
-- ❌ Avoid for: New Compose projects
-- Use only if: Migrating from View-based UI with heavy Glide usage
-
-### Serialization
-
-**kotlinx-serialization (Recommended)**
-- ✅ Use for: All new projects
-- ✅ Kotlin-first, compile-time safety, faster than Gson
-- ✅ Works with Retrofit via `retrofit2-kotlinx-serialization-converter`
-
-**Gson (Legacy)**
-- ❌ Avoid for: New projects
-- Use only if: Heavy investment in existing Gson code
-
-### Dependency Injection
-
-**Hilt (Required)**
-- ✅ Built on Dagger, Android-optimized
-- ✅ Compile-time safety, ViewModel integration
-- ✅ This SKILL requires Hilt for all projects
-- Module patterns, scopes, and anti-patterns: `references/architecture.md` (Domain Layer - [Dependency Injection Setup](/references/architecture.md#dependency-injection-setup))
-
-### AndroidX Libraries
-
-**Prefer `-ktx` extensions:**
-- `core-ktx`, `lifecycle-runtime-ktx`
-- Provide Kotlin-friendly APIs and coroutine support
-
-**Room 3:** Use **`androidx.room3:room3-runtime`**, **`sqlite-bundled`**, and KSP **`room3-compiler`** (see version catalog). DAOs are **coroutine-first** (`suspend`, `Flow`). Optional **`room3-paging`** only when a DAO returns `PagingSource`; **`room3-testing`** for instrumented DB tests.
-
-**Never use legacy support libraries:**
-- ❌ `com.android.support.*` (deprecated)
-- ✅ Always use `androidx.*`
+### Room 3
+Required artifacts: `androidx.room3:room3-runtime`, `sqlite-bundled`, KSP `room3-compiler` (see version catalog). DAOs are coroutine-first (`suspend`, `Flow`). Add `room3-paging` only when a DAO returns `PagingSource`; `room3-testing` only for instrumented DB tests.
 
 ## Version Strategy
 
@@ -257,22 +208,19 @@ Copy the template to `app/proguard-rules.pro` and adjust `com.example.*` package
 
 ## Adding a New Dependency
 
-### Step-by-Step
+Checklist (in order, fail-fast):
 
-1. **Check if it exists** in `assets/libs.versions.toml.template`
-2. **Evaluate the library:**
-   - Is it stable? (Avoid alpha/beta for production)
-   - Is it maintained? (Check last update, GitHub activity)
-   - License compatible? (Apache 2.0, MIT preferred)
-   - Size impact? (Check APK size increase)
-3. **Add to `libs.versions.toml`:**
+- [ ] Confirm it is not already in `assets/libs.versions.toml.template`.
+- [ ] Stable channel exists (Hilt/Coroutines/Retrofit/Coil must be stable).
+- [ ] Actively maintained (commit/release within last 12 months).
+- [ ] License is Apache 2.0 or MIT (or pre-approved equivalent).
+- [ ] APK size impact measured for app modules.
+- [ ] Add `[versions]` + `[libraries]` entries in `libs.versions.toml` (and a bundle if used together).
+- [ ] Reference via `libs.<group>.<name>` in module `build.gradle.kts` — never raw coordinates.
+- [ ] Add ProGuard/R8 keep rules to `assets/proguard-rules.pro.template` if the library uses reflection or annotations.
+- [ ] Run `./gradlew assembleDebug testDebugUnitTest` before commit.
 
-```toml
-libs.ktor.client.core
-libs.ktor.client.android
-```
-
-4. **Use in `build.gradle.kts`:**
+Example wiring after the catalog entries are added:
 
 ```kotlin
 dependencies {
@@ -281,6 +229,4 @@ dependencies {
 }
 ```
 
-5. **Test thoroughly** before committing
-
-For setup patterns and convention plugins, see `references/gradle-setup.md`.
+Convention-plugin and module wiring details: [gradle-setup.md](/references/gradle-setup.md).
