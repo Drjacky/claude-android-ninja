@@ -8,6 +8,7 @@ All Kotlin code must align with `references/kotlin-patterns.md`. Theme usage in 
 
 - [Material 3 Theme System](#material-3-theme-system)
 - [Color Schemes](#color-schemes)
+- [Color Pairing Rules](#color-pairing-rules)
 - [Surface Container Hierarchy](#surface-container-hierarchy)
 - [Tonal Elevation vs Shadows](#tonal-elevation-vs-shadows)
 - [Dynamic Color (Material You)](#dynamic-color-material-you)
@@ -419,6 +420,64 @@ fun ProfileCard(user: User) {
     }
 }
 ```
+
+## Color Pairing Rules
+
+Every M3 color role has an `on*` partner that is contrast-tuned for it. Mixing partners — `onPrimary` over `surface`, `onSurface` over `primaryContainer` — silently breaks WCAG, dark mode, dynamic color, and user contrast all at once. The rule is mechanical: **pick a container role, then use its `on*` for everything drawn on top.**
+
+### The pairing table
+
+| Container / fill role              | Content / `on*` role                                                       | Typical use                           |
+|------------------------------------|----------------------------------------------------------------------------|---------------------------------------|
+| `primary`                          | `onPrimary`                                                                | Filled button, FAB                    |
+| `primaryContainer`                 | `onPrimaryContainer`                                                       | Selected chip, hero card              |
+| `secondary` / `secondaryContainer` | `onSecondary` / `onSecondaryContainer`                                     | Tonal button, filter chip             |
+| `tertiary` / `tertiaryContainer`   | `onTertiary` / `onTertiaryContainer`                                       | Badge, complementary surface          |
+| `error` / `errorContainer`         | `onError` / `onErrorContainer`                                             | Destructive action, error banner      |
+| `surface` / `surfaceContainer*`    | `onSurface` (titles), `onSurfaceVariant` (secondary text, icons, dividers) | Most app content                      |
+| `inverseSurface`                   | `inverseOnSurface`                                                         | Snackbar, tooltip                     |
+| `*Fixed` / `*FixedDim`             | `on*Fixed` / `on*FixedVariant`                                             | Cross-mode media controls (see below) |
+
+### Compose: pair containers and content explicitly
+
+```kotlin
+@Composable
+fun PairedSurfaces() {
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        shape = MaterialTheme.shapes.medium,
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text("Hero card", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = "Auto-inherits onPrimaryContainer via LocalContentColor",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+}
+```
+
+Setting `Surface(contentColor = ...)` updates `LocalContentColor` so `Text`, `Icon`, and `IconButton` inside pick the right partner automatically — that's the idiomatic way to enforce pairing without naming colors at every `Text` call.
+
+### Title vs supporting text on surfaces
+
+On any `surface` / `surfaceContainer*` role, use **two** content roles, not one:
+
+- `onSurface` for primary text (titles, body copy that must read).
+- `onSurfaceVariant` for secondary text, icons, dividers, placeholders, helper text.
+
+`onSurfaceVariant` is intentionally lower-contrast — using it for body copy fails WCAG; using `onSurface` for every label flattens the visual hierarchy.
+
+### `*Fixed` / `*FixedDim`: keep tone constant across modes
+
+`primaryFixed` / `primaryFixedDim` keep the **same tone** in light and dark themes — useful when a surface (album art controls, an embedded media widget) must visually match across modes. Pair them with `onPrimaryFixed` (titles) and `onPrimaryFixedVariant` (supporting text), the same way `surface` pairs with `onSurface` / `onSurfaceVariant`.
+
+### Cross-references
+
+- These pairs are also enforced by `Card`, `Button`, `Chip`, `NavigationBar` etc. via `*Defaults.colors(...)` — see `references/compose-patterns.md`.
+- Anti-patterns for breaking pairing live in [Best Practices → Never Do](#-never-do).
 
 ## Surface Container Hierarchy
 
@@ -1657,6 +1716,8 @@ Match **density, color, motion, and typography** to product category. Use the ta
 8. **Never create custom color attributes** without considering light/dark variants
 9. **Never use `Color.Unspecified`** - always provide fallback colors
 10. **Never test theme in emulator only** - test on real devices with different wallpapers
+11. **Never mix color pairs** - `onPrimary` only goes on `primary`, `onPrimaryContainer` only on `primaryContainer` (see [Color Pairing Rules](#color-pairing-rules)); pulling content roles off their partner silently breaks contrast under dark mode, dynamic color, and user contrast
+12. **Never use `onSurface` for everything on a surface** - secondary text, icons, dividers, and helper text belong on `onSurfaceVariant`; using `onSurface` everywhere flattens the visual hierarchy
 
 ### Color Naming Convention
 
