@@ -152,9 +152,31 @@ class MyApplication : Application() {
             options.environment = if (BuildConfig.DEBUG) "debug" else "production"
             options.release = BuildConfig.VERSION_NAME
             options.tracesSampleRate = 1.0
+            // options.tracesSampler = { 0.2 } // Prefer sampler when you need dynamic control.
+            // options.tracePropagationTargets = listOf("api.example.com", "https://auth.example.com")
+            // options.propagateTraceparent = true
+            // options.traceOptionsRequests = false
+            
+            // Profiling configuration:
+            // profilesSampleRate: % of transactions to profile (requires tracesSampleRate > 0)
+            // Use this for production profiling of sampled transactions
             options.profilesSampleRate = 1.0
+            
+            // Alternative: profileSessionSampleRate profiles % of sessions (not transactions)
+            // Only use ONE of profilesSampleRate OR profileSessionSampleRate, not both
+            // options.profileSessionSampleRate = 0.2
+            
+            // options.profileLifecycle = SentryOptions.ProfileLifecycle.TRACE
+            // options.startProfilerOnAppStart = true
             options.enableAutoSessionTracking = true
             options.sendDefaultPii = false
+            // options.sampleRate = 1.0 // Error event sampling.
+            // options.maxBreadcrumbs = 100
+            // options.attachStacktrace = true
+            // options.attachThreads = false
+            // options.collectAdditionalContext = true
+            // options.inAppIncludes = listOf("com.example")
+            // options.inAppExcludes = listOf("com.example.core.testing")
         }
     }
 }
