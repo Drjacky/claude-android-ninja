@@ -11,17 +11,18 @@ Security guide for Android apps, aligned with our modular architecture.
 6. [Biometric Authentication](#biometric-authentication)
 7. [Credential Manager and Sign-In](#credential-manager-and-sign-in)
 8. [Device Identifiers and Privacy](#device-identifiers-and-privacy)
-9. [Play Console Data Safety](#play-console-data-safety)
-10. [Play Integrity API](#play-integrity-api)
-11. [Root & Emulator Detection](#root--emulator-detection)
-12. [Screenshot & Screen Recording Prevention](#screenshot--screen-recording-prevention)
-13. [Secure Database (Room)](#secure-database-room)
-14. [Secure Clipboard](#secure-clipboard)
-15. [WebView Security](#webview-security)
-16. [Content Provider Security](#content-provider-security)
-17. [ProGuard / R8 Hardening](#proguard--r8-hardening)
-18. [CI/CD Security](#cicd-security)
-19. [Security Checklist](#security-checklist)
+9. [Android 15+ Platform Privacy](#android-15-platform-privacy)
+10. [Play Console Data Safety](#play-console-data-safety)
+11. [Play Integrity API](#play-integrity-api)
+12. [Root & Emulator Detection](#root--emulator-detection)
+13. [Screenshot & Screen Recording Prevention](#screenshot--screen-recording-prevention)
+14. [Secure Database (Room)](#secure-database-room)
+15. [Secure Clipboard](#secure-clipboard)
+16. [WebView Security](#webview-security)
+17. [Content Provider Security](#content-provider-security)
+18. [ProGuard / R8 Hardening](#proguard--r8-hardening)
+19. [CI/CD Security](#cicd-security)
+20. [Security Checklist](#security-checklist)
 
 ## Dependencies
 
@@ -772,6 +773,109 @@ Do **not** use hardware identifiers for advertising or routine analytics. Google
 | App-specific ID                                                         | Generate and store a random UUID in app storage or tie identity to your **account** after sign-in                          |
 
 Prefer **account-based** identity for personalization. For crash and product analytics without PII, follow `references/crashlytics.md` scrubbing rules.
+
+## Android 15+ Platform Privacy
+
+Android 15 (API 35) and 16 (API 36) add platform privacy features that change how apps access media, render protected UI, and coexist with user profiles. Handle each one explicitly; do not rely on older behavior.
+
+### Partial photo/media access (API 34+, enforced broadly on API 35+)
+
+When the app requests `READ_MEDIA_IMAGES` / `READ_MEDIA_VIDEO` on API 34+, the user can grant **selected items only** instead of full access. The platform returns `READ_MEDIA_VISUAL_USER_SELECTED` in that case.
+
+```xml
+<!-- AndroidManifest.xml -->
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+<uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+```
+
+Rules:
+
+- **Prefer the Photo Picker** (`PickVisualMedia` / `ActivityResultContracts`) over requesting the permissions at all. See `references/android-permissions.md`. The picker does not require any media permission and works on all supported APIs.
+- If you *must* enumerate media (gallery-like apps), check the grant state and show a "Manage selected photos" entry point that re-invokes the picker via `ACTION_MANAGE_APP_PERMISSIONS` or a fresh `READ_MEDIA_VISUAL_USER_SELECTED` request. Do not silently fail when only partial access is granted.
+
+```kotlin
+val fullAccess = ContextCompat.checkSelfPermission(
+    context, Manifest.permission.READ_MEDIA_IMAGES
+) == PackageManager.PERMISSION_GRANTED
+
+val partialAccess = ContextCompat.checkSelfPermission(
+    context, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+) == PackageManager.PERMISSION_GRANTED
+
+when {
+    fullAccess -> loadAllMedia()
+    partialAccess -> loadSelectedMediaAndOfferReselection()
+    else -> showPhotoPickerPrompt()
+}
+```
+
+### Screen recording detection (API 35+)
+
+Android 15 lets an app detect when its own UI is being captured by another app or service (MediaProjection, cast, third-party recorders). Use this to pause sensitive surfaces (bank balances, OTP screens, medical data) rather than replacing `FLAG_SECURE`.
+
+Manifest:
+
+```xml
+<uses-permission android:name="android.permission.DETECT_SCREEN_RECORDING" />
+```
+
+Registration (in an Activity hosting sensitive content):
+
+```kotlin
+private val mainExecutor by lazy { ContextCompat.getMainExecutor(this) }
+
+private val screenRecordingCallback = Consumer<Int> { state ->
+    val visible = state == WindowManager.SCREEN_RECORDING_STATE_VISIBLE
+    sensitiveContentController.onRecordingStateChanged(visible)
+}
+
+override fun onStart() {
+    super.onStart()
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        windowManager.addScreenRecordingCallback(mainExecutor, screenRecordingCallback)
+    }
+}
+
+override fun onStop() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        windowManager.removeScreenRecordingCallback(screenRecordingCallback)
+    }
+    super.onStop()
+}
+```
+
+Rules:
+
+- The callback only detects *this app's* windows being recorded. It does not catch foreground-level global recording by system-signed tools.
+- This is a **detection signal**, not a prevention mechanism. Pair it with `FLAG_SECURE` on screens that must never be captured (see [Screenshot & Screen Recording Prevention](#screenshot--screen-recording-prevention)).
+- Do not use it as a DRM substitute. Determined attackers capture the framebuffer through other channels.
+
+### Private Space awareness (API 35+)
+
+Private Space is a user-level profile that stores a separate, locked copy of installed apps. It affects these surfaces:
+
+- **FileProvider / content sharing:** when sharing files via `Intent.ACTION_SEND`, do not assume the target resolver list is global. The private profile's apps are filtered out when the profile is locked. Let the system handle it; do not build custom resolver UIs.
+- **Account linking:** the same Google account can be present in both the main and private profile. Do not dedupe users by on-device signals alone; server-side identity is authoritative (consistent with the rule in [Device Identifiers and Privacy](#device-identifiers-and-privacy)).
+- **Querying installed apps:** `PackageManager.getInstalledApplications()` in one profile does not see apps installed in the other. Code paths that enumerate apps must not assume full visibility.
+
+No new API is required for most apps — the correctness fix is to stop making assumptions the old single-profile model allowed.
+
+### Partial screen sharing (API 34+)
+
+`MediaProjection` can now record a **single app window** rather than the whole display. If the app is the *source* of a screen-capture feature:
+
+- Expose the app-window option when calling `createScreenCaptureIntent()`; the user picks scope in the system dialog.
+- Do not try to escalate from single-window to full-display capture; the system blocks it and the user experience degrades.
+
+If the app is the *target* being recorded, use the Screen recording detection callback above to react.
+
+### Official references
+
+- [Android 15 features and APIs](https://developer.android.com/about/versions/15/features)
+- [Photo picker improvements and partial access](https://developer.android.com/training/data-storage/shared/photopicker)
+- [Detect screen recording](https://developer.android.com/about/versions/15/features#screen-recording-detection)
+- [Private Space](https://developer.android.com/about/versions/15/features#private-space)
 
 ## Play Console Data Safety
 
