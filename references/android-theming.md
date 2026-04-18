@@ -19,6 +19,7 @@ All Kotlin code must align with `references/kotlin-patterns.md`. Theme usage in 
 - [Dark/Light Mode Switching](#darklight-mode-switching)
 - [Theme Preferences](#theme-preferences)
 - [Custom Theme Attributes](#custom-theme-attributes)
+  - [Brand Color Harmonization](#brand-color-harmonization)
 - [Architecture Integration](#architecture-integration)
 - [Testing](#testing)
 - [Layout Spacing and Component Dimensions](#layout-spacing-and-component-dimensions)
@@ -1517,6 +1518,95 @@ fun StatusBadge(status: String) {
     }
 }
 ```
+
+### Brand Color Harmonization
+
+Hard-coded brand colors (`success`, `warning`, `info`, an "always-red" notification dot, a partner logo tint) clash visibly when [dynamic color](#dynamic-color-material-you) repaints the rest of the app from the user's wallpaper. M3 ships a fix: `MaterialColors.harmonize(...)` shifts a custom color's **hue** toward `colorScheme.primary` while preserving its **chroma and tone**, so `success` still reads as green and `warning` as yellow — they just stop fighting the wallpaper.
+
+Add the dependency once in `build.gradle.kts`:
+
+```kotlin
+implementation("com.google.android.material:material:1.12.0")
+```
+
+#### Harmonize once when the scheme is built
+
+`harmonize` is a pure color-math call. Run it where you build `ExtendedColors` so every consumer sees harmonized values automatically — never call it inside `Composable`s that recompose on every frame.
+
+```kotlin
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import com.google.android.material.color.MaterialColors
+
+private fun Color.harmonizeWith(primary: Color): Color =
+    Color(MaterialColors.harmonize(this.toArgb(), primary.toArgb()))
+
+@Composable
+fun rememberHarmonizedExtendedColors(
+    base: ExtendedColors,
+    primary: Color = MaterialTheme.colorScheme.primary,
+): ExtendedColors = remember(base, primary) {
+    base.copy(
+        success = base.success.harmonizeWith(primary),
+        warning = base.warning.harmonizeWith(primary),
+        info    = base.info.harmonizeWith(primary),
+    )
+}
+```
+
+`on*` partners stay as-is — they're chosen for contrast against the harmonized fill, and the fill's hue shift is too small to flip which on-color you need.
+
+#### Plug into `AppTheme`
+
+Replace the static `extendedColors` lookup in `AppTheme` with the harmonized version, but **only when dynamic color is actually active**. With the static `LightColorScheme` / `DarkColorScheme` there's nothing to harmonize against, so skip the cost.
+
+```kotlin
+@Composable
+fun AppTheme(
+    themeConfig: ThemeConfig,
+    content: @Composable () -> Unit,
+) {
+    val isDarkTheme = when (themeConfig.themePreference) {
+        ThemePreference.LIGHT -> false
+        ThemePreference.DARK -> true
+        ThemePreference.SYSTEM -> isSystemInDarkTheme()
+    }
+
+    val dynamicColorActive =
+        themeConfig.useDynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
+    val colorScheme = when {
+        dynamicColorActive -> {
+            val context = LocalContext.current
+            if (isDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        isDarkTheme -> DarkColorScheme
+        else        -> LightColorScheme
+    }
+
+    val baseExtended = if (isDarkTheme) DarkExtendedColors else LightExtendedColors
+    val extendedColors = if (dynamicColorActive) {
+        rememberHarmonizedExtendedColors(baseExtended, colorScheme.primary)
+    } else {
+        baseExtended
+    }
+
+    CompositionLocalProvider(LocalExtendedColors provides extendedColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = AppTypography,
+            shapes = AppShapes,
+            content = content,
+        )
+    }
+}
+```
+
+#### When to harmonize, when not to
+
+- **Harmonize**: brand accents (`success`, `warning`, `info`), partner-tinted illustrations, a custom `notification` color, third-party SDK accent overrides.
+- **Do not harmonize**: `error` (already part of `colorScheme`, must stay unmistakably red), pure neutrals (white, black, grays), brand colors with **legal/identity constraints** where the exact hex matters (logos, regulated marks).
+- For static-only apps (no dynamic color anywhere), there's nothing to harmonize against — skip it entirely and keep the original brand values.
 
 ## Architecture Integration
 
