@@ -1,6 +1,6 @@
 ---
 name: claude-android-ninja
-description: Create production-quality Android applications following Google's official Android architecture guidance with Kotlin, Jetpack Compose, MVVM architecture, Hilt dependency injection, Room 3 local persistence (KSP, SQLiteDriver, Flow/suspend DAOs), and multi-module architecture. Triggers on requests to create Android projects, modules, screens, ViewModels, repositories, or when asked about Android architecture patterns and best practices.
+description: Build Android apps with Kotlin, Jetpack Compose, MVVM, Hilt, Room 3 (KSP, SQLiteDriver, Flow/suspend DAOs), and multi-module architecture. Triggers on requests to create Android projects, modules, screens, ViewModels, or repositories.
 license: Apache-2.0
 metadata:
   author: DrJacky
@@ -10,9 +10,8 @@ metadata:
 ---
 # Android Kotlin Compose Development
 
-Create production-quality Android applications following Google's official architecture guidance and best practices.
-Use when building Android apps with Kotlin, Jetpack Compose, MVVM architecture, Hilt dependency injection, Room 3, DataStore, Paging 3, or Android multi-module projects.
-Triggers on requests to create Android projects, screens, ViewModels, repositories, feature modules, or when asked about Android architecture patterns.
+Use when building Android apps with Kotlin, Jetpack Compose, MVVM, Hilt, Room 3, DataStore, Paging 3, or multi-module projects.
+Triggers on requests to create Android projects, screens, ViewModels, repositories, feature modules, or asks about Android architecture patterns.
 
 
 ## Quick Reference
@@ -215,7 +214,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Refactoring existing code or improving architecture?**
 → Review [architecture.md](references/architecture.md) for layer responsibilities  
-→ Skim [architecture.md](references/architecture.md) -> "Cross-cutting anti-patterns (quick reference)" for common layering mistakes  
+→ Read [architecture.md](references/architecture.md) -> "Cross-cutting anti-patterns (quick reference)" for common layering mistakes  
 → Check [design-patterns.md](references/design-patterns.md) for applicable patterns  
 → Follow [kotlin-patterns.md](references/kotlin-patterns.md) for Kotlin-specific improvements  
 → Ensure compliance with [modularization.md](references/modularization.md) dependency rules  
@@ -243,7 +242,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Migrating legacy code (LiveData, Fragments, Accompanist, RxJava, Room 2.x)?**
 → Use [migration.md](references/migration.md) for all migration paths (including [Room 2.x → Room 3](references/migration.md#room-2x-to-room-3))  
-→ Follow [architecture.md](references/architecture.md) for modern MVVM patterns  
+→ Follow [architecture.md](references/architecture.md) for MVVM patterns  
 
 **Adding Compose animations?**
 → Use [compose-patterns.md](references/compose-patterns.md) → "Animation" for `AnimatedVisibility`, `AnimatedContent`, `animate*AsState`, `Animatable`, shared elements  
@@ -304,5 +303,5 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Check [crashlytics.md](references/crashlytics.md) for PII scrubbing and data privacy
 
 **Implementing fraud-resistant or high-value flows (payments, session bootstrap, integrity-gated APIs)?**
-→ Read [android-security.md](references/android-security.md): **Modern device trust and abuse resistance**, **Play Integrity API** (prerequisites, Standard vs Classic, server checklist, errors, remediation), **Root and Emulator Detection** (how this fits next to Play Integrity), **Security Checklist**  
-→ Ask the engineer for Cloud Console / Play Console steps and the **Google Cloud project number** before wiring client code (see prerequisites in that guide)
+→ Read [android-security.md](references/android-security.md): **Device trust and abuse resistance**, **Play Integrity API** (prerequisites, Standard vs Classic, server checklist, errors, remediation), **Root and Emulator Detection** (how this fits next to Play Integrity), **Security Checklist**  
+→ If Cloud Console / Play Console enablement or the **Google Cloud project number** is missing, list the missing prerequisites (see that guide) and stop before wiring client code
