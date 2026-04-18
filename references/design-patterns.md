@@ -1,13 +1,9 @@
 # Design Patterns (Android-Focused)
 
-This guide maps classic design patterns to practical Android usage while staying aligned with
-our architecture (`references/architecture.md`), modularization rules (`references/modularization.md`), and Compose-first code.
-Use this when designing new features, modules, pure business logic, or shared utilities.
-
-**Data Synchronization:** For cache patterns, conflict resolution, and sync strategies, see `references/android-data-sync.md`.
+Pattern catalog for feature, module, business-logic, and utility design. Aligned with [architecture.md](/references/architecture.md) and [modularization.md](/references/modularization.md). Cache, conflict-resolution, and sync patterns live in [android-data-sync.md](/references/android-data-sync.md).
 
 ## Table of Contents
-1. [Principles for This Codebase](#principles-for-this-codebase)
+1. [Principles](#principles)
 2. [Architectural Patterns](#architectural-patterns)
 3. [Creational Patterns](#creational-patterns)
 4. [Structural Patterns](#structural-patterns)
@@ -15,20 +11,22 @@ Use this when designing new features, modules, pure business logic, or shared ut
 6. [Kotlin-Specific Patterns](#kotlin-specific-patterns)
 7. [Anti-Patterns to Avoid](#anti-patterns-to-avoid)
 
-## Principles for This Codebase
-- **Prefer composition and delegation over inheritance.** See `references/kotlin-delegation.md`.
-- **Keep patterns local to the layer they belong to** (UI vs Domain vs Data).
-- **Avoid framework-heavy base classes**; keep components testable.
-- **For app-wide lifetimes, rely on DI scopes** instead of manual singletons.
-- **Start simple**: Don't add patterns preemptively. Add complexity only when needed.
-- **Kotlin-first**: Leverage sealed classes, data classes, delegation, and coroutines.
+## Principles
+
+Required:
+- Prefer composition and delegation over inheritance ([kotlin-delegation.md](/references/kotlin-delegation.md)).
+- Keep patterns local to the layer they belong to (UI / Domain / Data).
+- Avoid framework-heavy base classes; keep components testable.
+- Use DI scopes for app-wide lifetimes; never roll manual singletons.
+- Start simple; add a pattern only when concrete pain forces it.
+- Kotlin-first: sealed classes, data classes, delegation, coroutines, `Flow`.
 
 ## Architectural Patterns
 
 ### MVVM (Model-View-ViewModel)
 - **When**: All feature modules (this is our base architecture).
 - **Android use**: ViewModel holds `StateFlow<UiState>`, Composables observe and render.
-- **Notes**: See `references/architecture.md` for full details.
+- Full repository / state-flow contract: [architecture.md](/references/architecture.md).
 
 ```kotlin
 // Feature: Auth
@@ -88,7 +86,7 @@ fun AuthRoute(
 ### Repository Pattern
 - **When**: All data access (single source of truth).
 - **Android use**: Hide local/remote/cache complexity behind a clean interface.
-- **Notes**: See `references/architecture.md` for implementation details.
+- Implementation contract: [architecture.md](/references/architecture.md).
 
 ```kotlin
 // core/domain
@@ -124,7 +122,7 @@ internal class AuthRepositoryImpl @Inject constructor(
 ### Singleton
 - **When**: You need a single, app-wide instance.
 - **Android use**: Use DI with `@Singleton` for repositories, loggers, and crash reporters.
-- **Notes**: Avoid `object` keyword with Android dependencies; use Hilt scopes instead.
+- Forbidden: `object` singletons holding Android dependencies. Use Hilt scopes instead.
 
 ```kotlin
 // ❌ Bad: Holds context statically
@@ -155,7 +153,7 @@ class AuthViewModel @Inject constructor(
 ### Factory Method
 - **When**: The concrete class should vary by environment or runtime.
 - **Android use**: `ViewModelProvider.Factory`, `WorkManager` factories, Retrofit service creation.
-- **Notes**: Keep factory interfaces in `core/domain` or `core/common`.
+- Place factory interfaces in `core/domain` or `core/common`.
 
 ```kotlin
 // core/domain
@@ -189,7 +187,7 @@ abstract class DataSourceModule {
 ### Abstract Factory
 - **When**: You need families of related implementations.
 - **Android use**: Swap entire provider families (Crashlytics vs Sentry, Firebase vs custom).
-- **Notes**: Useful for build variants and testing.
+- Use for build-variant swaps and test doubles.
 
 ```kotlin
 // core/domain
@@ -224,7 +222,7 @@ object ReporterModule {
 ### Builder
 - **When**: Complex object configuration needs clarity or optional steps.
 - **Android use**: `OkHttpClient.Builder`, `Retrofit.Builder`, custom config builders.
-- **Notes**: Prefer immutable outputs; keep configuration in DI modules.
+- Output must be immutable; configuration belongs in DI modules.
 
 ```kotlin
 // core/network
@@ -261,7 +259,7 @@ fun provideOkHttpClient(builder: ApiClientBuilder): OkHttpClient =
 ### Prototype
 - **When**: Cloning is cheaper than new construction.
 - **Android use**: Copying immutable UI models (`data class.copy`) for state updates.
-- **Notes**: Works well with `UiState` and form screens.
+- Apply for `UiState` updates and form-state mutation.
 
 ```kotlin
 @Immutable
@@ -297,7 +295,7 @@ class RegisterViewModel @Inject constructor() : ViewModel() {
 ### Adapter
 - **When**: You need to reconcile mismatched interfaces (DTOs → Domain models).
 - **Android use**: Mapping network DTOs to domain models, database entities to domain.
-- **Notes**: Keep adapters in `core/data` for data mappings.
+- Adapters live in `core/data`; never expose DTOs above the data layer.
 
 ```kotlin
 // core/network - DTO (from API)
@@ -335,7 +333,7 @@ class UserAdapter {
 ### Bridge
 - **When**: You want abstraction to vary independently of implementation.
 - **Android use**: `Navigator` interfaces in features with app-level implementations.
-- **Notes**: Keeps features independent and testable.
+- Features must not import `NavController` or sibling features; route through their `Navigator` interface.
 
 ```kotlin
 // feature/auth - Abstraction
@@ -378,7 +376,7 @@ class AppAuthNavigator(
 ### Composite
 - **When**: You need tree-like structures with uniform treatment.
 - **Android use**: Navigation graphs, UI component trees, menu structures.
-- **Notes**: Helps build adaptive UI structures for tablets/foldables.
+- Use for adaptive UI on tablets/foldables and recursive menu trees.
 
 ```kotlin
 // core/ui - Component interface
@@ -438,7 +436,7 @@ fun NavigationMenu(items: List<NavigationItem>) {
 ### Decorator
 - **When**: Add behavior without modifying the original type.
 - **Android use**: OkHttp interceptors, Compose `Modifier` chains, logging decorators.
-- **Notes**: Keep decorators small and composable.
+- Each decorator addresses one cross-cutting concern; stack via Kotlin `by` delegation.
 
 ```kotlin
 // core/domain - Base interface (see references/crashlytics.md → "Provider-Agnostic Interface")
@@ -500,7 +498,7 @@ fun provideCrashReporter(
 ### Delegation
 - **When**: You want to reuse behavior without inheritance.
 - **Android use**: Delegating interface implementations, ViewModel delegation, repository delegation.
-- **Notes**: Use Kotlin's `by` keyword. See `references/kotlin-delegation.md`.
+- Use Kotlin `by`. Patterns and pitfalls: [kotlin-delegation.md](/references/kotlin-delegation.md).
 
 ```kotlin
 // core/domain
@@ -540,7 +538,7 @@ class AuthViewModel @Inject constructor(
 ### Facade
 - **When**: Provide a simplified API to complex subsystems.
 - **Android use**: Repositories hiding local/remote/cache details.
-- **Notes**: Repositories should be the public entry for data access. See `references/architecture.md`.
+- Repository is the only public entry to a data subsystem. Contract: [architecture.md](/references/architecture.md).
 
 ```kotlin
 // core/data - Complex subsystems (hidden)
@@ -594,7 +592,7 @@ class AuthRepositoryImpl @Inject constructor(
 ### Flyweight
 - **When**: You need to reduce memory by sharing common state.
 - **Android use**: Image loading caches, shared UI resources, reused `Painter`s.
-- **Notes**: Avoid recreating heavy objects inside composables.
+- Forbidden: instantiating heavy objects inside a `@Composable`. Cache via `remember` or `by lazy`.
 
 ```kotlin
 // core/ui - Icon resource management
@@ -632,7 +630,7 @@ fun UserAvatar(imageUrl: String) {
 ### Proxy
 - **When**: You need to control access to an expensive or remote object.
 - **Android use**: Lazy initialization for analytics/crash reporters, remote data sources.
-- **Notes**: Keep proxy logic in the data layer.
+- Proxy logic stays in the data layer; never expose it to UI or domain.
 
 ```kotlin
 // core/data - Proxy for lazy analytics initialization
@@ -674,7 +672,7 @@ class CachedAuthDataSource @Inject constructor(
 ### Observer
 - **When**: Many dependents must react to state changes.
 - **Android use**: `Flow`, `StateFlow` in ViewModels and repositories.
-- **Notes**: Always use `Flow`/`StateFlow` (not LiveData) for consistency. See `references/coroutines-patterns.md`.
+- Required: `Flow` / `StateFlow`. Forbidden: `LiveData`. Patterns: [coroutines-patterns.md](/references/coroutines-patterns.md).
 
 ```kotlin
 // core/domain
@@ -728,7 +726,7 @@ fun AuthScreen(viewModel: AuthViewModel = hiltViewModel()) {
 ### Strategy
 - **When**: Multiple interchangeable algorithms are needed.
 - **Android use**: Auth providers, caching strategies, feature flag resolution.
-- **Notes**: Inject the strategy via DI; don't branch on build flavors in business logic.
+- Inject the strategy via DI. Forbidden: branching on `BuildConfig.FLAVOR` inside business logic.
 
 ```kotlin
 // core/domain - Strategy interface
@@ -791,7 +789,7 @@ class AuthRepositoryImpl @Inject constructor(
 ### Chain of Responsibility
 - **When**: A request should pass through a sequence of handlers.
 - **Android use**: OkHttp interceptors, validation pipelines, auth token refresh chain.
-- **Notes**: Keep each handler focused and easily testable.
+- One concern per handler; each must be unit-testable in isolation.
 
 ```kotlin
 // core/network - Chain of interceptors
@@ -860,7 +858,7 @@ fun provideOkHttpClient(
 ### Command
 - **When**: You want to encapsulate actions as objects.
 - **Android use**: UI actions/intents from screens → ViewModel.
-- **Notes**: Prefer sealed `Action` types in the Presentation layer. See `references/compose-patterns.md`.
+- Required: sealed `Action` types in the presentation layer; one `onAction` entry point. Patterns: [compose-patterns.md](/references/compose-patterns.md).
 
 ```kotlin
 // feature/auth - Commands (Actions)
@@ -919,7 +917,7 @@ fun LoginScreen(onAction: (AuthAction) -> Unit) {
 ### Iterator
 - **When**: You need sequential access without exposing structure.
 - **Android use**: Paging data flows, cursor traversal in data layer.
-- **Notes**: Keep iteration in data/paging layers, not UI.
+- Iteration belongs in data / paging layers; UI consumes `Flow<PagingData<T>>`.
 
 ```kotlin
 // core/data - Iterator for paginated data
@@ -971,7 +969,7 @@ class DatabaseCursor(private val cursor: Cursor) : Iterator<User> {
 ### Mediator
 - **When**: Multiple components need coordinated interaction.
 - **Android use**: App-level navigation coordinator (`AppNavigation`).
-- **Notes**: Keeps features independent of each other. See `references/modularization.md`.
+- Features stay independent; only the `app` module knows the full graph. See [modularization.md](/references/modularization.md).
 
 ```kotlin
 // app - Mediator coordinates feature navigation using Navigation3
@@ -1014,7 +1012,7 @@ class AppNavigationMediator @Inject constructor(
 ### Memento
 - **When**: You must restore state without breaking encapsulation.
 - **Android use**: `SavedStateHandle`, restoring form drafts or auth flows.
-- **Notes**: Keep state snapshots minimal and serializable.
+- Snapshots must be `@Serializable` and minimal; never store derived data.
 
 ```kotlin
 // feature/auth - Memento (state snapshot)
@@ -1087,7 +1085,7 @@ class AuthViewModel @Inject constructor(
 ### State
 - **When**: Behavior changes with state.
 - **Android use**: `UiState` sealed types and state-driven UI.
-- **Notes**: Keep transitions in ViewModel; UI only renders. See `references/compose-patterns.md`.
+- Transitions live in the ViewModel; UI is a pure render of `UiState`. See [compose-patterns.md](/references/compose-patterns.md).
 
 ```kotlin
 // feature/auth - State hierarchy
@@ -1167,7 +1165,7 @@ fun AuthScreen(uiState: AuthUiState) {
 ### Template Method
 - **When**: You need a fixed algorithm with varying steps.
 - **Android use**: Base worker patterns or shared use case flows (use sparingly).
-- **Notes**: Prefer composition/delegation over inheritance. See `references/kotlin-delegation.md`.
+- Forbidden: `abstract` "Base*UseCase" hierarchies. Compose with strategies / delegation instead. See [kotlin-delegation.md](/references/kotlin-delegation.md).
 
 ```kotlin
 // ❌ Bad: Inheritance-based template method
@@ -1215,7 +1213,7 @@ class LoginUseCase @Inject constructor(
 ### Visitor
 - **When**: You need to run operations over a structure without changing it.
 - **Android use**: Analytics/event inspection over `UiState` or navigation events.
-- **Notes**: Use only if it improves clarity; avoid overengineering.
+- Use only when a `when` over a sealed hierarchy would explode call sites; otherwise prefer extension functions.
 
 ```kotlin
 // core/analytics - Visitor interface
@@ -1289,7 +1287,7 @@ uiState.accept(visitor)
 ### Result Type
 - **When**: Operations can fail and you need type-safe error handling.
 - **Android use**: Repository methods, use cases, network calls.
-- **Notes**: Prefer `Result<T>` over throwing exceptions for expected failures.
+- Required: `Result<T>` for expected failures. Forbidden: throwing across layer boundaries for known errors.
 
 ```kotlin
 // core/domain - Use Result for fallible operations
@@ -1348,7 +1346,7 @@ class AuthViewModel @Inject constructor(
 ### Sealed Classes for Exhaustive State
 - **When**: You need a closed set of related types with exhaustive `when` checks.
 - **Android use**: `UiState`, domain errors, navigation destinations, actions.
-- **Notes**: Always use sealed classes/interfaces for state hierarchies.
+- Required: `sealed interface` / `sealed class` for every closed state or error hierarchy. Forbidden: open enums for behaviour-bearing states.
 
 ```kotlin
 // core/domain - Sealed error hierarchy
@@ -1381,7 +1379,7 @@ sealed interface AuthDestination {
 ### Data Classes with Copy
 - **When**: You need immutable value objects with easy modification.
 - **Android use**: Domain models, UI state, DTOs.
-- **Notes**: Mark with `@Immutable` for Compose stability.
+- Annotate `@Immutable` on every UI-facing data class.
 
 ```kotlin
 @Immutable
@@ -1417,7 +1415,7 @@ class ProfileViewModel @Inject constructor() : ViewModel() {
 ### Extension Functions for Domain Logic
 - **When**: You need to add functionality to existing types without inheritance.
 - **Android use**: Domain transformations, UI formatting, validation.
-- **Notes**: Keep extensions in the same module as the type or in a shared `common` module.
+- Place extensions in the type's owning module or in `core/common`. Never colocate UI-formatting extensions in `core/domain`.
 
 ```kotlin
 // core/domain - Domain extensions
@@ -1750,15 +1748,3 @@ interface NoteDao {
 }
 ```
 
-## Summary
-
-- **MVVM** is our base architecture (see `references/architecture.md`)
-- **Repository** pattern for all data access
-- **Delegation** over inheritance (see `references/kotlin-delegation.md`)
-- **Sealed classes** for exhaustive state modeling
-- **Result<T>** for type-safe error handling
-- **Flow/StateFlow** for reactive streams (see `references/coroutines-patterns.md`)
-- **Navigator interfaces** for cross-feature navigation (see `references/android-navigation.md`)
-- **Avoid**: LiveData, GlobalScope, god objects, premature abstraction, feature-to-feature dependencies
-
-Use patterns to solve real problems, not to add complexity.
