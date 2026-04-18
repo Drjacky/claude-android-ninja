@@ -1,6 +1,6 @@
 # Gradle & Build Configuration
 
-Build system patterns following our modern Android multi-module architecture with Navigation3, Jetpack Compose, KSP, and convention plugins. Targets **Gradle 9 / AGP 9.0**.
+Required: Gradle 9 / AGP 9.0, JVM 17+, KSP (never kapt), version catalog, convention plugins in `build-logic/convention`. Module structure follows [modularization.md](/references/modularization.md).
 
 ## AGP 9 Key Changes
 
@@ -28,29 +28,26 @@ Build system patterns following our modern Android multi-module architecture wit
 
 ## Project Structure
 
-Project structure, module layout, and naming conventions are defined in
-`references/modularization.md`.
+Module layout and naming: [modularization.md](/references/modularization.md).
 
 ## Version Catalog
 
-The version catalog source of truth lives in `assets/libs.versions.toml.template`.
-Use it to generate or update `gradle/libs.versions.toml` for each project.
+Source of truth: `assets/libs.versions.toml.template`. Generate / update `gradle/libs.versions.toml` from it.
 
-Key points:
-- **KSP over kapt**: This SKILL uses KSP for annotation processing (2x faster than kapt)
-- **Room 3**: Catalog uses `androidx.room3` artifacts, plugin id `androidx.room3`, and `sqlite-bundled` for `BundledSQLiteDriver()`; see `app.android.room` convention plugin
-- **Kotlin Compose Plugin**: Compose compiler is managed via `kotlin-compose` plugin (Kotlin 2.0+)
-- **Bundles**: Use `unit-test` and `android-test` bundles for consistent testing dependencies
+Required:
+- KSP for all annotation processing; kapt is forbidden.
+- Room 3 via `androidx.room3` artifacts and the `androidx.room3` plugin; use `sqlite-bundled` with `BundledSQLiteDriver()` (configured by the `app.android.room` convention plugin).
+- Compose compiler via the `kotlin-compose` plugin (Kotlin 2.0+).
+- Use `unit-test` and `android-test` bundles for testing dependencies.
 
 ## Convention Plugins
 
-**Complete Convention Plugin Implementation**: All plugin source files are available in `assets/convention/` including:
-- All `*ConventionPlugin.kt` implementations (including optional `PlayVitalsReportingConventionPlugin.kt`), `PlayVitalsReportingTask.kt`, and related `.kt` files
-- Configuration files in `config/` subdirectory (KotlinAndroid.kt, AndroidCompose.kt, Jacoco.kt, etc.)
-- Build script (`build.gradle.kts`)
-- Setup guide and quick reference (`QUICK_REFERENCE.md`)
+Plugin sources live in `assets/convention/`:
+- `*ConventionPlugin.kt` (incl. optional `PlayVitalsReportingConventionPlugin.kt`), `PlayVitalsReportingTask.kt`, and related `.kt` files.
+- `config/` (`KotlinAndroid.kt`, `AndroidCompose.kt`, `Jacoco.kt`, …).
+- `build.gradle.kts`, `QUICK_REFERENCE.md`.
 
-Copy these files to `build-logic/convention/src/main/kotlin/` in your project.
+Copy them to `build-logic/convention/src/main/kotlin/`.
 
 ### Build Logic Setup
 
@@ -155,7 +152,7 @@ gradlePlugin {
 
 ### Convention Plugin Files
 
-All convention plugin implementations are available in `assets/convention/`:
+Implementations in `assets/convention/`:
 
 **Core Plugins:**
 - `AndroidApplicationConventionPlugin.kt` - Root app module configuration
@@ -193,11 +190,11 @@ All convention plugin implementations are available in `assets/convention/`:
 - `config/PrintApksTask.kt` - APK path printing
 - `config/Jacoco.kt` - Code coverage configuration
 
-See `assets/convention/QUICK_REFERENCE.md` for detailed setup instructions and usage examples.
+Setup and usage: `assets/convention/QUICK_REFERENCE.md`.
 
 ### Registering a root-level reporting task (Play Vitals)
 
-Optional **Play Vitals reporting** (see [android-performance.md](/references/android-performance.md)) is implemented in this skillset as a real convention plugin you copy into **`build-logic`**:
+Optional Play Vitals reporting ([android-performance.md](/references/android-performance.md)) ships as a convention plugin to copy into `build-logic`:
 
 | Source (copy to `build-logic/convention/src/main/kotlin/`)                                                                | Role                                                                                                                              |
 |---------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
@@ -206,9 +203,13 @@ Optional **Play Vitals reporting** (see [android-performance.md](/references/and
 
 The plugin is already wired in [`assets/convention/build.gradle.kts`](../assets/convention/build.gradle.kts) (`gradlePlugin { register("playVitals") { ... } }`). **`gradle/libs.versions.toml`** should include **`app-play-vitals`** from [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template) (`[plugins]`).
 
-**Apply (optional):** in the **root** `build.gradle.kts` only, add **`alias(libs.plugins.app.play.vitals)`** to the **`plugins { }`** block (see [QUICK_REFERENCE.md](../assets/convention/QUICK_REFERENCE.md) - "Root project (optional)"). Do **not** apply **`app.play.vitals`** in `app/build.gradle.kts` or feature modules. **Wire CI** to run `./gradlew playVitalsReport` on a schedule.
+Required:
+- Apply `alias(libs.plugins.app.play.vitals)` in the **root** `build.gradle.kts` only.
+- Forbidden in `app/build.gradle.kts` or feature modules.
+- Forbidden inside `subprojects { }` / `allprojects { }` (duplicates / wrong scope).
+- Wire CI to run `./gradlew playVitalsReport` on a schedule.
 
-**Alternatives:** avoid registering this task from **`subprojects`** / **`allprojects`** (duplicates or wrong scope). For **what** to query and HTTP code, use [android-performance.md](/references/android-performance.md); this section only covers **Gradle wiring** and the shipped convention sources.
+Query payload and HTTP code: [android-performance.md](/references/android-performance.md). This section only covers Gradle wiring.
 
 ## Module Build Files
 
@@ -367,7 +368,6 @@ android {
 }
 
 dependencies {
-    // Module dependencies following our architecture rules
     implementation(project(":core:domain"))
     
     // Data layer dependencies
@@ -404,7 +404,6 @@ android {
 }
 
 dependencies {
-    // Dependencies following our architecture
     implementation(project(":core:domain"))
     
     // Compose
@@ -475,7 +474,7 @@ dependencies {
 
 ### Benchmark Module (Optional)
 
-Create a dedicated `:benchmark` test module for macrobenchmark performance testing. See `references/android-performance.md` for when to use.
+Use a dedicated `:benchmark` test module for macrobenchmark. When to use: [android-performance.md](/references/android-performance.md).
 
 `benchmark/build.gradle.kts`:
 ```kotlin
@@ -510,7 +509,7 @@ Note: The `benchmark` build type must be defined in the app module (shown in the
 
 ### Compose Stability Analyzer (Optional)
 
-For real-time stability analysis and CI validation of Jetpack Compose composables. See `references/android-performance.md` → "Compose Stability Validation (Optional)" for when to use.
+CI gating on Compose composable stability. When to use: [android-performance.md → Compose Stability Validation](/references/android-performance.md#compose-stability-validation-optional).
 
 Root `build.gradle.kts`:
 ```kotlin
@@ -542,8 +541,7 @@ composeStabilityAnalyzer {
 
 ## Code Quality (Detekt)
 
-Detekt is integrated via a convention plugin to keep rules consistent across modules.
-See `references/code-quality.md` for setup details, baseline usage, and CI guidance.
+Required: apply Detekt via the `app.detekt` convention plugin in every module. Setup, baselines, CI: [code-quality.md](/references/code-quality.md).
 
 ## Build Variants & Optimization
 
@@ -738,9 +736,8 @@ module includes, and repository configuration.
 
 `build.gradle.kts`:
 ```kotlin
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-// Note: AGP 9+ has built-in Kotlin support, no need for kotlin-android plugin.
-// Repositories are configured in settings.gradle.kts via dependencyResolutionManagement.
+// Top-level build. Repositories are configured in settings.gradle.kts via dependencyResolutionManagement.
+// AGP 9+ ships built-in Kotlin support; do not apply org.jetbrains.kotlin.android.
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
@@ -803,56 +800,50 @@ gradle.settingsEvaluated {
 
 ### Optimization Workflow
 
-Apply one change at a time and measure before and after. Batching optimizations makes it
-impossible to know which one helped.
+Required: change one variable at a time; measure before and after.
 
-1. **Measure baseline** - clean build (`./gradlew clean assembleDebug`) and incremental build times
-2. **Generate a Build Scan** - `./gradlew assembleDebug --scan` (uploads to scans.gradle.com)
-3. **Identify the slow phase** - in the Build Scan, go to **Performance → Build timeline** to see whether Initialization, Configuration, or Execution is the bottleneck
-4. **Apply one optimization**
-5. **Measure again** - confirm improvement before moving on
+1. Baseline: `./gradlew clean assembleDebug` and an incremental build.
+2. Build Scan: `./gradlew assembleDebug --scan`.
+3. In the scan, identify the slow phase (Initialization / Configuration / Execution) under **Performance → Build timeline**.
+4. Apply one change.
+5. Re-measure; revert if no improvement.
 
-For a local report without uploading: `./gradlew assembleDebug --profile` (output in `build/reports/profile/`).
+Local-only profile (no upload): `./gradlew assembleDebug --profile` → `build/reports/profile/`.
 
 ### Lazy Task Configuration
 
-Use `tasks.register` (lazy) instead of `tasks.create` (eager). Eager creation instantiates and
-configures the task even when it's not in the execution graph, slowing the configuration phase.
+Required: `tasks.register` for every custom task; `tasks.create` is forbidden (eagerly configures on every build).
 
 ```kotlin
-// BAD: eagerly creates and configures the task on every build
+// Bad
 tasks.create("generateBuildInfo") {
     doLast { /* ... */ }
 }
 
-// GOOD: configured only when the task is actually needed
+// Good
 tasks.register("generateBuildInfo") {
     doLast { /* ... */ }
 }
 ```
 
-This applies to convention plugins and custom tasks. All standard AGP and Kotlin plugin tasks
-already use lazy registration.
-
 ### Avoid I/O During Configuration
 
-File reads, network calls, and `exec {}` during the configuration phase run on every build and
-break the configuration cache. Defer them to execution using Gradle's `providers` API.
+Forbidden in configuration phase: `File.readText()`, network calls, `exec { }`. They run every build and break the configuration cache. Defer via `providers`.
 
 ```kotlin
-// BAD: reads file during configuration - runs every build, breaks configuration cache
+// Bad
 val version = file("version.txt").readText()
 
-// GOOD: defers read to execution phase
+// Good
 val version = providers.fileContents(layout.projectDirectory.file("version.txt")).asText
 ```
 
 ```kotlin
-// BAD: runs git during configuration
+// Bad
 val gitHash = Runtime.getRuntime().exec("git rev-parse --short HEAD")
     .inputStream.bufferedReader().readText().trim()
 
-// GOOD: defers to execution via a provider
+// Good
 val gitHash = providers.exec {
     commandLine("git", "rev-parse", "--short", "HEAD")
 }.standardOutput.asText.map { it.trim() }
@@ -860,51 +851,37 @@ val gitHash = providers.exec {
 
 ### Pin Dependency Versions
 
-Dynamic versions (e.g., `1.+`, `latest.release`) force dependency resolution on every build
-and produce non-reproducible builds. Always use exact versions, managed via the version catalog.
+Forbidden: dynamic versions (`1.+`, `latest.release`, `-SNAPSHOT`). Always pin via the version catalog.
 
 ```kotlin
-// BAD: forces network check every build
+// Bad
 implementation("com.example:lib:1.0.+")
 
-// GOOD: pinned in libs.versions.toml
+// Good
 implementation(libs.example.lib)
 ```
 
 ### Bottleneck Troubleshooting
 
-**Slow Configuration Phase:**
+| Symptom                       | Fix                                                                                                                                                |
+|-------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| Slow configuration phase      | Use `tasks.register`; defer I/O via `providers`; move plugins into convention plugins; remove `subprojects { }` / `allprojects { }`.              |
+| Slow execution phase          | Migrate kapt → KSP ([dependencies.md](/references/dependencies.md)); enable `org.gradle.caching=true`; enable `org.gradle.parallel=true`; raise `-Xmx`. |
+| Slow dependency resolution    | Pin exact versions in the catalog; order `google()` before `mavenCentral()`; remove unused repos; ensure `org.gradle.caching=true`.               |
 
-- Eager task creation → use `tasks.register()` (see above)
-- File/network I/O in `build.gradle.kts` → defer to execution with `providers` (see above)
-- Many plugins applied unconditionally → move to convention plugins, apply only where needed
-- `subprojects {}` / `allprojects {}` blocks → replace with convention plugins
+## Rules
 
-**Slow Execution Phase:**
+Required:
+- Centralize all versions in `gradle/libs.versions.toml`.
+- Extract every reusable build configuration into a convention plugin.
+- Use KSP for annotation processing ([dependencies.md](/references/dependencies.md)).
+- Enable type-safe project accessors and local + remote build cache.
+- Apply Compose-only UI; no View binding, no legacy `View` system.
 
-- kapt annotation processing → migrate to KSP (see `references/dependencies.md`)
-- Build cache misses → enable `org.gradle.caching=true`; check for non-deterministic task inputs (timestamps, absolute paths) in the Build Scan under **Performance → Task execution**
-- Sequential module builds → enable `org.gradle.parallel=true`
-- Insufficient memory → increase `-Xmx` in `org.gradle.jvmargs`
-
-**Slow Dependency Resolution:**
-
-- Dynamic versions (`1.+`, `-SNAPSHOT`) → pin exact versions via version catalog
-- Slow or unnecessary repositories → reorder (google first, mavenCentral second); remove unused repos
-- No dependency caching → ensure `org.gradle.caching=true` is set
-
-## Best Practices
-
-1. **Use Version Catalog**: Centralize dependency versions for consistency
-2. **Convention Plugins**: Extract common build logic to avoid duplication
-3. **KSP over kapt**: 2x faster annotation processing (see `references/dependencies.md`)
-4. **Type-safe Project Accessors**: Enable for better IDE support
-5. **Build Caching**: Configure local and remote caches for faster builds
-6. **Modular Builds**: Use our strict dependency rules for clean architecture
-7. **Progressive Enhancement**: Start simple, add flavors and optimizations as needed
-8. **CI/CD Ready**: Ensure build configuration works well with CI systems
-9. **Profile Builds**: Use `./gradlew assembleDebug --profile` to identify bottlenecks
-10. **Compose-First**: No View binding or legacy View system support
+Forbidden:
+- Dynamic versions (`1.+`, `latest.release`, `-SNAPSHOT`).
+- Inline build logic duplicated across modules instead of a convention plugin.
+- I/O, `exec`, or `Runtime.getRuntime()` during the configuration phase.
 
 ## Common Gradle Commands
 
