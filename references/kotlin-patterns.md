@@ -70,9 +70,9 @@ Per-compilation form: `explicitApi = ExplicitApiMode.Strict`.
 
 ### Things to remove on Kotlin 2.x
 
-- `kotlinCompilerExtensionVersion = "…"` inside `composeOptions { }` — ignored, warns.
-- `languageVersion = "1.9"` — obsolete.
-- `useK2 = true` — obsolete; K2 is default.
+- `kotlinCompilerExtensionVersion = "…"` inside `composeOptions { }` - ignored, warns.
+- `languageVersion = "1.9"` - obsolete.
+- `useK2 = true` - obsolete; K2 is default.
 
 ## Delegation (Composition over Inheritance)
 
@@ -1031,7 +1031,7 @@ Required:
 - Delegation over inheritance: use `by` for composition.
 - Expose read-only collections; keep mutation private.
 - Model UI/state with sealed classes for exhaustive `when`.
-- Use `Result<T>`, generic repositories, and generic wrappers — never raw `Result`.
+- Use `Result<T>`, generic repositories, and generic wrappers - never raw `Result`.
 - Use `inline fun <reified T>` for type-safe runtime ops.
 - Add behavior via extension functions, never `*Utils` objects.
 - Wrap primitives in `@JvmInline value class` for IDs, tokens, and units.

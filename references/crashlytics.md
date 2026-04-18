@@ -3,7 +3,7 @@
 Required:
 - SDK-specific code lives only in `core:data` (or `core:analytics`); feature modules call a `CrashReporter` interface from `core:domain`.
 - Provider initialization happens once, in the `app` module.
-- Swap providers by changing the Hilt binding + convention plugin only — never by touching feature code.
+- Swap providers by changing the Hilt binding + convention plugin only - never by touching feature code.
 - Play Vitals is optional store-level signal, not a Crashlytics replacement: see [android-performance.md → Optional: Play Vitals observability](/references/android-performance.md#optional-play-vitals-observability-play-developer-reporting-api).
 
 ## Architecture Placement
@@ -140,7 +140,7 @@ Sentry uses a ContentProvider for auto-initialization. Configure via `AndroidMan
 
 ### Application Initialization (Sentry)
 
-Enable `options.logs.isEnabled` so StrictMode `.penaltyLog()` events can be shipped. Pick exactly one of `profilesSampleRate` or `profileSessionSampleRate` — never both.
+Enable `options.logs.isEnabled` so StrictMode `.penaltyLog()` events can be shipped. Pick exactly one of `profilesSampleRate` or `profileSessionSampleRate` - never both.
 
 ```kotlin
 class MyApplication : Application() {
@@ -415,7 +415,7 @@ plugins {
 
 Required:
 - Initialize the provider exactly once, in the `app` module.
-- Use `Sentry.withScope` for per-call tags. `Sentry.configureScope` mutates Global Scope on main thread and Thread Scope on background threads — avoid it for one-off context.
+- Use `Sentry.withScope` for per-call tags. `Sentry.configureScope` mutates Global Scope on main thread and Thread Scope on background threads - avoid it for one-off context.
 - Sample tracing / profiling in production (`tracesSampleRate`, `profilesSampleRate` < 1.0) when traffic is non-trivial.
 - Record non-fatals only for actionable failures (network failures, parse errors, recoverable exceptions).
 - Pair crash data with analytics events on user-facing flows to surface pre-crash context.

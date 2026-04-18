@@ -28,7 +28,7 @@ Required:
 - Each feature owns its `Destination` sealed interface (implements `NavKey`, `@Serializable`) and a `Navigator` interface.
 - App module owns the back stack, implements every feature's `Navigator`, and registers entries in a single `NavDisplay`.
 - Top-level chrome uses `NavigationSuiteScaffold` so bar/rail/drawer tracks window size automatically.
-- Multi-pane layouts use `NavigableListDetailPaneScaffold` / `NavigableSupportingPaneScaffold` from Material 3 Adaptive — never hand-rolled width branching.
+- Multi-pane layouts use `NavigableListDetailPaneScaffold` / `NavigableSupportingPaneScaffold` from Material 3 Adaptive - never hand-rolled width branching.
 - Predictive back is on by default (required on API 36).
 
 ## Adaptive Quality and Large Screens

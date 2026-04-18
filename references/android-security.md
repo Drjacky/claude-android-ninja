@@ -1,6 +1,6 @@
 # Android Security
 
-Required: server is the trust boundary; the client only collects credentials and forwards integrity tokens. Layer Play Integrity (server-decoded) + Android Keystore + EncryptedSharedPreferences/EncryptedFile + network security config. Heuristic root/emulator checks are telemetry only — never the sole gate.
+Required: server is the trust boundary; the client only collects credentials and forwards integrity tokens. Layer Play Integrity (server-decoded) + Android Keystore + EncryptedSharedPreferences/EncryptedFile + network security config. Heuristic root/emulator checks are telemetry only - never the sole gate.
 
 ## Table of Contents
 1. [Device trust and abuse resistance](#device-trust-and-abuse-resistance)
@@ -37,7 +37,7 @@ Add them to your module as needed, following [dependencies.md → Adding a New D
 
 ## Device trust and abuse resistance
 
-Apply for high-value flows: login, payment, account change. Establish that *this app binary* on *this device* is trustworthy *for this specific request* — not a single client-side boolean.
+Apply for high-value flows: login, payment, account change. Establish that *this app binary* on *this device* is trustworthy *for this specific request* - not a single client-side boolean.
 
 ### Client-only heuristics are insufficient
 
@@ -48,7 +48,7 @@ Local `su` / Magisk / package checks are evadable and tamperable. Use them only 
 - App binary matches what Play expects (**app integrity**).
 - Install/account context is legitimate (**licensing / account signals**).
 - Device environment meets policy (**device integrity** and optional signals).
-- Integrity token binds to this exact server request (`requestHash` for Standard API, `nonce` for Classic — see [Play Integrity API](#play-integrity-api)).
+- Integrity token binds to this exact server request (`requestHash` for Standard API, `nonce` for Classic - see [Play Integrity API](#play-integrity-api)).
 
 [Play Integrity API](https://developer.android.com/google/play/integrity/overview) emits these as server-verifiable signals.
 
@@ -59,7 +59,7 @@ Local `su` / Magisk / package checks are evadable and tamperable. Use them only 
 3. Bind every token to the action: hash a canonical request representation. Never put secrets in plaintext into the hash input.
 4. Roll out enforcement gradually: log verdicts first, then tighten rules.
 5. Combine with Android Keystore-backed keys for device-bound signing/encryption of high-value operations (see [Android Keystore, TEE & StrongBox](#android-keystore-tee--strongbox)).
-6. Treat optional runtime signals (overlays, accessibility abuse, automation) as risk inputs to policy/fraud engines — not the sole gate unless product requires it.
+6. Treat optional runtime signals (overlays, accessibility abuse, automation) as risk inputs to policy/fraud engines - not the sole gate unless product requires it.
 
 Reference: [Play Integrity API overview](https://developer.android.com/google/play/integrity/overview).
 
@@ -855,7 +855,7 @@ Private Space is a user-level profile that stores a separate, locked copy of ins
 - **Account linking:** the same Google account can be present in both the main and private profile. Do not dedupe users by on-device signals alone; server-side identity is authoritative (consistent with the rule in [Device Identifiers and Privacy](#device-identifiers-and-privacy)).
 - **Querying installed apps:** `PackageManager.getInstalledApplications()` in one profile does not see apps installed in the other. Code paths that enumerate apps must not assume full visibility.
 
-No new API is required for most apps — the correctness fix is to stop making assumptions the old single-profile model allowed.
+No new API is required for most apps - the correctness fix is to stop making assumptions the old single-profile model allowed.
 
 ### Partial screen sharing (API 34+)
 
@@ -893,7 +893,7 @@ Replaces SafetyNet Attestation API (deprecated). Verifies device integrity, app 
 1. **Google Cloud (engineer):** Create or select a project; enable the **Play Integrity API** ([Setup guide](https://developer.android.com/google/play/integrity/setup)). The engineer should share the **Google Cloud project number** (numeric, shown in Cloud Console for the project). You pass it to `PrepareIntegrityTokenRequest.setCloudProjectNumber` (Standard API) and to Classic requests when the docs require it. Backend teams create a **service account** in this project with access to call the Play Integrity **decode** API (see [Google's server verification docs](https://developer.android.com/google/play/integrity/standard#decrypt-and-verify-the-integrity-verdict)); those credentials stay on the server.
 2. **Play Console (engineer):** Link that Cloud project to your app under **Test and release** > **App integrity** > **Play Integrity API** > **Link a Cloud project**. Linking is required for quota increases, response configuration in Console, and related tooling. Projects enabled only in Cloud Console but not linked get a limited integration path per Google.
 3. **Quotas (defaults):** Roughly **10,000** integrity token operations and **10,000** server-side decryptions per day for the linked Cloud project (shared across request types; see [Setup](https://developer.android.com/google/play/integrity/setup) for current numbers and how to request more).
-4. **Dependency:** add the Play Integrity library via the version catalog [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template) — `version.ref = "playIntegrity"`, library alias `play-integrity` (`com.google.android.play:integrity`). Mirror in `gradle/libs.versions.toml` and module `build.gradle.kts` (see [Dependencies](#dependencies)).
+4. **Dependency:** add the Play Integrity library via the version catalog [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template) - `version.ref = "playIntegrity"`, library alias `play-integrity` (`com.google.android.play:integrity`). Mirror in `gradle/libs.versions.toml` and module `build.gradle.kts` (see [Dependencies](#dependencies)).
 
 ### Standard API vs Classic API
 

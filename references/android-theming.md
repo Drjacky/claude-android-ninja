@@ -127,7 +127,7 @@ Material 3 defines ~40 semantic color roles. Use these on `MaterialTheme.colorSc
 | Error Container    | `errorContainer`   | Error banner / inline error fill |
 | On Error Container | `onErrorContainer` | Text/icons on `errorContainer`   |
 
-**Surface roles** (the modern depth system — prefer over `background`)
+**Surface roles** (the modern depth system - prefer over `background`)
 
 | Role                      | `colorScheme.*`           | Use for                                                       |
 |---------------------------|---------------------------|---------------------------------------------------------------|
@@ -158,7 +158,7 @@ Material 3 defines ~40 semantic color roles. Use these on `MaterialTheme.colorSc
 | Outline         | `outline`        | Interactive boundaries (text-field borders, focus rings) |
 | Outline Variant | `outlineVariant` | Decorative dividers, card borders                        |
 
-**Fixed accent roles** (same color in light **and** dark — keep brand identity inside scoped surfaces)
+**Fixed accent roles** (same color in light **and** dark - keep brand identity inside scoped surfaces)
 
 | Role                                                 | `colorScheme.*`         | Use for                                          |
 |------------------------------------------------------|-------------------------|--------------------------------------------------|
@@ -166,9 +166,9 @@ Material 3 defines ~40 semantic color roles. Use these on `MaterialTheme.colorSc
 | Primary Fixed Dim                                    | `primaryFixedDim`       | Dimmer companion to `primaryFixed`               |
 | On Primary Fixed                                     | `onPrimaryFixed`        | Text/icons on `primaryFixed`                     |
 | On Primary Fixed Variant                             | `onPrimaryFixedVariant` | Lower-emphasis text on `primaryFixed`            |
-| (same shape for `secondaryFixed*`, `tertiaryFixed*`) | —                       | Brand-locked secondary/tertiary surfaces         |
+| (same shape for `secondaryFixed*`, `tertiaryFixed*`) | -                       | Brand-locked secondary/tertiary surfaces         |
 
-Fixed roles do not adapt to theme — only use them where preserving identity matters more than contrast adjustment.
+Fixed roles do not adapt to theme - only use them where preserving identity matters more than contrast adjustment.
 
 **Scrim**
 
@@ -219,7 +219,7 @@ val md_theme_light_surfaceTint = Color(0xFF6750A4)
 val md_theme_light_outlineVariant = Color(0xFFCAC4D0)
 val md_theme_light_scrim = Color(0xFF000000)
 
-// Surface containers (M3) — tonal hierarchy for nested surfaces
+// Surface containers (M3) - tonal hierarchy for nested surfaces
 val md_theme_light_surfaceContainerLowest = Color(0xFFFFFFFF)
 val md_theme_light_surfaceContainerLow = Color(0xFFF7F2FA)
 val md_theme_light_surfaceContainer = Color(0xFFF3EDF7)
@@ -228,7 +228,7 @@ val md_theme_light_surfaceContainerHighest = Color(0xFFE6E0E9)
 val md_theme_light_surfaceDim = Color(0xFFDED8E1)
 val md_theme_light_surfaceBright = Color(0xFFFEF7FF)
 
-// Fixed accent roles (M3) — same color in light and dark
+// Fixed accent roles (M3) - same color in light and dark
 val md_theme_primaryFixed = Color(0xFFEADDFF)
 val md_theme_primaryFixedDim = Color(0xFFD0BCFF)
 val md_theme_onPrimaryFixed = Color(0xFF21005D)
@@ -273,7 +273,7 @@ val md_theme_dark_surfaceTint = Color(0xFFD0BCFF)
 val md_theme_dark_outlineVariant = Color(0xFF49454F)
 val md_theme_dark_scrim = Color(0xFF000000)
 
-// Surface containers (M3) — tonal hierarchy for nested surfaces
+// Surface containers (M3) - tonal hierarchy for nested surfaces
 val md_theme_dark_surfaceContainerLowest = Color(0xFF0F0D13)
 val md_theme_dark_surfaceContainerLow = Color(0xFF1D1B20)
 val md_theme_dark_surfaceContainer = Color(0xFF211F26)
@@ -427,7 +427,7 @@ fun ProfileCard(user: User) {
 
 ## Color Pairing Rules
 
-Every M3 color role has an `on*` partner that is contrast-tuned for it. Mixing partners — `onPrimary` over `surface`, `onSurface` over `primaryContainer` — silently breaks WCAG, dark mode, dynamic color, and user contrast all at once. The rule is mechanical: **pick a container role, then use its `on*` for everything drawn on top.**
+Every M3 color role has an `on*` partner that is contrast-tuned for it. Mixing partners - `onPrimary` over `surface`, `onSurface` over `primaryContainer` - silently breaks WCAG, dark mode, dynamic color, and user contrast all at once. The rule is mechanical: **pick a container role, then use its `on*` for everything drawn on top.**
 
 ### The pairing table
 
@@ -463,7 +463,7 @@ fun PairedSurfaces() {
 }
 ```
 
-Setting `Surface(contentColor = ...)` updates `LocalContentColor` so `Text`, `Icon`, and `IconButton` inside pick the right partner automatically — that's the idiomatic way to enforce pairing without naming colors at every `Text` call.
+Setting `Surface(contentColor = ...)` updates `LocalContentColor` so `Text`, `Icon`, and `IconButton` inside pick the right partner automatically - that's the idiomatic way to enforce pairing without naming colors at every `Text` call.
 
 ### Title vs supporting text on surfaces
 
@@ -472,15 +472,15 @@ On any `surface` / `surfaceContainer*` role, use **two** content roles, not one:
 - `onSurface` for primary text (titles, body copy that must read).
 - `onSurfaceVariant` for secondary text, icons, dividers, placeholders, helper text.
 
-`onSurfaceVariant` is intentionally lower-contrast — using it for body copy fails WCAG; using `onSurface` for every label flattens the visual hierarchy.
+`onSurfaceVariant` is intentionally lower-contrast - using it for body copy fails WCAG; using `onSurface` for every label flattens the visual hierarchy.
 
 ### `*Fixed` / `*FixedDim`: keep tone constant across modes
 
-`primaryFixed` / `primaryFixedDim` keep the **same tone** in light and dark themes — useful when a surface (album art controls, an embedded media widget) must visually match across modes. Pair them with `onPrimaryFixed` (titles) and `onPrimaryFixedVariant` (supporting text), the same way `surface` pairs with `onSurface` / `onSurfaceVariant`.
+`primaryFixed` / `primaryFixedDim` keep the **same tone** in light and dark themes - useful when a surface (album art controls, an embedded media widget) must visually match across modes. Pair them with `onPrimaryFixed` (titles) and `onPrimaryFixedVariant` (supporting text), the same way `surface` pairs with `onSurface` / `onSurfaceVariant`.
 
 ### Cross-references
 
-- These pairs are also enforced by `Card`, `Button`, `Chip`, `NavigationBar` etc. via `*Defaults.colors(...)` — see `references/compose-patterns.md`.
+- These pairs are also enforced by `Card`, `Button`, `Chip`, `NavigationBar` etc. via `*Defaults.colors(...)` - see `references/compose-patterns.md`.
 - Anti-patterns for breaking pairing live in [Best Practices → Never Do](#-never-do).
 
 ## `outline` vs `outlineVariant`
@@ -489,8 +489,8 @@ M3 has two outline roles, and they are not interchangeable. Picking the wrong on
 
 | Role             | Contrast                                | Use for                                                                                                    |
 |------------------|-----------------------------------------|------------------------------------------------------------------------------------------------------------|
-| `outline`        | High — meets non-text contrast (3:1)    | Interactive borders: outlined button/text field/chip, focus indicators, important dividers between regions |
-| `outlineVariant` | Low — decorative, **does not** meet 3:1 | Subtle dividers between items in a list, decorative separators, disabled-state borders                     |
+| `outline`        | High - meets non-text contrast (3:1)    | Interactive borders: outlined button/text field/chip, focus indicators, important dividers between regions |
+| `outlineVariant` | Low - decorative, **does not** meet 3:1 | Subtle dividers between items in a list, decorative separators, disabled-state borders                     |
 
 Rule of thumb: if a sighted user is supposed to **act on** the bordered thing, use `outline`. If the line is purely visual rhythm inside a single region, use `outlineVariant`.
 
@@ -524,7 +524,7 @@ fun OutlineDemo() {
 }
 ```
 
-`OutlinedTextField` already pulls `outline` (and `outlineVariant` for its disabled state) internally — that's the model to follow when you write your own outlined components: take `outline` for the resting interactive border, `outlineVariant` for disabled/decorative.
+`OutlinedTextField` already pulls `outline` (and `outlineVariant` for its disabled state) internally - that's the model to follow when you write your own outlined components: take `outline` for the resting interactive border, `outlineVariant` for disabled/decorative.
 
 ### Cross-references
 
@@ -600,9 +600,9 @@ In M3, depth is communicated through **container tone first**. Reach for a shado
 | 1               | `surfaceContainerLow`       | Elevated card, banner, modal bottom sheet                                |
 | 2               | `surfaceContainer`          | Navigation bar, scrolled top app bar, menus, toolbar                     |
 | 3               | `surfaceContainerHigh`      | FAB, dialogs, search bar, date/time pickers                              |
-| 4–5             | `surfaceContainerHighest`   | Hover/focus increase only — never a resting state                        |
+| 4–5             | `surfaceContainerHighest`   | Hover/focus increase only - never a resting state                        |
 
-Setting `Surface(tonalElevation = 3.dp)` blends `surfaceTint` into `surface` to approximate level 3. Prefer **picking the explicit `surfaceContainer*` role** instead — it's clearer, survives dynamic color and user contrast, and matches what M3 components do internally.
+Setting `Surface(tonalElevation = 3.dp)` blends `surfaceTint` into `surface` to approximate level 3. Prefer **picking the explicit `surfaceContainer*` role** instead - it's clearer, survives dynamic color and user contrast, and matches what M3 components do internally.
 
 ### Compose: prefer container role, add shadow only when needed
 
@@ -614,7 +614,7 @@ fun ElevationDemo() {
         color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
         Text(
-            text = "Menu surface — tone alone communicates level 2",
+            text = "Menu surface - tone alone communicates level 2",
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(16.dp),
         )
@@ -635,7 +635,7 @@ fun ElevationDemo() {
 }
 ```
 
-The menu uses tone only. The FAB adds `shadowElevation` because it floats over arbitrary content — exactly the case where a shadow is justified.
+The menu uses tone only. The FAB adds `shadowElevation` because it floats over arbitrary content - exactly the case where a shadow is justified.
 
 ### Hover/focus, not resting
 
@@ -643,7 +643,7 @@ Levels 4 and 5 are **interaction** levels. Bump elevation by **one step** on hov
 
 ### Cross-references
 
-- M3 Expressive components consume tonal/elevation tokens through `MaterialExpressiveTheme` and `MotionScheme.expressive()` — see [Material 3 Expressive](#material-3-expressive).
+- M3 Expressive components consume tonal/elevation tokens through `MaterialExpressiveTheme` and `MotionScheme.expressive()` - see [Material 3 Expressive](#material-3-expressive).
 - Animation/feel of elevation transitions belongs in `references/compose-patterns.md` → "Animation".
 
 ## Dynamic Color (Material You)
@@ -797,11 +797,11 @@ private fun UiModeManager.contrastLevel(): ContrastLevel = when {
 }
 ```
 
-The bucket boundaries (`0.25` / `0.75`) are intentional — the API is documented to return `0.0` / `0.5` / `1.0` today, but bucketing leaves room for future intermediate values without breaking the picker.
+The bucket boundaries (`0.25` / `0.75`) are intentional - the API is documented to return `0.0` / `0.5` / `1.0` today, but bucketing leaves room for future intermediate values without breaking the picker.
 
 ### Plug into `AppTheme`
 
-Slot the contrast pick into the same `colorScheme` decision tree from [Conditional Dynamic Color Support](#conditional-dynamic-color-support) — pick the static variant that matches `(isDark, contrast)`. With **dynamic color**, `dynamicLightColorScheme(context)` / `dynamicDarkColorScheme(context)` already honor the user contrast on API 34+, so leave them alone.
+Slot the contrast pick into the same `colorScheme` decision tree from [Conditional Dynamic Color Support](#conditional-dynamic-color-support) - pick the static variant that matches `(isDark, contrast)`. With **dynamic color**, `dynamicLightColorScheme(context)` / `dynamicDarkColorScheme(context)` already honor the user contrast on API 34+, so leave them alone.
 
 ```kotlin
 @Composable
@@ -848,9 +848,9 @@ fun AppTheme(
 
 User contrast scales the **color scheme**. It is not a substitute for:
 
-- WCAG contrast checks on hard-coded brand colors (still required — see `references/android-accessibility.md`).
+- WCAG contrast checks on hard-coded brand colors (still required - see `references/android-accessibility.md`).
 - A larger-text / display-density preference (those are separate system settings).
-- Honoring user font scale (`fontScale` in `Configuration`) — that affects typography, not color.
+- Honoring user font scale (`fontScale` in `Configuration`) - that affects typography, not color.
 
 ### Testing
 
@@ -1649,7 +1649,7 @@ fun StatusBadge(status: String) {
 
 ### Brand Color Harmonization
 
-Hard-coded brand colors (`success`, `warning`, `info`, an "always-red" notification dot, a partner logo tint) clash visibly when [dynamic color](#dynamic-color-material-you) repaints the rest of the app from the user's wallpaper. M3 ships a fix: `MaterialColors.harmonize(...)` shifts a custom color's **hue** toward `colorScheme.primary` while preserving its **chroma and tone**, so `success` still reads as green and `warning` as yellow — they just stop fighting the wallpaper.
+Hard-coded brand colors (`success`, `warning`, `info`, an "always-red" notification dot, a partner logo tint) clash visibly when [dynamic color](#dynamic-color-material-you) repaints the rest of the app from the user's wallpaper. M3 ships a fix: `MaterialColors.harmonize(...)` shifts a custom color's **hue** toward `colorScheme.primary` while preserving its **chroma and tone**, so `success` still reads as green and `warning` as yellow - they just stop fighting the wallpaper.
 
 Add the dependency once in `build.gradle.kts`:
 
@@ -1659,7 +1659,7 @@ implementation("com.google.android.material:material:1.12.0")
 
 #### Harmonize once when the scheme is built
 
-`harmonize` is a pure color-math call. Run it where you build `ExtendedColors` so every consumer sees harmonized values automatically — never call it inside `Composable`s that recompose on every frame.
+`harmonize` is a pure color-math call. Run it where you build `ExtendedColors` so every consumer sees harmonized values automatically - never call it inside `Composable`s that recompose on every frame.
 
 ```kotlin
 import androidx.compose.ui.graphics.Color
@@ -1682,7 +1682,7 @@ fun rememberHarmonizedExtendedColors(
 }
 ```
 
-`on*` partners stay as-is — they're chosen for contrast against the harmonized fill, and the fill's hue shift is too small to flip which on-color you need.
+`on*` partners stay as-is - they're chosen for contrast against the harmonized fill, and the fill's hue shift is too small to flip which on-color you need.
 
 #### Plug into `AppTheme`
 
@@ -1734,11 +1734,11 @@ fun AppTheme(
 
 - **Harmonize**: brand accents (`success`, `warning`, `info`), partner-tinted illustrations, a custom `notification` color, third-party SDK accent overrides.
 - **Do not harmonize**: `error` (already part of `colorScheme`, must stay unmistakably red), pure neutrals (white, black, grays), brand colors with **legal/identity constraints** where the exact hex matters (logos, regulated marks).
-- For static-only apps (no dynamic color anywhere), there's nothing to harmonize against — skip it entirely and keep the original brand values.
+- For static-only apps (no dynamic color anywhere), there's nothing to harmonize against - skip it entirely and keep the original brand values.
 
 ## Scoped Themes
 
-Sometimes a single screen needs its own slice of theming — a settings *Danger Zone* whose primary is `error`, an "on-media" toolbar that sits over a dark hero image, an embedded brand surface inside a partner section. The right tool is **a nested `MaterialTheme`** that derives from the outer one with `colorScheme.copy(...)`. This keeps dynamic color, user contrast, and dark mode intact for the rest of the app while overriding only the roles you actually care about.
+Sometimes a single screen needs its own slice of theming - a settings *Danger Zone* whose primary is `error`, an "on-media" toolbar that sits over a dark hero image, an embedded brand surface inside a partner section. The right tool is **a nested `MaterialTheme`** that derives from the outer one with `colorScheme.copy(...)`. This keeps dynamic color, user contrast, and dark mode intact for the rest of the app while overriding only the roles you actually care about.
 
 ### Rule: `copy()` from the outer scheme, never rebuild
 
@@ -1771,7 +1771,7 @@ fun DangerZone() {
 }
 ```
 
-The `Button` reads `colorScheme.primary` like any other M3 component — it just sees `error` because of the scope. No custom `ButtonColors`, no per-component overrides, no leakage outside the `ErrorScope` block.
+The `Button` reads `colorScheme.primary` like any other M3 component - it just sees `error` because of the scope. No custom `ButtonColors`, no per-component overrides, no leakage outside the `ErrorScope` block.
 
 ### Common scoped-theme patterns
 
@@ -1782,10 +1782,10 @@ The `Button` reads `colorScheme.primary` like any other M3 component — it just
 
 ### Don'ts
 
-- **Don't scope shapes or typography** unless the design genuinely diverges — those rebuild the visual identity, not just the palette, and rarely belong in a scope.
+- **Don't scope shapes or typography** unless the design genuinely diverges - those rebuild the visual identity, not just the palette, and rarely belong in a scope.
 - **Don't scope to override a single component**. If only one `Button` needs a different fill, pass `ButtonDefaults.buttonColors(containerColor = ...)`. Reach for a scoped theme when **multiple** components in a subtree need the override.
 - **Don't nest more than one level deep**. Two layered scopes are almost always a sign the inner scope should just consume the outer one's roles directly.
-- **Don't introduce a scoped theme for accessibility-critical actions** without re-checking contrast — the new pairing must still satisfy WCAG. Run the same checks as for the base scheme (see `references/android-accessibility.md`).
+- **Don't introduce a scoped theme for accessibility-critical actions** without re-checking contrast - the new pairing must still satisfy WCAG. Run the same checks as for the base scheme (see `references/android-accessibility.md`).
 
 ## Architecture Integration
 

@@ -533,7 +533,7 @@ If `warmFeatures()` fails, `warmTokens` and `warmConfig` keep running. The funct
 
 **Decision rule:** ask "if one child fails, is there any value in the others' results?" Yes → `supervisorScope`. No → `coroutineScope`.
 
-**With `async`:** in `supervisorScope`, exceptions thrown inside `async` are stored on the `Deferred` and only raised when you call `await()`. Always `await()` (or `awaitAll()`) every `async` you launch — see [Unawaited async in supervisorScope](#unawaited-async-in-supervisorscope).
+**With `async`:** in `supervisorScope`, exceptions thrown inside `async` are stored on the `Deferred` and only raised when you call `await()`. Always `await()` (or `awaitAll()`) every `async` you launch - see [Unawaited async in supervisorScope](#unawaited-async-in-supervisorscope).
 
 ### `supervisorScope` vs `SupervisorJob` - Independent Child Failures
 
@@ -593,7 +593,7 @@ Without the `CoroutineExceptionHandler`, an unhandled exception from any child w
 | Long-lived scope (Service, Repository)      | `SupervisorJob` + `CoroutineExceptionHandler` |
 | `withContext` + supervision needed          | `supervisorScope` inside `withContext`        |
 
-Forbidden: `withContext(SupervisorJob())` — see anti-pattern below.
+Forbidden: `withContext(SupervisorJob())` - see anti-pattern below.
 
 
 #### Anti-Pattern: `withContext(SupervisorJob())`

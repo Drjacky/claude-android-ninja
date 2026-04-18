@@ -45,8 +45,8 @@ Run tests then the combined report task. Instrumented tests require a connected 
 
 Output paths (per module under `build/reports/jacoco/createDebugCombinedCoverageReport/`):
 
-- `createDebugCombinedCoverageReport.xml` — feed to CI/Codecov.
-- `html/index.html` — per-package, class, method drilldown.
+- `createDebugCombinedCoverageReport.xml` - feed to CI/Codecov.
+- `html/index.html` - per-package, class, method drilldown.
 
 ## Coverage Exclusions
 

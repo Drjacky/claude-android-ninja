@@ -208,7 +208,7 @@ fun ProductsRoute(viewModel: ProductsViewModel = hiltViewModel()) {
 
 ### Disposal Management
 
-**Option 1: CompositeDisposable** — default. Use unless an existing module already wires AutoDispose.
+**Option 1: CompositeDisposable** - default. Use unless an existing module already wires AutoDispose.
 
 ```kotlin
 class ProductsViewModel : ViewModel() {

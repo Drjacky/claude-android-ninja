@@ -246,8 +246,8 @@ fun MyScreen(state: UiState) {
 ### Common Causes
 
 - `State` objects created inside composition without `remember`.
-- Missing `equals()` on state data classes — a new instance with identical values still triggers recomposition without structural equality.
-- Unstable lambda references when Strong Skipping is disabled. With Compose Compiler 2.0+ / Kotlin 2.0+ defaults, this is rare — verify before chasing.
+- Missing `equals()` on state data classes - a new instance with identical values still triggers recomposition without structural equality.
+- Unstable lambda references when Strong Skipping is disabled. With Compose Compiler 2.0+ / Kotlin 2.0+ defaults, this is rare - verify before chasing.
 
 Stability annotations (`@Immutable`, `@Stable`) and Compose compiler metrics: [compose-patterns.md](/references/compose-patterns.md#stability-annotations-immutable-vs-stable), [android-performance.md](/references/android-performance.md).
 

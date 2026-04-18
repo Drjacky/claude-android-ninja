@@ -1,6 +1,6 @@
 # Jetpack Compose Patterns
 
-Required: Material 3, Navigation 3, adaptive layouts, edge-to-edge, lifecycle-aware state collection. Kotlin code aligns with [kotlin-patterns.md](/references/kotlin-patterns.md). Accessibility (semantics, touch targets, TalkBack) is mandatory — [android-accessibility.md](/references/android-accessibility.md). Theming via Material 3 semantic roles — [android-theming.md](/references/android-theming.md). All user-facing text via string resources — [android-i18n.md](/references/android-i18n.md).
+Required: Material 3, Navigation 3, adaptive layouts, edge-to-edge, lifecycle-aware state collection. Kotlin code aligns with [kotlin-patterns.md](/references/kotlin-patterns.md). Accessibility (semantics, touch targets, TalkBack) is mandatory - [android-accessibility.md](/references/android-accessibility.md). Theming via Material 3 semantic roles - [android-theming.md](/references/android-theming.md). All user-facing text via string resources - [android-i18n.md](/references/android-i18n.md).
 
 ## Table of Contents
 
@@ -1174,7 +1174,7 @@ fun ErrorContent(
 
 ### Card Variants (Filled / Outlined / Elevated)
 
-M3 ships three `Card` variants. Picking the right one is purely a function of how much the card needs to **separate from its background**, not how "important" the content is. Mixing variants on the same surface is the most common slip-up — pick one per region and stick with it.
+M3 ships three `Card` variants. Picking the right one is purely a function of how much the card needs to **separate from its background**, not how "important" the content is. Mixing variants on the same surface is the most common slip-up - pick one per region and stick with it.
 
 | Variant  | Composable     | Surface role at rest                | Use when                                                                                      |
 |----------|----------------|-------------------------------------|-----------------------------------------------------------------------------------------------|
@@ -1205,11 +1205,11 @@ fun FloatingHero(item: Item, onClick: () -> Unit) {
 }
 ```
 
-`Card` / `OutlinedCard` / `ElevatedCard` already pull the right surface, content color, border, and (for Elevated) shadow from `MaterialTheme`. Don't pass `colors = CardDefaults.cardColors(containerColor = ...)` to swap variants — use the dedicated composable instead, otherwise the on-color and border defaults silently drift out of sync. See [Color Pairing Rules](/references/android-theming.md#color-pairing-rules) and [Surface Container Hierarchy](/references/android-theming.md#surface-container-hierarchy) for the underlying tokens.
+`Card` / `OutlinedCard` / `ElevatedCard` already pull the right surface, content color, border, and (for Elevated) shadow from `MaterialTheme`. Don't pass `colors = CardDefaults.cardColors(containerColor = ...)` to swap variants - use the dedicated composable instead, otherwise the on-color and border defaults silently drift out of sync. See [Color Pairing Rules](/references/android-theming.md#color-pairing-rules) and [Surface Container Hierarchy](/references/android-theming.md#surface-container-hierarchy) for the underlying tokens.
 
 #### Clickable card → use the `onClick` overload
 
-`Card { ... }` is a static container. The moment the card is tappable, switch to the `Card(onClick = ...)` overload (same for `OutlinedCard` / `ElevatedCard`) — it wires up the M3 ripple, focus ring, hover state, and `Role.Button` semantics that a `.clickable { }` modifier on a static card silently misses.
+`Card { ... }` is a static container. The moment the card is tappable, switch to the `Card(onClick = ...)` overload (same for `OutlinedCard` / `ElevatedCard`) - it wires up the M3 ripple, focus ring, hover state, and `Role.Button` semantics that a `.clickable { }` modifier on a static card silently misses.
 
 ```kotlin
 Card(
@@ -1561,8 +1561,8 @@ Every M3 component reads its corner radius from `MaterialTheme.shapes` via a `*D
 | `Menu` (`DropdownMenu`, `ExposedDropdownMenu`)                                  | `MenuDefaults.shape`                                                       | `shapes.extraSmall`                                                 |                                                                              |
 | `Tooltip` (`PlainTooltip`, `RichTooltip`)                                       | `TooltipDefaults.plainTooltipContainerShape` / `richTooltipContainerShape` | `shapes.extraSmall` (plain), `shapes.medium` (rich)                 |                                                                              |
 | `SearchBar`, `DockedSearchBar`                                                  | `SearchBarDefaults.inputFieldShape`                                        | `shapes.full`                                                       | Pill                                                                         |
-| `Switch`, `RadioButton`, `Checkbox`                                             | (handle-driven, no public shape token)                                     | —                                                                   | Don't override; baked into the component                                     |
-| `TopAppBar`, `BottomAppBar`, `NavigationBar`, `NavigationRail`                  | (none — full-bleed)                                                        | —                                                                   | Never round these                                                            |
+| `Switch`, `RadioButton`, `Checkbox`                                             | (handle-driven, no public shape token)                                     | -                                                                   | Don't override; baked into the component                                     |
+| `TopAppBar`, `BottomAppBar`, `NavigationBar`, `NavigationRail`                  | (none - full-bleed)                                                        | -                                                                   | Never round these                                                            |
 
 #### Override at the token level, not per component
 
@@ -1576,7 +1576,7 @@ val AppShapes = Shapes(
 )
 
 MaterialTheme(colorScheme = colorScheme, typography = AppTypography, shapes = AppShapes) {
-    // Card → 10dp, Dialog → 24dp, Snackbar → 2dp, etc. — automatic.
+    // Card → 10dp, Dialog → 24dp, Snackbar → 2dp, etc. - automatic.
 }
 ```
 
@@ -1590,12 +1590,12 @@ Card(
 }
 ```
 
-Reach for `shape = ...` only when a single instance must visually break the system rhythm — a hero card on a marketing screen, a custom-shaped CTA. Doing this across every `Card` / `Button` is the same as not having a shape system at all.
+Reach for `shape = ...` only when a single instance must visually break the system rhythm - a hero card on a marketing screen, a custom-shaped CTA. Doing this across every `Card` / `Button` is the same as not having a shape system at all.
 
 #### Shape anti-patterns
 
 - **Don't `RoundedCornerShape(8.dp)` directly on a component.** Use `MaterialTheme.shapes.small` so a future token bump rethemes the whole app.
-- **Don't round full-bleed bars.** `TopAppBar`, `BottomAppBar`, `NavigationBar`, `NavigationRail` are designed to sit edge-to-edge — corners on them clip incorrectly under gesture insets.
+- **Don't round full-bleed bars.** `TopAppBar`, `BottomAppBar`, `NavigationBar`, `NavigationRail` are designed to sit edge-to-edge - corners on them clip incorrectly under gesture insets.
 - **Don't round all four corners on `ModalBottomSheet` / drawers.** Use the `*ExpandedShape` / `*Shape` defaults; the asymmetric corners are load-bearing for the affordance.
 - **Don't override `Switch` / `RadioButton` / `Checkbox` shape.** They're not derived from `MaterialTheme.shapes`; the visual is baked in by spec.
 
@@ -2842,7 +2842,7 @@ LifecycleResumeEffect(Unit) {
 ### Side Effect Anti-Patterns
 
 ```kotlin
-// Bad: wrong key — never re-runs on userId change
+// Bad: wrong key - never re-runs on userId change
 @Composable
 fun UserProfile(userId: String) {
     var user by remember { mutableStateOf<User?>(null) }

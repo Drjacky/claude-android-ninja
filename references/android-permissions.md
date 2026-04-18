@@ -452,7 +452,7 @@ Required:
 
 Forbidden:
 - Requesting batches of unrelated permissions in a single launcher call.
-- Re-prompting in a loop after the user denies — wait for the next contextual action.
+- Re-prompting in a loop after the user denies - wait for the next contextual action.
 
 ### Open App Settings
 

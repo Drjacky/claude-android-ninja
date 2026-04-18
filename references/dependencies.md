@@ -216,7 +216,7 @@ Checklist (in order, fail-fast):
 - [ ] License is Apache 2.0 or MIT (or pre-approved equivalent).
 - [ ] APK size impact measured for app modules.
 - [ ] Add `[versions]` + `[libraries]` entries in `libs.versions.toml` (and a bundle if used together).
-- [ ] Reference via `libs.<group>.<name>` in module `build.gradle.kts` — never raw coordinates.
+- [ ] Reference via `libs.<group>.<name>` in module `build.gradle.kts` - never raw coordinates.
 - [ ] Add ProGuard/R8 keep rules to `assets/proguard-rules.pro.template` if the library uses reflection or annotations.
 - [ ] Run `./gradlew assembleDebug testDebugUnitTest` before commit.
 

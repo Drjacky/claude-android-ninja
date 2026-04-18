@@ -1706,10 +1706,10 @@ Required:
 - Test with `WorkManagerTestInitHelper` + `TestDriver`, simulating constraints.
 
 Forbidden:
-- WorkManager for immediate, in-process work — use coroutines / `viewModelScope`.
+- WorkManager for immediate, in-process work - use coroutines / `viewModelScope`.
 - Storing payloads larger than 10 KB in `Data` (use Room or files and pass IDs).
 - Periodic work with `repeatInterval` < 15 minutes (system rejects it).
-- Blocking the main thread inside a `Worker` — always use `CoroutineWorker`.
+- Blocking the main thread inside a `Worker` - always use `CoroutineWorker`.
 - Long unbounded chains; batch related steps inside one worker.
 - Driving UI directly from a `Worker`; UI listens to `StateFlow` / `WorkInfo`.
 
@@ -2304,7 +2304,7 @@ Forbidden:
 - Unbounded retry loops.
 - Silently swallowing conflicts.
 - Auto-syncing on metered networks without explicit user opt-in.
-- `SharedPreferences` / `DataStore` for relational or list data — that's Room's job.
+- `SharedPreferences` / `DataStore` for relational or list data - that's Room's job.
 - Leaking `CoroutineScope`s from repositories; cancel scopes in `@PreDestroy` / lifecycle teardown.
 
 ### Sync Frequency Guidelines

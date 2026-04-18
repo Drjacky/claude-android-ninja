@@ -23,9 +23,9 @@ WCAG 2.2 adds nine success criteria on top of 2.1. Required on Android Compose:
 | 2.5.8 Target Size (Minimum)               | Interactive targets must be at least 24 × 24 CSS px.                                                                                                               | Android's 48dp × 48dp rule is stricter; enforce 48dp. See `#touch-target-sizes`.                                     |
 | 3.2.6 Consistent Help                     | Help mechanisms (contact, chat, FAQ) must appear in the same relative order on every screen.                                                                       | App-level navigation, not per-screen.                                                                                |
 | 3.3.7 Redundant Entry                     | Do not ask the user for the same info twice in one session. Prefill or pull from state.                                                                            | Multi-step forms, signup-then-onboarding flows.                                                                      |
-| 3.3.8 Accessible Authentication (Minimum) | Do not require a cognitive test (puzzle, exact recall, captcha without alternative) unless another factor exists. Paste and autofill must work on password fields. | Login, signup, password reset. Use Credential Manager — see `references/android-security.md`.                        |
+| 3.3.8 Accessible Authentication (Minimum) | Do not require a cognitive test (puzzle, exact recall, captcha without alternative) unless another factor exists. Paste and autofill must work on password fields. | Login, signup, password reset. Use Credential Manager - see `references/android-security.md`.                        |
 
-Always-applicable 2.1 AA criteria still in force: **1.4.3 Contrast (Minimum)** and **2.4.7 Focus Visible** — see `#color--visual-accessibility` and `#focus-management`.
+Always-applicable 2.1 AA criteria still in force: **1.4.3 Contrast (Minimum)** and **2.4.7 Focus Visible** - see `#color--visual-accessibility` and `#focus-management`.
 
 ## Semantic Properties
 

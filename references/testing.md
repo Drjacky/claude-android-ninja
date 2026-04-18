@@ -900,7 +900,7 @@ Required:
 
 | Dispatcher                  | Use when                                                      |
 |-----------------------------|---------------------------------------------------------------|
-| `UnconfinedTestDispatcher`  | Default — eager execution, synchronous-style assertions.      |
+| `UnconfinedTestDispatcher`  | Default - eager execution, synchronous-style assertions.      |
 | `StandardTestDispatcher`    | Need explicit ordering or virtual-time stepping.              |
 
 ```kotlin
@@ -1870,7 +1870,7 @@ android {
 ./gradlew :feature:auth:validateDebugScreenshotTest
 ```
 
-Reference images: `{module}/src/screenshotTestDebug/reference/` — commit to VCS. Validation report: `{module}/build/reports/screenshotTest/preview/debug/index.html`.
+Reference images: `{module}/src/screenshotTestDebug/reference/` - commit to VCS. Validation report: `{module}/build/reports/screenshotTest/preview/debug/index.html`.
 
 ### Requirements
 
