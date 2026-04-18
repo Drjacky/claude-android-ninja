@@ -96,6 +96,81 @@ class MainActivity : ComponentActivity() {
 
 ## Color Schemes
 
+### Full Color Role Reference (M3)
+
+Material 3 defines ~40 semantic color roles. Use these on `MaterialTheme.colorScheme.*` instead of raw `Color(...)` so themes, dark mode, dynamic color, and user contrast all keep working.
+
+**Accent roles** (3 groups: primary, secondary, tertiary)
+
+| Role                                      | `colorScheme.*`      | Use for                                              |
+|-------------------------------------------|----------------------|------------------------------------------------------|
+| Primary                                   | `primary`            | High-emphasis fills, FAB, primary button             |
+| On Primary                                | `onPrimary`          | Text/icons on `primary`                              |
+| Primary Container                         | `primaryContainer`   | Standout container fill (selected chip, hero card)   |
+| On Primary Container                      | `onPrimaryContainer` | Text/icons on `primaryContainer`                     |
+| Secondary / On / Container / On Container | `secondary*`         | Less prominent accents (tonal buttons, filter chips) |
+| Tertiary  / On / Container / On Container | `tertiary*`          | Contrasting accents (badges, complementary surfaces) |
+
+**Error roles** (do not change with dynamic color)
+
+| Role               | `colorScheme.*`    | Use for                          |
+|--------------------|--------------------|----------------------------------|
+| Error              | `error`            | Destructive action, validation   |
+| On Error           | `onError`          | Text/icons on `error`            |
+| Error Container    | `errorContainer`   | Error banner / inline error fill |
+| On Error Container | `onErrorContainer` | Text/icons on `errorContainer`   |
+
+**Surface roles** (the modern depth system — prefer over `background`)
+
+| Role                      | `colorScheme.*`           | Use for                                                       |
+|---------------------------|---------------------------|---------------------------------------------------------------|
+| Surface                   | `surface`                 | Default screen background                                     |
+| On Surface                | `onSurface`               | Primary text/icons on any surface                             |
+| On Surface Variant        | `onSurfaceVariant`        | Lower-emphasis text/icons on surface                          |
+| Surface Container Lowest  | `surfaceContainerLowest`  | Lowest-tone container (rarely used)                           |
+| Surface Container Low     | `surfaceContainerLow`     | Cards in flow, low-emphasis containers                        |
+| Surface Container         | `surfaceContainer`        | Default container (nav bar, persistent panels)                |
+| Surface Container High    | `surfaceContainerHigh`    | Menus, scrolled top app bar                                   |
+| Surface Container Highest | `surfaceContainerHighest` | Filled cards, highest-emphasis nested container               |
+| Surface Dim               | `surfaceDim`              | Always-dimmest surface (both themes)                          |
+| Surface Bright            | `surfaceBright`           | Always-brightest surface (both themes)                        |
+| Surface Tint              | `surfaceTint`             | Tonal-elevation tint (set by `Surface(tonalElevation = ...)`) |
+
+**Inverse roles** (for elements that contrast against the surrounding UI, e.g. snackbars)
+
+| Role               | `colorScheme.*`    | Use for                              |
+|--------------------|--------------------|--------------------------------------|
+| Inverse Surface    | `inverseSurface`   | Snackbar background, inverted toast  |
+| Inverse On Surface | `inverseOnSurface` | Text on `inverseSurface`             |
+| Inverse Primary    | `inversePrimary`   | Actionable text on `inverseSurface`  |
+
+**Outline roles**
+
+| Role            | `colorScheme.*`  | Use for                                                  |
+|-----------------|------------------|----------------------------------------------------------|
+| Outline         | `outline`        | Interactive boundaries (text-field borders, focus rings) |
+| Outline Variant | `outlineVariant` | Decorative dividers, card borders                        |
+
+**Fixed accent roles** (same color in light **and** dark — keep brand identity inside scoped surfaces)
+
+| Role                                                 | `colorScheme.*`         | Use for                                          |
+|------------------------------------------------------|-------------------------|--------------------------------------------------|
+| Primary Fixed                                        | `primaryFixed`          | Branded chip / badge that must not flip on theme |
+| Primary Fixed Dim                                    | `primaryFixedDim`       | Dimmer companion to `primaryFixed`               |
+| On Primary Fixed                                     | `onPrimaryFixed`        | Text/icons on `primaryFixed`                     |
+| On Primary Fixed Variant                             | `onPrimaryFixedVariant` | Lower-emphasis text on `primaryFixed`            |
+| (same shape for `secondaryFixed*`, `tertiaryFixed*`) | —                       | Brand-locked secondary/tertiary surfaces         |
+
+Fixed roles do not adapt to theme — only use them where preserving identity matters more than contrast adjustment.
+
+**Scrim**
+
+| Role  | `colorScheme.*` | Use for                                        |
+|-------|-----------------|------------------------------------------------|
+| Scrim | `scrim`         | Modal backdrops behind dialogs / bottom sheets |
+
+`background` / `onBackground` still exist for backwards compatibility; in new code prefer `surface` / `onSurface`.
+
 ### Default Light and Dark Schemes
 
 Material 3 uses semantic color roles instead of hardcoded colors.
