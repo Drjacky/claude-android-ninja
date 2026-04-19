@@ -26,6 +26,17 @@ Migrate one screen at a time. Do not attempt a full rewrite. Required order:
 3. **Container screens** - screens that host Fragments or ViewPagers (migrate after children)
 4. **Navigation** - migrate to Navigation3 once all screens are Compose
 
+### Per-Screen Workflow (mandatory)
+
+Run these steps **for each XML screen** before considering it migrated:
+
+1. **Capture a baseline screenshot** of the existing XML UI. Reuse an existing screenshot test if one exists; otherwise add a minimal **UI Automator** or **Espresso** test that opens the screen and saves a screenshot. This is the visual diff target for steps 2-4.
+2. **Migrate only the minimum theming** required for that screen. Do **not** port the whole `styles.xml` / `themes.xml` upfront. Map only the colors, typography, and shapes used by this screen into `MaterialTheme` (see `references/android-theming.md`); keep the rest of the XML theme intact so unmigrated screens continue to render correctly.
+3. **Add a `@Preview`** for every new composable. Previews are the fast-loop visual parity check against the baseline from step 1; a screen without `@Preview` cannot be diff-verified.
+4. **Diff against baseline**, iterate the composable until layout and styling match (ignore string content). When parity is reached, write a Compose UI test for the new screen, then proceed to the interop / replacement sections below.
+
+Only delete the XML layout, drawables, styles, and legacy tests **after** all references are gone.
+
 ### Compose in XML (Adding Compose to Existing Screens)
 
 Use `ComposeView` to embed Compose inside an XML layout:
