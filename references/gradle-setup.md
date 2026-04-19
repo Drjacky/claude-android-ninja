@@ -31,19 +31,19 @@ Do **not** add `android.disallowKotlinSourceSets=false`. It re-enables a removed
 
 ### AGP 9 Verification
 
-After the migration (and for any AGP 9 build-config change), verify the project still configures correctly **without** running `clean` (clean wastes time and does not validate the DSL):
+Run after every AGP 9 build-config change. Do **not** run `clean` first - it does not validate the DSL.
 
 ```bash
 ./gradlew help              # Gradle IDE-equivalent sync
 ./gradlew build --dry-run   # Configures every task without executing
 ```
 
-If either fails, the failing task name points to the misconfigured module / DSL block.
+On failure, the failing task name identifies the module / DSL block to fix.
 
 ### AGP 9 Toolchain Compatibility Notes
 
 - **Paparazzi**: Versions **`<= 2.0.0-alpha04`** are incompatible with AGP 9. Upgrade to a release that explicitly supports AGP 9 before flipping the AGP version, or temporarily disable Paparazzi modules.
-- **KMP**: AGP 9 migration patterns here assume an Android-only project. Kotlin Multiplatform projects need a separate migration path.
+- **KMP**: This AGP 9 path is Android-only. Kotlin Multiplatform projects require a separate migration.
 
 ## Table of Contents
 1. [Project Structure](#project-structure)
@@ -755,9 +755,9 @@ See [android-security.md](/references/android-security.md#proguard--r8-hardening
 
 ### R8 Keep-Rules Audit
 
-Run this audit whenever the app `proguard-rules.pro` grows past ~50 lines, when release APK/AAB size regresses, or when a release crash points at a missing class/member. Steps are ordered worst-impact first; stop early if no rules of that class exist.
+Run when `proguard-rules.pro` grows past ~50 lines, release APK/AAB size regresses, or a release-only crash points at a missing class/member. Steps are ordered worst-impact first; skip any step whose rule class does not appear in the file.
 
-**Step 1 - Drop redundant library rules.** These libraries already ship their own consumer rules inside the AAR/JAR. If your file repeats them, delete the duplicates first - they cannot do anything except mask narrower app-side rules.
+**Step 1 - Drop redundant library rules.** The libraries below ship consumer rules inside the AAR/JAR. App-side duplicates only mask narrower rules - delete them first.
 
 | Library group                                          | App-side rules needed?                                                                                                                                  |
 |--------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -771,56 +771,56 @@ Run this audit whenever the app `proguard-rules.pro` grows past ~50 lines, when 
 | Firebase SDKs                                          | No. Mapping upload is handled by the Gradle plugin.                                                                                                     |
 | Coil 3, Compose, Compose-runtime                       | No (Compose-stability annotations are the only edge case worth keeping).                                                                                |
 
-If you find rules targeting any of the above, delete them and rebuild release - if R8 fails, the underlying issue is almost always a **reflection** site in your own code (handled in step 4), not a missing library keep.
+If a release build fails after deleting one of the above, the failure points to a **reflection** site in app code (see step 4), not a missing library keep.
 
-**Step 2 - Score remaining rules by impact (broad → narrow).** Always prefer the narrowest rule that works. Anything in the top rows of this table is a size regression suspect:
+**Step 2 - Score remaining rules by impact (broad → narrow).** Use the narrowest rule that works. Top-row rules are size-regression suspects:
 
-| Tier (worst → best) | Pattern                                                   | Effect                                                                                          |
-|---------------------|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------|
-| 1 - Package-wide    | `-keep class com.example.** { *; }`                       | Disables shrinking, optimization, and obfuscation for the whole tree. Almost never justifiable. |
-| 2 - Class-wide      | `-keep class com.example.Foo { *; }`                      | Keeps every member; disables member-level optimization for that class.                          |
-| 3 - Method/field    | `-keepclassmembers class com.example.Foo { void bar(); }` | Keeps only what reflection actually touches; lets R8 shrink/optimize the rest.                  |
-| 4 - Conditional     | `-if @MyAnnotation class ** -keep class <1> { *; }`       | Applies only when the predicate matches. Best fit for annotation-driven reflection.             |
+| Tier (worst → best) | Pattern                                                   | Effect                                                                                                                      |
+|---------------------|-----------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| 1 - Package-wide    | `-keep class com.example.** { *; }`                       | Disables shrinking, optimization, and obfuscation for the whole tree. Forbidden in app code unless step 4 cannot narrow it. |
+| 2 - Class-wide      | `-keep class com.example.Foo { *; }`                      | Keeps every member; disables member-level optimization for that class.                                                      |
+| 3 - Method/field    | `-keepclassmembers class com.example.Foo { void bar(); }` | Keeps only what reflection touches; R8 shrinks/optimizes the rest.                                                          |
+| 4 - Conditional     | `-if @MyAnnotation class ** -keep class <1> { *; }`       | Required form for annotation-driven reflection.                                                                             |
 
 **Step 3 - Detect subsuming rules and remove the broader half.** When two rules overlap, keep only the narrower one:
 
-- A `-keep class com.example.Foo { *; }` makes any `-keepclassmembers class com.example.Foo { … }` redundant - **delete the class-wide rule**, keep the member rule.
-- A `-keep class com.example.** { *; }` subsumes every per-class rule under that package - **delete the package-wide rule**, keep the per-class rules.
+- `-keep class com.example.Foo { *; }` subsumes any `-keepclassmembers class com.example.Foo { … }` - **delete the class-wide rule**, keep the member rule.
+- `-keep class com.example.** { *; }` subsumes every per-class rule under that package - **delete the package-wide rule**, keep the per-class rules.
 - A conditional `-if … -keep <1>` subsumes the equivalent unconditional `-keep` for the same class - delete the unconditional one.
 
-R8 has no built-in "redundant rule" report; this is a manual scan. If unsure, comment the broader rule out and run a release build - if it still succeeds and `mapping.txt` shows the narrower-kept symbol, the broader rule was redundant.
+R8 emits no "redundant rule" report. To verify a suspected redundancy, comment the broader rule out, run `./gradlew assembleRelease`, and confirm `mapping.txt` still contains the narrower-kept symbol.
 
-**Step 4 - Narrow reflection-driven keeps.** For every remaining package- or class-wide rule, find the actual reflection site (search for `Class.forName`, `::class.java`, `getDeclaredMethod`, `getDeclaredField`, JNI symbol lookups, service-loader files under `META-INF/services/`, Gson `TypeToken`, Moshi adapter lookups, Retrofit Proxy). Replace the broad rule with one that targets only those members:
+**Step 4 - Narrow reflection-driven keeps.** For every remaining package- or class-wide rule, locate the reflection site (search for `Class.forName`, `::class.java`, `getDeclaredMethod`, `getDeclaredField`, JNI symbol lookups, `META-INF/services/` entries, Gson `TypeToken`, Moshi adapter lookups, Retrofit `Proxy`). Replace the broad rule with one that targets only the reflected members:
 
 ```proguard
-# Before: package-wide, hides real intent
+# Before: package-wide
 -keep class com.example.api.models.** { *; }
 
 # After: only what Gson reads via reflection
 -keep class com.example.api.models.** {
-    <init>();      # no-arg constructor
-    <fields>;      # serialised fields
+    <init>();
+    <fields>;
 }
 
-# Before: keeps every method on a class because one is called via Class.forName
+# Before: class-wide because one method is called via Class.forName
 -keep class com.example.plugins.AnalyticsPlugin { *; }
 
-# After: keep only the entry point + the no-arg constructor R8 sees as unused
+# After: only the constructor + entry point
 -keep class com.example.plugins.AnalyticsPlugin {
     <init>();
     public void initialize(android.content.Context);
 }
 ```
 
-When the reflection target is annotation-driven, prefer `-if @YourAnnotation class **` so the rule scales without future edits.
+For annotation-driven reflection, use `-if @YourAnnotation class **` so the rule scales as new annotated classes are added.
 
-**Step 5 - AGP 9 default optimizations.** AGP 9 enables additional R8 optimizations by default; many manual rules written for AGP 7/8 are now unnecessary. Re-run steps 1-4 after upgrading AGP and after every major library bump. Track release APK/AAB size as a CI metric so silent regressions surface.
+**Step 5 - AGP 9 default optimizations.** AGP 9 enables additional R8 optimizations by default. Re-run steps 1-4 after every AGP upgrade and every major library bump. Track release APK/AAB size as a CI metric to surface silent regressions.
 
-**Final guardrail.** Never edit `proguard-rules.pro` and ship without:
+**Final guardrail.** Before shipping any `proguard-rules.pro` change:
 
-1. A successful `./gradlew assembleRelease` (or `bundleRelease`).
-2. A smoke test that exercises the suspect packages (UI Automator end-to-end is enough; see [testing.md](/references/testing.md)).
-3. A diff of `mapping.txt` line count vs the previous release - large drops in kept-symbol count are the win signal; large jumps mean a broader keep slipped in.
+1. `./gradlew assembleRelease` (or `bundleRelease`) succeeds.
+2. Run a UI Automator smoke test over the packages whose rules changed (see [testing.md](/references/testing.md)).
+3. Diff `mapping.txt` line count against the previous release. Drops are the win signal; jumps mean a broader keep slipped in.
 
 ## Build Performance
 
