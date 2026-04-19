@@ -1284,6 +1284,96 @@ Required JSON shape in the response: a non-empty `statements` array containing t
 
 For per-device verification commands (`pm set-app-links`, `pm verify-app-links --re-verify`, `pm get-app-links`) and the return-code legend, see [testing.md → Testing Deep Links](/references/testing.md#testing-deep-links).
 
+### DomainVerificationManager Runtime Check
+
+API floor: 31. Required guard: `Build.VERSION.SDK_INT >= Build.VERSION_CODES.S` before any `DomainVerificationManager` call.
+
+Use `DomainVerificationManager` when the app needs to know which of its declared HTTPS hosts are actually claimed by this install — to prompt the user to approve unverified hosts or to disable in-app banners advertising deep-linkable URLs the system will not honour.
+
+```kotlin
+// app/deeplink/AppLinkVerificationStatus.kt
+import android.content.Context
+import android.content.pm.verify.domain.DomainVerificationManager
+import android.content.pm.verify.domain.DomainVerificationUserState
+import android.os.Build
+import androidx.annotation.RequiresApi
+
+data class AppLinkStatus(
+    val verified: List<String>,
+    val userSelected: List<String>,
+    val unapproved: List<String>,
+)
+
+@RequiresApi(Build.VERSION_CODES.S)
+fun Context.appLinkStatus(): AppLinkStatus {
+    val manager = getSystemService(DomainVerificationManager::class.java)
+    val state = manager.getDomainVerificationUserState(packageName) ?: return AppLinkStatus(emptyList(), emptyList(), emptyList())
+
+    val grouped = state.hostToStateMap.entries.groupBy { (_, value) ->
+        when (value) {
+            DomainVerificationUserState.DOMAIN_STATE_VERIFIED -> "verified"
+            DomainVerificationUserState.DOMAIN_STATE_SELECTED -> "selected"
+            else -> "unapproved"
+        }
+    }
+    return AppLinkStatus(
+        verified = grouped["verified"].orEmpty().map { it.key },
+        userSelected = grouped["selected"].orEmpty().map { it.key },
+        unapproved = grouped["unapproved"].orEmpty().map { it.key },
+    )
+}
+```
+
+Required when at least one host is in `unapproved`: route the user to system settings so they can manually associate the app with the host. The Settings deep link is the only supported path — the app cannot grant itself verification.
+
+```kotlin
+// app/deeplink/AppLinkSettings.kt
+import android.content.Context
+import android.content.Intent
+import android.provider.Settings
+import androidx.core.net.toUri
+
+fun Context.openAppLinkSettings() {
+    val intent = Intent(
+        Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS,
+        "package:$packageName".toUri()
+    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    startActivity(intent)
+}
+```
+
+Use in Compose only after gating on API 31+:
+
+```kotlin
+@Composable
+fun AppLinkApprovalBanner(onOpenSettings: () -> Unit) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+
+    val context = LocalContext.current
+    val status = remember { context.appLinkStatus() }
+
+    if (status.unapproved.isEmpty()) return
+
+    Banner(
+        message = "Approve ${status.unapproved.size} link(s) in Settings",
+        action = "Open settings",
+        onAction = onOpenSettings,
+    )
+}
+```
+
+Forbidden: caching the result across process restarts — verification state changes when the user toggles defaults, when the app re-runs verification, or when Play re-installs.
+
+Forbidden: showing the Settings link when `verified` already contains every host — the system will show "Open supported links" toggled on and the user has nothing to do.
+
+State legend (returned by `hostToStateMap`):
+
+| Constant                         | Meaning                                                                       |
+|----------------------------------|-------------------------------------------------------------------------------|
+| `DOMAIN_STATE_VERIFIED`          | Auto-verified via Digital Asset Links. App opens the link without a dialog.   |
+| `DOMAIN_STATE_SELECTED`          | User manually picked this app as the default for the host in system settings. |
+| `DOMAIN_STATE_NONE`              | Not verified and not user-selected. Link goes to browser or disambiguation.   |
+
 ### URI Pattern Matching
 
 Map URI patterns to `NavKey` types with path and query parameter extraction:
