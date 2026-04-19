@@ -1125,6 +1125,67 @@ Forbidden: combining `<data android:scheme="https" />` and `<data android:scheme
 
 Keep `pathPrefix` entries narrow. Forbidden: `pathPrefix="/"` on production builds — claims every URL on the host and the system rejects the verification batch.
 
+### onNewIntent for singleTask
+
+Required when `android:launchMode="singleTask"`: implement `onNewIntent` so a deep link delivered to an already-running Activity updates the back stack instead of being dropped on the floor.
+
+Required: route both the `onCreate` initial intent and every subsequent `onNewIntent` through the same `parseDeepLink` function so behaviour stays consistent.
+
+```kotlin
+// app/MainActivity.kt
+class MainActivity : ComponentActivity() {
+
+    private val pendingDeepLink = mutableStateOf<NavKey?>(null)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val initialKey = parseDeepLink(intent) ?: HomeRoute
+
+        setContent {
+            val backStack = rememberNavBackStack(initialKey)
+
+            LaunchedEffect(Unit) {
+                snapshotFlow { pendingDeepLink.value }
+                    .filterNotNull()
+                    .collect { key ->
+                        backStack.add(key)
+                        pendingDeepLink.value = null
+                    }
+            }
+
+            NavDisplay(
+                backStack = backStack,
+                onBack = { backStack.removeLastOrNull() },
+                entryProvider = entryProvider { /* ... */ }
+            )
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // CORRECT: setIntent so any later getIntent() read sees the new URI, not the original.
+        setIntent(intent)
+        parseDeepLink(intent)?.let { pendingDeepLink.value = it }
+    }
+
+    private fun parseDeepLink(intent: Intent): NavKey? {
+        val uri = intent.data ?: return null
+        if (!DeepLinkValidator.validate(uri)) return null
+        val request = DeepLinkRequest(uri)
+        val match = deepLinkPatterns.firstNotNullOfOrNull { pattern ->
+            DeepLinkMatcher(request, pattern).match()
+        } ?: return null
+        return KeyDecoder(match.args).decodeSerializableValue(match.serializer)
+    }
+}
+```
+
+Forbidden: reading `intent.data` directly inside Composables — `intent` does not change reference when `onNewIntent` fires; route the new URI through state (`mutableStateOf`, `Channel`, `SharedFlow`).
+
+Forbidden: omitting `setIntent(intent)` in `onNewIntent` — leaves stale `getIntent()` results for any later code path (notification action handlers, restored process death).
+
+Use a synthetic back stack on the new-task path (see [Synthetic Back Stack](#synthetic-back-stack)). On the existing-task path, append the new key to the live back stack as shown above.
+
 ### App Links Verification
 
 App Links (verified HTTPS deep links) prevent other apps from claiming your URLs. They require a Digital Asset Links file on your server.
