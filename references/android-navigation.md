@@ -666,7 +666,7 @@ fun DialogExample() {
 
 ### Bottom Sheet Navigation
 
-There is no first-party `BottomSheetSceneStrategy` in Navigation 3 yet. Build a minimal custom strategy that renders the top entry inside a Material 3 `ModalBottomSheet`, with the previous entry shown underneath:
+Navigation 3 ships no first-party `BottomSheetSceneStrategy`. Use the custom strategy below: it renders the top entry inside a Material 3 `ModalBottomSheet` and keeps the previous entry visible underneath.
 
 ```kotlin
 import androidx.compose.material3.ModalBottomSheet
@@ -696,7 +696,6 @@ class BottomSheetSceneStrategy<T : Any>(
             override val entries: List<NavEntry<T>> = listOf(top)
             override val previousEntries: List<NavEntry<T>> = previous
             override val content: @Composable () -> Unit = {
-                // Render the entry underneath so the bottom sheet appears as an overlay.
                 previous.lastOrNull()?.Content()
 
                 val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -745,10 +744,9 @@ fun BottomSheetExample() {
 ```
 
 **Key points:**
-- Mark sheet entries with `metadata = BottomSheetSceneStrategy.bottomSheet()`; everything else falls through to the default `SinglePaneSceneStrategy`.
-- The strategy renders the previous entry underneath, so the sheet behaves as an overlay rather than replacing the screen.
-- Wire `onDismissRequest` to `backStack.removeLastOrNull()` so swipe-down and scrim-tap stay back-stack-driven (no separate dismiss state to keep in sync).
-- Predictive back works automatically because the back stack is the source of truth.
+- Mark sheet entries with `metadata = BottomSheetSceneStrategy.bottomSheet()`. Unmarked entries fall through to the default `SinglePaneSceneStrategy`.
+- Wire `onDismissRequest` to `backStack.removeLastOrNull()` so swipe-down and scrim-tap stay back-stack-driven. Do not maintain a separate dismiss state.
+- Predictive back is handled by the back stack; no extra wiring required.
 
 ### Custom Scene: List-Detail Layout
 
@@ -1479,10 +1477,9 @@ fun EventResultExample() {
 
 ### State-Based Results (CompositionLocal)
 
-When the result must drive recomposition for several screens (e.g., a global "selected filter" or a multi-step wizard value), expose it as **state via a `CompositionLocal`** scoped to the `NavDisplay` rather than passing callbacks down. The receiver simply reads the value; the producer writes it before popping.
+Use when several screens must observe the same result (global "selected filter", multi-step wizard value). Expose the result as **state via a `CompositionLocal`** scoped to the `NavDisplay`. Receivers read the value; producers write it before popping.
 
 ```kotlin
-// Hold the result as state. Use a sealed type or a small data class for type safety.
 class FilterResultHolder {
     var value by mutableStateOf<FilterResult?>(null)
         private set
@@ -1527,10 +1524,10 @@ fun AppNavigation() {
 ```
 
 **Key points:**
-- Holder lives at the same scope as `backStack` (`remember` inside `AppNavigation`); it survives back-stack mutations but is cleared with the `NavDisplay`.
-- Receivers **read** `LocalFilterResult.current.value` and recompose like any other state - no `LaunchedEffect` plumbing.
-- For one-shot semantics, expose a `consume()` method that nulls the value after read; for sticky state, expose `value` directly.
-- Keep the holder small and feature-specific. Don't smuggle a kitchen-sink "result bus" through `CompositionLocal`.
+- Scope the holder to `backStack` (`remember` inside `AppNavigation`). It survives back-stack mutations and clears with the `NavDisplay`.
+- Receivers **read** `LocalFilterResult.current.value` and recompose like any other state. No `LaunchedEffect` plumbing.
+- One-shot semantics: expose a `consume()` method that nulls the value after read. Sticky state: expose `value` directly.
+- One holder per result type. Do not build a generic "result bus" through `CompositionLocal`.
 
 ### Choosing a pattern
 
