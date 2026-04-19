@@ -753,6 +753,75 @@ Check `build/outputs/mapping/release/` for the mapping file after each release b
 
 See [android-security.md](/references/android-security.md#proguard--r8-hardening) for security-specific hardening rules (log stripping, aggressive obfuscation, manifest settings).
 
+### R8 Keep-Rules Audit
+
+Run this audit whenever the app `proguard-rules.pro` grows past ~50 lines, when release APK/AAB size regresses, or when a release crash points at a missing class/member. Steps are ordered worst-impact first; stop early if no rules of that class exist.
+
+**Step 1 - Drop redundant library rules.** These libraries already ship their own consumer rules inside the AAR/JAR. If your file repeats them, delete the duplicates first - they cannot do anything except mask narrower app-side rules.
+
+| Library group                                          | App-side rules needed?                                                                                                                                  |
+|--------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| AndroidX / Jetpack (lifecycle, room3, paging, work, …) | No. Consumer rules are bundled.                                                                                                                         |
+| Kotlin stdlib, kotlinx.coroutines, kotlinx.collections | No. Only `-dontwarn kotlinx.coroutines.**` for residual warnings.                                                                                       |
+| kotlinx.serialization                                  | Library bundles rules since 1.6+. Keep only the **`@Serializable` generic-parameter** rules (R8 full-mode strips classes used only as `List<MyModel>`). |
+| Retrofit / OkHttp                                      | Retrofit needs the `@retrofit2.http.*` interface keeps for R8 full-mode (Proxy). OkHttp 5.x: only `-dontwarn` for optional Conscrypt/BouncyCastle.      |
+| Gson / Moshi (codegen)                                 | No. Codegen variants ship rules. Reflective Gson **does** need `-keep` on the model package.                                                            |
+| Hilt / Dagger                                          | No. Only `-dontwarn dagger.hilt.internal.**` and project-level DI keep if you reflect into it.                                                          |
+| Google Play services (incl. Play Integrity, Play Core) | No. Only `-dontwarn` for optional sub-packages.                                                                                                         |
+| Firebase SDKs                                          | No. Mapping upload is handled by the Gradle plugin.                                                                                                     |
+| Coil 3, Compose, Compose-runtime                       | No (Compose-stability annotations are the only edge case worth keeping).                                                                                |
+
+If you find rules targeting any of the above, delete them and rebuild release - if R8 fails, the underlying issue is almost always a **reflection** site in your own code (handled in step 4), not a missing library keep.
+
+**Step 2 - Score remaining rules by impact (broad → narrow).** Always prefer the narrowest rule that works. Anything in the top rows of this table is a size regression suspect:
+
+| Tier (worst → best) | Pattern                                                   | Effect                                                                                          |
+|---------------------|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| 1 - Package-wide    | `-keep class com.example.** { *; }`                       | Disables shrinking, optimization, and obfuscation for the whole tree. Almost never justifiable. |
+| 2 - Class-wide      | `-keep class com.example.Foo { *; }`                      | Keeps every member; disables member-level optimization for that class.                          |
+| 3 - Method/field    | `-keepclassmembers class com.example.Foo { void bar(); }` | Keeps only what reflection actually touches; lets R8 shrink/optimize the rest.                  |
+| 4 - Conditional     | `-if @MyAnnotation class ** -keep class <1> { *; }`       | Applies only when the predicate matches. Best fit for annotation-driven reflection.             |
+
+**Step 3 - Detect subsuming rules and remove the broader half.** When two rules overlap, keep only the narrower one:
+
+- A `-keep class com.example.Foo { *; }` makes any `-keepclassmembers class com.example.Foo { … }` redundant - **delete the class-wide rule**, keep the member rule.
+- A `-keep class com.example.** { *; }` subsumes every per-class rule under that package - **delete the package-wide rule**, keep the per-class rules.
+- A conditional `-if … -keep <1>` subsumes the equivalent unconditional `-keep` for the same class - delete the unconditional one.
+
+R8 has no built-in "redundant rule" report; this is a manual scan. If unsure, comment the broader rule out and run a release build - if it still succeeds and `mapping.txt` shows the narrower-kept symbol, the broader rule was redundant.
+
+**Step 4 - Narrow reflection-driven keeps.** For every remaining package- or class-wide rule, find the actual reflection site (search for `Class.forName`, `::class.java`, `getDeclaredMethod`, `getDeclaredField`, JNI symbol lookups, service-loader files under `META-INF/services/`, Gson `TypeToken`, Moshi adapter lookups, Retrofit Proxy). Replace the broad rule with one that targets only those members:
+
+```proguard
+# Before: package-wide, hides real intent
+-keep class com.example.api.models.** { *; }
+
+# After: only what Gson reads via reflection
+-keep class com.example.api.models.** {
+    <init>();      # no-arg constructor
+    <fields>;      # serialised fields
+}
+
+# Before: keeps every method on a class because one is called via Class.forName
+-keep class com.example.plugins.AnalyticsPlugin { *; }
+
+# After: keep only the entry point + the no-arg constructor R8 sees as unused
+-keep class com.example.plugins.AnalyticsPlugin {
+    <init>();
+    public void initialize(android.content.Context);
+}
+```
+
+When the reflection target is annotation-driven, prefer `-if @YourAnnotation class **` so the rule scales without future edits.
+
+**Step 5 - AGP 9 default optimizations.** AGP 9 enables additional R8 optimizations by default; many manual rules written for AGP 7/8 are now unnecessary. Re-run steps 1-4 after upgrading AGP and after every major library bump. Track release APK/AAB size as a CI metric so silent regressions surface.
+
+**Final guardrail.** Never edit `proguard-rules.pro` and ship without:
+
+1. A successful `./gradlew assembleRelease` (or `bundleRelease`).
+2. A smoke test that exercises the suspect packages (UI Automator end-to-end is enough; see [testing.md](/references/testing.md)).
+3. A diff of `mapping.txt` line count vs the previous release - large drops in kept-symbol count are the win signal; large jumps mean a broader keep slipped in.
+
 ## Build Performance
 
 ### Settings Configuration

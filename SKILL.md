@@ -230,6 +230,9 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Use [android-debugging.md](references/android-debugging.md) for R8 mapping files and manual de-obfuscation  
 → See [gradle-setup.md](references/gradle-setup.md) for R8 build configuration and keep rules
 
+**Auditing R8 keep rules / fixing release size or release-only crashes?**
+→ Use [gradle-setup.md](references/gradle-setup.md) → "R8 Keep-Rules Audit" for the redundant-library list, impact hierarchy, subsuming-rule detection, reflection-narrowing playbook, and AGP 9 default-optimization re-audit
+
 **Debugging performance issues or memory leaks?**
 → Enable [android-strictmode.md](references/android-strictmode.md) for development builds  
 → Use [android-performance.md](references/android-performance.md) for profiling and benchmarking  
