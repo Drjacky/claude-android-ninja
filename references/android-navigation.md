@@ -664,6 +664,92 @@ fun DialogExample() {
 - The dialog renders as an overlay on top of the previous entry
 - Use `dropUnlessResumed` to prevent double-clicks during transitions
 
+### Bottom Sheet Navigation
+
+There is no first-party `BottomSheetSceneStrategy` in Navigation 3 yet. Build a minimal custom strategy that renders the top entry inside a Material 3 `ModalBottomSheet`, with the previous entry shown underneath:
+
+```kotlin
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.scene.Scene
+import androidx.navigation3.scene.SceneStrategy
+import androidx.navigation3.scene.SinglePaneSceneStrategy
+
+private const val BOTTOM_SHEET_KEY = "BottomSheetSceneStrategy"
+
+class BottomSheetSceneStrategy<T : Any>(
+    private val onDismiss: () -> Unit,
+) : SceneStrategy<T> {
+
+    override fun SceneStrategyScope<T>.calculateScene(
+        entries: List<NavEntry<T>>,
+    ): Scene<T>? {
+        val top = entries.lastOrNull() ?: return null
+        if (top.metadata[BOTTOM_SHEET_KEY] != true) return null
+
+        val previous = entries.dropLast(1)
+        return object : Scene<T> {
+            override val key: Any = top.contentKey
+            override val entries: List<NavEntry<T>> = listOf(top)
+            override val previousEntries: List<NavEntry<T>> = previous
+            override val content: @Composable () -> Unit = {
+                // Render the entry underneath so the bottom sheet appears as an overlay.
+                previous.lastOrNull()?.Content()
+
+                val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                ModalBottomSheet(
+                    onDismissRequest = onDismiss,
+                    sheetState = sheetState,
+                ) {
+                    top.Content()
+                }
+            }
+        }
+    }
+
+    companion object {
+        fun bottomSheet(): Map<String, Any> = mapOf(BOTTOM_SHEET_KEY to true)
+    }
+}
+
+@Composable
+fun BottomSheetExample() {
+    val backStack = rememberNavBackStack(HomeRoute)
+    val bottomSheetStrategy = remember {
+        BottomSheetSceneStrategy<NavKey>(onDismiss = { backStack.removeLastOrNull() })
+    }
+
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        sceneStrategy = bottomSheetStrategy,
+        entryProvider = entryProvider {
+            entry<HomeRoute> {
+                HomeScreen(
+                    onShowFilters = dropUnlessResumed { backStack.add(FiltersRoute) }
+                )
+            }
+            entry<FiltersRoute>(
+                metadata = BottomSheetSceneStrategy.bottomSheet()
+            ) {
+                FiltersBottomSheet(
+                    onApply = { backStack.removeLastOrNull() }
+                )
+            }
+        }
+    )
+}
+```
+
+**Key points:**
+- Mark sheet entries with `metadata = BottomSheetSceneStrategy.bottomSheet()`; everything else falls through to the default `SinglePaneSceneStrategy`.
+- The strategy renders the previous entry underneath, so the sheet behaves as an overlay rather than replacing the screen.
+- Wire `onDismissRequest` to `backStack.removeLastOrNull()` so swipe-down and scrim-tap stay back-stack-driven (no separate dismiss state to keep in sync).
+- Predictive back works automatically because the back stack is the source of truth.
+
 ### Custom Scene: List-Detail Layout
 
 Create a custom `Scene` and `SceneStrategy` for adaptive layouts (e.g., list-detail on wide screens):
@@ -1391,14 +1477,70 @@ fun EventResultExample() {
 }
 ```
 
+### State-Based Results (CompositionLocal)
+
+When the result must drive recomposition for several screens (e.g., a global "selected filter" or a multi-step wizard value), expose it as **state via a `CompositionLocal`** scoped to the `NavDisplay` rather than passing callbacks down. The receiver simply reads the value; the producer writes it before popping.
+
+```kotlin
+// Hold the result as state. Use a sealed type or a small data class for type safety.
+class FilterResultHolder {
+    var value by mutableStateOf<FilterResult?>(null)
+        private set
+
+    fun set(result: FilterResult) { value = result }
+    fun consume(): FilterResult? = value.also { value = null }
+}
+
+val LocalFilterResult = compositionLocalOf<FilterResultHolder> {
+    error("FilterResultHolder not provided")
+}
+
+@Composable
+fun AppNavigation() {
+    val backStack = rememberNavBackStack(HomeRoute)
+    val filterResult = remember { FilterResultHolder() }
+
+    CompositionLocalProvider(LocalFilterResult provides filterResult) {
+        NavDisplay(
+            backStack = backStack,
+            onBack = { backStack.removeLastOrNull() },
+            entryProvider = entryProvider {
+                entry<HomeRoute> {
+                    val applied = LocalFilterResult.current.value
+                    HomeScreen(
+                        appliedFilter = applied,
+                        onOpenFilters = dropUnlessResumed { backStack.add(FiltersRoute) }
+                    )
+                }
+                entry<FiltersRoute> {
+                    FiltersScreen(
+                        onApply = dropUnlessResumed { result ->
+                            LocalFilterResult.current.set(result)
+                            backStack.removeLastOrNull()
+                        }
+                    )
+                }
+            }
+        )
+    }
+}
+```
+
+**Key points:**
+- Holder lives at the same scope as `backStack` (`remember` inside `AppNavigation`); it survives back-stack mutations but is cleared with the `NavDisplay`.
+- Receivers **read** `LocalFilterResult.current.value` and recompose like any other state - no `LaunchedEffect` plumbing.
+- For one-shot semantics, expose a `consume()` method that nulls the value after read; for sticky state, expose `value` directly.
+- Keep the holder small and feature-specific. Don't smuggle a kitchen-sink "result bus" through `CompositionLocal`.
+
 ### Choosing a pattern
 
-| Pattern        | Use when                                                                          | Avoid when                                              |
-|----------------|-----------------------------------------------------------------------------------|---------------------------------------------------------|
-| Callback-based | Default. Result is type-safe and the caller already exposes hoisted state.        | Caller cannot hold the receiving state (cross-feature). |
-| Event-based    | Receiver is decoupled from the Navigator and you only need a one-shot delivery.   | You need Compose-observable updates or shared state.    |
+| Pattern                        | Use when                                                                                                  | Avoid when                                                                              |
+|--------------------------------|-----------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| Callback-based                 | Default. Result is type-safe and the caller already exposes hoisted state.                                | Caller cannot hold the receiving state (cross-feature).                                 |
+| Event-based                    | Receiver is decoupled from the Navigator and you only need a one-shot delivery.                           | You need Compose-observable updates or shared state.                                    |
+| State-based (CompositionLocal) | Several screens read the same result, or the receiver wants idiomatic Compose state instead of callbacks. | A single caller/receiver pair (use callback-based) or cross-process delivery is needed. |
 
-Default to callback-based; it stays type-safe and matches the `Navigator` interface pattern used everywhere else.
+Default to callback-based; it stays type-safe and matches the `Navigator` interface pattern used everywhere else. Reach for state-based only when multiple consumers are involved.
 
 ## ViewModel Scoping
 
