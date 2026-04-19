@@ -764,18 +764,16 @@ fun ScrollableContentWithInsets(modifier: Modifier = Modifier) {
 
 Rule of thumb: start with `safeDrawingPadding()` for form screens, `safeContentPadding()` for hosts/panes, and add `safeGesturesPadding()` on any composable that consumes drag gestures. Do not stack more than one `safe*Padding` on the same node.
 
-**Target SDK floor:** the inset APIs below require **target SDK 35+**. The skill defaults `targetSdk = 36` (mandatory enforcement); 35 is the floor on which these APIs are guaranteed available.
+**Target SDK floor:** the inset APIs below require **target SDK 35+**. `targetSdk = 36` is the project default; 35 is the minimum on which these APIs are guaranteed available.
 
 #### IME (soft keyboard) insets
 
-The IME is the most common source of edge-to-edge bugs (input fields hidden under the keyboard, double padding, jank). Wire it in two places:
+Wire IME insets in two places:
 
-1. **Manifest:** every Activity that hosts text input must set `android:windowSoftInputMode="adjustResize"`. The runtime constant `SOFT_INPUT_ADJUST_RESIZE` is deprecated and must not be used.
-2. **Composable:** apply IME insets to the input container. Pick **one** of these patterns - never combine them, that is what causes double padding.
+1. **Manifest:** every Activity that hosts text input must set `android:windowSoftInputMode="adjustResize"`. `SOFT_INPUT_ADJUST_RESIZE` is deprecated; do not use the runtime constant.
+2. **Composable:** apply IME insets to the input container. Use **one** of the patterns below. Combining them double-pads.
 
-**Preferred: `Modifier.fitInside(WindowInsetsRulers.Ime.current)`**
-
-`WindowInsetsRulers` is the newer (target SDK 35+) API. It fits the content **inside** the IME inset regardless of upstream `consumeWindowInsets` calls, so it is jank-free even when an ancestor forgot to consume.
+**Use `Modifier.fitInside(WindowInsetsRulers.Ime.current)` by default.** It fits content inside the IME inset regardless of upstream `consumeWindowInsets` calls, so an ancestor that forgets to consume cannot break it.
 
 ```kotlin
 Scaffold { innerPadding ->
@@ -789,15 +787,13 @@ Scaffold { innerPadding ->
 }
 ```
 
-**Alternative: `Modifier.imePadding()`**
-
-If you stay on `imePadding()`, two ordering rules are non-negotiable:
+**Use `Modifier.imePadding()`** when `WindowInsetsRulers` is unavailable. Two ordering rules apply:
 
 - `imePadding()` **must come before** `Modifier.verticalScroll(...)`. Reversing the order makes the keyboard cover the focused field on tall content.
-- Do **not** combine `imePadding()` with `Scaffold(contentWindowInsets = WindowInsets.safeDrawing)`. `safeDrawing` already includes the IME, so the modifier double-pads.
+- Do **not** combine `imePadding()` with `Scaffold(contentWindowInsets = WindowInsets.safeDrawing)`. `safeDrawing` already includes the IME.
 
 ```kotlin
-// CORRECT: default contentWindowInsets does not include IME, so imePadding() applies it once.
+// CORRECT: default contentWindowInsets does not include IME; imePadding() applies it once.
 Scaffold { innerPadding ->
     Column(
         modifier = Modifier
@@ -808,7 +804,7 @@ Scaffold { innerPadding ->
     ) { /* TextField + content */ }
 }
 
-// WRONG: IME padding is applied twice - once via safeDrawing, once via imePadding().
+// WRONG: IME padding applied twice (once via safeDrawing, once via imePadding()).
 Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
     Column(
         modifier = Modifier
@@ -819,15 +815,15 @@ Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
 }
 ```
 
-For **non-Scaffold** layouts, consume the parent insets explicitly so children don't re-apply them:
+For **non-Scaffold** layouts, consume the parent insets explicitly so children do not re-apply them:
 
 ```kotlin
-// CORRECT
-Box(modifier = Modifier.safeDrawingPadding()) { // consumes safeDrawing for descendants
+// CORRECT: safeDrawingPadding consumes insets for descendants.
+Box(modifier = Modifier.safeDrawingPadding()) {
     Column(modifier = Modifier.imePadding()) { /* TextField + content */ }
 }
 
-// WRONG: the outer padding does not consume insets, so imePadding() double-pads.
+// WRONG: outer padding does not consume insets; imePadding() double-pads.
 Box(modifier = Modifier.padding(WindowInsets.safeDrawing.asPaddingValues())) {
     Column(modifier = Modifier.imePadding()) { /* … */ }
 }
@@ -835,10 +831,10 @@ Box(modifier = Modifier.padding(WindowInsets.safeDrawing.asPaddingValues())) {
 
 #### System bar appearance & contrast
 
-Two settings keep status- and navigation-bar icons legible against your content; both belong in the theme/Activity, not in screen code.
+Status- and navigation-bar icon legibility is controlled in the theme/Activity, not in screen code.
 
-- **`enableEdgeToEdge` from `ComponentActivity`** (the default in this skill) auto-flips icon colors per system theme. **Do not** set `isAppearanceLightStatusBars` / `isAppearanceLightNavigationBars` manually if you use this entry point.
-- **`enableEdgeToEdge` from `WindowCompat`** does **not** auto-flip - you must set both manually:
+- **`ComponentActivity.enableEdgeToEdge`** (default entry point) auto-flips icon colors per system theme. **Do not** set `isAppearanceLightStatusBars` / `isAppearanceLightNavigationBars` manually when using this entry point.
+- **`WindowCompat.enableEdgeToEdge`** does **not** auto-flip. Set both manually:
 
   ```kotlin
   @Composable
@@ -856,7 +852,7 @@ Two settings keep status- and navigation-bar icons legible against your content;
   }
   ```
 
-- **Three-button nav contrast scrim:** `enableEdgeToEdge` defaults `window.isNavigationBarContrastEnforced = true`, which paints a translucent scrim under three-button navigation. If your screen draws its own bottom bar (e.g., `BottomAppBar`, `NavigationBar`, `NavigationSuiteScaffold` with a bar), set it to `false` so your bar colour reaches the screen edge:
+- **Three-button nav contrast scrim:** `enableEdgeToEdge` defaults `window.isNavigationBarContrastEnforced = true`, which paints a translucent scrim under three-button navigation. When the screen draws its own bottom bar (`BottomAppBar`, `NavigationBar`, `NavigationSuiteScaffold` with a bar), set it to `false` so the bar colour reaches the screen edge:
 
   ```kotlin
   // In MainActivity.onCreate(), after enableEdgeToEdge()
@@ -865,7 +861,7 @@ Two settings keep status- and navigation-bar icons legible against your content;
   }
   ```
 
-- **Status-bar protection scrim** (use when content scrolls under a translucent status bar and icons need extra contrast):
+- **Status-bar protection scrim:** use when content scrolls under a translucent status bar and icons need extra contrast.
 
   ```kotlin
   @Composable
@@ -891,30 +887,28 @@ Two settings keep status- and navigation-bar icons legible against your content;
 
 #### NavigationSuiteScaffold and adaptive-pane scaffolds
 
-`NavigationSuiteScaffold` and the `*PaneScaffold` family (`ListDetailPaneScaffold`, `SupportingPaneScaffold`) **do not propagate `PaddingValues`** to their inner content lambdas - the scaffolds manage insets for their own chrome (rail, bar, drawer) but each pane is responsible for its own content insets. So:
+`NavigationSuiteScaffold` and the `*PaneScaffold` family (`ListDetailPaneScaffold`, `SupportingPaneScaffold`) **do not propagate `PaddingValues`** to their inner content lambdas. The scaffolds manage insets for their own chrome (rail, bar, drawer); each pane is responsible for its own content insets.
 
 - Apply insets per-pane / per-screen, e.g. `LazyColumn(contentPadding = …)` and `Modifier.safeContentPadding()` on `AnimatedPane`.
-- **Do not** wrap the `NavigationSuiteScaffold` itself in `safeDrawingPadding()` / `safeContentPadding()` - that clips the chrome and breaks the edge-to-edge effect.
-
-The existing examples in this file already follow this rule (see `Modifier.safeContentPadding()` on `AnimatedPane`).
+- **Do not** wrap the `NavigationSuiteScaffold` itself in `safeDrawingPadding()` / `safeContentPadding()` - that clips the chrome and breaks edge-to-edge.
 
 #### Full-screen Dialogs
 
-A standard Material 3 `AlertDialog` handles insets internally. A **full-screen** `Dialog` (one that opts out of platform width sizing **and** fills the screen) needs an explicit edge-to-edge opt-in:
+`AlertDialog` handles insets internally. A **full-screen** `Dialog` (opts out of platform width sizing **and** fills the screen) requires an explicit edge-to-edge opt-in:
 
 ```kotlin
 Dialog(
     onDismissRequest = onDismiss,
     properties = DialogProperties(
-        usePlatformDefaultWidth = false,   // span the full width
-        decorFitsSystemWindows = false,    // draw behind status & navigation bars
+        usePlatformDefaultWidth = false,
+        decorFitsSystemWindows = false,
     )
 ) {
     Surface(modifier = Modifier.fillMaxSize().safeDrawingPadding()) { /* content */ }
 }
 ```
 
-If both conditions are not met (e.g., the dialog uses platform width or does not call `fillMaxSize()`), leave `decorFitsSystemWindows` at its default - flipping it on a non-full-screen dialog will misalign content.
+If the dialog uses platform width or does not call `fillMaxSize()`, leave `decorFitsSystemWindows` at its default. Flipping it on a non-full-screen dialog misaligns content.
 
 #### Edge-to-edge checklist
 
