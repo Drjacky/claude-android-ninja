@@ -1284,6 +1284,96 @@ Required JSON shape in the response: a non-empty `statements` array containing t
 
 For per-device verification commands (`pm set-app-links`, `pm verify-app-links --re-verify`, `pm get-app-links`) and the return-code legend, see [testing.md → Testing Deep Links](/references/testing.md#testing-deep-links).
 
+### Dynamic App Links (Android 15+, API 35)
+
+API floor: 35. Devices with Google Play services periodically refresh `assetlinks.json` and merge server-side rules with manifest filters. Older devices ignore the dynamic block.
+
+Required: dynamic rules can only **narrow** what the manifest declares. Set the broadest scope (scheme + host) in the manifest; refine path / query / fragment server-side.
+
+Forbidden: relying on dynamic rules to add a host or scheme not in the manifest. The system silently drops them.
+
+#### `dynamic_app_link_components` shape
+
+```json
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.app",
+      "sha256_cert_fingerprints": ["AA:BB:..."]
+    },
+    "relation_extensions": {
+      "delegate_permission/common.handle_all_urls": {
+        "dynamic_app_link_components": [
+          {"/": "/products/*"},
+          {"/": "/shoes", "?": {"in_app": "true"}},
+          {"#": "app"},
+          {"?": {"dl": "*"}},
+          {"/": "/internal/*", "exclude": true},
+          {"/": "*"}
+        ]
+      }
+    }
+  }
+]
+```
+
+Matcher keys (every key optional, all keys in one rule must match):
+
+| Key         | Type    | Matches                                                                                                                            |
+|-------------|---------|------------------------------------------------------------------------------------------------------------------------------------|
+| `"/"`       | string  | URL path. Wildcards: `*` (zero or more chars), `?` (single char), `?*` (one or more chars).                                        |
+| `"#"`       | string  | URL fragment (after `#`). Same wildcards as path.                                                                                  |
+| `"?"`       | object  | Query parameter dict. Every entry must match a `key=value` pair in the URL. Order does not matter; extra query params are allowed. |
+| `"exclude"` | boolean | When `true`, matching URLs **do not** open the app. Default `false`.                                                               |
+
+#### Ordering rules
+
+Required: declare more specific rules first. Evaluation stops at the first match.
+
+```json
+{"/": "/path1"},
+{"/": "*", "exclude": true}
+```
+
+Above: `/path1` opens the app; everything else is excluded.
+
+```json
+{"/": "*", "exclude": true},
+{"/": "/path1"}
+```
+
+Above: nothing opens the app — the `*` exclude rule wins for every URL including `/path1`.
+
+#### "Exclude one path, allow the rest"
+
+Required pattern: exclude rule, then catch-all allow rule. Omitting the catch-all excludes every URL not matched by an earlier rule.
+
+```json
+{"/": "/admin/*", "exclude": true},
+{"/": "*"}
+```
+
+Forbidden: ending the list with only excludes. Unmatched URLs default to **excluded**, breaking every host the manifest still declares.
+
+#### Failure modes
+
+Required: validate JSON server-side before publishing. Malformed `relation_extensions` or empty `dynamic_app_link_components` makes the device discard all dynamic rules and fall back to the manifest filter alone — silently.
+
+Required after every server-side rule change: force a re-fetch with `adb shell pm verify-app-links --re-verify com.example.app` (per-device cache; eventual consistency without it). Production devices pick up the new file on their own refresh schedule.
+
+Cross-check live rules with the Digital Asset Links REST API by appending `&return_relation_extensions=true`:
+
+```bash
+curl 'https://digitalassetlinks.googleapis.com/v1/statements:list?\
+source.web.site=https://example.com&\
+relation=delegate_permission/common.handle_all_urls&\
+return_relation_extensions=true'
+```
+
+The `relation_extensions` field in the response must contain the same `dynamic_app_link_components` array. Empty or missing field = the verifier will not see the rules.
+
 ### DomainVerificationManager Runtime Check
 
 API floor: 31. Required guard: `Build.VERSION.SDK_INT >= Build.VERSION_CODES.S` before any `DomainVerificationManager` call.
