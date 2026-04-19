@@ -12,10 +12,38 @@ Required: Gradle 9 / AGP 9.0, JVM 17+, KSP (never kapt), version catalog, conven
 - **CommonExtension**: Type parameters removed; use `CommonExtension` instead of `CommonExtension<*, *, *, *, *, *>`.
 - **KotlinAndroidProjectExtension**: Not registered with built-in Kotlin; configure compiler options via `tasks.withType<KotlinCompile>().configureEach { compilerOptions { ... } }` instead.
 - **Hilt**: Minimum version **2.59.2** required for AGP 9 (older versions access removed `BaseExtension`).
-- **KSP**: Use `2.x` suffix (e.g., `2.2.21-2.0.5`) instead of `1.x` (e.g., `2.2.21-1.0.32`).
+- **KSP**: Minimum version **2.3.6** required for AGP 9. Use `2.x` suffix (e.g., `2.3.6-…`) instead of `1.x` (e.g., `2.2.21-1.0.32`); `1.x` KSP is incompatible with AGP 9.
+- **kapt fallback (`legacy-kapt`)**: Prefer KSP. If a processor has no KSP equivalent under AGP 9, use the **`org.jetbrains.kotlin.kapt`** plugin (a.k.a. `legacy-kapt`) for that single module only; the new built-in Kotlin pipeline does not run kapt automatically.
 - **Type-safe project accessors**: Enabled by default in Gradle 9; `enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")` is no longer needed in `settings.gradle.kts`.
 - **JVM 17 minimum**: Gradle 9 requires JVM 17+ to run.
 - **Legacy API removal**: `BaseExtension`, `applicationVariants.all`, `Convention` type, and `com.android.build.gradle.api.*` legacy APIs are removed. Use `androidComponents` API instead.
+
+### AGP 9 Migration: Post-Upgrade Cleanup
+
+After completing the AGP 9 upgrade, remove these now-obsolete flags from `gradle.properties` (they were only needed during incremental migration and are no-ops or warnings under AGP 9):
+
+- `android.builtInKotlin`
+- `android.newDsl`
+- `android.uniquePackageNames`
+- `android.enableAppCompileTimeRClass`
+
+Do **not** add `android.disallowKotlinSourceSets=false`. It re-enables a removed escape hatch and masks real migration work.
+
+### AGP 9 Verification
+
+After the migration (and for any AGP 9 build-config change), verify the project still configures correctly **without** running `clean` (clean wastes time and does not validate the DSL):
+
+```bash
+./gradlew help              # Gradle IDE-equivalent sync
+./gradlew build --dry-run   # Configures every task without executing
+```
+
+If either fails, the failing task name points to the misconfigured module / DSL block.
+
+### AGP 9 Toolchain Compatibility Notes
+
+- **Paparazzi**: Versions **`<= 2.0.0-alpha04`** are incompatible with AGP 9. Upgrade to a release that explicitly supports AGP 9 before flipping the AGP version, or temporarily disable Paparazzi modules.
+- **KMP**: AGP 9 migration patterns here assume an Android-only project. Kotlin Multiplatform projects need a separate migration path.
 
 ## Table of Contents
 1. [Project Structure](#project-structure)
