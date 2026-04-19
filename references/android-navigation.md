@@ -1188,53 +1188,101 @@ Use a synthetic back stack on the new-task path (see [Synthetic Back Stack](#syn
 
 ### App Links Verification
 
-App Links (verified HTTPS deep links) prevent other apps from claiming your URLs. They require a Digital Asset Links file on your server.
+Required for HTTPS deep links: publish a Digital Asset Links file (`assetlinks.json`) on every host declared in the `autoVerify` intent-filter. Without it the link opens in the browser or shows the disambiguation dialog.
 
-**1. Host `assetlinks.json` on your domain:**
+#### Server contract
 
-Publish at `https://example.com/.well-known/assetlinks.json`:
+Required, all of:
+
+| Rule             | Value                                                                                           |
+|------------------|-------------------------------------------------------------------------------------------------|
+| URL              | `https://<host>/.well-known/assetlinks.json` (exact path)                                       |
+| Scheme           | HTTPS only. HTTP is rejected.                                                                   |
+| Status           | HTTP 200. **Any redirect fails verification.**                                                  |
+| Content-Type     | `application/json`                                                                              |
+| Auth             | None. No cookies, no Basic auth, no IP allowlist.                                               |
+| Apex consistency | `https://example.com.` (with trailing dot) must serve identical bytes to `https://example.com`. |
+
+Forbidden redirects: `http://example.com` → `https://example.com`, `example.com` → `www.example.com`. Both kill verification for the entire app on Android 12+.
+
+#### `assetlinks.json` template
 
 ```json
-[{
+[
+  {
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
-        "namespace": "android_app",
-        "package_name": "com.example.app",
-        "sha256_cert_fingerprints": [
-            "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
-        ]
+      "namespace": "android_app",
+      "package_name": "com.example.app",
+      "sha256_cert_fingerprints": [
+        "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99",
+        "11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00"
+      ]
     }
-}]
+  }
+]
 ```
 
-**Get your signing certificate fingerprint:**
+Required: every fingerprint string is **uppercase**, colon-separated SHA-256. Lowercase fingerprints fail silently.
+
+Required fingerprints: include every certificate that signs an APK that ships to a real device — Play-managed signing key, upload key (only when not enrolled in Play App Signing), debug key (for QA tracks).
+
+#### Where to get the SHA-256
+
+Use Play App Signing when enrolled — local `keytool` output is **not** the runtime fingerprint:
+
+| App-signing setup                       | Source of the SHA-256                                                                                                                        |
+|-----------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| Play App Signing (default for new apps) | Play Console → Release → Setup → App signing → "App signing key certificate". Copy the SHA-256. Console also exposes the upload-key SHA-256. |
+| Self-managed release keystore           | `keytool -list -v -keystore release.jks -alias <alias>`. Copy the `SHA256:` line.                                                            |
+| Debug builds                            | `keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android`.                                            |
+
+Forbidden: shipping only the upload-key SHA-256 when Play App Signing is enrolled — installs from the Play Store carry the Play-managed signature, not the upload signature, and verification fails on every Play install.
+
+#### Multi-app per domain
+
+Required when several apps share a host (separate consumer + B2B builds, vendor split): one statement file with multiple `target` blocks. Different apps may handle different path prefixes via their own intent-filters.
+
+```json
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.consumer",
+      "sha256_cert_fingerprints": ["AA:BB:..."]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.b2b",
+      "sha256_cert_fingerprints": ["CC:DD:..."]
+    }
+  }
+]
+```
+
+#### Multi-domain per app
+
+Required when one app handles several hosts: publish an identical `assetlinks.json` at each `https://<host>/.well-known/assetlinks.json` and list every host in the same `autoVerify` intent-filter (see [AndroidManifest Setup](#androidmanifest-setup)).
+
+Forbidden on Android 11 and lower: declaring a host you cannot serve `assetlinks.json` for — fails verification for **every** host in that filter (all-or-nothing).
+
+#### Verify the file is reachable
+
+Use the Digital Asset Links REST API before installing the app — does not depend on a device:
+
 ```bash
-# Debug keystore
-keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android
-
-# Release keystore (or use Play Console > Setup > App signing)
-keytool -list -v -keystore your-release-key.keystore -alias your-alias
+curl 'https://digitalassetlinks.googleapis.com/v1/statements:list?\
+source.web.site=https://example.com&\
+relation=delegate_permission/common.handle_all_urls'
 ```
 
-**Requirements:**
-- Must be served at `https://domain/.well-known/assetlinks.json` (exact path)
-- Must return HTTP 200 (redirects are NOT followed)
-- Must have `Content-Type: application/json`
-- Include fingerprints for all signing keys (debug, release, Play App Signing)
+Required JSON shape in the response: a non-empty `statements` array containing the package name and uppercase fingerprint that match the manifest. Empty array = file unreachable, malformed, or wrong content-type.
 
-**2. Verify on device (Android 12+):**
-```bash
-# Reset verification state
-adb shell pm set-app-links --package com.example.app 0 all
-
-# Trigger re-verification
-adb shell pm verify-app-links --re-verify com.example.app
-
-# Check verification status
-adb shell pm get-app-links com.example.app
-```
-
-Domain states: `verified`, `approved`, `denied`, `none` (not yet verified).
+For per-device verification commands (`pm set-app-links`, `pm verify-app-links --re-verify`, `pm get-app-links`) and the return-code legend, see [testing.md → Testing Deep Links](/references/testing.md#testing-deep-links).
 
 ### URI Pattern Matching
 
