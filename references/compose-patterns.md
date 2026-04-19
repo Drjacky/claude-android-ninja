@@ -764,11 +764,178 @@ fun ScrollableContentWithInsets(modifier: Modifier = Modifier) {
 
 Rule of thumb: start with `safeDrawingPadding()` for form screens, `safeContentPadding()` for hosts/panes, and add `safeGesturesPadding()` on any composable that consumes drag gestures. Do not stack more than one `safe*Padding` on the same node.
 
+**Target SDK floor:** the inset APIs below require **target SDK 35+**. The skill defaults `targetSdk = 36` (mandatory enforcement); 35 is the floor on which these APIs are guaranteed available.
+
+#### IME (soft keyboard) insets
+
+The IME is the most common source of edge-to-edge bugs (input fields hidden under the keyboard, double padding, jank). Wire it in two places:
+
+1. **Manifest:** every Activity that hosts text input must set `android:windowSoftInputMode="adjustResize"`. The runtime constant `SOFT_INPUT_ADJUST_RESIZE` is deprecated and must not be used.
+2. **Composable:** apply IME insets to the input container. Pick **one** of these patterns - never combine them, that is what causes double padding.
+
+**Preferred: `Modifier.fitInside(WindowInsetsRulers.Ime.current)`**
+
+`WindowInsetsRulers` is the newer (target SDK 35+) API. It fits the content **inside** the IME inset regardless of upstream `consumeWindowInsets` calls, so it is jank-free even when an ancestor forgot to consume.
+
+```kotlin
+Scaffold { innerPadding ->
+    Column(
+        modifier = Modifier
+            .padding(innerPadding)
+            .consumeWindowInsets(innerPadding)
+            .fitInside(WindowInsetsRulers.Ime.current)
+            .verticalScroll(rememberScrollState())
+    ) { /* TextField + content */ }
+}
+```
+
+**Alternative: `Modifier.imePadding()`**
+
+If you stay on `imePadding()`, two ordering rules are non-negotiable:
+
+- `imePadding()` **must come before** `Modifier.verticalScroll(...)`. Reversing the order makes the keyboard cover the focused field on tall content.
+- Do **not** combine `imePadding()` with `Scaffold(contentWindowInsets = WindowInsets.safeDrawing)`. `safeDrawing` already includes the IME, so the modifier double-pads.
+
+```kotlin
+// CORRECT: default contentWindowInsets does not include IME, so imePadding() applies it once.
+Scaffold { innerPadding ->
+    Column(
+        modifier = Modifier
+            .padding(innerPadding)
+            .consumeWindowInsets(innerPadding)
+            .imePadding()
+            .verticalScroll(rememberScrollState())
+    ) { /* TextField + content */ }
+}
+
+// WRONG: IME padding is applied twice - once via safeDrawing, once via imePadding().
+Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
+    Column(
+        modifier = Modifier
+            .padding(innerPadding)
+            .imePadding()
+            .verticalScroll(rememberScrollState())
+    ) { /* … */ }
+}
+```
+
+For **non-Scaffold** layouts, consume the parent insets explicitly so children don't re-apply them:
+
+```kotlin
+// CORRECT
+Box(modifier = Modifier.safeDrawingPadding()) { // consumes safeDrawing for descendants
+    Column(modifier = Modifier.imePadding()) { /* TextField + content */ }
+}
+
+// WRONG: the outer padding does not consume insets, so imePadding() double-pads.
+Box(modifier = Modifier.padding(WindowInsets.safeDrawing.asPaddingValues())) {
+    Column(modifier = Modifier.imePadding()) { /* … */ }
+}
+```
+
+#### System bar appearance & contrast
+
+Two settings keep status- and navigation-bar icons legible against your content; both belong in the theme/Activity, not in screen code.
+
+- **`enableEdgeToEdge` from `ComponentActivity`** (the default in this skill) auto-flips icon colors per system theme. **Do not** set `isAppearanceLightStatusBars` / `isAppearanceLightNavigationBars` manually if you use this entry point.
+- **`enableEdgeToEdge` from `WindowCompat`** does **not** auto-flip - you must set both manually:
+
+  ```kotlin
+  @Composable
+  fun AppTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+      val view = LocalView.current
+      if (!view.isInEditMode) {
+          SideEffect {
+              val window = (view.context as? Activity)?.window ?: return@SideEffect
+              val controller = WindowCompat.getInsetsController(window, view)
+              controller.isAppearanceLightStatusBars = !darkTheme
+              controller.isAppearanceLightNavigationBars = !darkTheme
+          }
+      }
+      MaterialTheme(content = content)
+  }
+  ```
+
+- **Three-button nav contrast scrim:** `enableEdgeToEdge` defaults `window.isNavigationBarContrastEnforced = true`, which paints a translucent scrim under three-button navigation. If your screen draws its own bottom bar (e.g., `BottomAppBar`, `NavigationBar`, `NavigationSuiteScaffold` with a bar), set it to `false` so your bar colour reaches the screen edge:
+
+  ```kotlin
+  // In MainActivity.onCreate(), after enableEdgeToEdge()
+  if (Build.VERSION.SDK_INT >= 29) {
+      window.isNavigationBarContrastEnforced = false
+  }
+  ```
+
+- **Status-bar protection scrim** (use when content scrolls under a translucent status bar and icons need extra contrast):
+
+  ```kotlin
+  @Composable
+  fun StatusBarProtection(color: Color = MaterialTheme.colorScheme.surfaceContainer) {
+      Spacer(
+          modifier = Modifier
+              .fillMaxWidth()
+              .height(
+                  with(LocalDensity.current) {
+                      (WindowInsets.statusBars.getTop(this) * 1.2f).toDp()
+                  }
+              )
+              .background(
+                  brush = Brush.verticalGradient(
+                      colors = listOf(color, color.copy(alpha = 0.8f), Color.Transparent)
+                  )
+              )
+      )
+  }
+  ```
+
+  Render it **after** the main content in the same `Box`/`Scaffold` so it sits on top of the scrolling region.
+
+#### NavigationSuiteScaffold and adaptive-pane scaffolds
+
+`NavigationSuiteScaffold` and the `*PaneScaffold` family (`ListDetailPaneScaffold`, `SupportingPaneScaffold`) **do not propagate `PaddingValues`** to their inner content lambdas - the scaffolds manage insets for their own chrome (rail, bar, drawer) but each pane is responsible for its own content insets. So:
+
+- Apply insets per-pane / per-screen, e.g. `LazyColumn(contentPadding = …)` and `Modifier.safeContentPadding()` on `AnimatedPane`.
+- **Do not** wrap the `NavigationSuiteScaffold` itself in `safeDrawingPadding()` / `safeContentPadding()` - that clips the chrome and breaks the edge-to-edge effect.
+
+The existing examples in this file already follow this rule (see `Modifier.safeContentPadding()` on `AnimatedPane`).
+
+#### Full-screen Dialogs
+
+A standard Material 3 `AlertDialog` handles insets internally. A **full-screen** `Dialog` (one that opts out of platform width sizing **and** fills the screen) needs an explicit edge-to-edge opt-in:
+
+```kotlin
+Dialog(
+    onDismissRequest = onDismiss,
+    properties = DialogProperties(
+        usePlatformDefaultWidth = false,   // span the full width
+        decorFitsSystemWindows = false,    // draw behind status & navigation bars
+    )
+) {
+    Surface(modifier = Modifier.fillMaxSize().safeDrawingPadding()) { /* content */ }
+}
+```
+
+If both conditions are not met (e.g., the dialog uses platform width or does not call `fillMaxSize()`), leave `decorFitsSystemWindows` at its default - flipping it on a non-full-screen dialog will misalign content.
+
+#### Edge-to-edge checklist
+
+Run before considering an Activity edge-to-edge complete:
+
+- [ ] `enableEdgeToEdge()` is called in every Activity's `onCreate()` before `setContent`.
+- [ ] `android:windowSoftInputMode="adjustResize"` is set in `AndroidManifest.xml` for every Activity that hosts a soft keyboard.
+- [ ] Every `TextField` / `OutlinedTextField` / `BasicTextField` has an ancestor that applies IME insets (`fitInside(WindowInsetsRulers.Ime.current)`, `imePadding()`, `safeDrawingPadding()`, `safeContentPadding()`, `safeGesturesPadding()`, or `Scaffold(contentWindowInsets = WindowInsets.safeDrawing)`).
+- [ ] Lists pass insets to `contentPadding`, **not** as a parent `Modifier.padding()` (otherwise content cannot scroll behind the system bars).
+- [ ] FABs and floating overlays sit inside a `Scaffold` **or** apply `Modifier.safeDrawingPadding()`.
+- [ ] If using `WindowCompat.enableEdgeToEdge` (not the `ComponentActivity` API), `isAppearanceLightStatusBars` / `isAppearanceLightNavigationBars` are wired to the theme.
+- [ ] If the Activity draws its own bottom bar, `window.isNavigationBarContrastEnforced = false` is set (SDK 29+).
+- [ ] `./gradlew build` succeeds.
+
 **Do NOT:**
 
 - Set `fitsSystemWindows` in XML
 - Use `windowOptOutEdgeToEdgeEnforcement` -- it is disabled on API 36
 - Assume the content area excludes system bars
+- Apply `safe*Padding` to a `NavigationSuiteScaffold` or `*PaneScaffold` parent - apply it inside each pane instead
+- Combine `Scaffold(contentWindowInsets = WindowInsets.safeDrawing)` with `Modifier.imePadding()` on the same column (double padding)
 
 ### Predictive Back (Mandatory on API 36)
 

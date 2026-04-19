@@ -233,6 +233,10 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Auditing R8 keep rules / fixing release size or release-only crashes?**
 → Use [gradle-setup.md](references/gradle-setup.md) → "R8 Keep-Rules Audit" for the redundant-library list, impact hierarchy, subsuming-rule detection, reflection-narrowing playbook, and AGP 9 default-optimization re-audit
 
+**Going edge-to-edge / fixing IME, insets, or system-bar bugs?**
+→ Use [compose-patterns.md](references/compose-patterns.md) → "Edge-to-Edge (Mandatory on API 36)" for IME insets (`fitInside(WindowInsetsRulers.Ime.current)` vs `imePadding()` ordering and double-padding pitfalls), system-bar appearance/contrast (`isAppearanceLight*Bars`, `isNavigationBarContrastEnforced`), `NavigationSuiteScaffold` / pane-scaffold inset handling, full-screen `Dialog` `decorFitsSystemWindows`, `StatusBarProtection` scrim, and the per-Activity edge-to-edge checklist  
+→ Manifest must set `android:windowSoftInputMode="adjustResize"` for any Activity hosting text input
+
 **Debugging performance issues or memory leaks?**
 → Enable [android-strictmode.md](references/android-strictmode.md) for development builds  
 → Use [android-performance.md](references/android-performance.md) for profiling and benchmarking  
