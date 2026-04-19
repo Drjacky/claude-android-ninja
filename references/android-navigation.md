@@ -1073,7 +1073,9 @@ fun navigateUp(deepLinkKey: NavKey, activity: Activity) {
 
 ### AndroidManifest Setup
 
-Declare intent filters for your deep link Activity:
+Required on the deep-link `Activity`: `android:exported="true"` (mandatory on Android 12+ for any Activity with an intent-filter), `android:launchMode="singleTask"` so re-entering the app reuses the existing Activity via `onNewIntent` (see [onNewIntent for singleTask](#onnewintent-for-singletask)).
+
+Required: keep HTTPS App Links and custom schemes in **separate** `<intent-filter>` blocks. `android:autoVerify="true"` only works on the HTTPS filter and verifies every `<data>` host inside that single filter.
 
 ```xml
 <!-- app/src/main/AndroidManifest.xml -->
@@ -1082,36 +1084,46 @@ Declare intent filters for your deep link Activity:
     android:exported="true"
     android:launchMode="singleTask">
 
-    <!-- App Links (verified HTTPS - preferred) -->
     <intent-filter android:autoVerify="true">
         <action android:name="android.intent.action.VIEW" />
         <category android:name="android.intent.category.DEFAULT" />
         <category android:name="android.intent.category.BROWSABLE" />
-        <data
-            android:scheme="https"
-            android:host="example.com"
-            android:pathPrefix="/products" />
+        <data android:scheme="https" />
+        <data android:host="example.com" />
+        <data android:host="www.example.com" />
+        <data android:pathPrefix="/products" />
         <data android:pathPrefix="/users" />
+        <data android:pathPattern="/orders/.*/items/.*" />
     </intent-filter>
 
-    <!-- Custom scheme (fallback, not verifiable) -->
     <intent-filter>
         <action android:name="android.intent.action.VIEW" />
         <category android:name="android.intent.category.DEFAULT" />
         <category android:name="android.intent.category.BROWSABLE" />
-        <data
-            android:scheme="myapp"
-            android:host="open" />
+        <data android:scheme="myapp" android:host="open" />
     </intent-filter>
 </activity>
 ```
 
-**Key points:**
-- `android:autoVerify="true"` enables Android App Links verification (HTTPS only)
-- `android:exported="true"` is required for Activities with intent filters (Android 12+)
-- `android:launchMode="singleTask"` ensures deep links reuse the existing Activity instance via `onNewIntent`
-- Keep `pathPrefix` entries narrow - avoid matching overly broad paths
-- Prefer HTTPS App Links over custom schemes for security
+`<data>` matching rules:
+
+| Attribute                     | Use when                                                                             |
+|-------------------------------|--------------------------------------------------------------------------------------|
+| `android:scheme`              | Required first. Declare once per filter (`https` for App Links).                     |
+| `android:host`                | Declare once per host. List every host in the same `autoVerify` filter.              |
+| `android:pathPrefix`          | Default. Matches `/products`, `/products/123`, `/products/anything`.                 |
+| `android:pathSuffix`          | Use when the dynamic segment is the prefix (`/share/abc.png`, suffix `.png`).        |
+| `android:path`                | Use for an exact-match URL with no parameters (`/about`).                            |
+| `android:pathPattern`         | Use when prefix/suffix cannot express the rule. `.*` = any chars, `\\*` = literal *. |
+| `android:pathAdvancedPattern` | Use for full regex (`[a-z]{2,4}/.*`) on API 31+. Falls back to no-match below 31.    |
+
+Required: every `<data>` host inside an `autoVerify` filter must be served by a Digital Asset Links file (see [App Links Verification](#app-links-verification)). On Android 11 and lower, **one** unverifiable host fails verification for **all** hosts in that filter.
+
+Forbidden: `android:autoVerify="true"` on a custom-scheme filter. App Links verification is HTTPS-only; the attribute is silently ignored on other schemes (see [Custom-Scheme Deep Linking](#custom-scheme-deep-linking)).
+
+Forbidden: combining `<data android:scheme="https" />` and `<data android:scheme="myapp" />` in one filter — every scheme/host pair becomes a verification target and the non-https schemes break `autoVerify`.
+
+Keep `pathPrefix` entries narrow. Forbidden: `pathPrefix="/"` on production builds — claims every URL on the host and the system rejects the verification batch.
 
 ### App Links Verification
 
