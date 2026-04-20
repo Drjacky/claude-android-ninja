@@ -1510,6 +1510,14 @@ adb shell am start -W -a android.intent.action.VIEW \
     com.example.app
 ```
 
+#### Custom-scheme launch (`am start`)
+
+Required: when validating custom-scheme routing, run the `adb shell am start` line that uses `-d "myapp://open/profile/user42"` from Launch deep links (`am start`).
+
+Forbidden: treating a successful custom-scheme launch as proof of HTTPS App Links verification — `pm get-app-links` never inspects custom schemes; the disambiguation dialog and default-handler state apply only to `http`/`https` filters with `autoVerify`.
+
+Forbidden: security-critical flows (auth callback, payment return) on custom schemes in production — any package can register the same scheme (see [android-navigation.md → Custom-Scheme Deep Linking](android-navigation.md#custom-scheme-deep-linking)).
+
 #### App Links verification (`pm` + `dumpsys`)
 
 ```bash
@@ -1568,7 +1576,31 @@ relation=delegate_permission/common.handle_all_urls'
 
 Required: HTTP 200 JSON body with a non-empty `statements` array before expecting `verified` on device.
 
-For Dynamic App Links server rules in the response, append `&return_relation_extensions=true` (see [android-navigation.md → Dynamic App Links](android-navigation.md#dynamic-app-links-android-15-api-35)).
+#### Dynamic App Links REST validation
+
+Required when server-side `dynamic_app_link_components` exists: query with `return_relation_extensions=true` and assert the extension payload before writing device tests (see [android-navigation.md → Dynamic App Links](android-navigation.md#dynamic-app-links-android-15-api-35)).
+
+```bash
+curl 'https://digitalassetlinks.googleapis.com/v1/statements:list?\
+source.web.site=https://example.com&\
+relation=delegate_permission/common.handle_all_urls&\
+return_relation_extensions=true'
+```
+
+Required: locate `dynamic_app_link_components` under the relation-extension map for `delegate_permission/common.handle_all_urls` inside a `statements[]` entry; assert it is a non-empty JSON array when dynamic rules are active.
+
+Forbidden: omitting `return_relation_extensions=true` when the test asserts dynamic path/query/fragment behaviour — the verifier omits that field without the flag.
+
+#### Dynamic rules device refresh
+
+Required after every deploy that edits `dynamic_app_link_components` in `assetlinks.json`:
+
+```bash
+adb shell pm verify-app-links --re-verify com.example.app
+adb shell pm get-app-links com.example.app
+```
+
+Required: every host that participates in dynamic routing shows `verified` in `pm get-app-links` output before closing the change (or document an intentional `approved` / `selected` user override from [Domain verification state legend](#domain-verification-state-legend)).
 
 **Unit test for deep link parsing:**
 ```kotlin
