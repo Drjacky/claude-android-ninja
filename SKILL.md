@@ -145,6 +145,12 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Configure navigation graph in the app module  
 → Use feature navigation destinations and navigator interfaces  
 
+**Setting up deep links, App Links, Digital Asset Links, verification, Dynamic App Links, or custom schemes?**
+→ Read [android-navigation.md](references/android-navigation.md) → "Deep Links" for `NavKey` parsing, synthetic back stack, manifest filters, `assetlinks.json`, verification, `DomainVerificationManager`, Dynamic App Links (API 35), custom schemes, troubleshooting  
+→ Use [testing.md](references/testing.md) → "Testing Deep Links" for `am start`, `pm set-app-links` / `pm verify-app-links --re-verify` / `pm get-app-links` / `dumpsys package d`, Digital Asset Links REST (append `return_relation_extensions=true` for dynamic rules), custom-scheme launch semantics, and instrumented `onNewIntent` tests  
+→ Required: Play Console → Release → Setup → App signing → uppercase SHA-256 in `assetlinks.json`; deep-link Activity `android:exported="true"`, `android:launchMode="singleTask"`, `onNewIntent` + `setIntent`; `android:autoVerify="true"` only on HTTPS intent-filters  
+→ Forbidden: security-critical flows on custom URI schemes — use HTTPS App Links  
+
 **Adding tests?**
 → Use [testing.md](references/testing.md) for patterns and examples  
 → Use [testing.md](references/testing.md) → "Screenshot Testing" for Compose Preview Screenshot Testing setup  
