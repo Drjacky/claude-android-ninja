@@ -1487,29 +1487,88 @@ at build time. See `references/gradle-setup.md` → "Compose Stability Analyzer"
 
 ### Testing Deep Links
 
-**ADB commands:**
+Required: wait at least 20 seconds after `adb install` before the first `pm get-app-links` read — the verifier runs asynchronously.
+
+#### Launch deep links (`am start`)
+
 ```bash
-# Test HTTPS deep link
 adb shell am start -W -a android.intent.action.VIEW \
     -d "https://example.com/products/abc123" \
     com.example.app
 
-# Test custom scheme
 adb shell am start -W -a android.intent.action.VIEW \
     -d "myapp://open/profile/user42" \
     com.example.app
 
-# Test with query parameters
 adb shell am start -W -a android.intent.action.VIEW \
     -d "https://example.com/search?query=shoes&category=footwear" \
     com.example.app
 
-# Simulate new task (as if opened from another app)
 adb shell am start -W -a android.intent.action.VIEW \
     --activity-new-task \
     -d "https://example.com/products/abc123" \
     com.example.app
 ```
+
+#### App Links verification (`pm` + `dumpsys`)
+
+```bash
+adb shell pm set-app-links --package com.example.app 0 all
+
+adb shell pm verify-app-links --re-verify com.example.app
+
+adb shell pm get-app-links com.example.app
+
+adb shell pm get-app-links --user cur com.example.app
+
+adb shell dumpsys package d
+```
+
+| Command                                  | Use when                                                                       |
+|------------------------------------------|--------------------------------------------------------------------------------|
+| `pm set-app-links --package <pkg> 0 all` | Reset every domain to unselected before a clean re-verify.                     |
+| `pm verify-app-links --re-verify <pkg>`  | Force the verifier to re-fetch `assetlinks.json` after server changes.         |
+| `pm get-app-links <pkg>`                 | Read per-host verification state for the default user.                         |
+| `pm get-app-links --user cur <pkg>`      | Same as above when multiple users exist on the device.                         |
+| `dumpsys package d`                      | Dump domain-preferred-apps for every package (alias: `domain-preferred-apps`). |
+
+#### Domain verification state legend
+
+Parse the `Domain verification state:` block from `pm get-app-links` output.
+
+| State               | Meaning                                                                |
+|---------------------|------------------------------------------------------------------------|
+| `verified`          | Digital Asset Links succeeded for that host.                           |
+| `approved`          | User or shell forced approval; not the same as automatic verification. |
+| `denied`            | User or shell forced denial.                                           |
+| `legacy_failure`    | Legacy verifier rejected the host; reason not surfaced.                |
+| `migrated`          | Result carried over from legacy verification.                          |
+| `restored`          | Approved after backup restore; assumed previously verified.            |
+| `system_configured` | OEM or policy pre-approved the domain.                                 |
+| `none`              | No record yet — wait, re-run `--re-verify`, or confirm network.        |
+| `1024` or higher    | Device-specific verifier error code; retry after network is stable.    |
+
+The hex value after `Status: always` in `dumpsys package d` reflects user link-handling preference, not verification success alone.
+
+#### Pre-Android-12 verification compat
+
+Use when the app targets below API 31 and you need the Android-12+ verifier behaviour on an older test image:
+
+```bash
+adb shell am compat enable 175408749 com.example.app
+```
+
+#### Digital Asset Links REST (no device)
+
+```bash
+curl 'https://digitalassetlinks.googleapis.com/v1/statements:list?\
+source.web.site=https://example.com&\
+relation=delegate_permission/common.handle_all_urls'
+```
+
+Required: HTTP 200 JSON body with a non-empty `statements` array before expecting `verified` on device.
+
+For Dynamic App Links server rules in the response, append `&return_relation_extensions=true` (see [android-navigation.md → Dynamic App Links](android-navigation.md#dynamic-app-links-android-15-api-35)).
 
 **Unit test for deep link parsing:**
 ```kotlin
