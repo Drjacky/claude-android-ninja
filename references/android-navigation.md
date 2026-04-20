@@ -1573,6 +1573,56 @@ override fun onNewIntent(intent: Intent) {
 - Prefer verified HTTPS App Links over custom URI schemes - custom schemes can be claimed by any app
 - Log deep link attempts for anomaly detection (see `references/crashlytics.md`)
 
+### Custom-Scheme Deep Linking
+
+Use HTTPS App Links by default. Use a custom scheme (`myapp://`) only when:
+
+- The OAuth library or third-party SDK requires a non-HTTPS redirect URI.
+- A vendor-internal IPC link must reach a sibling app on the same device.
+- Internal QA shortcuts that never ship to production.
+
+Forbidden in app code for: payments, auth tokens, password reset, magic-link sign-in, anything that grants account access. Custom schemes are unverifiable — any other installed app can register the same scheme and silently steal the URL.
+
+Required: declare the custom scheme in a **separate** `<intent-filter>` from the HTTPS App Links filter (see [AndroidManifest Setup](#androidmanifest-setup)). Mixing schemes inside one filter breaks `autoVerify` for the HTTPS hosts.
+
+```xml
+<activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTask">
+
+    <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="https" />
+        <data android:host="example.com" />
+        <data android:pathPrefix="/products" />
+    </intent-filter>
+
+    <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="myapp" android:host="open" />
+    </intent-filter>
+</activity>
+```
+
+Forbidden: `android:autoVerify="true"` on a custom-scheme filter — silently ignored. Verification is HTTPS-only.
+
+Required: route the custom scheme through the same `DeepLinkPattern` list and `DeepLinkValidator` allowlist as the HTTPS patterns. The validator's `ALLOWED_SCHEMES` set decides which schemes survive parsing.
+
+```kotlin
+DeepLinkPattern(
+    serializer = UserProfile.serializer(),
+    pattern = "myapp://open/profile/{userId}".toUri()
+),
+```
+
+Required disambiguation rule when both an HTTPS App Link and a custom-scheme URL point at the same destination: prefer the HTTPS form in every outbound link (email, SMS, push payload). Reserve the custom scheme for intra-device callbacks where the OS will not synthesise an HTTPS URL.
+
+Required for inbound custom-scheme links: validate the host as well as the scheme. `myapp://` with no `host` constraint matches `myapp://anything`, including paths an attacker can craft to confuse the parser.
+
+For testing custom schemes via `adb shell am start`, see [testing.md → Testing Deep Links](/references/testing.md#testing-deep-links).
+
 ### Testing Deep Links
 
 For ADB commands and unit tests for deep link parsing, validation, and synthetic back stack, see `references/testing.md` → "Testing Deep Links".
