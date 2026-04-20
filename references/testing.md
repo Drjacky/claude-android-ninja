@@ -1609,6 +1609,49 @@ class DeepLinkParsingTest {
 }
 ```
 
+#### Instrumented `onNewIntent` test
+
+Required: the deep-link `Activity` uses `android:launchMode="singleTask"` and forwards `onNewIntent` through the same parser as `onCreate` ([android-navigation.md → onNewIntent for singleTask](android-navigation.md#onnewintent-for-singletask)).
+
+Required: the destination composable root exposes `Modifier.testTag("…")` for every node the test asserts.
+
+Forbidden: launching a second `Activity` with `startActivity` to simulate a second link — `singleTask` reuses the instance; call `onNewIntent` on the running `Activity` only.
+
+```kotlin
+// app/src/androidTest/kotlin/com/example/app/MainActivityDeepLinkTest.kt
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.example.app.MainActivity
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class MainActivityDeepLinkTest {
+
+    @get:Rule(order = 1)
+    val composeRule = createAndroidComposeRule<MainActivity>()
+
+    @Test
+    fun onNewIntentNavigatesToParsedDestination() {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/products/deeplink-id"))
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            composeRule.activity.onNewIntent(intent)
+        }
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithTag("product_detail_screen").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("product_detail_screen").assertIsDisplayed()
+    }
+}
+```
+
 For deep link patterns, validation, and synthetic back stack setup, see `references/android-navigation.md` → "Deep Links".
 
 ## UI Tests
