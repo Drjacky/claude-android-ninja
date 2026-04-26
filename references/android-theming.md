@@ -27,7 +27,7 @@ All Kotlin code must align with `references/kotlin-patterns.md`. Theme usage in 
 - [Layout Spacing and Component Dimensions](#layout-spacing-and-component-dimensions)
 - [Reserved Resource Names](#reserved-resource-names)
 - [Visual Style by App Category](#visual-style-by-app-category)
-- [Best Practices](#best-practices)
+- [Theme routing](#theme-routing)
 
 ## Material 3 Theme System
 
@@ -481,7 +481,7 @@ On any `surface` / `surfaceContainer*` role, use **two** content roles, not one:
 ### Cross-references
 
 - These pairs are also enforced by `Card`, `Button`, `Chip`, `NavigationBar` etc. via `*Defaults.colors(...)` - see `references/compose-patterns.md`.
-- Anti-patterns for breaking pairing live in [Best Practices → Never Do](#-never-do).
+- Anti-patterns for breaking pairing live in [Theme routing → Forbidden](#forbidden).
 
 ## `outline` vs `outlineVariant`
 
@@ -528,7 +528,7 @@ fun OutlineDemo() {
 
 ### Cross-references
 
-- Anti-pattern lives in [Best Practices → Never Do](#-never-do).
+- Anti-pattern lives in [Theme routing → Forbidden](#forbidden).
 - Custom outlined components: see `references/compose-patterns.md` → component patterns.
 
 ## Surface Container Hierarchy
@@ -750,7 +750,7 @@ Android 14 (API 34) added a system-wide **Contrast** slider in *Settings → Acc
 | `0.5f`                | Medium   | Medium-contrast variant                        |
 | `1.0f`                | High     | High-contrast variant                          |
 
-Honoring this is one of the cheapest accessibility wins in M3: the user already opted in at the OS level, you just have to read the value and pick the right scheme.
+Honoring the OS contrast choice is a low-cost M3 accessibility win: read `getContrast()` and select the matching scheme variant.
 
 ### Generate the contrast scheme variants
 
@@ -1649,7 +1649,7 @@ fun StatusBadge(status: String) {
 
 ### Brand Color Harmonization
 
-Hard-coded brand colors (`success`, `warning`, `info`, an "always-red" notification dot, a partner logo tint) clash visibly when [dynamic color](#dynamic-color-material-you) repaints the rest of the app from the user's wallpaper. M3 ships a fix: `MaterialColors.harmonize(...)` shifts a custom color's **hue** toward `colorScheme.primary` while preserving its **chroma and tone**, so `success` still reads as green and `warning` as yellow - they just stop fighting the wallpaper.
+Hard-coded brand colors (`success`, `warning`, `info`, an "always-red" notification dot, a partner logo tint) clash visibly when [dynamic color](#dynamic-color-material-you) repaints the rest of the app from the user's wallpaper. M3 ships a fix: `MaterialColors.harmonize(...)` shifts a custom color's **hue** toward `colorScheme.primary` while preserving its **chroma and tone**, so `success` still reads as green and `warning` as yellow without fighting the wallpaper palette.
 
 Add the dependency once in `build.gradle.kts`:
 
@@ -1771,7 +1771,7 @@ fun DangerZone() {
 }
 ```
 
-The `Button` reads `colorScheme.primary` like any other M3 component - it just sees `error` because of the scope. No custom `ButtonColors`, no per-component overrides, no leakage outside the `ErrorScope` block.
+The `Button` reads `colorScheme.primary` like any other M3 component; inside `ErrorScope` that role maps to `error`. No custom `ButtonColors`, no per-component overrides, no leakage outside the `ErrorScope` block.
 
 ### Common scoped-theme patterns
 
@@ -1782,9 +1782,9 @@ The `Button` reads `colorScheme.primary` like any other M3 component - it just s
 
 ### Don'ts
 
-- **Don't scope shapes or typography** unless the design genuinely diverges - those rebuild the visual identity, not just the palette, and rarely belong in a scope.
+- **Don't scope shapes or typography** unless the design genuinely diverges — those tokens rebuild the visual identity beyond palette swaps and rarely belong in a scope.
 - **Don't scope to override a single component**. If only one `Button` needs a different fill, pass `ButtonDefaults.buttonColors(containerColor = ...)`. Reach for a scoped theme when **multiple** components in a subtree need the override.
-- **Don't nest more than one level deep**. Two layered scopes are almost always a sign the inner scope should just consume the outer one's roles directly.
+- **Don't nest more than one level deep.** Two layered scopes mean the inner subtree should read the outer color roles instead of adding another theme layer.
 - **Don't introduce a scoped theme for accessibility-critical actions** without re-checking contrast - the new pairing must still satisfy WCAG. Run the same checks as for the base scheme (see `references/android-accessibility.md`).
 
 ## Architecture Integration
@@ -2006,9 +2006,9 @@ Match **density, color, motion, and typography** to product category. Use the ta
 
 **Style mismatches to avoid:** playful palette on finance, dense dashboards on meditation apps, tiny touch targets on kids flows, clownish UI on enterprise tools.
 
-## Best Practices
+## Theme routing
 
-### ✅ Always Do
+### Required
 
 1. **Use semantic color roles** from `MaterialTheme.colorScheme` (never hardcoded colors)
 2. **Support both light and dark themes** with proper contrast
@@ -2022,7 +2022,7 @@ Match **density, color, motion, and typography** to product category. Use the ta
 10. **Test on both themes** to ensure content is readable
 11. **Do not use `elegantTextHeight` attribute** - it is deprecated and ignored on API 36
 
-### ❌ Never Do
+### Forbidden
 
 1. **Never hardcode colors** in composables (`Color(0xFFFF0000)`)
 2. **Never hardcode text sizes** or font weights

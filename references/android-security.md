@@ -205,7 +205,7 @@ openssl x509 -in server.crt -pubkey -noout | \
   openssl dgst -sha256 -binary | openssl enc -base64
 ```
 
-### Best Practices
+### Pin rotation and monitoring
 
 - **Always include a backup pin** (intermediate or root CA) to avoid lockout during cert rotation
 - **Set expiration dates** on pin-sets so expired pins don't brick the app
@@ -446,7 +446,7 @@ class SoftwareEncryption {
 
 - **Android Keystore**: System-level key storage backed by hardware (when available). Keys never leave the secure hardware.
 - **TEE (Trusted Execution Environment)**: An isolated processing environment (e.g., ARM TrustZone) that runs alongside Android but is isolated from the main OS. Most modern Android devices have TEE support.
-- **StrongBox**: A dedicated secure element (separate hardware chip). More secure than TEE because the key material is in a tamper-resistant chip, not just an isolated CPU mode. Available since API 28 on devices that have a dedicated secure element.
+- **StrongBox**: A dedicated secure element (separate hardware chip). More secure than TEE because the key material is in a tamper-resistant chip, not solely an isolated CPU mode. Available since API 28 on devices that have a dedicated secure element.
 
 ### How They Protect
 
@@ -919,7 +919,7 @@ Library `minSdk` for both follows the Play Integrity library version you ship (s
 ### Classic API client flow
 
 - Use `IntegrityManagerFactory.create(context)` and `IntegrityTokenRequest` with a **`nonce`** meeting Google's format (Base64 URL-safe, no wrap, length limits in the docs).
-- Apps **distributed through Google Play** usually do **not** need `setCloudProjectNumber` on the request because the app is linked in Play Console.
+- Apps **distributed through Google Play** omit `setCloudProjectNumber` when Play Console already links the Play Integrity cloud project.
 - Apps **not** installed from Play (or SDK integrations as documented) may need **`setCloudProjectNumber`** - follow [Classic requests](https://developer.android.com/google/play/integrity/classic).
 - Use Classic **sparingly**; it is heavier and you own nonce and replay policy on the server.
 

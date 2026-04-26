@@ -3,27 +3,29 @@
 Use Kotlin's class and property delegation (`by`) to share behavior across ViewModels and other classes. Forbidden: open base classes (`BaseViewModel`, `BaseActivity`, etc.) for cross-cutting concerns like logging, validation, crash reporting, or feature flags.
 
 ## Table of Contents
-1. [When to Use Delegation](#when-to-use-delegation)
+1. [Delegation routing](#delegation-routing)
 2. [Class Delegation](#class-delegation)
 3. [Property Delegation](#property-delegation)
 4. [Advanced Patterns](#advanced-patterns)
 5. [Testing with Delegation](#testing-with-delegation)
-6. [Best Practices](#best-practices)
+6. [Rules](#rules)
 
-## When to Use Delegation
+## Delegation routing
+
+**Use when:**
 
 - Shared behavior across multiple ViewModels or classes
 - Behavior not tied to Android framework inheritance requirements
 - Logic that benefits from clear interfaces and DI (e.g., validators, analytics, feature flags)
-- When you need to layer behavior (decorator pattern)
+- Layered behavior (decorator pattern)
 - State management in ViewModels (`by mutableStateOf`)
 
-## When Not to Use It
+**Forbidden:**
 
 - Single-use logic with no reuse potential
-- Cases where delegation adds indirection without value
+- Delegation that only adds indirection
 - Framework-required inheritance (e.g., `Activity`, `Application`, `ViewModel` itself)
-- Extremely performance-critical paths (rare; measure first)
+- Hot paths where delegation measurably regresses performance (profile before changing)
 
 ## Class Delegation
 
@@ -410,7 +412,7 @@ class SettingsViewModel @Inject constructor(
 
 ### Complex Real-World Example
 
-**Note**: For `CrashReporter` interface and implementation details, see `references/crashlytics.md` → "Provider-Agnostic Interface" and "Implementation Examples" sections.
+[`crashlytics.md`](/references/crashlytics.md) defines the `CrashReporter` surface and provider-agnostic implementations.
 
 ```kotlin
 // Interfaces for different concerns
@@ -505,7 +507,7 @@ class AuthViewModel @Inject constructor(
 
 ### Creating Test Fakes
 
-**Note**: For `CrashReporter` interface, see `references/crashlytics.md` → "Provider-Agnostic Interface".
+[`crashlytics.md`](/references/crashlytics.md) carries the `CrashReporter` contract used by these fakes.
 
 ```kotlin
 // Test fakes for delegated interfaces
@@ -625,18 +627,20 @@ fun `login records crash on failure`() = runTest {
 }
 ```
 
-## Best Practices
+## Rules
 
-### Interface Design
-- **Keep interfaces focused**: Prefer 2-5 methods per interface. Split larger interfaces into smaller ones.
-- **Delegate interfaces, not concrete classes**: Enables easy swapping and testing.
-- **Use sealed types for errors**: Return `ValidationResult` or sealed error types, not nullable strings.
+### Interface shape
+
+- Cap interfaces at roughly five methods; split larger surfaces.
+- Delegate to interfaces, not concrete implementations, so fakes swap cleanly.
+- Return `ValidationResult` or sealed error types instead of nullable strings for validation failures.
 
 ### Implementation
-- **No `private` on delegated parameters**: Makes delegation explicit and prevents bypassing.
-- **Use `super` in overrides**: When overriding delegated methods, call `super.method()` to use delegate.
-- **Prefer DI for delegates**: Inject delegates via Hilt; avoid manual construction.
-- **Document delegation intent**: Add comments explaining why delegation is used.
+
+- **No `private` on delegated parameters:** keeps delegation explicit and prevents bypassing the `by` target.
+- Override delegated methods by calling `super.method()` unless the override fully replaces behavior.
+- Inject delegates through Hilt instead of constructing graphs manually.
+- Add a one-line comment only when the delegate wiring is not obvious from types alone.
 
 ### Auditing Existing Base Classes
 
