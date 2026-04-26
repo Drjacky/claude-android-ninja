@@ -6,10 +6,10 @@ Required: every dependency goes through `assets/libs.versions.toml.template`. Do
 Always check `assets/libs.versions.toml.template` before adding or changing dependencies.
 
 ### Rules
-1. **Prefer existing entries** in the template when adding dependencies
+1. **Reuse existing catalog entries** before inventing new coordinates
 2. **If a dependency is missing**, add it to `libs.versions.toml` following the same grouping and naming conventions
 3. **Keep versions centralized** in the `[versions]` section; reference them by `version.ref`
-4. **Use bundles** when multiple libraries are typically used together (e.g., Compose, Navigation, Testing)
+4. **Use bundles** when multiple libraries ship together (e.g., Compose, Navigation, Testing)
 5. **Use platform dependencies** (BOMs) for coordinated version management (Compose, Firebase)
 
 ## Dependency Selection
@@ -35,13 +35,13 @@ Required artifacts: `androidx.room3:room3-runtime`, `sqlite-bundled`, KSP `room3
 - ✅ Use **stable** versions only (e.g., `1.0.0`) for libraries that offer a stable channel
 - ✅ Exception: AndroidX alpha/beta when required for critical features (e.g. Navigation3 during its preview cycle)
 - ❌ Avoid alpha/beta/RC for **Hilt** and **Coroutines** in production
-- **Room 3:** Prefer a **stable** `androidx.room3` release when available on [Room 3 releases](https://developer.android.com/jetpack/androidx/releases/room3). If you must ship on a preview Room 3 version, pin the version from that page and plan to upgrade to stable when it ships
+- **Room 3:** Ship **stable** `androidx.room3` builds from [Room 3 releases](https://developer.android.com/jetpack/androidx/releases/room3). Preview builds require pinning the exact version from that page and scheduling the upgrade to stable.
 
 **Experimental projects:**
 - ✅ Can use alpha/beta for evaluation
 - Document experimental versions clearly
 
-### When to Update
+### Version update cadence
 
 **Security patches:**
 - 🔴 Update immediately for CVEs
@@ -103,7 +103,7 @@ The `kotlin-compose` plugin (formerly `compose-compiler`) is now part of Kotlin 
 
 BOMs (Bill of Materials) manage versions of related libraries, ensuring compatibility.
 
-**When to use BOMs:**
+**Use BOMs when:**
 
 ```kotlin
 // Compose BOM - manages all androidx.compose.* versions
@@ -145,13 +145,9 @@ These are defined in `assets/libs.versions.toml.template`.
 
 ### `api` vs `implementation`
 
-**`implementation`** (Preferred)
-- ✅ Hides dependency from consumers
-- ✅ Faster builds (changes don't trigger recompilation of consumers)
+**`implementation`:** default for module-private dependencies — hides transitives from downstream compilation units and limits recompilation when internals change.
 
-**`api`** (Use sparingly)
-- ✅ Use when: Dependency types are part of your public API
-- Example: Domain module exposes `Flow` from coroutines
+**`api`:** dependency types appear in the module's public API (signatures, public properties), e.g. `core:domain` exporting `Flow` from `kotlinx-coroutines`.
 
 ```kotlin
 // core:domain/build.gradle.kts
@@ -166,7 +162,7 @@ dependencies {
 
 ### Annotation Processing: KSP > Kapt
 
-**Prefer KSP (Kotlin Symbol Processing):**
+**Required: KSP (Kotlin Symbol Processing).**
 - ✅ 2x faster than kapt
 - ✅ **Room 3 is KSP-only** (no kapt/Java annotation processing for Room)
 - ✅ Hilt supports KSP
@@ -185,7 +181,7 @@ kapt {
 
 dependencies {
     kapt(libs.hilt.compiler)
-    kapt("androidx.room:room-compiler:<room2Version>") // Room 2.x only - not in this skillset catalog
+    kapt("androidx.room:room-compiler:<room2Version>") // Room 2.x: pin <room2Version> locally; not in template catalog
 }
 
 // New

@@ -100,9 +100,9 @@ Four-layer architecture with strict module separation and unidirectional data fl
 
 ## Cross-cutting anti-patterns (quick reference)
 
-Domain-specific pitfalls (navigation, Room 3, Paging, etc.) live in their topic references. This table is a **layering and state-shape** checklist. Deeper guidance on recomposition and stability: `references/android-performance.md` and `references/compose-patterns.md`.
+Domain-specific pitfalls (navigation, Room 3, Paging, etc.) live in their topic references. **Scope:** layering and state shape. Deeper guidance on recomposition and stability: `references/android-performance.md` and `references/compose-patterns.md`.
 
-| Anti-pattern                                                                       | Failure mode                                                             | Prefer instead                                                                                                                                                                                 |
+| Anti-pattern                                                                       | Failure mode                                                             | Use instead                                                                                                                                                                                    |
 |------------------------------------------------------------------------------------|--------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Business logic in composables                                                      | Competing sources of truth, hard to test, work reruns during composition | ViewModel / domain services / repositories; composables map state → UI                                                                                                                         |
 | Oversized "god" ViewModel                                                          | Hard to own and change safely                                            | One ViewModel per screen or one coherent flow                                                                                                                                                  |
@@ -216,8 +216,8 @@ internal class AuthRepositoryImpl @Inject constructor(
 
 ### DataStore (Preferences & Typed)
 
-**When to use what:**
-- **Room 3:** Relational data, SQL queries (`WHERE` / `JOIN`), indexes, unbounded or **large** collections (order-of **~100+ entries** is a common threshold), partial updates, referential integrity.
+**Storage routing:**
+- **Room 3:** Relational data, SQL queries (`WHERE` / `JOIN`), indexes, unbounded or **large** collections (order-of **~100+ entries** signals Room over DataStore), partial updates, referential integrity.
 - **DataStore:** Small preference blobs: simple key-value pairs, typed settings objects, feature flags. Does **not** support partial updates, ad hoc queries, or relational integrity-use Room 3 when you need those.
 - **Files:** Large media, blobs.
 - **MultiProcessDataStoreFactory:** Only if accessing data across multiple processes-and then **every** reader/writer for that file must use the multi-process path (see Critical Rules).
@@ -278,7 +278,8 @@ object UserSettingsSerializer : Serializer<UserSettings> {
 ```
 
 #### SharedPreferences Migration
-Easily migrate existing `SharedPreferences` to `DataStore` during creation:
+
+**Required:** pass `SharedPreferencesMigration` when replacing legacy `SharedPreferences` keys backed by the same file:
 
 ```kotlin
 val dataStore = PreferenceDataStoreFactory.create(
@@ -289,9 +290,9 @@ val dataStore = PreferenceDataStoreFactory.create(
 
 #### Hilt Setup
 
-**Scope:** DataStore-only wiring below. For **Hilt module rules** (`@Binds` vs `@Provides`, scopes, anti-patterns, Navigation3 + `hiltViewModel`), see [Dependency Injection Setup](#dependency-injection-setup) under **Domain Layer**.
+**Scope:** preference and typed `DataStore` wiring only. For **Hilt module rules** (`@Binds` vs `@Provides`, scopes, anti-patterns, Navigation3 + `hiltViewModel`), see [Dependency Injection Setup](#dependency-injection-setup) under **Domain Layer**.
 
-The `preferencesDataStore(name = ...)` property delegate on `Context` is fine for very small apps. Prefer an explicit `@Singleton` provider (below) when you want **test doubles** without tying tests to `Application` or static `Context`.
+The `preferencesDataStore(name = ...)` property delegate on `Context` is acceptable only for trivial wiring. For injectable `DataStore<T>` graphs, expose `@Singleton` `@Provides` factories like `DataStoreModule` so tests swap fakes without static `Context`.
 
 Always provide `DataStore` as a `@Singleton` to guarantee a single instance per file.
 
@@ -351,7 +352,7 @@ interface AuthApiService {
 
 Wire formats do not match your ideal domain model: fields can be **missing**, **null**, or **renamed** across API versions. Types used only for JSON (network DTOs) should reflect that.
 
-- Prefer **nullable** properties for anything the server might omit or null out; map to non-null domain types in the repository or mapper after you decide defaults.
+- Use **nullable** properties for fields the server can omit or null out; map to non-null domain types in the repository or mapper after defaults are defined.
 - Keep `Json { ignoreUnknownKeys = true }` (see `NetworkModule`) so new server fields do not crash deserialization.
 - Avoid fake non-nulls such as `String = ""` for "missing" JSON keys unless you have a strict, documented contract. Empty string is ambiguous versus "present but empty".
 
@@ -565,7 +566,7 @@ dependencies {
 
 Hilt provides **compile-time DI** across features and core modules: `@Module` / `@InstallIn`, with `@HiltAndroidApp` and `@AndroidEntryPoint` entry points in the app module.
 
-**Constructor injection:** Prefer `@Inject constructor(...)` on types Hilt builds. Avoid `@Inject lateinit var` on app or domain types (their dependencies are hidden and tests get harder). Platform types may still use field injection where the API requires it.
+**Constructor injection:** Use `@Inject constructor(...)` on types Hilt builds. Avoid `@Inject lateinit var` on app or domain types (their dependencies are hidden and tests get harder). Platform types may still use field injection where the API requires it.
 
 **`@Binds` vs `@Provides`:**
 - **`@Binds`** - `abstract` method in a module; map an interface to an `@Inject`-constructable implementation (Hilt generates the binding).
@@ -576,7 +577,7 @@ Hilt provides **compile-time DI** across features and core modules: `@Module` / 
 | Annotation                | Lifetime                                       | Typical use                                          |
 |---------------------------|------------------------------------------------|------------------------------------------------------|
 | `@Singleton`              | Application                                    | Retrofit, `OkHttp`, Room 3, `DataStore`, dispatchers |
-| `@ActivityRetainedScoped` | Survives config change until activity finished | Session-like state (use sparingly)                   |
+| `@ActivityRetainedScoped` | Survives config change until activity finished | Session-like state that must survive rotation        |
 | `@ViewModelScoped`        | Same as hosting `ViewModel`                    | Feature helpers (validators, calculators)            |
 | `@ActivityScoped`         | Activity instance                              | Rare in Compose-first apps                           |
 | `@FragmentScoped`         | Fragment instance                              | Rare when using Compose                              |
@@ -587,13 +588,13 @@ Over-scoping wastes memory; under-scoping duplicates heavy types or breaks singl
 
 **Anti-patterns:**
 
-| Problem                                                  | Failure mode                   | Prefer                                                                    |
+| Problem                                                  | Failure mode                   | Use instead                                                               |
 |----------------------------------------------------------|--------------------------------|---------------------------------------------------------------------------|
 | `Activity` / `Fragment` in a `ViewModel`                 | Leaks, lifecycle mismatch      | Ids via `SavedStateHandle`, navigation args, repositories                 |
 | Raw `Context` in a `ViewModel`                           | Same                           | `@ApplicationContext` in data/repository wiring, not in `ViewModel`       |
 | `ViewModel` with `@Inject` but no `@HiltViewModel`       | Hilt does not own the instance | `@HiltViewModel` + `@Inject constructor` + `hiltViewModel()` in Compose   |
 | Manual `ViewModel(...)` factories everywhere             | Bypasses graph                 | `hiltViewModel()` or Hilt-assisted factories                              |
-| Feature-only deps in `SingletonComponent` "just in case" | Wrong lifetime, memory         | `ViewModelComponent` / `@ViewModelScoped` when only screens need the type |
+| Feature-only deps parked in `SingletonComponent` preemptively | Wrong lifetime, memory         | `ViewModelComponent` / `@ViewModelScoped` when only screens need the type |
 
 **Navigation arguments and assisted injection:** `SavedStateHandle`, `@AssistedInject`, and `hiltViewModel` factory lambdas with Navigation3 - see `references/android-navigation.md` as the source of truth.
 
@@ -623,12 +624,13 @@ abstract class DataModule {
 
 ### Use Case Pattern
 
-Use cases are **optional** but recommended when:
-1. Combining data from multiple repositories
-2. Complex business logic that shouldn't be in ViewModels
-3. Reusable operations across multiple features
+**Use when:**
 
-**Simple pass-through use cases add unnecessary boilerplate.** ViewModels can call repositories directly for simple operations.
+1. The operation combines data from multiple repositories.
+2. The operation centralizes domain logic reused across features or ViewModels.
+3. The logic is too heavy for the `ViewModel` but does not belong in a repository.
+
+**Forbidden:** pass-through use cases that only wrap a single repository call — call the repository from the `ViewModel` instead.
 
 ```kotlin
 // ❌ Unnecessary use case (simple pass-through)

@@ -13,7 +13,7 @@ Required: Gradle 9 / AGP 9.0, JVM 17+, KSP (never kapt), version catalog, conven
 - **KotlinAndroidProjectExtension**: Not registered with built-in Kotlin; configure compiler options via `tasks.withType<KotlinCompile>().configureEach { compilerOptions { ... } }` instead.
 - **Hilt**: Minimum version **2.59.2** required for AGP 9 (older versions access removed `BaseExtension`).
 - **KSP**: Minimum version **2.3.6** required for AGP 9. Use `2.x` suffix (e.g., `2.3.6-…`) instead of `1.x` (e.g., `2.2.21-1.0.32`); `1.x` KSP is incompatible with AGP 9.
-- **kapt fallback (`legacy-kapt`)**: Prefer KSP. If a processor has no KSP equivalent under AGP 9, use the **`org.jetbrains.kotlin.kapt`** plugin (a.k.a. `legacy-kapt`) for that single module only; the new built-in Kotlin pipeline does not run kapt automatically.
+- **kapt fallback (`legacy-kapt`)**: Use KSP everywhere it exists. If a processor has no KSP equivalent under AGP 9, use the **`org.jetbrains.kotlin.kapt`** plugin (a.k.a. `legacy-kapt`) for that single module only; the new built-in Kotlin pipeline does not run kapt automatically.
 - **Type-safe project accessors**: Enabled by default in Gradle 9; `enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")` is no longer needed in `settings.gradle.kts`.
 - **JVM 17 minimum**: Gradle 9 requires JVM 17+ to run.
 - **Legacy API removal**: `BaseExtension`, `applicationVariants.all`, `Convention` type, and `com.android.build.gradle.api.*` legacy APIs are removed. Use `androidComponents` API instead.
@@ -71,7 +71,7 @@ Required:
 ## Convention Plugins
 
 Plugin sources live in `assets/convention/`:
-- `*ConventionPlugin.kt` (incl. optional `PlayVitalsReportingConventionPlugin.kt`), `PlayVitalsReportingTask.kt`, and related `.kt` files.
+- `*ConventionPlugin.kt` (incl. `PlayVitalsReportingConventionPlugin.kt` for root-only Play Vitals), `PlayVitalsReportingTask.kt`, and related `.kt` files.
 - `config/` (`KotlinAndroid.kt`, `AndroidCompose.kt`, `Jacoco.kt`, …).
 - `build.gradle.kts`, `QUICK_REFERENCE.md`.
 
@@ -500,9 +500,9 @@ dependencies {
 }
 ```
 
-### Benchmark Module (Optional)
+### Benchmark module
 
-Use a dedicated `:benchmark` test module for macrobenchmark. When to use: [android-performance.md](/references/android-performance.md).
+**Use when:** macrobenchmark coverage from [android-performance.md](/references/android-performance.md) applies. Host it in a dedicated `:benchmark` test module.
 
 `benchmark/build.gradle.kts`:
 ```kotlin
@@ -533,11 +533,11 @@ dependencies {
 }
 ```
 
-Note: The `benchmark` build type must be defined in the app module (shown in the app module example above).
+**Required:** `:app` declares a matching `benchmark` build type (`create("benchmark")` under Module Build Files).
 
-### Compose Stability Analyzer (Optional)
+### Compose stability analyzer
 
-CI gating on Compose composable stability. When to use: [android-performance.md → Compose Stability Validation](/references/android-performance.md#compose-stability-validation-optional).
+**Use when:** CI must gate composable stability per [android-performance.md → Compose Stability Validation](/references/android-performance.md#compose-stability-validation-optional).
 
 Root `build.gradle.kts`:
 ```kotlin
@@ -546,7 +546,7 @@ plugins {
 }
 ```
 
-Module `build.gradle.kts` (typically app or feature modules):
+Module `build.gradle.kts` (app or heavy UI modules):
 ```kotlin
 plugins {
     alias(libs.plugins.app.android.application)
@@ -560,7 +560,7 @@ composeStabilityAnalyzer {
         includeTests.set(false)
         failOnStabilityChange.set(true) // Fail build on stability regressions
         
-        // Optional: Exclude specific packages or classes
+        // Allowed: exclude internal packages from fail-on-change
         ignoredPackages.set(listOf("com.example.internal"))
         ignoredClasses.set(listOf("PreviewComposables"))
     }
@@ -636,7 +636,7 @@ android {
 
 **Flavor-specific source sets:** Optional overrides live next to `main` - for example `app/src/development/`, `app/src/staging/`, `app/src/production/` for resources or code only for that flavor; `app/src/debug/` and `app/src/release/` apply per build type across flavors.
 
-**Multiple flavor dimensions:** If you add another dimension (e.g. `tier` = `free` / `paid`), variants become combinations such as `developmentFreeDebug`. Prefer a small number of dimensions to avoid an explosion of variant count and CI time.
+**Multiple flavor dimensions:** If you add another dimension (e.g. `tier` = `free` / `paid`), variants become combinations such as `developmentFreeDebug`. Cap flavor dimensions — each new dimension multiplies variant count and CI time.
 
 ### Build Optimization Configuration
 
@@ -708,10 +708,10 @@ With `android.nonTransitiveRClass=true`, each module generates its own R class c
    Text(stringResource(com.example.core.ui.R.string.loading))
    ```
 
-**Best practices:**
-- Use import aliases (`as CoreUiR`) for readability when accessing multiple resources from another module
-- Group cross-module resource imports at the top of the file
-- See [android-i18n.md](/references/android-i18n.md#string-resource-ownership) for guidance on which module should own which strings
+**Required:**
+- Use import aliases (`as CoreUiR`) when one file pulls strings from multiple foreign modules.
+- Group cross-module resource imports at the top of the file.
+- String ownership rules: [android-i18n.md → String resource ownership](/references/android-i18n.md#string-resource-ownership).
 
 ### R8 / ProGuard Configuration
 
@@ -732,12 +732,12 @@ buildTypes {
 
 Copy `assets/proguard-rules.pro.template` to `app/proguard-rules.pro` and adjust `com.example.*` package names to match your project. The template includes rules for every library in the version catalog.
 
-**Key points:**
-- Most AndroidX/Jetpack libraries ship their own consumer rules inside the AAR - only add manual rules when library docs say so or when R8 full-mode requires it
-- Retrofit requires explicit rules for R8 full-mode (interfaces created via `Proxy` are invisible to R8)
-- `EncryptedSharedPreferences` needs `-dontwarn` for Tink's error-prone annotations
-- SQLCipher native methods must be kept
-- Upload `mapping.txt` to Crashlytics/Sentry for readable stack traces (both Gradle plugins handle this automatically)
+**Required:**
+- Rely on AndroidX/Jetpack consumer rules inside AARs; add manual keep rules only when library docs or R8 full-mode errors demand it.
+- Ship Retrofit keep rules for R8 full-mode (`Proxy`-generated interfaces stay invisible to static analysis).
+- Add `-dontwarn` for Tink error-prone annotations when using `EncryptedSharedPreferences`.
+- Keep SQLCipher native methods in shrinker output.
+- Upload `mapping.txt` to Crashlytics/Sentry so release stacks decode (Gradle plugins wire this when configured).
 
 **Debugging shrunk builds:**
 

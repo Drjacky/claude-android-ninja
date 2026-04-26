@@ -57,7 +57,7 @@ Shared library code used across features with strict dependency direction.
 | `core:network`   | Retrofit API, network models                    | `core:model` (if separate), otherwise `core:domain` | `AuthApi`, `NetworkAuthResponse`                                    |
 | `core:datastore` | Proto DataStore preferences                     | None                                                | `AuthPreferencesDataSource`                                         |
 | `core:common`    | Shared utilities, extensions                    | None                                                | `AppDispatchers`, `ResultExtensions`                                |
-| `core:ui`        | Reusable UI components, themes, base ViewModels | `core:domain` (optional)                            | `AuthForm`, `AuthTheme`, `BaseViewModel`                            |
+| `core:ui`        | Reusable UI components, themes, base ViewModels | `core:domain` when composables read shared models     | `AuthForm`, `AuthTheme`, `BaseViewModel`                            |
 | `core:testing`   | Test utilities, test doubles                    | Depends on module being tested                      | `TestDispatcherRule`, `FakeAuthRepository`                          |
 
 ## Module Structure
@@ -178,7 +178,7 @@ core/domain/
 ```
 feature/* → core/domain → core/data
     ↓                       ↓
-core/ui (optional)       (no circular dependencies)
+core/ui (when shared UI exists)   (no circular dependencies)
 
 app → all feature modules (for navigation coordination)
 app → all core modules (for DI setup)
@@ -191,7 +191,7 @@ NO feature-to-feature dependencies allowed
 2. **Feature modules cannot depend on other feature modules**
 3. **Core/Domain has no Android dependencies** (pure Kotlin)
 4. **Core/Data depends on Core/Domain** (implements interfaces)
-5. **Core/UI is optional** for features that need shared UI components
+5. **Core/UI** ships once multiple features share composables, themes, or base `ViewModel` chrome; presentation-only features can defer it until reuse appears
 6. **App module depends on all features** for navigation coordination
 7. **No circular dependencies** between any modules
 
