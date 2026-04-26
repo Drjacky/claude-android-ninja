@@ -612,7 +612,7 @@ SentryAndroid.init(this) { options ->
             "[REDACTED_EMAIL]"
         )
         
-        // Remove specific tags that might contain PII
+        // Strip tags that can carry PII
         event.removeTag("user_email")
         event.removeExtra("raw_user_data")
         

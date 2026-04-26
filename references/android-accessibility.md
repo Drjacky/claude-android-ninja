@@ -1428,7 +1428,7 @@ fun enableA11yChecks() {
 }
 ```
 
-Compose UI tests usually assert **semantics** directly (see **Compose Testing** above). Use Espresso accessibility checks when you still have `ActivityScenario` / `Espresso` flows or `AndroidView` interop.
+Compose UI tests assert **semantics** directly for most flows. Use Espresso accessibility checks when `ActivityScenario` / `Espresso` or `AndroidView` interop still owns the surface under test.
 
 ### Accessibility Scanner
 
@@ -1497,9 +1497,9 @@ android {
 }
 ```
 
-## Best Practices Summary
+## Rules
 
-**Always:**
+**Required:**
 - ✅ Provide `contentDescription` for all icons and images
 - ✅ Write concise labels (purpose, not "button" / "tap here")
 - ✅ Ensure 48dp × 48dp minimum touch targets
@@ -1508,7 +1508,7 @@ android {
 - ✅ Support dark mode and high contrast
 - ✅ Test with TalkBack enabled
 
-**Never:**
+**Forbidden:**
 - ❌ Rely on color alone to convey information
 - ❌ Use small touch targets (< 48dp)
 - ❌ Ignore form validation error announcements

@@ -18,7 +18,7 @@ All Kotlin code must align with `references/kotlin-patterns.md`. Permission hand
 - [Notification Manager Interface](#notification-manager-interface)
 - [Architecture Integration](#architecture-integration)
 - [Testing](#testing)
-- [Best Practices](#best-practices)
+- [Notification routing](#notification-routing)
 
 ## Notification Channels (API 26+)
 
@@ -1166,9 +1166,9 @@ fun `startSync shows progress notification`() = runTest {
 }
 ```
 
-## Best Practices
+## Notification routing
 
-### ✅ Always Do
+### Required
 
 1. **Create notification channels** at app startup (no-op on API < 26)
 2. **Check POST_NOTIFICATIONS permission** on API 33+ before showing notifications
@@ -1181,10 +1181,10 @@ fun `startSync shows progress notification`() = runTest {
 9. **Use interfaces** for testability in repositories/ViewModels
 10. **Handle notification permission** gracefully (don't crash if denied)
 
-### ❌ Never Do
+### Forbidden
 
 1. **Never show notifications without permission check** on API 33+
-2. **Never use FLAG_MUTABLE** for PendingIntents unless absolutely necessary (security risk)
+2. **Never use FLAG_MUTABLE** for PendingIntents except APIs that require mutable extras (security-sensitive default is immutable)
 3. **Never hardcode notification IDs** (use unique IDs or timestamp-based IDs)
 4. **Never forget to call startForeground()** within 5 seconds of starting a foreground service
 5. **Never use setOngoing(true)** for dismissible notifications

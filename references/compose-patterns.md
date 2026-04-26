@@ -557,12 +557,12 @@ fun AuthScreen(
 }
 ```
 
-Key points:
+**Required:** match the collector to the work:
 
-- Use `collectAsStateWithLifecycle()` for state that drives UI
-- Use `flowWithLifecycle` for a single side-effect flow
-- Use `repeatOnLifecycle` for multiple flows or complex scoped operations
-- Both prevent leaked collectors and wasted background work during lifecycle changes
+- UI-bound state → `collectAsStateWithLifecycle()`.
+- Single side-effect stream → `flowWithLifecycle`.
+- Multiple streams or complex lifecycle scopes → `repeatOnLifecycle`.
+- These APIs stop leaked collectors and idle background collection during lifecycle churn.
 
 ### Primitive State Specializations
 
@@ -3998,15 +3998,15 @@ fun ValidatedEmailField(
 }
 ```
 
-## Related Guides
+## Cross-references
 
-- [Architecture Guide](/references/architecture.md) - ViewModel patterns and state management
-- [Modularization Guide](/references/modularization.md) - Feature modules and dependency rules
-- [Navigation Guide](/references/android-navigation.md) - Navigation3 architecture and adaptive navigation
-- [Android Accessibility](/references/android-accessibility.md) - Semantic properties and TalkBack support
-- [Android Theming](/references/android-theming.md) - Material 3 theming, dynamic colors, typography
-- [Android i18n](/references/android-i18n.md) - Localization, RTL support, and string resources
-- [Kotlin Patterns](/references/kotlin-patterns.md) - Immutability and data class usage
-- [Testing Guide](/references/testing.md) - UI testing with Compose
-- [Migration Guide](/references/migration.md) - Accompanist, Compose API, Material, RxJava, and Navigation migrations
+- [architecture.md](/references/architecture.md) — ViewModel patterns and state management
+- [modularization.md](/references/modularization.md) — Feature modules and dependency rules
+- [android-navigation.md](/references/android-navigation.md) — Navigation 3 and adaptive navigation
+- [android-accessibility.md](/references/android-accessibility.md) — Semantics and TalkBack
+- [android-theming.md](/references/android-theming.md) — Material 3, dynamic color, typography
+- [android-i18n.md](/references/android-i18n.md) — Localization, RTL, string resources
+- [kotlin-patterns.md](/references/kotlin-patterns.md) — Immutability and data classes
+- [testing.md](/references/testing.md) — Compose UI tests
+- [migration.md](/references/migration.md) — Accompanist, Compose, Material, RxJava, Navigation migrations
 

@@ -435,7 +435,7 @@ fun displayTemperature(temp: Temperature): String =
 displayTemperature(Temperature(25.0))
 ```
 
-**When to Use:**
+**Use when:**
 - Wrapping primitive types for type safety (IDs, tokens, measurements)
 - Domain-specific types that need compile-time enforcement
 - No runtime overhead (inlined at compile time)
@@ -519,7 +519,7 @@ fun processLargeFile(file: File): List<String> =
     }
 ```
 
-**When to Use:**
+**Use when:**
 - Large collections (1000+ items)
 - Multiple chained operations
 - Potentially infinite streams
@@ -631,7 +631,7 @@ typealias UEVM = UserEditViewModel // Unreadable abbreviation
 typealias IntList = List<Int> // Doesn't add value; use List<Int> directly
 ```
 
-**When to Use:**
+**Use when:**
 - Complex generic types (`Map<String, List<Result<User>>>`)
 - Commonly used callback signatures
 - Domain-specific terminology (`UserId` vs raw `String`)
@@ -865,7 +865,7 @@ inline fun <T> runOnIo(crossinline block: () -> T, crossinline onResult: (T) -> 
 
 #### Decision Rules
 
-| Modifier | When to Use | Effect |
+| Modifier | Use when | Effect |
 |----------|-------------|--------|
 | (default) | Lambda used directly at call site | Inlined, non-local `return` allowed |
 | `noinline` | Lambda stored, passed to another function, or returned | Not inlined, creates object |
@@ -908,7 +908,7 @@ createUser(
 )
 ```
 
-**When to Use:**
+**Use when:**
 - Multiple parameters of same type
 - Boolean parameters
 - Parameters with defaults

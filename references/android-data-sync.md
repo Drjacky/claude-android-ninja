@@ -21,7 +21,7 @@ Kotlin code must align with [kotlin-patterns.md](/references/kotlin-patterns.md)
 - [Repository Pattern for Sync](#repository-pattern-for-sync)
 - [Architecture Integration](#architecture-integration)
 - [Testing](#testing)
-- [Best Practices](#best-practices)
+- [Rules](#rules)
 
 ## Offline-First Architecture
 
@@ -2292,7 +2292,7 @@ Required:
 - Store sync metadata on every syncable entity: `syncStatus`, `lastModified`, `serverVersion`.
 - Check `NetworkMonitor` before any sync attempt; treat `NoNetwork` as a `Result.retry()`.
 - Pick exactly one conflict-resolution strategy per entity type and document it on the repository.
-- Use exponential backoff (with optional jitter) for transient failures; cap at `maxAttempts`.
+- Use exponential backoff with bounded jitter for transient failures; cap at `maxAttempts`.
 - Invalidate caches on every write that mutates the affected key(s).
 - Treat partial sync failures as success-with-failures, not full failure; surface counts to the UI.
 - Test offline behaviour with `FakeNetworkMonitor.setConnected(false)` and HTTP error injection.

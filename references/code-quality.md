@@ -87,16 +87,18 @@ build:
 
 ## Baselines & CI
 
-### When to Use Baselines
+### Detekt baseline routing
 
 **Use baselines when:**
-- Adopting detekt in an existing project with many violations
-- You want to prevent new issues without fixing old ones immediately
-- You're enabling new rules gradually
 
-**Don't use baselines when:**
-- Starting a new project (fix issues instead)
-- In active development (baselines hide problems)
+- Adopting detekt in an existing project with many violations.
+- New violations must fail CI while legacy debt is scheduled.
+- Rules roll out gradually behind a baseline.
+
+**Forbidden:**
+
+- Greenfield projects — fix findings instead of freezing debt.
+- Active refactors that need signal — baselines mask regressions.
 
 ### Creating Per-Module Baselines
 
@@ -284,14 +286,15 @@ enum class CirclePosition { START, END }
 fun AnAnimatedComposableExampleView(...) { /* ... */ }
 ```
 
-**When to use:**
-- `MatchingDeclarationName`: File has a primary composable plus supporting types (enums, sealed classes, data classes)
-- `TooManyFunctions`: Composable files with many small helper composables
-- `MagicNumber`: UI files with many layout dimensions
+**Use `@file:Suppress` when:**
 
-### When NOT to Suppress
+- `MatchingDeclarationName`: primary composable plus supporting types (enums, sealed classes, data classes) share one file.
+- `TooManyFunctions`: composable files with many tiny helpers.
+- `MagicNumber`: UI files dense with layout constants.
 
-Avoid suppressing these without fixing the underlying issue:
+### Forbidden suppressions
+
+Do not suppress without fixing the root cause when:
 - `ComplexMethod` in ViewModels or business logic → Refactor the code
 - `LongParameterList` in data classes → Consider builder pattern or DSL
 - `TooGenericExceptionCaught` when you can handle specific exceptions → Use specific catches

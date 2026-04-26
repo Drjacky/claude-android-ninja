@@ -190,8 +190,9 @@ class AuthStartupBenchmark {
 }
 ```
 
-#### Macrobenchmark Best Practices
-- Prefer `CompilationMode.Partial()` to approximate Baseline Profile behavior when comparing changes.
+#### Macrobenchmark rules
+
+- Use `CompilationMode.Partial()` to approximate Baseline Profile behavior when comparing changes.
 - Use `StartupMode.COLD/WARM/HOT` to measure the scenario you care about.
 - Keep actions in `measureRepeated` focused and deterministic (e.g., navigate to one screen, scroll one list).
 - Wait for UI idleness with `device.waitForIdle()` between steps when needed.
@@ -334,7 +335,7 @@ fun AsyncScreen() {
 }
 ```
 
-#### Best Practices
+#### `ReportDrawn*` rules
 
 - **Call once per screen**: Multiple `ReportDrawnWhen` calls become no-ops after the first reports
 - **Handle error states**: Report even on errors to avoid blocking metrics
@@ -359,10 +360,11 @@ This metric is crucial for understanding real user experience beyond initial fra
 
 Baseline Profiles improve app startup and runtime performance by pre-compiling critical code paths. They are automatically generated and included in release builds.
 
-#### When to Use
-- Improve cold start time (10-30% faster).
-- Optimize critical user journeys (scrolling, navigation, animations).
-- Reduce jank in frequently used screens.
+#### Use baseline profiles when:
+
+- Cold start time must drop (typical gains 10–30%).
+- Critical journeys (scroll, navigation, animation) need AOT coverage.
+- High-traffic screens show persistent jank without profiles.
 
 #### Module Setup
 
@@ -934,12 +936,12 @@ class MainViewModel @Inject constructor(
 }
 ```
 
-**Key points:**
-- Call `installSplashScreen()` before `super.onCreate()`
-- `setKeepOnScreenCondition` callback runs on main thread before each draw - keep it fast (just read a boolean)
-- The splash screen dismisses automatically once the condition returns `false`
-- Animated icons are supported on API 31+; animation duration should not exceed 1000ms
-- `postSplashScreenTheme` switches to your app theme after dismissal
+**Required:**
+- Call `installSplashScreen()` before `super.onCreate()`.
+- `setKeepOnScreenCondition` runs on the main thread before each draw — return from a cheap boolean read only.
+- Splash dismisses when the condition returns `false`.
+- Animated icons are supported on API 31+; cap animations at 1000ms.
+- `postSplashScreenTheme` applies the real app theme after dismissal.
 
 ### Startup Optimization Checklist
 

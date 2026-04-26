@@ -626,7 +626,7 @@ Apps targeting API 36 must migrate from `BODY_SENSORS` / `BODY_SENSORS_BACKGROUN
 <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
 ```
 
-**Important:** Mobile apps using these granular health permissions must declare an activity to display the app's privacy policy (same requirement as Health Connect). Failure to provide this rationale will result in the permission being revoked.
+**Required:** Apps declaring granular `android.permission.health.*` reads must register an activity that renders the privacy policy (Health Connect parity). Missing that activity yields revocation of health permissions.
 
 ```kotlin
 fun buildHealthPermissions(): List<String> = when {

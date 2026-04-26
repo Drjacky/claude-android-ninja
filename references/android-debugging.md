@@ -42,7 +42,7 @@ Avoid `Log.v`/`Log.d` spam in hot paths in release builds. Never log secrets, to
 
 ### Reading Crash Logs
 
-The root cause is usually at the bottom of the `Caused by:` chain, not the top-level exception.
+The root cause is most often at the bottom of the `Caused by:` chain, not the top-level exception.
 Always read the full stack trace before forming a hypothesis.
 
 ## ANR Debugging

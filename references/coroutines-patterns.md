@@ -1,6 +1,6 @@
 # Coroutines Patterns
 
-## Coroutines Best Practices (Android)
+## Android coroutine rules
 
 Use coroutines in a testable, lifecycle-aware way. Reference: [developer.android.com/kotlin/coroutines/coroutines-best-practices](https://developer.android.com/kotlin/coroutines/coroutines-best-practices).
 

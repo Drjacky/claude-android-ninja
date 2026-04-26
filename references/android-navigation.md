@@ -658,11 +658,11 @@ fun DialogExample() {
 }
 ```
 
-**Key points:**
-- Pass `DialogSceneStrategy<NavKey>()` as `sceneStrategy` to `NavDisplay`
-- Mark dialog entries with `metadata = DialogSceneStrategy.dialog(DialogProperties(...))`
-- The dialog renders as an overlay on top of the previous entry
-- Use `dropUnlessResumed` to prevent double-clicks during transitions
+**Required:**
+- Pass `DialogSceneStrategy<NavKey>()` as `sceneStrategy` to `NavDisplay`.
+- Mark dialog entries with `metadata = DialogSceneStrategy.dialog(DialogProperties(...))`.
+- Dialog entries render as overlays above the previous entry.
+- Wrap navigations that open dialogs in `dropUnlessResumed` to block double taps during transitions.
 
 ### Bottom Sheet Navigation
 
@@ -743,10 +743,10 @@ fun BottomSheetExample() {
 }
 ```
 
-**Key points:**
-- Mark sheet entries with `metadata = BottomSheetSceneStrategy.bottomSheet()`. Unmarked entries fall through to the default `SinglePaneSceneStrategy`.
-- Wire `onDismissRequest` to `backStack.removeLastOrNull()` so swipe-down and scrim-tap stay back-stack-driven. Do not maintain a separate dismiss state.
-- Predictive back is handled by the back stack; no extra wiring required.
+**Required:**
+- Mark sheet entries with `metadata = BottomSheetSceneStrategy.bottomSheet()`; unmarked entries keep `SinglePaneSceneStrategy`.
+- Bind `onDismissRequest` to `backStack.removeLastOrNull()` so scrim and swipe-dismiss stay stack-driven — no parallel boolean dismiss flags.
+- Predictive back follows the back stack without extra glue.
 
 ### Custom Scene: List-Detail Layout
 
@@ -1904,11 +1904,11 @@ fun AppNavigation() {
 }
 ```
 
-**Key points:**
-- Scope the holder to `backStack` (`remember` inside `AppNavigation`). It survives back-stack mutations and clears with the `NavDisplay`.
-- Receivers **read** `LocalFilterResult.current.value` and recompose like any other state. No `LaunchedEffect` plumbing.
-- One-shot semantics: expose a `consume()` method that nulls the value after read. Sticky state: expose `value` directly.
-- One holder per result type. Do not build a generic "result bus" through `CompositionLocal`.
+**Required:**
+- Scope result holders to the `backStack` (`remember` inside `AppNavigation`) so they survive stack mutations and dispose with `NavDisplay`.
+- Receivers **read** `LocalFilterResult.current.value` like any other state — skip `LaunchedEffect` bridges.
+- One-shot results expose `consume()` that clears after read; sticky results expose `value` directly.
+- One `CompositionLocal` holder per result type — no generic cross-feature result bus.
 
 ### Choosing a pattern
 
@@ -2115,7 +2115,7 @@ class AuthViewModel : ViewModel() {
 // Bad: Passing large or complex objects in navigation routes
 @Serializable
 data class ProductDetail(
-    val product: Product // Product might be too large for SavedStateHandle or contain non-serializable data
+    val product: Product // Product can exceed SavedStateHandle limits or hold non-Parcelable fields
 ) : ProductsDestination
 
 // Good: Pass only IDs, fetch data in the destination
