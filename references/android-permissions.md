@@ -43,7 +43,7 @@ Auto-granted when declared. No runtime request needed.
 ```
 
 ### Media Access (Runtime, Android 13+)
-Prefer Photo Picker when possible to avoid permission requests entirely.
+**Required:** use the Photo Picker when UX allows picking without `READ_MEDIA_*`; it avoids those runtime permissions on supported APIs.
 
 ```xml
 <!-- Android 14+ partial access -->

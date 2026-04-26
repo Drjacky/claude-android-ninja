@@ -137,7 +137,7 @@ fun rememberCoroutineScope(): CoroutineScope = // ...
 
 ### Loading and refresh UX
 
-Prefer **stable layout** and **preserved context** while data loads or refreshes. Users should not lose visible content, scroll position, or typed input because a network call started.
+**Required:** keep **stable layout** and **preserved context** during loads and refresh — retain visible content, scroll position, and in-flight form state while network work runs.
 
 | Situation                                                  | Default                                                                                           |
 |------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
@@ -652,7 +652,7 @@ These APIs differ in **how long** state is kept and **what types** you can store
 
 - **`rememberSaveable`** - User-visible state the app cannot easily reload from elsewhere: text fields, toggles, scroll position, selected tab, navigation arguments mirrored in UI. Use this when your type is already `Parcelable`, fits the built-in `Saver` rules, or you hand-write a `Saver` / `mapSaver` / `listSaver`.
 
-- **`rememberSerializable`** - Same persistence guarantees as `rememberSaveable`, but **automatic persistence for `@Serializable` models** via `kotlinx.serialization`. Prefer it when your domain or UI model is already (or can be) marked `@Serializable`; use **`rememberSaveable`** for primitives, `Parcelable`, or manual `Saver`s when you are not using kotlinx.serialization.
+- **`rememberSerializable`** - Same persistence guarantees as `rememberSaveable`, but **automatic persistence for `@Serializable` models** via `kotlinx.serialization`. Use it when your domain or UI model is already (or can be) marked `@Serializable`; use **`rememberSaveable`** for primitives, `Parcelable`, or manual `Saver`s when you are not using kotlinx.serialization.
 
 Both saveable variants serialize into a `Bundle`, so restored values are **equivalent** copies, not the same object identity.
 
@@ -2495,7 +2495,7 @@ keyframes {
 }
 ```
 
-Prefer `spring` for user-driven interactions. Use `tween` for choreographed sequences.
+Use `spring` for user-driven interactions. Use `tween` for choreographed sequences.
 
 ### Material Design motion (duration and easing)
 
@@ -2755,7 +2755,7 @@ fun ScreenWithLifecycle(onResume: () -> Unit, onPause: () -> Unit) {
 }
 ```
 
-Prefer over `LaunchedEffect` when cleanup isn't coroutine-based (removing listeners, unregistering callbacks).
+Use `DisposableEffect` instead of `LaunchedEffect` when cleanup is not coroutine-based (unregistering listeners, receivers, or callbacks).
 
 ```kotlin
 @Composable
@@ -3241,7 +3241,7 @@ fun Modifier.onSwipeRight(onSwipe: () -> Unit) = pointerInput(Unit) {
 
 ### graphicsLayer - GPU Transforms
 
-Applies transforms at the GPU level - no recomposition, no relayout. Prefer for animations.
+Applies transforms at the GPU level - no recomposition, no relayout. Use for animations that should skip composition/layout work.
 
 ```kotlin
 Box(
@@ -3660,7 +3660,7 @@ LazyVerticalGrid(columns = GridCells.Adaptive(minSize = 120.dp)) {
 }
 ```
 
-Prefer `GridCells.Adaptive` for responsive layouts.
+Use `GridCells.Adaptive` for responsive layouts.
 
 ### Staggered Grid
 

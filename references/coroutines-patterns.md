@@ -29,7 +29,7 @@ class AuthRepository @Inject constructor(
 
 ### Use `limitedParallelism` for Custom Dispatcher Pools
 
-Prefer `limitedParallelism` over creating custom `ExecutorService` dispatchers. This is more efficient and integrates better with structured concurrency.
+Use `limitedParallelism` instead of custom `ExecutorService` dispatchers — fewer threads and proper structured-concurrency integration.
 
 ```kotlin
 // Define qualifier annotations to distinguish dispatchers of the same type
@@ -76,7 +76,7 @@ Benefits over custom ExecutorService:
 - Automatic cleanup and resource management
 - Better debugging and profiling support
 
-### Avoid GlobalScope, Prefer Structured Concurrency
+### Structured concurrency (not `GlobalScope`)
 
 Use `viewModelScope`/`lifecycleScope` for UI and inject external scope only when work must outlive UI.
 
@@ -139,7 +139,7 @@ class AuthViewModel @Inject constructor(
 ### Do Not Catch `Throwable`
 
 Catch only expected exception types. Avoid `catch (Throwable)` because it includes fatal errors and
-`CancellationException`. Prefer a `CoroutineExceptionHandler` for unexpected failures so cancellation
+`CancellationException`. Use a `CoroutineExceptionHandler` for unexpected failures so cancellation
 propagates correctly without manual rethrowing.
 
 ```kotlin
@@ -162,7 +162,7 @@ It is ignored if passed to `withContext` or nested coroutines.
 If you must catch `Throwable` (rare), rethrow `CancellationException` immediately so structured
 concurrency remains intact.
 
-### Prefer StateFlow Over LiveData for New Code
+### StateFlow for new code (not LiveData)
 
 Use `StateFlow` for observable state and `SharedFlow` or `Channel` for events. Reserve `LiveData` for interop
 or legacy code that still requires it. **Migration Priority:** If the project plan allows, prioritize refactoring and migrating existing `LiveData` to `StateFlow` by following the guidelines in `references/migration.md` -> `## LiveData to StateFlow`.
@@ -237,18 +237,17 @@ Note on buffering with SharedFlow:
 
 - `replay` controls how many values new subscribers receive.
 - `extraBufferCapacity` adds temporary queue space for bursts from active emitters.
-- For **one-shot commands**, `replay = 1` (or higher) is often the wrong default: every new collector
-  receives the replayed value again. Prefer `replay = 0` plus an explicit buffer/overflow policy, or
+- For **one-shot commands**, `replay = 1` (or higher) replays to every new collector — wrong default. Use `replay = 0` with an explicit buffer/overflow policy, or
   use a `Channel` instead of fighting multicast semantics.
-If you genuinely need **late subscribers** to see only the **latest** value (state-like behavior),
-`replay = 1` plus optional `extraBufferCapacity` can be appropriate; treat that as sticky state, not
+When **late subscribers** must read only the **latest** value (state-like behavior),
+`replay = 1` plus explicit `extraBufferCapacity` can match the product; treat that as sticky state, not
 a consumed command.
 
 Guidance for events vs state:
 
-- Prefer **`Channel` + `receiveAsFlow()`** for strict one-shot commands (navigation, snackbars,
-  one-time dialogs). Use **`SharedFlow`** when multiple collectors should observe the same stream or
-  when replay to new subscribers is intended; size buffers and pick `onBufferOverflow` on purpose.
+- **`Channel` + `receiveAsFlow()`** for strict one-shot commands (navigation, snackbars,
+  one-time dialogs). **`SharedFlow`** when multiple collectors observe the same stream or
+  replay to new subscribers is intended; size buffers and pick `onBufferOverflow` deliberately.
 - **Best-effort** UI (some toasts, debug banners) may use a small `SharedFlow` if occasional drops are
   acceptable; do not label navigation that way unless the product truly allows missing the action.
 - If an event must survive the UI being stopped, persist it as state and render it on resume
@@ -284,7 +283,7 @@ Key `SharingStarted` strategies:
 - `Eagerly`: Starts immediately and never stops. Use for critical always-needed state (auth status, app config).
 - `Lazily`: Starts on first subscriber, never stops. Use when you want to keep the flow hot after first access.
 
-Common mistake: Using `stateIn` with `Eagerly` by default. Prefer `WhileSubscribed` to avoid wasted resources.
+Common mistake: Using `stateIn` with `Eagerly` by default. Use `WhileSubscribed` to avoid wasted resources.
 
 ### Share Expensive Upstream with `shareIn`
 
@@ -393,7 +392,7 @@ suspend fun refreshAuth(): AuthResult {
 }
 ```
 
-### Prefer `launch` for Fire-and-Forget, `async` for Values, `withContext` for Sequential Work
+### `launch` vs `async` vs `withContext`
 
 Use `launch` for side effects, `async` for parallel work that returns values, and `withContext` for sequential operations that need dispatcher switching or structured concurrency.
 
@@ -426,7 +425,7 @@ suspend fun processAuthData(data: AuthData): ProcessedAuth = withContext(Dispatc
 
 ### Use `awaitAll` for Parallel Work
 
-Prefer `awaitAll()` so failures cancel remaining work promptly. It handles exceptions properly and cancels sibling coroutines when one fails.
+Use `awaitAll()` so failures cancel remaining work promptly. It handles exceptions properly and cancels sibling coroutines when one fails.
 
 ```kotlin
 suspend fun syncAuthData(): SyncResult = coroutineScope {
@@ -768,7 +767,7 @@ fastProducer()
     }
 ```
 
-### Prefer `suspend` for One-Off Values
+### `suspend` for one-off values
 
 Use a suspending function when only a single value is expected.
 
@@ -778,7 +777,7 @@ interface AuthRepository {
 }
 ```
 
-### Prefer Explicit Coroutine Names for Long-Lived Work
+### Coroutine names for long-lived work
 
 For long-lived or background work, add `CoroutineName` to improve debugging and structured logs.
 
@@ -801,7 +800,7 @@ class AuthSessionRefresher(
 
 ### Avoid `Job` in `withContext` or Ad-Hoc `Job()` Usage
 
-Passing a `Job` into `withContext` breaks structured concurrency. Prefer `coroutineScope`/`supervisorScope`
+Passing a `Job` into `withContext` breaks structured concurrency. Use `coroutineScope`/`supervisorScope`
 and keep a reference to the returned `Job` when you need cancellation.
 
 ```kotlin
@@ -916,7 +915,7 @@ class CameraRepository(
 
 Warning: Never wrap normal business logic in `NonCancellable`. It should only guard cleanup code that prevents resource leaks or corruption.
 
-### Prefer Explicit Timeouts for Hardware and Uncontrolled APIs
+### Timeouts for hardware and uncontrolled APIs
 
 Use `withTimeout` or `withTimeoutOrNull` for operations that can hang indefinitely when interacting with hardware or third-party SDKs without built-in timeout mechanisms.
 

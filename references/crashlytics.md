@@ -152,7 +152,7 @@ class MyApplication : Application() {
             options.environment = if (BuildConfig.DEBUG) "debug" else "production"
             options.release = BuildConfig.VERSION_NAME
             options.tracesSampleRate = 1.0
-            // options.tracesSampler = { 0.2 } // Prefer sampler when you need dynamic control.
+            // options.tracesSampler = { 0.2 } // Use a sampler when traces need dynamic sampling rates.
             // options.tracePropagationTargets = listOf("api.example.com", "https://auth.example.com")
             // options.propagateTraceparent = true
             // options.traceOptionsRequests = false

@@ -768,7 +768,7 @@ Do **not** use hardware identifiers for advertising or routine analytics. Google
 | **Android ID**                                                          | App-scoped on modern Android; may change after factory reset; use only when appropriate, not as a global cross-app user ID |
 | App-specific ID                                                         | Generate and store a random UUID in app storage or tie identity to your **account** after sign-in                          |
 
-Prefer **account-based** identity for personalization. For crash and product analytics without PII, follow `references/crashlytics.md` scrubbing rules.
+Use **account-based** identity for personalization. For crash and product analytics without PII, follow `references/crashlytics.md` scrubbing rules.
 
 ## Android 15+ Platform Privacy
 
@@ -787,7 +787,7 @@ When the app requests `READ_MEDIA_IMAGES` / `READ_MEDIA_VIDEO` on API 34+, the u
 
 Rules:
 
-- **Prefer the Photo Picker** (`PickVisualMedia` / `ActivityResultContracts`) over requesting the permissions at all. See `references/android-permissions.md`. The picker does not require any media permission and works on all supported APIs.
+- **Use the Photo Picker** (`PickVisualMedia` / `ActivityResultContracts`) instead of broad media reads when UX allows. Details: `references/android-permissions.md`. The picker needs no media permission on supported APIs.
 - If you *must* enumerate media (gallery-like apps), check the grant state and show a "Manage selected photos" entry point that re-invokes the picker via `ACTION_MANAGE_APP_PERMISSIONS` or a fresh `READ_MEDIA_VISUAL_USER_SELECTED` request. Do not silently fail when only partial access is granted.
 
 ```kotlin

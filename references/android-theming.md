@@ -602,7 +602,7 @@ In M3, depth is communicated through **container tone first**. Reach for a shado
 | 3               | `surfaceContainerHigh`      | FAB, dialogs, search bar, date/time pickers                              |
 | 4–5             | `surfaceContainerHighest`   | Hover/focus increase only - never a resting state                        |
 
-Setting `Surface(tonalElevation = 3.dp)` blends `surfaceTint` into `surface` to approximate level 3. Prefer **picking the explicit `surfaceContainer*` role** instead - it's clearer, survives dynamic color and user contrast, and matches what M3 components do internally.
+Setting `Surface(tonalElevation = 3.dp)` blends `surfaceTint` into `surface` to approximate level 3. **Use the explicit `surfaceContainer*` role** instead — clearer mapping, survives dynamic color and user contrast, and matches what M3 components do internally.
 
 ### Compose: prefer container role, add shadow only when needed
 

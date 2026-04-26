@@ -121,7 +121,7 @@ Build a **`TimelineSpec`** (aggregation period, start/end in **`America/Los_Ange
 
 **CI/CD:** schedule a job (for example nightly) that runs `./gradlew <yourReportingTask>` and injects secrets at runtime: service account JSON, Slack token or webhook URL, and the **`apps/...`** resource name for the app you report on.
 
-**Kotlin and coroutines:** Gradle tasks run on the build JVM; I/O belongs in **`@TaskAction`** (or a worker). Prefer **`suspend`** + **`withContext(Dispatchers.IO)`** in a dedicated class for clarity and tests; the task only **`runBlocking { … }`**. Avoid duplicate **`Dispatchers.IO`** if the task already uses **`runBlocking(Dispatchers.IO)`**. See [kotlin-patterns.md](/references/kotlin-patterns.md) and [coroutines-patterns.md](/references/coroutines-patterns.md). Avoid heavy work during **configuration** phase.
+**Kotlin and coroutines:** Gradle tasks run on the build JVM; I/O belongs in **`@TaskAction`** (or a worker). Use **`suspend`** + **`withContext(Dispatchers.IO)`** in a dedicated class for clarity and tests; the task only **`runBlocking { … }`**. Avoid duplicate **`Dispatchers.IO`** if the task already uses **`runBlocking(Dispatchers.IO)`**. See [kotlin-patterns.md](/references/kotlin-patterns.md) and [coroutines-patterns.md](/references/coroutines-patterns.md). Avoid heavy work during **configuration** phase.
 
 ### Startup time (user experience)
 

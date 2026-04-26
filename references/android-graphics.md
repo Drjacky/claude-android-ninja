@@ -811,7 +811,7 @@ fun extractVibrantColor(bitmap: Bitmap, isDark: Boolean = true): Color {
 
     val palette = Palette.from(softwareBitmap).generate()
 
-    // Prefer vibrant swatches for dynamic colors
+    // Use vibrant swatches when sampling wallpaper colors
     val vibrantSwatch = if (isDark) {
         palette.darkVibrantSwatch
             ?: palette.vibrantSwatch

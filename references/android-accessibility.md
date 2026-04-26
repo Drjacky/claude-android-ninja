@@ -78,7 +78,7 @@ Button(onClick = { }) {
 
 TalkBack already announces the **role** (button, image). Labels should describe **purpose**, not control type.
 
-| Prefer                  | Avoid                  |
+| Use                     | Avoid                  |
 |-------------------------|------------------------|
 | "Save"                  | "Save button"          |
 | "Submit"                | "Click here to submit" |
@@ -547,9 +547,9 @@ fun ArticleScreen(article: Article) {
 
 Announce dynamic content changes to screen readers.
 
-**Modes:** In `Modifier.semantics`, `liveRegion = LiveRegionMode.Polite` queues announcements when the user is idle; `LiveRegionMode.Assertive` interrupts (use sparingly, for example critical errors). Prefer **polite** live regions on the composable that actually changed, or rely on **stateDescription** / **error** semantics so TalkBack picks up updates without extra noise.
+**Modes:** In `Modifier.semantics`, `liveRegion = LiveRegionMode.Polite` queues announcements when the user is idle; `LiveRegionMode.Assertive` interrupts — reserve it for critical errors. Default to **polite** live regions on the composable that changed, or rely on **stateDescription** / **error** semantics so TalkBack picks up updates without extra noise.
 
-**Avoid** firing raw `AccessibilityEvent.TYPE_ANNOUNCEMENT` for every minor UI tick. Prefer semantics-driven updates; use one-off announcements only when there is no stable node to attach semantics to.
+**Avoid** firing raw `AccessibilityEvent.TYPE_ANNOUNCEMENT` for every minor UI tick. Drive updates through semantics; emit one-off announcements only when no stable node can carry the change.
 
 ```kotlin
 @Composable

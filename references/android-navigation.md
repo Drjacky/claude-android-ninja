@@ -9,9 +9,9 @@ Navigation 3 is still under active development; pin a stable version from [Navig
 2. [Quick Start](#navigation-3-quick-start)
 3. [App Navigation Setup](#app-navigation-setup)
 4. [Navigation State Management](#navigation-3-state-management)
-5. [Key Principles](#key-principles)
+5. [Navigation invariants](#navigation-invariants)
 6. [Navigation Flow](#navigation-flow)
-7. [Migration Note](#migration-note)
+7. [Migration](#migration)
 8. [Animations](#animations)
 9. [Scenes & Custom Layouts](#scenes--custom-layouts)
 10. [Deep Links](#deep-links)
@@ -50,10 +50,10 @@ Required floor: tier 3 on every build. Target tier 2 for productivity and tablet
 | Window width           | Typical layout (Material adaptive)                   |
 |------------------------|------------------------------------------------------|
 | Compact (under 600 dp) | Bottom bar, single pane                              |
-| Medium (600-840 dp)    | Navigation rail, optional list-detail                |
+| Medium (600-840 dp)    | Navigation rail; add list-detail when content needs split panes |
 | Expanded (over 840 dp) | Rail or persistent drawer, list-detail or multi-pane |
 
-Use `WindowSizeClass` / `currentWindowAdaptiveInfo()` for custom splits; prefer `NavigationSuiteScaffold` so bar vs rail vs drawer tracks size without manual branching.
+Use `WindowSizeClass` / `currentWindowAdaptiveInfo()` for custom splits; use `NavigationSuiteScaffold` so bar vs rail vs drawer tracks size without manual branching.
 
 ### Configuration and state
 
@@ -69,7 +69,7 @@ Handle **configuration changes** without losing user context: rotation, fold/unf
 | Flat / open                             | Treat like tablet or large phone                              |
 | Tabletop / half-open (horizontal hinge) | Avoid primary actions on the hinge; split content per segment |
 | Book / vertical hinge                   | Same: no critical tap targets on the fold                     |
-| Folded closed                           | Usually one display; navigation should match compact patterns |
+| Folded closed                           | Single outer display; navigation matches compact patterns |
 
 Use Jetpack **WindowManager** (`androidx.window`) when you need explicit fold or posture; not for everyday bar vs rail decisions.
 
@@ -99,7 +99,7 @@ Assume the app **does not own the full display**. Support minimum resize width (
 
 ## Navigation 3 Quick Start
 
-Navigation 3 uses type-safe data classes as navigation keys. Here's a minimal example:
+Navigation 3 uses type-safe data classes as navigation keys. Minimal wiring:
 
 #### 1. Define Destinations (Feature Module)
 
@@ -417,7 +417,7 @@ import androidx.navigation3.runtime.NavKey
 class Navigator(val state: NavigationState) {
     fun navigate(route: NavKey) {
         if (route in state.backStacks.keys) {
-            // This is a top level route, just switch to it.
+            // Top-level route: swap the active tab instead of pushing a child.
             state.topLevelRoute = route
         } else {
             state.backStacks[state.topLevelRoute]?.add(route)
@@ -466,7 +466,7 @@ val authNavigator = remember(navigator) {
 - The `Navigator` handles navigation events and updates `NavigationState`
 - The UI (provided by `NavDisplay`) observes `NavigationState` and reacts to changes
 
-## Key Principles
+## Navigation invariants
 
 1. **Feature Independence**: Features define `Navigator` interfaces
 2. **Central Coordination**: App module implements all navigators
@@ -476,13 +476,11 @@ val authNavigator = remember(navigator) {
 
 ## Navigation Flow
 
-For end-to-end flow diagrams (UI → data → navigation), see the Complete Architecture
-Flow section in `references/architecture.md`.
+End-to-end flow diagrams (UI → data → navigation): [architecture.md](/references/architecture.md).
 
-## Migration Note
+## Migration
 
-For step-by-step migration from Navigation 2.x to Navigation3, see
-[migration.md](/references/migration.md#navigation-2x-to-navigation3).
+Navigation 2.x → Navigation3: [migration.md → Navigation 2.x to Navigation3](/references/migration.md#navigation-2x-to-navigation3).
 
 ## Animations
 
@@ -899,7 +897,7 @@ fun MaterialListDetailExample() {
 ```
 
 **Material3 metadata helpers:**
-- `ListDetailSceneStrategy.listPane(detailPlaceholder = { ... })` - marks entry as list pane, with optional placeholder when no detail is selected
+- `ListDetailSceneStrategy.listPane(detailPlaceholder = { ... })` — marks the list pane; supply `detailPlaceholder` when the detail pane can be empty
 - `ListDetailSceneStrategy.detailPane()` - marks entry as detail pane
 - `ListDetailSceneStrategy.extraPane()` - marks entry as extra pane (three-pane layout)
 
@@ -2074,7 +2072,7 @@ The child entry's `viewModel<SharedCounterViewModel>()` call resolves to the sam
 // Bad: hiltViewModel() inside a nested composable (wrong scope)
 @Composable
 fun ProductCard() {
-    // This ViewModel is scoped to the entire NavEntry, not just this card!
+    // ViewModelStore follows the NavEntry — every ProductCard shares one ViewModel.
     // Multiple ProductCards will share the exact same ViewModel instance.
     val viewModel: ProductViewModel = hiltViewModel() 
 }

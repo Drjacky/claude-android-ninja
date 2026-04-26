@@ -2141,7 +2141,7 @@ object TestData {
 
 Required:
 - Use Google Truth (`assertThat(actual).isEqualTo(expected)`); never JUnit `assertEquals` / `assertTrue` / `assertNotNull`.
-- Prefer Truth subject methods (`hasSize`, `contains`, `isInstanceOf`, `isNull`, `isNotNull`) over manual boolean checks.
+- Use Truth subject methods (`hasSize`, `contains`, `isInstanceOf`, `isNull`, `isNotNull`) instead of hand-rolled boolean assertions.
 - Hand-written fakes mirror production behaviour with state and test hooks; never stub-only.
 - Test each feature module's ViewModel and UI in isolation; never depend on another feature module from tests.
 - Test `Navigator` interfaces with fakes; MockK only for Navigation 3 framework types in `app`.

@@ -151,7 +151,7 @@ Extract composables when there is **real reuse**, a **stable API**, or a clear v
 
 ## Collection APIs
 
-### Prefer Read-Only Collection APIs
+### Read-only collection APIs
 
 Expose `List`, `Set`, or `Map` from public APIs and keep mutable collections private. This keeps
 mutation localized and makes state transitions explicit.
