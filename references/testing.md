@@ -2202,7 +2202,7 @@ fun `when products loaded then state is success`() = runTest {
 **Warning:** `cachedIn(viewModelScope)` caches `PagingData` and can swallow exceptions, making error-state testing unreliable.
 
 ```kotlin
-// ❌ Problematic for error testing
+// WRONG: Problematic for error testing
 class ProductsViewModel @Inject constructor(
     private val repository: ProductRepository
 ) : ViewModel() {

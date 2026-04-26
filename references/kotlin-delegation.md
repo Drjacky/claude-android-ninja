@@ -55,7 +55,7 @@ class ExampleViewModel(
 ### Inheritance vs Delegation Comparison
 
 ```kotlin
-// ❌ Bad: Deep inheritance hierarchy
+// WRONG: Deep inheritance hierarchy
 abstract class BaseViewModel : ViewModel() {
     abstract fun log(message: String)
     abstract fun validateEmail(email: String): String?
@@ -82,7 +82,7 @@ class LoginViewModel : BaseViewModel() {
     // Tightly coupled to base class
 }
 
-// ✅ Good: Composition with delegation
+// CORRECT: Composition with delegation
 interface Logger {
     fun log(message: String)
 }
@@ -652,7 +652,7 @@ When migrating from inheritance-based patterns to delegation, audit base classes
    ```kotlin
    // BaseViewModel.kt
    abstract class BaseViewModel : ViewModel() {
-       // ❌ Dead code: No subclass ever uses this
+       // WRONG: Dead code: No subclass ever uses this
        protected fun handleFailure(throwable: Throwable) {
            viewModelScope.launch {
                _failure.emit(throwable)
@@ -669,8 +669,8 @@ When migrating from inheritance-based patterns to delegation, audit base classes
    ```kotlin
    // Application class or BaseViewModel
    class MyApplication : Application() {
-       @Inject lateinit var resources: Resources  // ❌ Never used
-       @Inject lateinit var crashReporter: CrashReporter  // ✅ Used in subclasses
+       @Inject lateinit var resources: Resources  // WRONG: Never used
+       @Inject lateinit var crashReporter: CrashReporter  // CORRECT: Used in subclasses
    }
    ```
    **Fix:** Remove unused `@Inject` fields. They compile fine but add unnecessary dependencies.
@@ -680,7 +680,7 @@ When migrating from inheritance-based patterns to delegation, audit base classes
    // BaseViewModel.kt
    abstract class BaseViewModel : ViewModel() {
        private val _failure = MutableSharedFlow<Throwable>()
-       val failure: SharedFlow<Throwable> = _failure.asSharedFlow()  // ❌ No screen collects this
+       val failure: SharedFlow<Throwable> = _failure.asSharedFlow()  // WRONG: No screen collects this
    }
    ```
    **Fix:** Search codebase for `.collect` or `collectAsStateWithLifecycle()` on this flow. If none exist, delete it.
@@ -689,7 +689,7 @@ When migrating from inheritance-based patterns to delegation, audit base classes
    ```kotlin
    // BaseViewModel.kt
    abstract class BaseViewModel : ViewModel() {
-       // ❌ Only called by handleFailure(), which is also unused
+       // WRONG: Only called by handleFailure(), which is also unused
        protected fun logError(throwable: Throwable) {
            crashReporter.recordException(throwable)
        }

@@ -32,27 +32,27 @@ Required artifacts: `androidx.room3:room3-runtime`, `sqlite-bundled`, KSP `room3
 ### Stability Requirements
 
 **Production apps:**
-- ✅ Use **stable** versions only (e.g., `1.0.0`) for libraries that offer a stable channel
-- ✅ Exception: AndroidX alpha/beta when required for critical features (e.g. Navigation3 during its preview cycle)
-- ❌ Avoid alpha/beta/RC for **Hilt** and **Coroutines** in production
+- Use **stable** versions only (e.g., `1.0.0`) for libraries that offer a stable channel
+- Exception: AndroidX alpha/beta when required for critical features (e.g. Navigation3 during its preview cycle)
+- Avoid alpha/beta/RC for **Hilt** and **Coroutines** in production
 - **Room 3:** Ship **stable** `androidx.room3` builds from [Room 3 releases](https://developer.android.com/jetpack/androidx/releases/room3). Preview builds require pinning the exact version from that page and scheduling the upgrade to stable.
 
 **Experimental projects:**
-- ✅ Can use alpha/beta for evaluation
+- Can use alpha/beta for evaluation
 - Document experimental versions clearly
 
 ### Version update cadence
 
 **Security patches:**
-- 🔴 Update immediately for CVEs
+- **P0 —** Update immediately for CVEs
 - Check dependency-check tools or GitHub security alerts
 
 **Feature updates:**
-- 🟡 Update when needed for specific features
+- **P1 —** Update when needed for specific features
 - Test thoroughly in feature branches
 
 **Breaking changes:**
-- 🟢 Update during planned refactoring windows
+- **P2 —** Update during planned refactoring windows
 - Review migration guides first
 
 ### Version Conflict Resolution
@@ -116,10 +116,10 @@ implementation(platform(libs.firebase.bom))
 **Don't specify versions for BOM-managed dependencies:**
 
 ```kotlin
-// ✅ Correct: version from BOM
+// CORRECT: version from BOM
 implementation(libs.androidx.compose.ui)
 
-// ❌ Wrong: explicit version overrides BOM
+// WRONG: explicit version overrides BOM
 implementation("androidx.compose.ui:ui:1.7.0")
 ```
 
@@ -163,9 +163,9 @@ dependencies {
 ### Annotation Processing: KSP > Kapt
 
 **Required: KSP (Kotlin Symbol Processing).**
-- ✅ 2x faster than kapt
-- ✅ **Room 3 is KSP-only** (no kapt/Java annotation processing for Room)
-- ✅ Hilt supports KSP
+- 2x faster than kapt
+- **Room 3 is KSP-only** (no kapt/Java annotation processing for Room)
+- Hilt supports KSP
 
 **Migrate from kapt to KSP:**
 

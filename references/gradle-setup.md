@@ -684,11 +684,11 @@ With `android.nonTransitiveRClass=true`, each module generates its own R class c
    // Package: com.example.feature.products.presentation.detail
    
    // This may fail:
-   stringResource(R.string.product_title) // ❌ Unresolved reference
+   stringResource(R.string.product_title) // WRONG: Unresolved reference
    
    // Fix: Import the module's R class explicitly
    import com.example.feature.products.R
-   stringResource(R.string.product_title) // ✅ Works
+   stringResource(R.string.product_title) // CORRECT: Works
    ```
 
 3. **Cross-module resources require import aliases**:

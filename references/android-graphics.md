@@ -1131,7 +1131,7 @@ Use `remember` and `derivedStateOf` appropriately:
 ```kotlin
 @Composable
 fun AnimatedIcon(isActive: Boolean) {
-    // ✅ Icon only recreated when isActive changes
+    // CORRECT: Icon only recreated when isActive changes
     val icon = remember(isActive) {
         createAnimatedIcon(isActive)
     }
@@ -1141,7 +1141,7 @@ fun AnimatedIcon(isActive: Boolean) {
 
 @Composable
 fun DerivedIcon(data: List<Int>) {
-    // ✅ Icon only recreated when sum changes, not when list instance changes
+    // CORRECT: Icon only recreated when sum changes, not when list instance changes
     val icon = remember {
         derivedStateOf { createIcon(data.sum()) }
     }.value
@@ -1156,12 +1156,12 @@ Don't create all icons upfront:
 
 ```kotlin
 object AppIcons {
-    // ✅ Lazy initialization
+    // CORRECT: Lazy initialization
     val Home: ImageVector by lazy { createHomeIcon() }
     val Settings: ImageVector by lazy { createSettingsIcon() }
     val Profile: ImageVector by lazy { createProfileIcon() }
     
-    // ❌ Avoid: Eager initialization
+    // WRONG: Avoid Eager initialization
     // val All = listOf(createHomeIcon(), createSettingsIcon(), ...) // Creates all immediately
 }
 ```

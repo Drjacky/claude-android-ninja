@@ -2043,11 +2043,11 @@ Match **density, color, motion, and typography** to product category. Use the ta
 Use semantic names, not visual descriptions:
 
 ```kotlin
-// ❌ Bad
+// WRONG: visual descriptor names (`lightBlue`) instead of semantic roles
 val lightBlue = Color(0xFF2196F3)
 val darkBlue = Color(0xFF1976D2)
 
-// ✅ Good
+// CORRECT: semantic role names (`primary`, `primaryVariant`)
 val primary = Color(0xFF2196F3)
 val primaryVariant = Color(0xFF1976D2)
 ```

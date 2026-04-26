@@ -125,7 +125,7 @@ internal class AuthRepositoryImpl @Inject constructor(
 - Forbidden: `object` singletons holding Android dependencies. Use Hilt scopes instead.
 
 ```kotlin
-// ❌ Bad: Holds context statically
+// WRONG: Holds context statically
 object BadAnalytics {
     private lateinit var context: Context
     
@@ -134,7 +134,7 @@ object BadAnalytics {
     }
 }
 
-// ✅ Good: DI-managed singleton
+// CORRECT: DI-managed singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class DataModule {
@@ -1168,7 +1168,7 @@ fun AuthScreen(uiState: AuthUiState) {
 - Forbidden: `abstract` "Base*UseCase" hierarchies. Compose with strategies / delegation instead. See [kotlin-delegation.md](/references/kotlin-delegation.md).
 
 ```kotlin
-// ❌ Bad: Inheritance-based template method
+// WRONG: Inheritance-based template method
 abstract class BaseAuthUseCase {
     suspend fun execute(credentials: Credentials): Result<AuthToken> {
         validate(credentials)
@@ -1182,7 +1182,7 @@ abstract class BaseAuthUseCase {
     protected abstract suspend fun saveToken(token: AuthToken)
 }
 
-// ✅ Good: Composition-based (Strategy pattern)
+// CORRECT: Composition-based (Strategy pattern)
 interface CredentialsValidator {
     fun validate(credentials: Credentials)
 }
@@ -1462,7 +1462,7 @@ fun UserCard(user: User) {
 - **Solution**: Inject `Context` via DI or use `Application` context.
 
 ```kotlin
-// ❌ Bad: Static context
+// WRONG: Static context
 object BadLogger {
     private lateinit var context: Context
     
@@ -1471,7 +1471,7 @@ object BadLogger {
     }
 }
 
-// ✅ Good: Injected context
+// CORRECT: Injected context
 @Singleton
 class Logger @Inject constructor(
     @ApplicationContext private val context: Context
@@ -1483,13 +1483,13 @@ class Logger @Inject constructor(
 - **Solution**: Use `StateFlow` and `collectAsStateWithLifecycle()` in Compose.
 
 ```kotlin
-// ❌ Bad: LiveData in new Compose code
+// WRONG: LiveData in new Compose code
 class BadViewModel : ViewModel() {
     private val _state = MutableLiveData<UiState>()
     val state: LiveData<UiState> = _state
 }
 
-// ✅ Good: StateFlow
+// CORRECT: StateFlow
 class GoodViewModel : ViewModel() {
     private val _state = MutableStateFlow<UiState>(UiState.Loading)
     val state: StateFlow<UiState> = _state.asStateFlow()
@@ -1501,7 +1501,7 @@ class GoodViewModel : ViewModel() {
 - **Solution**: Split into focused components.
 
 ```kotlin
-// ❌ Bad: God object
+// WRONG: God object
 class AuthManager {
     fun validateEmail(email: String): Boolean { }
     fun validatePassword(password: String): Boolean { }
@@ -1515,7 +1515,7 @@ class AuthManager {
     fun checkAuthStatus() { }
 }
 
-// ✅ Good: Separated concerns
+// CORRECT: Separated concerns
 interface AuthRepository {
     suspend fun login(email: String, password: String): Result<AuthToken>
     suspend fun register(user: User): Result<Unit>
@@ -1540,7 +1540,7 @@ class PasswordValidator {
 - **Solution**: Use `viewModelScope`, `lifecycleScope`, or custom scopes.
 
 ```kotlin
-// ❌ Bad: GlobalScope
+// WRONG: GlobalScope
 class BadViewModel : ViewModel() {
     fun loadData() {
         GlobalScope.launch { // Survives ViewModel!
@@ -1549,7 +1549,7 @@ class BadViewModel : ViewModel() {
     }
 }
 
-// ✅ Good: viewModelScope
+// CORRECT: viewModelScope
 class GoodViewModel : ViewModel() {
     fun loadData() {
         viewModelScope.launch { // Canceled when ViewModel cleared
@@ -1564,19 +1564,19 @@ class GoodViewModel : ViewModel() {
 - **Solution**: Use immutable collections or `PersistentList`.
 
 ```kotlin
-// ❌ Bad: Mutable collection
+// WRONG: Mutable collection
 @Immutable // This is a lie!
 data class UserList(
     val users: MutableList<User>
 )
 
-// ✅ Good: Immutable collection
+// CORRECT: Immutable collection
 @Immutable
 data class UserList(
     val users: List<User> // Immutable interface
 )
 
-// ✅ Better: Persistent collection
+// CORRECT: Better — Persistent collection
 @Immutable
 data class UserList(
     val users: PersistentList<User> // Efficient immutable updates
@@ -1588,7 +1588,7 @@ data class UserList(
 - **Solution**: Start simple, refactor when complexity emerges.
 
 ```kotlin
-// ❌ Bad: Over-engineered for simple case
+// WRONG: Over-engineered for simple case
 interface UserRepository {
     suspend fun getUser(): Result<User>
 }
@@ -1602,7 +1602,7 @@ class UserRepositoryImpl @Inject constructor(
     }
 }
 
-// ✅ Good: Simple, direct
+// CORRECT: Simple, direct
 class UserRepository @Inject constructor(
     private val api: UserApi
 ) {
@@ -1617,7 +1617,7 @@ class UserRepository @Inject constructor(
 - **Solution**: Use coroutines and structured concurrency.
 
 ```kotlin
-// ❌ Bad: Callback hell
+// WRONG: Callback hell
 fun login(email: String, password: String, callback: (Result) -> Unit) {
     validateEmail(email) { isValid ->
         if (isValid) {
@@ -1638,7 +1638,7 @@ fun login(email: String, password: String, callback: (Result) -> Unit) {
     }
 }
 
-// ✅ Good: Coroutines with sequential clarity
+// CORRECT: Coroutines with sequential clarity
 suspend fun login(email: String, password: String): Result<User> =
     try {
         validateEmail(email)
@@ -1656,13 +1656,13 @@ suspend fun login(email: String, password: String): Result<User> =
 - **Solution**: Use app module as mediator with `Navigator` interfaces.
 
 ```kotlin
-// ❌ Bad: Feature depends on another feature
+// WRONG: Feature depends on another feature
 // feature/profile
 class ProfileViewModel @Inject constructor(
     private val authViewModel: AuthViewModel // Feature-to-feature dependency!
 ) : ViewModel()
 
-// ✅ Good: Features depend on domain, app mediates
+// CORRECT: Features depend on domain, app mediates
 // feature/profile
 interface ProfileNavigator {
     fun navigateToAuth()

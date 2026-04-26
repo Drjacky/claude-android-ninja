@@ -1898,7 +1898,7 @@ dependencies {
 **Contract:** every property is `val`, nested types are immutable, and instances never mutate after construction.
 
 ```kotlin
-// ✅ Correct: All properties are val and immutable
+// CORRECT: All properties are val and immutable
 @Immutable
 data class User(
     val id: String,
@@ -1907,7 +1907,7 @@ data class User(
     val profileUrl: String?
 )
 
-// ✅ Correct: Nested types are also immutable
+// CORRECT: Nested types are also immutable
 @Immutable
 data class AuthState(
     val user: User?, // User is @Immutable
@@ -1915,7 +1915,7 @@ data class AuthState(
     val error: String?
 )
 
-// ✅ Correct: Sealed class with immutable children
+// CORRECT: Sealed class with immutable children
 @Immutable
 sealed interface UiState {
     data object Loading : UiState
@@ -1923,14 +1923,14 @@ sealed interface UiState {
     data class Error(val message: String) : UiState
 }
 
-// ❌ Wrong: Contains mutable property
+// WRONG: Contains mutable property
 @Immutable // This is a lie!
 data class MutableUser(
     val id: String,
     var name: String // var makes this mutable
 )
 
-// ❌ Wrong: Contains mutable collection
+// WRONG: Contains mutable collection
 @Immutable // This is a lie!
 data class UserList(
     val users: MutableList<User> // Mutable collection
@@ -1942,7 +1942,7 @@ data class UserList(
 **Contract:** the type mutates, yet every change is observable (`mutableStateOf`, `StateFlow`, or `MutableState`).
 
 ```kotlin
-// ✅ Correct: Mutable but observable by Compose
+// CORRECT: Mutable but observable by Compose
 @Stable
 class AuthFormState {
     var email by mutableStateOf("")
@@ -1967,7 +1967,7 @@ class AuthFormState {
     }
 }
 
-// ✅ Correct: Wraps StateFlow (observable)
+// CORRECT: Wraps StateFlow (observable)
 @Stable
 class SearchRepository @Inject constructor(
     private val api: SearchApi
@@ -1980,7 +1980,7 @@ class SearchRepository @Inject constructor(
     }
 }
 
-// ✅ Correct: Interface can be marked @Stable if implementations guarantee stability
+// CORRECT: Interface can be marked @Stable if implementations guarantee stability
 // See references/crashlytics.md → "Provider-Agnostic Interface" for full implementation
 @Stable
 interface CrashReporter {
@@ -1988,14 +1988,14 @@ interface CrashReporter {
     fun recordException(throwable: Throwable)
 }
 
-// ❌ Wrong: Mutable and NOT observable by Compose
+// WRONG: Mutable and NOT observable by Compose
 @Stable // This is a lie!
 class BadFormState {
     var email: String = "" // No mutableStateOf - Compose won't see changes!
     var password: String = ""
 }
 
-// ❌ Wrong: Truly immutable, should use @Immutable instead
+// WRONG: Truly immutable, should use @Immutable instead
 @Stable // Use @Immutable instead
 data class Config(
     val apiUrl: String,

@@ -36,7 +36,7 @@ Set semantics on every interactive composable. TalkBack reads only the semantics
 Required on every non-text interactive element (icons, image buttons, decorative-but-tappable surfaces). Set `contentDescription = null` only when an adjacent text label already conveys the action.
 
 ```kotlin
-// ✅ Good: Descriptive, action-oriented
+// CORRECT: Descriptive, action-oriented
 IconButton(
     onClick = { onDeleteItem(item.id) },
     modifier = Modifier.semantics {
@@ -46,19 +46,19 @@ IconButton(
     Icon(painterResource(R.drawable.ic_delete), contentDescription = null)
 }
 
-// ✅ Good: Icon already has description
+// CORRECT: Icon already has description
 Icon(
     painterResource(R.drawable.ic_home),
     contentDescription = "Home"
 )
 
-// ❌ Bad: Missing description
+// WRONG: Missing description
 Icon(
     painterResource(R.drawable.ic_settings),
     contentDescription = null  // Only use null if parent has description
 )
 
-// ❌ Bad: Redundant description
+// WRONG: Redundant description
 Button(onClick = { }) {
     Icon(
         painterResource(R.drawable.ic_save),
@@ -265,7 +265,7 @@ Use `mergeDescendants = true` when you want to combine the semantics of child el
 Use `clearAndSetSemantics` when you want to completely replace the semantics of child elements with a custom description, ignoring what the children would normally announce.
 
 ```kotlin
-// ✅ Good: Merge card content for single announcement
+// CORRECT: Merge card content for single announcement
 @Composable
 fun ArticleCard(article: Article, onClick: () -> Unit) {
     Card(
@@ -284,7 +284,7 @@ fun ArticleCard(article: Article, onClick: () -> Unit) {
     }
 }
 
-// ✅ Good: Merge form label and input
+// CORRECT: Merge form label and input
 @Composable
 fun LabeledTextField(
     label: String,
@@ -317,14 +317,14 @@ fun LabeledTextField(
 Hide or override default semantics when needed.
 
 ```kotlin
-// ✅ Good: Hide decorative image from screen readers
+// CORRECT: Hide decorative image from screen readers
 Image(
     painterResource(R.drawable.decorative_pattern),
     contentDescription = null,
     modifier = Modifier.semantics { invisibleToUser() }
 )
 
-// ✅ Good: Clear default semantics for custom implementation
+// CORRECT: Clear default semantics for custom implementation
 Box(
     modifier = Modifier
         .clearAndSetSemantics {
@@ -359,21 +359,21 @@ All interactive elements must have a minimum touch target size of **48dp × 48dp
 ### Minimum Touch Targets
 
 ```kotlin
-// ✅ Good: Sufficient touch target
+// CORRECT: Sufficient touch target
 IconButton(
     onClick = { onDeleteClick() }  // IconButton defaults to 48dp
 ) {
     Icon(painterResource(R.drawable.ic_delete), contentDescription = "Delete")
 }
 
-// ❌ Bad: Too small
+// WRONG: Too small
 Icon(
     painterResource(R.drawable.ic_settings),
     contentDescription = "Settings",
     modifier = Modifier.clickable { }  // Only 24dp by default
 )
 
-// ✅ Good: Explicit padding to meet minimum
+// CORRECT: Explicit padding to meet minimum
 Icon(
     painterResource(R.drawable.ic_settings),
     contentDescription = "Settings",
@@ -383,7 +383,7 @@ Icon(
         .padding(12.dp)  // Total: 48dp
 )
 
-// ✅ Good: Minimum touch target with custom size
+// CORRECT: Minimum touch target with custom size
 Box(
     modifier = Modifier
         .clickable { onItemClick() }
@@ -404,7 +404,7 @@ Box(
 Maintain adequate spacing between interactive elements.
 
 ```kotlin
-// ✅ Good: Proper spacing between actions
+// CORRECT: Proper spacing between actions
 Row(
     modifier = Modifier.padding(16.dp),
     horizontalArrangement = Arrangement.spacedBy(8.dp)  // Minimum 8dp spacing
@@ -420,7 +420,7 @@ Row(
     }
 }
 
-// ❌ Bad: Actions too close together
+// WRONG: Actions too close together
 Row(modifier = Modifier.padding(16.dp)) {
     Icon(
         painterResource(R.drawable.ic_favorite),
@@ -678,7 +678,7 @@ fun AccessibleButton(
     }
 }
 
-// ❌ Bad: Insufficient contrast
+// WRONG: Insufficient contrast
 @Composable
 fun PoorContrastText() {
     Text(
@@ -688,7 +688,7 @@ fun PoorContrastText() {
     )
 }
 
-// ✅ Good: Check contrast programmatically
+// CORRECT: Check contrast programmatically
 @Composable
 fun DynamicContrastText(
     text: String,
@@ -713,7 +713,7 @@ fun DynamicContrastText(
 Use multiple indicators (color + icon + text).
 
 ```kotlin
-// ❌ Bad: Color only
+// WRONG: Color only
 @Composable
 fun StatusBadge(status: Status) {
     Box(
@@ -730,7 +730,7 @@ fun StatusBadge(status: Status) {
     )
 }
 
-// ✅ Good: Color + Icon + Text
+// CORRECT: Color + Icon + Text
 @Composable
 fun AccessibleStatusBadge(status: Status) {
     val (icon, color, text) = when (status) {
@@ -756,7 +756,7 @@ fun AccessibleStatusBadge(status: Status) {
     }
 }
 
-// ✅ Good: Form validation with multiple indicators
+// CORRECT: Form validation with multiple indicators
 @Composable
 fun AccessibleTextField(
     value: String,
@@ -1500,21 +1500,21 @@ android {
 ## Rules
 
 **Required:**
-- ✅ Provide `contentDescription` for all icons and images
-- ✅ Write concise labels (purpose, not "button" / "tap here")
-- ✅ Ensure 48dp × 48dp minimum touch targets
-- ✅ Use `mergeDescendants` to group related content
-- ✅ Announce state changes with `stateDescription`
-- ✅ Support dark mode and high contrast
-- ✅ Test with TalkBack enabled
+- Provide `contentDescription` for all icons and images
+- Write concise labels (purpose, not "button" / "tap here")
+- Ensure 48dp × 48dp minimum touch targets
+- Use `mergeDescendants` to group related content
+- Announce state changes with `stateDescription`
+- Support dark mode and high contrast
+- Test with TalkBack enabled
 
 **Forbidden:**
-- ❌ Rely on color alone to convey information
-- ❌ Use small touch targets (< 48dp)
-- ❌ Ignore form validation error announcements
-- ❌ Use `contentDescription` on decorative images
-- ❌ Forget to test with accessibility services enabled
-- ❌ Hardcode text (use string resources for i18n)
+- Rely on color alone to convey information
+- Use small touch targets (< 48dp)
+- Ignore form validation error announcements
+- Use `contentDescription` on decorative images
+- Forget to test with accessibility services enabled
+- Hardcode text (use string resources for i18n)
 
 ## References
 

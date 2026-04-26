@@ -239,7 +239,7 @@ See: `references/design-patterns.md` → "Kotlin-Specific Patterns" → "Sealed 
 Use generics for type-safe wrappers and error handling:
 
 ```kotlin
-// ✅ Generic Result type
+// CORRECT: Generic Result type
 sealed class Result<out T> {
     data class Success<T>(val data: T) : Result<T>()
     data class Error(val exception: Exception) : Result<Nothing>()
@@ -268,7 +268,7 @@ Kotlin stdlib ships `Result<T>`; add a sealed domain result when branches need m
 Use `reified` with `inline` functions for runtime type information:
 
 ```kotlin
-// ✅ Type-safe JSON parsing with reified
+// CORRECT: Type-safe JSON parsing with reified
 inline fun <reified T> parseJson(json: String): T {
     return Json.decodeFromString<T>(json)
 }
@@ -277,16 +277,16 @@ inline fun <reified T> parseJson(json: String): T {
 val user: User = parseJson(jsonString)
 val token: AuthToken = parseJson(tokenJson)
 
-// ✅ Type-safe navigation argument retrieval
+// CORRECT: Type-safe navigation argument retrieval
 inline fun <reified T> SavedStateHandle.getOrNull(key: String): T? =
     get<T>(key)
 
-// ✅ Type-safe Retrofit service creation wrapper
+// CORRECT: Type-safe Retrofit service creation wrapper
 inline fun <reified T> Retrofit.create(): T {
     return create(T::class.java)
 }
 
-// ✅ Room 3 DAO with reified type
+// CORRECT: Room 3 DAO with reified type
 inline fun <reified T> Database.dao(): T {
     return when (T::class) {
         UserDao::class -> userDao() as T
@@ -392,7 +392,7 @@ See: `references/design-patterns.md` → "Kotlin-Specific Patterns" → "Extensi
 Use inline value classes for type-safe wrappers with zero runtime overhead.
 
 ```kotlin
-// ✅ Type-safe IDs
+// CORRECT: Type-safe IDs
 @JvmInline
 value class UserId(val value: String)
 
@@ -402,7 +402,7 @@ value class AuthToken(val value: String)
 @JvmInline
 value class Email(val value: String)
 
-// ✅ Prevents mixing different ID types
+// CORRECT: Prevents mixing different ID types
 interface UserRepository {
     suspend fun getUser(id: UserId): Result<User> // Can't pass Email by mistake
 }
@@ -415,10 +415,10 @@ interface AuthRepository {
 val userId = UserId("123")
 val email = Email("user@example.com")
 
-userRepository.getUser(userId) // ✅ Correct
-userRepository.getUser(email) // ❌ Compile error - type safety!
+userRepository.getUser(userId) // CORRECT: compiles — `UserId` matches repository API
+userRepository.getUser(email) // WRONG: Compile error - type safety!
 
-// ✅ Type-safe domain values
+// CORRECT: Type-safe domain values
 @JvmInline
 value class Temperature(val celsius: Double) {
     fun toFahrenheit(): Double = celsius * 9.0 / 5.0 + 32.0
@@ -454,13 +454,13 @@ Use `Sequence` for large collections or chained operations to avoid intermediate
 Allocating short-lived objects inside hot loops triggers GC pauses and causes jank. Reuse buffers, or hoist the allocation out of the loop.
 
 ```kotlin
-// ❌ Allocates a new String per iteration (10,001 objects)
+// WRONG: Allocates a new String per iteration (10,001 objects)
 for (i in 0..10000) {
     val text = "Item number: $i"
     processText(text)
 }
 
-// ✅ Reuse StringBuilder
+// CORRECT: Reuse StringBuilder
 val builder = StringBuilder()
 for (i in 0..10000) {
     builder.clear()
@@ -468,12 +468,12 @@ for (i in 0..10000) {
     processText(builder.toString())
 }
 
-// ❌ Creates new object each time
+// WRONG: Creates new object each time
 fun getCurrentDate(): Date {
     return Date() // Called 1000 times = 1000 objects
 }
 
-// ✅ Reuse if possible
+// CORRECT: Reuse if possible
 private var cachedDate: Date? = null
 fun getCurrentDate(): Date {
     return cachedDate ?: Date().also { cachedDate = it }
@@ -481,14 +481,14 @@ fun getCurrentDate(): Date {
 ```
 
 ```kotlin
-// ❌ Eager evaluation - creates intermediate lists
+// WRONG: Eager evaluation - creates intermediate lists
 val activeUserNames = users
     .filter { it.isActive() }       // Creates List
     .map { it.name }                // Creates another List
     .sortedBy { it.lowercase() }    // Creates another List
     .take(10)                       // Creates another List
 
-// ✅ Lazy evaluation - single pass
+// CORRECT: Lazy evaluation - single pass
 val activeUserNames = users
     .asSequence()
     .filter { it.isActive() }
@@ -497,7 +497,7 @@ val activeUserNames = users
     .take(10)
     .toList() // Materialize only at the end
 
-// ✅ Generate sequences lazily
+// CORRECT: Generate sequences lazily
 fun generateUserIds(): Sequence<UserId> = sequence {
     var counter = 0
     while (true) {
@@ -507,7 +507,7 @@ fun generateUserIds(): Sequence<UserId> = sequence {
 
 val first100Ids = generateUserIds().take(100).toList()
 
-// ✅ File processing (avoid loading everything into memory)
+// CORRECT: File processing (avoid loading everything into memory)
 fun processLargeFile(file: File): List<String> =
     file.useLines { lines ->
         lines
@@ -535,7 +535,7 @@ fun processLargeFile(file: File): List<String> =
 ### Constants and Factory Methods
 
 ```kotlin
-// ✅ Constants in companion object
+// CORRECT: Constants in companion object
 class AuthConfig {
     companion object {
         val SESSION_TIMEOUT = 30.minutes
@@ -544,7 +544,7 @@ class AuthConfig {
     }
 }
 
-// ✅ Factory methods
+// CORRECT: Factory methods
 @Immutable
 data class User private constructor(
     val id: String,
@@ -577,11 +577,11 @@ val user = User.create("test@example.com", "Test User").getOrThrow()
 **Top-Level vs Companion Object:**
 
 ```kotlin
-// ✅ Top-level for pure utility functions
+// CORRECT: Top-level for pure utility functions
 fun formatDuration(duration: Duration): String =
     "${duration.inWholeSeconds} seconds"
 
-// ✅ Companion object for type-related constants/factories
+// CORRECT: Companion object for type-related constants/factories
 class Session {
     companion object {
         val DEFAULT_TIMEOUT = 30.seconds
@@ -595,12 +595,12 @@ class Session {
 Use type aliases for readability and to simplify complex generic types.
 
 ```kotlin
-// ✅ Simplify complex types
+// CORRECT: Simplify complex types
 typealias UserId = String
 typealias AuthCallback = (Result<AuthToken>) -> Unit
 typealias ValidationRules = Map<String, (String) -> Boolean>
 
-// ✅ Generic callback types
+// CORRECT: Generic callback types
 typealias Callback<T> = (Result<T>) -> Unit
 typealias Listener<T> = (T) -> Unit
 
@@ -615,7 +615,7 @@ class AuthService {
     }
 }
 
-// ✅ Flow types
+// CORRECT: Flow types
 typealias AuthStateFlow = StateFlow<AuthState>
 typealias UserListFlow = Flow<List<User>>
 
@@ -623,11 +623,11 @@ class AuthViewModel {
     val authState: AuthStateFlow = _authState.asStateFlow()
 }
 
-// ❌ Don't use for single-use types
+// WRONG: Don't use for single-use types
 typealias S = String // Too generic
 typealias UEVM = UserEditViewModel // Unreadable abbreviation
 
-// ❌ Don't hide important type information
+// WRONG: Don't hide important type information
 typealias IntList = List<Int> // Doesn't add value; use List<Int> directly
 ```
 
@@ -645,31 +645,31 @@ typealias IntList = List<Int> // Doesn't add value; use List<Int> directly
 Destructure data classes and Pairs for cleaner code:
 
 ```kotlin
-// ✅ Data class destructuring
+// CORRECT: Data class destructuring
 data class User(val id: String, val name: String, val email: String)
 
 val user = User("1", "John", "john@example.com")
 val (id, name, email) = user
 
-// ✅ Useful in loops
+// CORRECT: Useful in loops
 val users = listOf(user1, user2, user3)
 for ((id, name, _) in users) { // _ ignores email
     println("$id: $name")
 }
 
-// ✅ Map entries
+// CORRECT: Map entries
 val userMap = mapOf("1" to user1, "2" to user2)
 for ((userId, user) in userMap) {
     println("User $userId: ${user.name}")
 }
 
-// ✅ Pairs from functions
+// CORRECT: Pairs from functions
 fun getMinMax(numbers: List<Int>): Pair<Int, Int> =
     numbers.min() to numbers.max()
 
 val (min, max) = getMinMax(listOf(1, 5, 3, 9, 2))
 
-// ✅ Limited destructuring (only first N components)
+// CORRECT: Limited destructuring (only first N components)
 data class SearchResult(val id: String, val title: String, val description: String, val score: Float)
 
 val (id, title) = searchResult // Only destructure first 2
@@ -687,7 +687,7 @@ val (id, title) = searchResult // Only destructure first 2
 Use `inline` for higher-order functions to eliminate lambda overhead:
 
 ```kotlin
-// ✅ Inline higher-order function
+// CORRECT: Inline higher-order function
 inline fun <T> measureTime(block: () -> T): Pair<T, Duration> {
     val start = Clock.System.now()
     val result = block()
@@ -701,7 +701,7 @@ val (user, elapsed) = measureTime {
 }
 println("Took ${elapsed.inWholeMilliseconds}ms")
 
-// ✅ Inline for DSL builders
+// CORRECT: Inline for DSL builders
 inline fun buildUser(init: UserBuilder.() -> Unit): User {
     val builder = UserBuilder()
     builder.init()
@@ -720,7 +720,7 @@ val user = buildUser {
 Retain type information at runtime with `reified`:
 
 ```kotlin
-// ✅ Generic Activity start
+// CORRECT: Generic Activity start
 inline fun <reified T : Activity> Context.startActivity() {
     startActivity(Intent(this, T::class.java))
 }
@@ -728,13 +728,13 @@ inline fun <reified T : Activity> Context.startActivity() {
 // Usage
 context.startActivity<MainActivity>() // Type-safe!
 
-// ✅ Generic ViewModel retrieval with Hilt
+// CORRECT: Generic ViewModel retrieval with Hilt
 @Composable
 inline fun <reified T : ViewModel> hiltViewModel(): T {
     return androidx.hilt.navigation.compose.hiltViewModel()
 }
 
-// ✅ Type-safe navigation arguments
+// CORRECT: Type-safe navigation arguments
 inline fun <reified T> SavedStateHandle.getOrThrow(key: String): T =
     get<T>(key) ?: error("Missing required argument: $key")
 
@@ -745,7 +745,7 @@ class ProfileViewModel @Inject constructor(
     private val userId: UserId = savedStateHandle.getOrThrow("userId")
 }
 
-// ✅ Generic JSON serialization
+// CORRECT: Generic JSON serialization
 inline fun <reified T> Json.decodeFromString(string: String): T {
     return decodeFromString(serializer<T>(), string)
 }
@@ -876,23 +876,23 @@ inline fun <T> runOnIo(crossinline block: () -> T, crossinline onResult: (T) -> 
 Use named arguments for clarity, especially with multiple parameters of the same type:
 
 ```kotlin
-// ❌ Hard to read
+// WRONG: Hard to read
 authRepository.login("user@example.com", "password123")
 
-// ✅ Clear and explicit
+// CORRECT: Clear and explicit
 authRepository.login(
     email = "user@example.com",
     password = "password123"
 )
 
-// ✅ Essential for boolean parameters
+// CORRECT: Essential for boolean parameters
 Button(
     onClick = { },
     enabled = true,
     modifier = Modifier.fillMaxWidth()
 )
 
-// ✅ When parameters have default values
+// CORRECT: When parameters have default values
 fun createUser(
     name: String,
     email: String,
@@ -949,7 +949,7 @@ Use `findViewTreeLifecycleOwner()` when the view lives under a `Fragment` or Com
 Always use scoped coroutines; never `GlobalScope`.
 
 ```kotlin
-// ✅ ViewModel scope
+// CORRECT: ViewModel scope
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository
@@ -962,7 +962,7 @@ class AuthViewModel @Inject constructor(
     }
 }
 
-// ✅ Custom scope for repositories
+// CORRECT: Custom scope for repositories
 @Singleton
 class AuthRepository @Inject constructor(
     @IoDispatcher private val dispatcher: CoroutineDispatcher
@@ -980,7 +980,7 @@ class AuthRepository @Inject constructor(
 Use generics in suspend functions for reusable async patterns:
 
 ```kotlin
-// ✅ Generic retry logic
+// CORRECT: Generic retry logic
 suspend fun <T> retryWithBackoff(
     maxAttempts: Int = 3,
     initialDelay: Duration = 1.seconds,
@@ -1012,7 +1012,7 @@ suspend fun login(email: String, password: String): Result<AuthToken> =
         authApi.login(email, password)
     }
 
-// ✅ Generic resource management
+// CORRECT: Generic resource management
 suspend fun <T> withTimeoutResult(
     timeout: Duration,
     block: suspend () -> T

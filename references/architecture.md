@@ -633,7 +633,7 @@ abstract class DataModule {
 **Forbidden:** pass-through use cases that only wrap a single repository call — call the repository from the `ViewModel` instead.
 
 ```kotlin
-// ❌ Unnecessary use case (simple pass-through)
+// WRONG: Unnecessary use case (simple pass-through)
 class LoginUseCase @Inject constructor(
     private val authRepository: AuthRepository
 ) {
@@ -641,7 +641,7 @@ class LoginUseCase @Inject constructor(
         authRepository.login(email, password) // No added value
 }
 
-// ✅ Valuable use case (combines multiple repositories)
+// CORRECT: Valuable use case (combines multiple repositories)
 class GetUserProfileWithStatsUseCase @Inject constructor(
     private val userRepository: UserRepository,
     private val activityRepository: ActivityRepository,
@@ -667,7 +667,7 @@ class GetUserProfileWithStatsUseCase @Inject constructor(
     }
 }
 
-// ✅ Valuable use case (complex validation logic)
+// CORRECT: Valuable use case (complex validation logic)
 class ValidateRegistrationUseCase @Inject constructor() {
     operator fun invoke(email: String, password: String, confirmPassword: String): Result<Unit> {
         if (!email.matches(EMAIL_REGEX)) {
@@ -696,7 +696,7 @@ class ValidateRegistrationUseCase @Inject constructor() {
 
 ```kotlin
 // core/domain/repository/AuthRepository.kt
-// ✅ @Stable: Interface contract guarantees observable changes
+// CORRECT: @Stable: Interface contract guarantees observable changes
 @Stable
 interface AuthRepository {
     suspend fun login(email: String, password: String): Result<AuthToken>
@@ -715,7 +715,7 @@ Domain models should be annotated with `@Immutable` for Compose stability. Use `
 ```kotlin
 // core/domain/model/
 
-// ✅ @Immutable: Deeply immutable data
+// CORRECT: @Immutable: Deeply immutable data
 @Immutable
 data class User(
     val id: String,

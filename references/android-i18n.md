@@ -841,13 +841,13 @@ fun testRTLScreenshots() {
 
 ### String resources
 
-❌ **Bad:**
+**Wrong:**
 ```kotlin
 Text("Welcome to My App")
 Button(onClick = {}) { Text("Submit") }
 ```
 
-✅ **Good:**
+**Correct:**
 ```kotlin
 Text(stringResource(R.string.welcome_message))
 Button(onClick = {}) { Text(stringResource(R.string.submit_button)) }
@@ -855,24 +855,24 @@ Button(onClick = {}) { Text(stringResource(R.string.submit_button)) }
 
 ### Plurals for quantities
 
-❌ **Bad:**
+**Wrong:**
 ```kotlin
 val text = if (count == 1) "$count item" else "$count items"
 ```
 
-✅ **Good:**
+**Correct:**
 ```kotlin
 val text = pluralStringResource(R.plurals.item_count, count, count)
 ```
 
 ### No string concatenation
 
-❌ **Bad:**
+**Wrong:**
 ```kotlin
 Text("Hello " + userName + ", welcome back!")
 ```
 
-✅ **Good:**
+**Correct:**
 ```xml
 <string name="welcome_back">Hello %1$s, welcome back!</string>
 ```
@@ -882,12 +882,12 @@ Text(stringResource(R.string.welcome_back, userName))
 
 ### Start/end layout
 
-❌ **Bad:**
+**Wrong:**
 ```kotlin
 Modifier.padding(left = 16.dp, right = 16.dp)
 ```
 
-✅ **Good:**
+**Correct:**
 ```kotlin
 Modifier.padding(start = 16.dp, end = 16.dp)
 ```
@@ -905,13 +905,13 @@ fun PreviewArabic() {
 
 ### Locale-aware formatting
 
-❌ **Bad:**
+**Wrong:**
 ```kotlin
 Text("Price: $${amount}")
 Text("Date: ${year}-${month}-${day}")
 ```
 
-✅ **Good:**
+**Correct:**
 ```kotlin
 Text(currencyFormatter.formatCurrency(amount, "USD"))
 Text(dateFormatter.formatDate(instant))
