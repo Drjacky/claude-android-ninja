@@ -907,13 +907,13 @@ The Material3 `ListDetailSceneStrategy` automatically handles pane arrangement, 
 
 ## Deep Links
 
-Navigation 3 gives you direct control over deep link handling - you parse the intent, create the `NavKey`, and manage the back stack yourself. This section follows the [Principles of Navigation](https://developer.android.com/guide/navigation/principles).
+Required: parse `Intent.data` into a `NavKey`, push the result onto the back stack, and keep Up/Back aligned with [Principles of Navigation](https://developer.android.com/guide/navigation/principles).
 
 ### Parsing an Intent into a NavKey
 
-Convert the incoming `Intent` data URI into a navigation key using `kotlinx.serialization`:
+Required: decode the incoming `Intent` data URI with `kotlinx.serialization` and the Navigation 3 `DeepLinkPattern` / `KeyDecoder` pipeline.
 
-**1. Define deep link patterns:**
+Required: declare every supported URI in `deepLinkPatterns`:
 ```kotlin
 // app/deeplink/DeepLinkPatterns.kt
 import androidx.navigation3.runtime.NavKey
@@ -934,7 +934,7 @@ internal val deepLinkPatterns: List<DeepLinkPattern<out NavKey>> = listOf(
 )
 ```
 
-**2. Parse and match in Activity:**
+Required: parse in `Activity.onCreate` (or the shared entry used by `onCreate` and `onNewIntent`):
 ```kotlin
 // app/MainActivity.kt
 override fun onCreate(savedInstanceState: Bundle?) {
@@ -959,17 +959,18 @@ override fun onCreate(savedInstanceState: Bundle?) {
 }
 ```
 
-**Key points:**
-- `DeepLinkPattern` maps a URI pattern to a `NavKey` serializer, extracting `{path}` and `?query` arguments
-- `DeepLinkRequest` parses the incoming URI into path segments and query parameters
-- `DeepLinkMatcher` compares the request against each pattern
-- `KeyDecoder` uses `kotlinx.serialization` to decode matched arguments into the `NavKey`
+Required roles per parse:
+
+- `DeepLinkPattern` maps a URI pattern to a `NavKey` serializer; `{path}` and `?query` placeholders bind to `@Serializable` fields.
+- `DeepLinkRequest` materialises path segments and query parameters for matching.
+- `DeepLinkMatcher` selects the first matching pattern.
+- `KeyDecoder` decodes matched arguments into the concrete `NavKey`.
 
 ### Synthetic Back Stack
 
-When a deep link launches directly to a destination, build a synthetic back stack so Up/Back navigates naturally to parent screens:
+Required on the new-task deep-link path: build a synthetic back stack so Up/Back walks parent screens instead of exiting after one pop.
 
-**1. Define parent relationships:**
+Required: model `DeepLinkKey.parent` for every deep-linked destination:
 ```kotlin
 interface DeepLinkKey : NavKey {
     val parent: NavKey
@@ -989,7 +990,7 @@ data class ProductDetail(val productId: String) : DeepLinkKey {
 }
 ```
 
-**2. Build the synthetic back stack:**
+Required: walk `DeepLinkKey.parent` from the leaf key to the root to build the list:
 ```kotlin
 fun buildSyntheticBackStack(deepLinkKey: NavKey): List<NavKey> = buildList {
     var current: NavKey? = deepLinkKey
@@ -1000,7 +1001,7 @@ fun buildSyntheticBackStack(deepLinkKey: NavKey): List<NavKey> = buildList {
 }
 ```
 
-**3. Use with NavDisplay:**
+Required: pass the synthetic list into `rememberNavBackStack` before `NavDisplay`:
 ```kotlin
 val syntheticBackStack = buildSyntheticBackStack(deepLinkKey)
 
@@ -1015,13 +1016,13 @@ setContent {
 }
 ```
 
-For `ProductDetail("abc")`, the back stack becomes: `[HomeRoute, ProductListRoute, ProductDetail("abc")]` - pressing Back walks through parents naturally.
+Required stack shape for `ProductDetail("abc")`: `[HomeRoute, ProductListRoute, ProductDetail("abc")]`; Back pops in reverse order.
 
 ### Task Management
 
-Deep link behavior differs based on whether the Activity is started in a new task or the existing task:
+Required: branch on `Intent.FLAG_ACTIVITY_NEW_TASK` — new task vs existing task changes whether a synthetic stack is mandatory vs optional.
 
-**Detect the task:**
+Required: read `intent.flags` in `onCreate` before branching:
 ```kotlin
 override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -1030,17 +1031,15 @@ override fun onCreate(savedInstanceState: Bundle?) {
     val deepLinkKey = parseDeepLink(intent)
 
     if (isNewTask) {
-        // Build synthetic back stack for proper Up/Back
         val syntheticBackStack = buildSyntheticBackStack(deepLinkKey)
-        // Use syntheticBackStack with rememberNavBackStack(...)
+        // CORRECT: new task — seed stack with syntheticBackStack before NavDisplay.
     } else {
-        // Add deep link destination to existing back stack
-        // Use deepLinkKey directly with rememberNavBackStack(...)
+        // CORRECT: existing task — append deepLinkKey to the live stack (or replace per app policy).
     }
 }
 ```
 
-**Up button behavior on original task** - restart the Activity in a new task so Up navigates within the app:
+Required on the original task: restart the Activity in a new task so Up stays inside the app:
 ```kotlin
 fun navigateUp(deepLinkKey: NavKey, activity: Activity) {
     val parentKey = (deepLinkKey as? DeepLinkKey)?.parent
@@ -1059,17 +1058,16 @@ fun navigateUp(deepLinkKey: NavKey, activity: Activity) {
 }
 ```
 
-**Summary:**
-
 | Scenario      | Back                | Up                                   | Synthetic back stack?     |
 |---------------|---------------------|--------------------------------------|---------------------------|
 | New task      | Parent screen       | Parent screen                        | Yes, on Activity creation |
 | Existing task | Previous app/screen | Parent screen (restarts in new task) | Optional                  |
 
-**Guidelines:**
-- Up button never exits the app - disable it on the start destination
-- Deep linking simulates manual navigation via synthetic back stack
-- The start destination should never show an Up button
+Forbidden: show Up on the start destination — no in-app parent exists.
+
+Forbidden: route Up out of the app — Up targets only in-app parents (including synthetic-stack parents).
+
+Required: synthetic stack models the manual path from the root destination to the deep-linked key.
 
 ### AndroidManifest Setup
 
@@ -1123,7 +1121,7 @@ Forbidden: `android:autoVerify="true"` on a custom-scheme filter. App Links veri
 
 Forbidden: combining `<data android:scheme="https" />` and `<data android:scheme="myapp" />` in one filter — every scheme/host pair becomes a verification target and the non-https schemes break `autoVerify`.
 
-Keep `pathPrefix` entries narrow. Forbidden: `pathPrefix="/"` on production builds — claims every URL on the host and the system rejects the verification batch.
+Required: keep `pathPrefix` entries narrow. Forbidden: `pathPrefix="/"` on production builds — claims every URL on the host and the system rejects the verification batch.
 
 ### onNewIntent for singleTask
 
@@ -1184,11 +1182,15 @@ Forbidden: reading `intent.data` directly inside Composables — `intent` does n
 
 Forbidden: omitting `setIntent(intent)` in `onNewIntent` — leaves stale `getIntent()` results for any later code path (notification action handlers, restored process death).
 
-Use a synthetic back stack on the new-task path (see [Synthetic Back Stack](#synthetic-back-stack)). On the existing-task path, append the new key to the live back stack as shown above.
+Use when: `Intent.FLAG_ACTIVITY_NEW_TASK` is set — seed the stack from [Synthetic Back Stack](#synthetic-back-stack) before the first frame.
+
+Use when: the Activity stays in the existing task — append the parsed key to the live back stack (or replace the stack per app policy).
 
 ### App Links Verification
 
-Required for HTTPS deep links: publish a Digital Asset Links file (`assetlinks.json`) on every host declared in the `autoVerify` intent-filter. Without it the link opens in the browser or shows the disambiguation dialog.
+Required for HTTPS deep links: publish a Digital Asset Links file (`assetlinks.json`) on every host declared in the `autoVerify` intent-filter.
+
+Forbidden: ship `autoVerify` hosts without a reachable `assetlinks.json` — opens the browser or the disambiguation dialog.
 
 #### Server contract
 
@@ -1272,7 +1274,7 @@ Forbidden on Android 11 and lower: declaring a host you cannot serve `assetlinks
 
 #### Verify the file is reachable
 
-Use the Digital Asset Links REST API before installing the app — does not depend on a device:
+Required: hit the Digital Asset Links REST endpoint from CI or a laptop before blocking on-device `pm get-app-links` — no device required.
 
 ```bash
 curl 'https://digitalassetlinks.googleapis.com/v1/statements:list?\
@@ -1282,7 +1284,7 @@ relation=delegate_permission/common.handle_all_urls'
 
 Required JSON shape in the response: a non-empty `statements` array containing the package name and uppercase fingerprint that match the manifest. Empty array = file unreachable, malformed, or wrong content-type.
 
-For per-device verification commands (`pm set-app-links`, `pm verify-app-links --re-verify`, `pm get-app-links`) and the return-code legend, see [testing.md → Testing Deep Links](/references/testing.md#testing-deep-links).
+Per-device verification (`pm set-app-links`, `pm verify-app-links --re-verify`, `pm get-app-links`) and the return-code legend: [testing.md → Testing Deep Links](/references/testing.md#testing-deep-links).
 
 ### Dynamic App Links (Android 15+, API 35)
 
@@ -1319,7 +1321,7 @@ Forbidden: relying on dynamic rules to add a host or scheme not in the manifest.
 ]
 ```
 
-Matcher keys (every key optional, all keys in one rule must match):
+Required: each rule object may set any of these keys; every set key must match the URL:
 
 | Key         | Type    | Matches                                                                                                                            |
 |-------------|---------|------------------------------------------------------------------------------------------------------------------------------------|
@@ -1337,14 +1339,14 @@ Required: declare more specific rules first. Evaluation stops at the first match
 {"/": "*", "exclude": true}
 ```
 
-Above: `/path1` opens the app; everything else is excluded.
+Outcome for `{"/": "/path1"}` then `{"/": "*", "exclude": true}`: `/path1` opens the app; every other path is excluded.
 
 ```json
 {"/": "*", "exclude": true},
 {"/": "/path1"}
 ```
 
-Above: nothing opens the app — the `*` exclude rule wins for every URL including `/path1`.
+Outcome for `{"/": "*", "exclude": true}` then `{"/": "/path1"}`: no URL opens the app — the `*` exclude rule matches first for every path including `/path1`.
 
 #### "Exclude one path, allow the rest"
 
@@ -1363,7 +1365,7 @@ Required: validate JSON server-side before publishing. Malformed `relation_exten
 
 Required after every server-side rule change: force a re-fetch with `adb shell pm verify-app-links --re-verify com.example.app` (per-device cache; eventual consistency without it). Production devices pick up the new file on their own refresh schedule.
 
-Cross-check live rules with the Digital Asset Links REST API by appending `&return_relation_extensions=true`:
+Required: cross-check live rules against the Digital Asset Links REST response; append `&return_relation_extensions=true`:
 
 ```bash
 curl 'https://digitalassetlinks.googleapis.com/v1/statements:list?\
@@ -1372,13 +1374,13 @@ relation=delegate_permission/common.handle_all_urls&\
 return_relation_extensions=true'
 ```
 
-The `relation_extensions` field in the response must contain the same `dynamic_app_link_components` array. Empty or missing field = the verifier will not see the rules.
+Required: the REST JSON exposes `dynamic_app_link_components` under the same relation key as the published `assetlinks.json`. Empty or missing field means devices never load those rules.
 
 ### DomainVerificationManager Runtime Check
 
 API floor: 31. Required guard: `Build.VERSION.SDK_INT >= Build.VERSION_CODES.S` before any `DomainVerificationManager` call.
 
-Use `DomainVerificationManager` when the app needs to know which of its declared HTTPS hosts are actually claimed by this install — to prompt the user to approve unverified hosts or to disable in-app banners advertising deep-linkable URLs the system will not honour.
+Use `DomainVerificationManager` when: surfacing a Settings CTA for hosts stuck in `DOMAIN_STATE_NONE`, or hiding in-app copy that assumes verified App Links when the host map says otherwise.
 
 ```kotlin
 // app/deeplink/AppLinkVerificationStatus.kt
@@ -1414,7 +1416,7 @@ fun Context.appLinkStatus(): AppLinkStatus {
 }
 ```
 
-Required when at least one host is in `unapproved`: route the user to system settings so they can manually associate the app with the host. The Settings deep link is the only supported path — the app cannot grant itself verification.
+Required when `unapproved` is non-empty: open `Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS` for the package. No API grants verification without user or verifier action.
 
 ```kotlin
 // app/deeplink/AppLinkSettings.kt
@@ -1432,7 +1434,7 @@ fun Context.openAppLinkSettings() {
 }
 ```
 
-Use in Compose only after gating on API 31+:
+Required in Compose: gate the banner on API 31+ (`Build.VERSION.SDK_INT >= Build.VERSION_CODES.S`) before calling `appLinkStatus()`.
 
 ```kotlin
 @Composable
@@ -1454,9 +1456,9 @@ fun AppLinkApprovalBanner(onOpenSettings: () -> Unit) {
 
 Forbidden: caching the result across process restarts — verification state changes when the user toggles defaults, when the app re-runs verification, or when Play re-installs.
 
-Forbidden: showing the Settings link when `verified` already contains every host — the system will show "Open supported links" toggled on and the user has nothing to do.
+Forbidden: show the Settings CTA when every declared host is already `DOMAIN_STATE_VERIFIED` — nothing left to approve.
 
-State legend (returned by `hostToStateMap`):
+Required: map `hostToStateMap` integer values using this table:
 
 | Constant                         | Meaning                                                                       |
 |----------------------------------|-------------------------------------------------------------------------------|
@@ -1466,7 +1468,7 @@ State legend (returned by `hostToStateMap`):
 
 ### URI Pattern Matching
 
-Map URI patterns to `NavKey` types with path and query parameter extraction:
+Required: register one `DeepLinkPattern` per supported URI shape; placeholders bind to `@Serializable` fields on the `NavKey`.
 
 ```kotlin
 // app/deeplink/DeepLinkPatterns.kt
@@ -1510,7 +1512,7 @@ data class OrderItemDetail(val orderId: String, val itemId: String) : NavKey
 
 ### Deep Link Security
 
-Deep links are public entry points - treat all incoming data as untrusted:
+Required: treat every deep link as untrusted input — validate, allowlist, then navigate.
 
 ```kotlin
 // app/deeplink/DeepLinkValidator.kt
@@ -1531,7 +1533,7 @@ object DeepLinkValidator {
 }
 ```
 
-**Use in Activity:**
+Wire in `Activity`:
 ```kotlin
 override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -1552,30 +1554,34 @@ override fun onCreate(savedInstanceState: Bundle?) {
 }
 ```
 
-**Handle `onNewIntent` for `singleTask` launch mode:**
+Handle `onNewIntent` for `singleTask`:
 ```kotlin
 override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
     intent.data?.let { uri ->
         if (DeepLinkValidator.validate(uri)) {
             val key = parseDeepLink(uri)
-            // Add to existing back stack or reset
+            // CORRECT: push key or reset stack — match onNewIntent for singleTask wiring.
         }
     }
 }
 ```
 
-**Security guidelines:**
-- Always validate scheme and host against allowlists before processing
-- Sanitize all URI parameters (path segments, query values) - they are attacker-controlled
-- Verify authentication/authorization state before navigating to protected screens (see [Conditional Navigation](#conditional-navigation))
-- Never load deep link URLs directly in a WebView without strict allowlisting
-- Prefer verified HTTPS App Links over custom URI schemes - custom schemes can be claimed by any app
-- Log deep link attempts for anomaly detection (see `references/crashlytics.md`)
+Required: validate `scheme` and `host` against allowlists before parsing.
+
+Required: sanitize path segments and query values — attacker-controlled.
+
+Required: gate protected `NavKey` targets on auth state ([Conditional Navigation](#conditional-navigation)).
+
+Forbidden: load deep-link URLs in a `WebView` without an allowlist that matches the parser.
+
+Use HTTPS App Links for untrusted ingress. Forbidden: custom URI schemes as the only entry for auth, payments, or account recovery.
+
+Required: log deep-link attempts for anomaly detection ([crashlytics.md](references/crashlytics.md)).
 
 ### Custom-Scheme Deep Linking
 
-Use HTTPS App Links by default. Use a custom scheme (`myapp://`) only when:
+Use HTTPS App Links for production ingress. Use a custom scheme (`myapp://`) only when:
 
 - The OAuth library or third-party SDK requires a non-HTTPS redirect URI.
 - A vendor-internal IPC link must reach a sibling app on the same device.
@@ -1617,24 +1623,24 @@ DeepLinkPattern(
 ),
 ```
 
-Required disambiguation rule when both an HTTPS App Link and a custom-scheme URL point at the same destination: prefer the HTTPS form in every outbound link (email, SMS, push payload). Reserve the custom scheme for intra-device callbacks where the OS will not synthesise an HTTPS URL.
+Required when both HTTPS and a custom scheme reach the same `NavKey`: use HTTPS in every outbound link (email, SMS, push). Use the custom scheme only for intra-device callbacks where no HTTPS URL exists.
 
 Required for inbound custom-scheme links: validate the host as well as the scheme. `myapp://` with no `host` constraint matches `myapp://anything`, including paths an attacker can craft to confuse the parser.
 
-For testing custom schemes via `adb shell am start`, see [testing.md → Testing Deep Links](/references/testing.md#testing-deep-links).
+Custom-scheme `adb shell am start` probes: [testing.md → Testing Deep Links](/references/testing.md#testing-deep-links).
 
 ### Testing Deep Links
 
-For ADB commands and unit tests for deep link parsing, validation, and synthetic back stack, see `references/testing.md` → "Testing Deep Links".
+ADB, REST checks, instrumented `onNewIntent`, and host-state tables: [testing.md → Testing Deep Links](/references/testing.md#testing-deep-links).
 
 ### Troubleshooting Deep Links
 
-Use this table first. Run the matching ADB diagnostic from [testing.md → Testing Deep Links](/references/testing.md#testing-deep-links) before changing code.
+Required: match a symptom row, run the linked ADB or REST check from [testing.md → Testing Deep Links](/references/testing.md#testing-deep-links), then edit manifest or server data.
 
 | Symptom                                                       | Likely cause                                                                                           | Fix                                                                                                                                                  |
 |---------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Link opens browser instead of app                             | `assetlinks.json` unreachable, malformed, or fingerprint mismatch.                                     | Hit the Digital Asset Links REST endpoint (see [App Links Verification](#app-links-verification)). Confirm uppercase SHA-256 and `application/json`. |
-| Disambiguation dialog appears every time                      | User previously chose another handler, or hosts are only `DOMAIN_STATE_SELECTED`.                      | `pm reset-app-links com.example.app` then `pm verify-app-links --re-verify com.example.app`.                                                         |
+| Disambiguation dialog appears every time                      | User previously chose another handler, or hosts are only `DOMAIN_STATE_SELECTED`.                      | `pm set-app-links --package com.example.app 0 all` then `pm verify-app-links --re-verify com.example.app`.                                         |
 | Lowercase fingerprint in `assetlinks.json`                    | Generator produced lowercase, or hand-edited.                                                          | Convert to uppercase, colon-separated. Lowercase fails silently.                                                                                     |
 | Debug APK ignores deep link                                   | Debug fingerprint missing from `assetlinks.json`.                                                      | Add the debug-keystore SHA-256 alongside release/Play fingerprints.                                                                                  |
 | Play-installed APK ignores deep link, side-loaded build works | Only the upload-key SHA-256 is published; runtime install carries the Play-managed signature.          | Add the Play App Signing key SHA-256 from Play Console → Setup → App signing.                                                                        |

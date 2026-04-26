@@ -1433,7 +1433,7 @@ class FakeNavBackStack<T : NavKey>(startRoute: T) {
 
 ### Testing Compose Stability Annotations
 
-Verify that `@Immutable` and `@Stable` annotations are correctly applied:
+Required: assert `@Immutable` / `@Stable` on UI-owned models in unit tests before relying on Compose compiler stability output:
 
 ```kotlin
 // core/domain/src/test/kotlin/com/example/domain/model/StabilityTest.kt
@@ -1482,8 +1482,7 @@ class StabilityTest {
 }
 ```
 
-**Note**: Use Compose Compiler reports (`composeStabilityAnalyzer` Gradle plugin) to verify stability
-at build time. See `references/gradle-setup.md` → "Compose Stability Analyzer".
+Required after changing `@Immutable` / `@Stable` on UI-facing models: run Compose Compiler reports via the `composeStabilityAnalyzer` Gradle plugin ([gradle-setup.md](gradle-setup.md) → "Compose Stability Analyzer").
 
 ### Testing Deep Links
 
@@ -1542,7 +1541,7 @@ adb shell dumpsys package d
 
 #### Domain verification state legend
 
-Parse the `Domain verification state:` block from `pm get-app-links` output.
+Required: read the `Domain verification state:` block from `pm get-app-links` output before interpreting host status.
 
 | State               | Meaning                                                                |
 |---------------------|------------------------------------------------------------------------|
@@ -1556,7 +1555,7 @@ Parse the `Domain verification state:` block from `pm get-app-links` output.
 | `none`              | No record yet — wait, re-run `--re-verify`, or confirm network.        |
 | `1024` or higher    | Device-specific verifier error code; retry after network is stable.    |
 
-The hex value after `Status: always` in `dumpsys package d` reflects user link-handling preference, not verification success alone.
+Required: treat the hex suffix after `Status: always` in `dumpsys package d` as user preference metadata — it does not replace per-host `verified` / `none` lines from `pm get-app-links`.
 
 #### Pre-Android-12 verification compat
 
@@ -1602,7 +1601,8 @@ adb shell pm get-app-links com.example.app
 
 Required: every host that participates in dynamic routing shows `verified` in `pm get-app-links` output before closing the change (or document an intentional `approved` / `selected` user override from [Domain verification state legend](#domain-verification-state-legend)).
 
-**Unit test for deep link parsing:**
+#### Unit tests (parsing + stack)
+
 ```kotlin
 class DeepLinkParsingTest {
 
@@ -1684,7 +1684,7 @@ class MainActivityDeepLinkTest {
 }
 ```
 
-For deep link patterns, validation, and synthetic back stack setup, see `references/android-navigation.md` → "Deep Links".
+Patterns, manifest, App Links, Dynamic App Links, security: [android-navigation.md](android-navigation.md#deep-links).
 
 ## UI Tests
 
