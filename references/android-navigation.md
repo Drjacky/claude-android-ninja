@@ -1020,7 +1020,7 @@ Required stack shape for `ProductDetail("abc")`: `[HomeRoute, ProductListRoute, 
 
 ### Task Management
 
-Required: branch on `Intent.FLAG_ACTIVITY_NEW_TASK` — new task vs existing task changes whether a synthetic stack is mandatory vs optional.
+Required: branch on `Intent.FLAG_ACTIVITY_NEW_TASK` - new task vs existing task changes whether a synthetic stack is mandatory vs optional.
 
 Required: read `intent.flags` in `onCreate` before branching:
 ```kotlin
@@ -1032,9 +1032,9 @@ override fun onCreate(savedInstanceState: Bundle?) {
 
     if (isNewTask) {
         val syntheticBackStack = buildSyntheticBackStack(deepLinkKey)
-        // CORRECT: new task — seed stack with syntheticBackStack before NavDisplay.
+        // CORRECT: new task - seed stack with syntheticBackStack before NavDisplay.
     } else {
-        // CORRECT: existing task — append deepLinkKey to the live stack (or replace per app policy).
+        // CORRECT: existing task - append deepLinkKey to the live stack (or replace per app policy).
     }
 }
 ```
@@ -1063,9 +1063,9 @@ fun navigateUp(deepLinkKey: NavKey, activity: Activity) {
 | New task      | Parent screen       | Parent screen                        | Yes, on Activity creation |
 | Existing task | Previous app/screen | Parent screen (restarts in new task) | Optional                  |
 
-Forbidden: show Up on the start destination — no in-app parent exists.
+Forbidden: show Up on the start destination - no in-app parent exists.
 
-Forbidden: route Up out of the app — Up targets only in-app parents (including synthetic-stack parents).
+Forbidden: route Up out of the app - Up targets only in-app parents (including synthetic-stack parents).
 
 Required: synthetic stack models the manual path from the root destination to the deep-linked key.
 
@@ -1119,9 +1119,9 @@ Required: every `<data>` host inside an `autoVerify` filter must be served by a 
 
 Forbidden: `android:autoVerify="true"` on a custom-scheme filter. App Links verification is HTTPS-only; the attribute is silently ignored on other schemes (see [Custom-Scheme Deep Linking](#custom-scheme-deep-linking)).
 
-Forbidden: combining `<data android:scheme="https" />` and `<data android:scheme="myapp" />` in one filter — every scheme/host pair becomes a verification target and the non-https schemes break `autoVerify`.
+Forbidden: combining `<data android:scheme="https" />` and `<data android:scheme="myapp" />` in one filter - every scheme/host pair becomes a verification target and the non-https schemes break `autoVerify`.
 
-Required: keep `pathPrefix` entries narrow. Forbidden: `pathPrefix="/"` on production builds — claims every URL on the host and the system rejects the verification batch.
+Required: keep `pathPrefix` entries narrow. Forbidden: `pathPrefix="/"` on production builds - claims every URL on the host and the system rejects the verification batch.
 
 ### onNewIntent for singleTask
 
@@ -1178,19 +1178,19 @@ class MainActivity : ComponentActivity() {
 }
 ```
 
-Forbidden: reading `intent.data` directly inside Composables — `intent` does not change reference when `onNewIntent` fires; route the new URI through state (`mutableStateOf`, `Channel`, `SharedFlow`).
+Forbidden: reading `intent.data` directly inside Composables - `intent` does not change reference when `onNewIntent` fires; route the new URI through state (`mutableStateOf`, `Channel`, `SharedFlow`).
 
-Forbidden: omitting `setIntent(intent)` in `onNewIntent` — leaves stale `getIntent()` results for any later code path (notification action handlers, restored process death).
+Forbidden: omitting `setIntent(intent)` in `onNewIntent` - leaves stale `getIntent()` results for any later code path (notification action handlers, restored process death).
 
-Use when: `Intent.FLAG_ACTIVITY_NEW_TASK` is set — seed the stack from [Synthetic Back Stack](#synthetic-back-stack) before the first frame.
+Use when: `Intent.FLAG_ACTIVITY_NEW_TASK` is set - seed the stack from [Synthetic Back Stack](#synthetic-back-stack) before the first frame.
 
-Use when: the Activity stays in the existing task — append the parsed key to the live back stack (or replace the stack per app policy).
+Use when: the Activity stays in the existing task - append the parsed key to the live back stack (or replace the stack per app policy).
 
 ### App Links Verification
 
 Required for HTTPS deep links: publish a Digital Asset Links file (`assetlinks.json`) on every host declared in the `autoVerify` intent-filter.
 
-Forbidden: ship `autoVerify` hosts without a reachable `assetlinks.json` — opens the browser or the disambiguation dialog.
+Forbidden: ship `autoVerify` hosts without a reachable `assetlinks.json` - opens the browser or the disambiguation dialog.
 
 #### Server contract
 
@@ -1227,11 +1227,11 @@ Forbidden redirects: `http://example.com` → `https://example.com`, `example.co
 
 Required: every fingerprint string is **uppercase**, colon-separated SHA-256. Lowercase fingerprints fail silently.
 
-Required fingerprints: include every certificate that signs an APK that ships to a real device — Play-managed signing key, upload key (only when not enrolled in Play App Signing), debug key (for QA tracks).
+Required fingerprints: include every certificate that signs an APK that ships to a real device - Play-managed signing key, upload key (only when not enrolled in Play App Signing), debug key (for QA tracks).
 
 #### Where to get the SHA-256
 
-Use Play App Signing when enrolled — local `keytool` output is **not** the runtime fingerprint:
+Use Play App Signing when enrolled - local `keytool` output is **not** the runtime fingerprint:
 
 | App-signing setup                       | Source of the SHA-256                                                                                                                        |
 |-----------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
@@ -1239,7 +1239,7 @@ Use Play App Signing when enrolled — local `keytool` output is **not** the run
 | Self-managed release keystore           | `keytool -list -v -keystore release.jks -alias <alias>`. Copy the `SHA256:` line.                                                            |
 | Debug builds                            | `keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android`.                                            |
 
-Forbidden: shipping only the upload-key SHA-256 when Play App Signing is enrolled — installs from the Play Store carry the Play-managed signature, not the upload signature, and verification fails on every Play install.
+Forbidden: shipping only the upload-key SHA-256 when Play App Signing is enrolled - installs from the Play Store carry the Play-managed signature, not the upload signature, and verification fails on every Play install.
 
 #### Multi-app per domain
 
@@ -1270,11 +1270,11 @@ Required when several apps share a host (separate consumer + B2B builds, vendor 
 
 Required when one app handles several hosts: publish an identical `assetlinks.json` at each `https://<host>/.well-known/assetlinks.json` and list every host in the same `autoVerify` intent-filter (see [AndroidManifest Setup](#androidmanifest-setup)).
 
-Forbidden on Android 11 and lower: declaring a host you cannot serve `assetlinks.json` for — fails verification for **every** host in that filter (all-or-nothing).
+Forbidden on Android 11 and lower: declaring a host you cannot serve `assetlinks.json` for - fails verification for **every** host in that filter (all-or-nothing).
 
 #### Verify the file is reachable
 
-Required: hit the Digital Asset Links REST endpoint from CI or a laptop before blocking on-device `pm get-app-links` — no device required.
+Required: hit the Digital Asset Links REST endpoint from CI or a laptop before blocking on-device `pm get-app-links` - no device required.
 
 ```bash
 curl 'https://digitalassetlinks.googleapis.com/v1/statements:list?\
@@ -1346,7 +1346,7 @@ Outcome for `{"/": "/path1"}` then `{"/": "*", "exclude": true}`: `/path1` opens
 {"/": "/path1"}
 ```
 
-Outcome for `{"/": "*", "exclude": true}` then `{"/": "/path1"}`: no URL opens the app — the `*` exclude rule matches first for every path including `/path1`.
+Outcome for `{"/": "*", "exclude": true}` then `{"/": "/path1"}`: no URL opens the app - the `*` exclude rule matches first for every path including `/path1`.
 
 #### "Exclude one path, allow the rest"
 
@@ -1361,7 +1361,7 @@ Forbidden: ending the list with only excludes. Unmatched URLs default to **exclu
 
 #### Failure modes
 
-Required: validate JSON server-side before publishing. Malformed `relation_extensions` or empty `dynamic_app_link_components` makes the device discard all dynamic rules and fall back to the manifest filter alone — silently.
+Required: validate JSON server-side before publishing. Malformed `relation_extensions` or empty `dynamic_app_link_components` makes the device discard all dynamic rules and fall back to the manifest filter alone - silently.
 
 Required after every server-side rule change: force a re-fetch with `adb shell pm verify-app-links --re-verify com.example.app` (per-device cache; eventual consistency without it). Production devices pick up the new file on their own refresh schedule.
 
@@ -1454,9 +1454,9 @@ fun AppLinkApprovalBanner(onOpenSettings: () -> Unit) {
 }
 ```
 
-Forbidden: caching the result across process restarts — verification state changes when the user toggles defaults, when the app re-runs verification, or when Play re-installs.
+Forbidden: caching the result across process restarts - verification state changes when the user toggles defaults, when the app re-runs verification, or when Play re-installs.
 
-Forbidden: show the Settings CTA when every declared host is already `DOMAIN_STATE_VERIFIED` — nothing left to approve.
+Forbidden: show the Settings CTA when every declared host is already `DOMAIN_STATE_VERIFIED` - nothing left to approve.
 
 Required: map `hostToStateMap` integer values using this table:
 
@@ -1512,7 +1512,7 @@ data class OrderItemDetail(val orderId: String, val itemId: String) : NavKey
 
 ### Deep Link Security
 
-Required: treat every deep link as untrusted input — validate, allowlist, then navigate.
+Required: treat every deep link as untrusted input - validate, allowlist, then navigate.
 
 ```kotlin
 // app/deeplink/DeepLinkValidator.kt
@@ -1561,7 +1561,7 @@ override fun onNewIntent(intent: Intent) {
     intent.data?.let { uri ->
         if (DeepLinkValidator.validate(uri)) {
             val key = parseDeepLink(uri)
-            // CORRECT: push key or reset stack — match onNewIntent for singleTask wiring.
+            // CORRECT: push key or reset stack - match onNewIntent for singleTask wiring.
         }
     }
 }
@@ -1569,7 +1569,7 @@ override fun onNewIntent(intent: Intent) {
 
 Required: validate `scheme` and `host` against allowlists before parsing.
 
-Required: sanitize path segments and query values — attacker-controlled.
+Required: sanitize path segments and query values - attacker-controlled.
 
 Required: gate protected `NavKey` targets on auth state ([Conditional Navigation](#conditional-navigation)).
 
@@ -1587,7 +1587,7 @@ Use HTTPS App Links for production ingress. Use a custom scheme (`myapp://`) onl
 - A vendor-internal IPC link must reach a sibling app on the same device.
 - Internal QA shortcuts that never ship to production.
 
-Forbidden in app code for: payments, auth tokens, password reset, magic-link sign-in, anything that grants account access. Custom schemes are unverifiable — any other installed app can register the same scheme and silently steal the URL.
+Forbidden in app code for: payments, auth tokens, password reset, magic-link sign-in, anything that grants account access. Custom schemes are unverifiable - any other installed app can register the same scheme and silently steal the URL.
 
 Required: declare the custom scheme in a **separate** `<intent-filter>` from the HTTPS App Links filter (see [AndroidManifest Setup](#androidmanifest-setup)). Mixing schemes inside one filter breaks `autoVerify` for the HTTPS hosts.
 
@@ -1612,7 +1612,7 @@ Required: declare the custom scheme in a **separate** `<intent-filter>` from the
 </activity>
 ```
 
-Forbidden: `android:autoVerify="true"` on a custom-scheme filter — silently ignored. Verification is HTTPS-only.
+Forbidden: `android:autoVerify="true"` on a custom-scheme filter - silently ignored. Verification is HTTPS-only.
 
 Required: route the custom scheme through the same `DeepLinkPattern` list and `DeepLinkValidator` allowlist as the HTTPS patterns. The validator's `ALLOWED_SCHEMES` set decides which schemes survive parsing.
 
@@ -1647,7 +1647,7 @@ Required: match a symptom row, run the linked ADB or REST check from [testing.md
 | Verification works for one host, fails for others             | One host in the same `autoVerify` filter has no `assetlinks.json`. Android 11 and lower fails the lot. | Publish the file on every host, or split unverifiable hosts into a separate filter without `autoVerify`.                                             |
 | Verification fails after server change                        | HTTP→HTTPS redirect, apex→www redirect, or `Content-Type: text/html`.                                  | Serve the file directly with HTTP 200 and `application/json`. No redirects of any kind.                                                              |
 | Apex domain works, `www` does not (or vice-versa)             | Hosts treated as separate; only one has the file.                                                      | Publish the same JSON at both `https://example.com/.well-known/assetlinks.json` and `https://www.example.com/.well-known/assetlinks.json`.           |
-| `intent.data` is `null` after `onNewIntent`                   | `setIntent(intent)` not called.                                                                        | See [onNewIntent for singleTask](#onnewintent-for-singletask) — the new intent must replace the cached one.                                          |
+| `intent.data` is `null` after `onNewIntent`                   | `setIntent(intent)` not called.                                                                        | See [onNewIntent for singleTask](#onnewintent-for-singletask) - the new intent must replace the cached one.                                          |
 | Activity restarts on every deep link                          | `launchMode` is `standard` or `singleTop`.                                                             | Set `android:launchMode="singleTask"` on the deep-link Activity.                                                                                     |
 | Deep link drops the user on a screen with no Up target        | No synthetic back stack on the new-task path.                                                          | Build one (see [Synthetic Back Stack](#synthetic-back-stack)) and use it when `Intent.FLAG_ACTIVITY_NEW_TASK` is present.                            |
 | `pathPattern` matches unintended URLs                         | `.*` is greedy and matches `/anything`.                                                                | Anchor with explicit segments: `/orders/[^/]+/items/[^/]+`.                                                                                          |

@@ -1486,7 +1486,7 @@ Required after changing `@Immutable` / `@Stable` on UI-facing models: run Compos
 
 ### Testing Deep Links
 
-Required: wait at least 20 seconds after `adb install` before the first `pm get-app-links` read — the verifier runs asynchronously.
+Required: wait at least 20 seconds after `adb install` before the first `pm get-app-links` read - the verifier runs asynchronously.
 
 #### Launch deep links (`am start`)
 
@@ -1513,9 +1513,9 @@ adb shell am start -W -a android.intent.action.VIEW \
 
 Required: when validating custom-scheme routing, run the `adb shell am start` line that uses `-d "myapp://open/profile/user42"` from Launch deep links (`am start`).
 
-Forbidden: treating a successful custom-scheme launch as proof of HTTPS App Links verification — `pm get-app-links` never inspects custom schemes; the disambiguation dialog and default-handler state apply only to `http`/`https` filters with `autoVerify`.
+Forbidden: treating a successful custom-scheme launch as proof of HTTPS App Links verification - `pm get-app-links` never inspects custom schemes; the disambiguation dialog and default-handler state apply only to `http`/`https` filters with `autoVerify`.
 
-Forbidden: security-critical flows (auth callback, payment return) on custom schemes in production — any package can register the same scheme (see [android-navigation.md → Custom-Scheme Deep Linking](android-navigation.md#custom-scheme-deep-linking)).
+Forbidden: security-critical flows (auth callback, payment return) on custom schemes in production - any package can register the same scheme (see [android-navigation.md → Custom-Scheme Deep Linking](android-navigation.md#custom-scheme-deep-linking)).
 
 #### App Links verification (`pm` + `dumpsys`)
 
@@ -1552,10 +1552,10 @@ Required: read the `Domain verification state:` block from `pm get-app-links` ou
 | `migrated`          | Result carried over from legacy verification.                          |
 | `restored`          | Approved after backup restore; assumed previously verified.            |
 | `system_configured` | OEM or policy pre-approved the domain.                                 |
-| `none`              | No record yet — wait, re-run `--re-verify`, or confirm network.        |
+| `none`              | No record yet - wait, re-run `--re-verify`, or confirm network.        |
 | `1024` or higher    | Device-specific verifier error code; retry after network is stable.    |
 
-Required: treat the hex suffix after `Status: always` in `dumpsys package d` as user preference metadata — it does not replace per-host `verified` / `none` lines from `pm get-app-links`.
+Required: treat the hex suffix after `Status: always` in `dumpsys package d` as user preference metadata - it does not replace per-host `verified` / `none` lines from `pm get-app-links`.
 
 #### Pre-Android-12 verification compat
 
@@ -1588,7 +1588,7 @@ return_relation_extensions=true'
 
 Required: locate `dynamic_app_link_components` under the relation-extension map for `delegate_permission/common.handle_all_urls` inside a `statements[]` entry; assert it is a non-empty JSON array when dynamic rules are active.
 
-Forbidden: omitting `return_relation_extensions=true` when the test asserts dynamic path/query/fragment behaviour — the verifier omits that field without the flag.
+Forbidden: omitting `return_relation_extensions=true` when the test asserts dynamic path/query/fragment behaviour - the verifier omits that field without the flag.
 
 #### Dynamic rules device refresh
 
@@ -1647,7 +1647,7 @@ Required: the deep-link `Activity` uses `android:launchMode="singleTask"` and fo
 
 Required: the destination composable root exposes `Modifier.testTag("…")` for every node the test asserts.
 
-Forbidden: launching a second `Activity` with `startActivity` to simulate a second link — `singleTask` reuses the instance; call `onNewIntent` on the running `Activity` only.
+Forbidden: launching a second `Activity` with `startActivity` to simulate a second link - `singleTask` reuses the instance; call `onNewIntent` on the running `Activity` only.
 
 ```kotlin
 // app/src/androidTest/kotlin/com/example/app/MainActivityDeepLinkTest.kt
