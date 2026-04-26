@@ -172,7 +172,7 @@ or legacy code that still requires it. **Migration Priority:** If the project pl
 | Type         | Best For                                    | Behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 |--------------|---------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `StateFlow`  | UI state (forms, loading, data)             | Always holds one value. New collectors get the current value immediately.                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `SharedFlow` | Data or signals many observers need at once | **Multicast:** every active collector can see the same emissions. Optional `replay` re-delivers the last N values to **new** collectors (watch for duplicate handling after rotation or back stack). With defaults similar to `MutableSharedFlow()`, `emit()` often **suspends** until there is subscriber capacity rather than dropping; **loss** usually comes from `tryEmit`, `DROP_OLDEST` / `DROP_LATEST` when the buffer is under pressure, or tight `replay` / buffer sizing. |
+| `SharedFlow` | Data or signals many observers need at once | **Multicast:** every active collector can see the same emissions. Optional `replay` re-delivers the last N values to **new** collectors (watch for duplicate handling after rotation or back stack). With defaults similar to `MutableSharedFlow()`, `emit()` **suspends** until there is subscriber capacity rather than dropping; **loss** comes from `tryEmit`, `DROP_OLDEST` / `DROP_LATEST` under buffer pressure, or tight `replay` / buffer sizing. |
 | `Channel`    | One-shot **commands** (navigate, snackbar)  | **Unicast:** each element is consumed once by one receiver. Buffered channels hold work until a collector runs; expose with `receiveAsFlow()` for lifecycle-aware collection. Design for **one** consumer (typical single UI collector).                                                                                                                                                                                                                                             |
 
 **Commands vs data, unicast vs multicast**
@@ -181,14 +181,14 @@ Treat navigation, snackbars, and dialogs as **commands**: they should run once p
 
 Treat "session invalidated", "theme changed", or global bus-style signals as **data** or **broadcasts**: several layers may need the same event. That is the natural fit for `SharedFlow` (multicast).
 
-**`SharedFlow` details worth getting right**
+**Required semantics for `SharedFlow`**
 
-- `replay = 1` (or higher) fixes "missed last value" for late subscribers but **re-fires** that value whenever a new collector appears. That is often wrong for one-shot commands after configuration change.
+- `replay = 1` (or higher) fixes "missed last value" for late subscribers but **re-fires** that value whenever a new collector appears. Wrong shape for one-shot commands after configuration change.
 - `MutableSharedFlow` defaults to `onBufferOverflow = BufferOverflow.SUSPEND`. You do not need to pass `SUSPEND` unless you want the call site to document intent; you pass a **non-default** overflow (for example `DROP_OLDEST`) when you intentionally prefer loss or conflation over blocking the emitter.
 - With the default `SUSPEND`, `emit()` tends to **suspend** when there is no capacity, not silently drop. Loss is more tied to `tryEmit`, choosing `DROP_OLDEST` / `DROP_LATEST`, or tight buffer sizing under load.
-- Larger `replay` or `extraBufferCapacity` with the default `SUSPEND` adds queue space before `emit()` suspends; the emitter can still wait until collectors drain the buffer (usually fine in `viewModelScope`; cancel when the `ViewModel` clears).
+- Larger `replay` or `extraBufferCapacity` with the default `SUSPEND` adds queue space before `emit()` suspends; the emitter can still wait until collectors drain the buffer (typical `viewModelScope` usage tolerates this; cancel when the `ViewModel` clears).
 
-**Recommendation:** Prefer **`Channel` + `receiveAsFlow()`** for strict one-shot UI commands. Use **`SharedFlow`** when multiple collectors should see the same emissions or when controlled replay is part of the product semantics.
+**Use when:** `Channel` + `receiveAsFlow()` for strict one-shot UI commands. `SharedFlow` when several collectors must observe the same emissions or when controlled replay is part of the product contract.
 
 ```kotlin
 @HiltViewModel
@@ -199,11 +199,11 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Loading)
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
-    // Preferred for one-shot commands: unicast, consumed once, buffers until UI collects
+    // CORRECT: Channel = unicast one-shot commands; buffers until UI collects
     private val _events = Channel<AuthEvent>(Channel.BUFFERED)
     val events: Flow<AuthEvent> = _events.receiveAsFlow()
 
-    // Alternative: SharedFlow when several observers need the same event, or you accept replay/buffer tradeoffs
+    // Use SharedFlow when several observers need the same event or replay/buffer tradeoffs are acceptable
     // private val _events = MutableSharedFlow<AuthEvent>(
     //     replay = 0,
     //     extraBufferCapacity = 1,
@@ -1256,7 +1256,7 @@ suspend fun openFileHandle(api: FileApi): FileHandle =
 - **Use `suspendCancellableCoroutine` for one-shot callbacks that are not `Task<T>`** - custom bridging still applies when no official adapter exists.
 - **When resuming with closeable resources, use `resume(value) { ... }`** - ensures cancellation-time cleanup if the coroutine is cancelled before the caller observes the resource.
 - **Treat `suspendCoroutine` as an exception, not a default** - use it only for truly non-cancellable, short-lived one-shot callbacks with no cleanup requirements.
-- **Call `resume`/`resumeWithException` exactly once** - multiple calls throw `IllegalStateException`. Use `cont.isActive` check if the callback might fire after cancellation.
+- **Call `resume`/`resumeWithException` exactly once** - multiple calls throw `IllegalStateException`. Guard with `cont.isActive` when the callback can fire after cancellation.
 - **Always implement `invokeOnCancellation`** - clean up resources (cancel requests, unregister listeners) when the coroutine is cancelled.
 - **Cancellation cleanup must be thread-safe** - callbacks may fire concurrently with `invokeOnCancellation`, so cancellation/unregister logic must tolerate races.
 - **Never block inside the lambda** - the lambda runs synchronously on the caller's thread. Register the callback and return immediately.

@@ -118,7 +118,7 @@ fun FancyButton(
 
 ### Factory Functions
 
-Factory functions are used to create objects or state, usually involving `remember`.
+Factory functions create objects or state and typically pair with `remember`.
 
 - **Name:** `lowerCamelCase` (e.g., `defaultStyle`, `rememberCoroutineScope`)
 - **Return Type:** Returns a result (e.g., `Style`, `CoroutineScope`)
@@ -1153,12 +1153,15 @@ fun ScreenWithSheet(
 }
 ```
 
-**Key Points:**
+**Required:**
 
-- **Nested handlers**: Innermost enabled `BackHandler` takes precedence
-- **Conditional interception**: Use `enabled` parameter to control when back is intercepted
-- **Lifecycle-aware**: Automatically cleaned up when composable leaves composition
-- **Don't block permanently**: Always provide a way to exit the screen eventually
+- Innermost enabled `BackHandler` handles the gesture first.
+- Gate interception with the `enabled` flag.
+- Registration ends when the composable leaves the composition.
+
+**Forbidden:**
+
+- Intercepting back with no path off the screen.
 
 ## Component Patterns
 
@@ -1872,27 +1875,27 @@ fun LoginScreenAllStatesPreview(
 
 ### Stability Annotations: `@Immutable` vs `@Stable`
 
-Compose can skip recomposition when inputs are stable. Use these annotations to help Compose's compiler understand stability contracts:
+Compose skips more work when the compiler can prove stability. Declare that contract with `@Immutable` / `@Stable`.
 
-**Important:** `@Immutable` and `@Stable` come from `androidx.compose.runtime`. To use them in domain models:
+**Required:** Import `@Immutable` / `@Stable` from `androidx.compose.runtime`.
 
-- **Option 1**: Make your domain module depend on `androidx.compose.runtime` (it's a Kotlin-only library, no Android dependencies):
-  ```kotlin
-  // core/domain/build.gradle.kts
-  plugins {
-      alias(libs.plugins.app.android.library)  // or app.jvm.library
-  }
+**Domain models:** Either add `androidx.compose.runtime` to the Gradle module that owns annotated domain types (Kotlin-only) or keep annotations on UI-layer models and cover domain types with the stability configuration in [`android-strictmode.md`](/references/android-strictmode.md#compose-stability-guardrails).
 
-  dependencies {
-      implementation(platform(libs.androidx.compose.bom))
-      implementation(libs.androidx.compose.runtime)  // For @Immutable/@Stable
-  }
-  ```
-- **Option 2**: Only annotate UI-layer models (e.g., `UserUi` in feature modules) and use a stability configuration file for domain models (see [android-strictmode.md](/references/android-strictmode.md#compose-stability-guardrails))
+```kotlin
+// core/domain/build.gradle.kts
+plugins {
+    alias(libs.plugins.app.android.library)  // or app.jvm.library
+}
 
-#### When to Use `@Immutable`
+dependencies {
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.runtime)  // For @Immutable/@Stable
+}
+```
 
-Use `@Immutable` when a type is **deeply immutable**: all properties are `val`, and all property types are primitives or also immutable. Once created, the object never changes.
+#### Use `@Immutable` when:
+
+**Contract:** every property is `val`, nested types are immutable, and instances never mutate after construction.
 
 ```kotlin
 // ✅ Correct: All properties are val and immutable
@@ -1934,9 +1937,9 @@ data class UserList(
 )
 ```
 
-#### When to Use `@Stable`
+#### Use `@Stable` when:
 
-Use `@Stable` when a type has **observable mutations**: it may be mutable, but Compose will be notified of all changes (e.g., via `mutableStateOf`, `StateFlow`, or MutableState).
+**Contract:** the type mutates, yet every change is observable (`mutableStateOf`, `StateFlow`, or `MutableState`).
 
 ```kotlin
 // ✅ Correct: Mutable but observable by Compose
@@ -2168,9 +2171,9 @@ fun VerticalScroller(
 }
 ```
 
-### Remember/Lambda Best Practices
+### `remember` and lambda routing
 
-**Default approach (99% of cases):** Keep it simple. Let Compose handle optimizations automatically when your data types are stable/immutable.
+**Start here:** Immutable stable parameter types; skip `remember`-wrapping lambdas until a trace ties recompositions to unstable captures.
 
 ```kotlin
 @Composable
@@ -2197,7 +2200,7 @@ data class AuthEvent(
 )
 ```
 
-**When `onClick` changes frequently and performance matters (deeply nested/large lists):** Use `rememberUpdatedState` to always reference the latest callback without recreating the lambda.
+**Use when:** `onClick` identity churns and the composable is expensive (deep nesting or large lists). Hold the latest callback with `rememberUpdatedState` so the lambda body stays stable.
 
 ```kotlin
 @Composable
@@ -2218,7 +2221,7 @@ fun AuthEventCard(
 }
 ```
 
-**When both `event` and `onClick` change independently and you need true memoization (rare):**
+**Use when:** `event` and `onClick` both churn and profiling shows allocation or recomposition cost tied to the handler lambda:
 
 ```kotlin
 @Composable
@@ -2953,15 +2956,15 @@ fun LocationTracker(locationManager: LocationManager) {
 }
 ```
 
-#### When to Use Which Lifecycle Effect
+#### Lifecycle effect routing
 
 | Effect | Active During | Use For |
 |--------|--------------|---------|
 | `LifecycleResumeEffect` | `onResume` to `onPause` | Camera, media playback, interactive features |
 | `LifecycleStartEffect` | `onStart` to `onStop` | Location, sensors, background-visible work |
-| `DisposableEffect` | Composition to disposal | Not lifecycle-dependent, just composition-scoped |
+| `DisposableEffect` | Composition to disposal | Composition-scoped setup with no lifecycle callbacks |
 
-**Rule:** Prefer `LifecycleResumeEffect`/`LifecycleStartEffect` over manually observing `LocalLifecycleOwner` with `DisposableEffect` + `LifecycleEventObserver`. They provide the same behavior with less boilerplate and no risk of forgetting cleanup.
+**Required:** Use `LifecycleResumeEffect` / `LifecycleStartEffect` instead of hand-rolling `DisposableEffect` + `LifecycleEventObserver` on `LocalLifecycleOwner`; they match lifecycle edges with less code and mandatory cleanup hooks.
 
 ```kotlin
 // BAD: Manual lifecycle observer boilerplate
@@ -3394,17 +3397,17 @@ Values are scoped to descendants. Inner providers override outer ones.
 | `LocalUriHandler`                 | `UriHandler`                  | Open URIs (e.g., in a browser)             |
 | `LocalHapticFeedback`             | `HapticFeedback`              | Provide haptic feedback (vibrations)       |
 
-### When to Use vs When NOT to Use
+### CompositionLocal routing
 
-**Use CompositionLocal for:**
-- Values needed by many descendants across the tree
-- Configuration data (theme, locale, feature flags)
-- Avoiding deep parameter drilling (5+ levels)
+**Use when:**
+- Many descendants need the same read-only value.
+- The value is configuration-shaped (theme, locale, feature flags).
+- Parameter drilling would cross five or more layers.
 
-**Do NOT use CompositionLocal for:**
-- Data only 1-2 levels deep - pass as parameters
-- Frequently changing values that need precise control - use State/ViewModel
-- General dependency injection - use Hilt
+**Forbidden:**
+- Data only one or two levels deep — pass parameters.
+- Rapidly changing values that need explicit ownership — model them in state or a `ViewModel`.
+- App-wide service graphs — wire those through Hilt, not `CompositionLocal`.
 
 ### CompositionLocal Anti-Patterns
 

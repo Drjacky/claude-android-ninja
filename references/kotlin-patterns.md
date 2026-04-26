@@ -17,7 +17,7 @@ Time-related examples use `kotlin.time.Duration` and `kotlinx.datetime.Clock`. D
 10. [Companion Objects](#companion-objects)
 11. [Type Aliases](#type-aliases)
 12. [Android View Lifecycle (Interop)](#android-view-lifecycle-interop)
-13. [Coroutines Best Practices](#coroutines-best-practices)
+13. [Coroutines routing](#coroutines-routing)
 
 ## Kotlin 2.x and the K2 Compiler
 
@@ -25,7 +25,7 @@ Target **Kotlin 2.x**. Pinned version lives in `assets/libs.versions.toml.templa
 
 ### Behavioural differences vs K1
 
-- Stricter nullability in generic chains. Prefer explicit nullability over relying on inference.
+- Stricter nullability in generic chains. Declare explicit nullability instead of relying on inference.
 - More aggressive smart-casts inside lambdas and local functions. Do not add redundant `!!` or re-checks.
 - Tighter exhaustiveness checking on `when`. Treat new warnings as errors.
 - New diagnostics may surface latent bugs in previously-compiling code. Fix them; do not downgrade.
@@ -124,9 +124,9 @@ val domainUnit = WeightUnit.fromDb(dbUnit)
 
 **Alias naming:** suffix or prefix with the layer (`Db`, `Api`, `Dto`, `Ui`, `Domain`) so readers see which world a value belongs to.
 
-### When "use cases" are just ceremony
+### Use cases that only wrap repositories
 
-A class that only forwards to a repository with no extra policy, validation, or reuse is usually **noise**:
+A class that only forwards to a repository with no extra policy, validation, or reuse is **noise**:
 
 ```kotlin
 // Often unnecessary - call the repository from the ViewModel instead
@@ -261,7 +261,7 @@ suspend fun handleLogin(email: String, password: String) {
 }
 ```
 
-**Note**: Kotlin stdlib has `Result<T>`, but you can create custom result types for domain-specific error handling.
+Kotlin stdlib ships `Result<T>`; add a sealed domain result when branches need more structure than `Result` exposes.
 
 ### Reified Type Parameters
 
@@ -940,9 +940,9 @@ class MyView @JvmOverloads constructor(
 }
 ```
 
-Prefer `findViewTreeLifecycleOwner()` when the view lives under a `Fragment` or Compose host. For pure composables, use lifecycle-aware APIs from `references/compose-patterns.md` (`LifecycleResumeEffect`, `DisposableEffect`, etc.) instead of manual `View` hooks.
+Use `findViewTreeLifecycleOwner()` when the view lives under a `Fragment` or Compose host. For pure composables, use lifecycle-aware APIs from `references/compose-patterns.md` (`LifecycleResumeEffect`, `DisposableEffect`, etc.) instead of manual `View` hooks.
 
-## Coroutines Best Practices
+## Coroutines routing
 
 ### Structured Concurrency
 
