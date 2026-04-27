@@ -2304,13 +2304,46 @@ fun `paging data contains expected items`() = runTest {
 }
 ```
 
+### `paging-testing`: `asSnapshot` and `TestPager`
+
+Required: `testImplementation(libs.androidx.paging.testing)` and catalog rules in [dependencies.md](/references/dependencies.md#paging-3-test-artifact). Keep the `paging` version ref aligned with `paging-runtime` and `paging-compose`.
+
+Use `Flow<PagingData<T>>.asSnapshot { }` when the test drives the same `Flow` the UI collects and asserts the rendered item list after explicit loads, scrolls, or refresh.
+
+Inside the block the receiver is `SnapshotLoader`: call `scrollTo`, `refresh`, `appendScrollWhile`, `prependScrollWhile`, or `flingTo`, then return the snapshot list. `asSnapshot` is suspending; invoke it only from `runTest` (`kotlinx-coroutines-test`).
+
+```kotlin
+import androidx.paging.testing.asSnapshot
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class ProductsPagingTest {
+    @Test
+    fun first_page_matches_repository() = runTest {
+        val items: List<Product> = viewModel.products.asSnapshot {
+            refresh()
+        }
+        assertEquals(2, items.size)
+    }
+}
+```
+
+Use `TestPager` when the test targets a `PagingSource` in isolation (page keys, invalidation, error paths) without a ViewModel or `Flow` wrapper. [`androidx.paging.testing`](https://developer.android.com/reference/kotlin/androidx/paging/testing/package-summary) lists `TestPager` and related types.
+
+Use `PagingData.from()` / fakes when only static list-shaped `PagingData` is required.
+
+Use `AsyncPagingDataDiffer` when verifying diff callbacks and `ListUpdateCallback` behavior against submitted `PagingData`.
+
 ### Paging rules
 
 Required:
 - Use `PagingData.from(list)` for the common path.
 - Hold error and loading state in a sibling `StateFlow`; do not assert errors through `PagingData` because `cachedIn` swallows them.
 - Use `AsyncPagingDataDiffer` only when verifying actual loaded items.
-- `advanceUntilIdle()` before every assertion.
+- Use `asSnapshot` when asserting loaded content through the real `Flow<PagingData<T>>` pipeline.
+- Use `TestPager` for direct `PagingSource` unit tests.
+- `advanceUntilIdle()` before every assertion when the test mixes `runTest` with non-suspending collection patterns.
 
 Forbidden:
 - Testing the Paging library's internal pagination logic.

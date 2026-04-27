@@ -27,6 +27,9 @@ Hilt module patterns, scopes, and anti-patterns: [architecture.md → Dependency
 ### Room 3
 Required artifacts: `androidx.room3:room3-runtime`, `sqlite-bundled`, KSP `room3-compiler` (see version catalog). DAOs are coroutine-first (`suspend`, `Flow`). Add `room3-paging` only when a DAO returns `PagingSource`; `room3-testing` only for instrumented DB tests.
 
+### Paging 3 test artifact
+Use `androidx.paging:paging-testing` on test source sets only (`testImplementation(libs.androidx.paging.testing)` from the version catalog). Keep the `paging` version ref aligned with `paging-runtime` / `paging-compose`. Align snapshot and scroll test code with [Test your Paging implementation](https://developer.android.com/topic/libraries/architecture/paging/test).
+
 ## Version Strategy
 
 ### Stability Requirements
