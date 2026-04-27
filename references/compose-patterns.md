@@ -3508,9 +3508,22 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
 
 **Anti-pattern:** Never call `searchResults.refresh()` directly in the composable body (it will loop infinitely). Call it only in event handlers (e.g., `PullToRefresh` or a retry button).
 
-#### Offline-first and `RemoteMediator`
+#### Offline-first paging and RemoteMediator
 
-For **paged** lists backed by **Room 3** plus a remote API, use a [`RemoteMediator`](https://developer.android.com/topic/libraries/architecture/paging/v3-network-db) to load pages from the network into the local database and expose a `PagingSource` from the DAO to the `Pager`. In **Room 3**, add **`androidx.room3:room3-paging`** and **`@DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)`** on the DAO (or `@Database`) per [Room 3 release notes](https://developer.android.com/jetpack/androidx/releases/room3). That keeps the UI on a single `Flow<PagingData<T>>` while the database stays the source of truth. Broader sync, conflict handling, and invalidation patterns: [android-data-sync.md](/references/android-data-sync.md).
+Use `RemoteMediator` when the list reads a Room 3 `PagingSource` and each page is fetched from a remote API and written into Room inside `load`.
+
+Wire `Pager(config = ..., remoteMediator = ..., pagingSourceFactory = { dao.pagingSource() }).flow`, then `cachedIn(viewModelScope)` using the same ViewModel rules as server-only paging. Keep entities and keys only in Room; the UI still collects one `Flow<PagingData<T>>`.
+
+**Required:**
+- Implement `initialize()`. Return `InitializeAction.LAUNCH_INITIAL_REFRESH` when the first open must hit the network before trusting cached rows. Return `InitializeAction.SKIP_INITIAL_REFRESH` when warm Room data is valid until scroll-driven loads or explicit invalidation. Match return value to product rules for cold start vs cache. Read [RemoteMediator](https://developer.android.com/topic/libraries/architecture/paging/v3-network-db) for `InitializeAction` and `load`.
+- Store remote page keys in Room (for example a `RemoteKeys` entity with `nextKey`, `prevKey`, and a query or feed id column). Read keys at the start of `load`, persist updated keys in the same transaction as entity inserts for that page.
+- After backend writes or sync completion that change list contents, invalidate the backing `PagingSource` or trigger mediator refresh so `Pager` reloads.
+
+Add `androidx.room3:room3-paging` and `@DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)` on the DAO or `@Database` per [Room 3 release notes](https://developer.android.com/jetpack/androidx/releases/room3). Conflict handling, backoff, and non-paged sync: [android-data-sync.md](/references/android-data-sync.md).
+
+**Forbidden:**
+- Returning `LAUNCH_INITIAL_REFRESH` when `SKIP_INITIAL_REFRESH` matches the warm-cache entry rule (forces avoidable network on every launch that already has Room pages).
+- Feeding the `Pager` from in-memory caches while the `PagingSource` reads Room (split sources of truth for the same list).
 
 ### Flow Layouts
 
