@@ -13,7 +13,8 @@ pattern and its modern replacement.
 6. [Compose API Migrations](#compose-api-migrations)
 7. [Material 2 to Material 3](#material-2-to-material-3)
 8. [Edge-to-Edge](#edge-to-edge)
-9. [Room 2.x to Room 3](#room-2x-to-room-3)
+9. [Legacy splash to Splash Screen API](#legacy-splash-to-splash-screen-api)
+10. [Room 2.x to Room 3](#room-2x-to-room-3)
 
 ## XML to Compose
 
@@ -578,6 +579,57 @@ Scaffold { innerPadding ->
 ```
 
 For full edge-to-edge setup including `WindowInsets` handling, see `references/compose-patterns.md` → "Edge-to-Edge (Mandatory on API 36)".
+
+## Legacy splash to Splash Screen API
+
+Required: Migrate off `android:windowBackground`-only splash themes and off dedicated splash `Activity` stacks before relying on Android 12+ launch behavior. Read [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen) and [Migrate to the Splash Screen API](https://developer.android.com/develop/ui/views/launch/splash-screen/migrate) for current attributes and activity patterns.
+
+**P0 —** On API 31+, the system always draws a splash on cold and warm start. A legacy drawable-only launcher theme may be replaced by the default system treatment; a separate `SplashActivity` yields **system splash then your activity** (double splash).
+
+Required: Add `androidx.core:core-splashscreen` (version catalog: `assets/libs.versions.toml.template`, wiring: `references/gradle-setup.md`). Use the compat library so the same themed splash applies across API levels; platform-only `SplashScreen` without compat leaves pre-12 behavior unchanged.
+
+Required routing (launcher activity):
+
+- Manifest: set `android:theme` on the **LAUNCHER** activity to a style whose parent is `Theme.SplashScreen` (or `Theme.SplashScreen.IconBackground` when a circular plate behind the icon is required).
+- Theme: set `windowSplashScreenAnimatedIcon`, `windowSplashScreenBackground`, and `postSplashScreenTheme` to the normal app theme per the current attribute list on [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen).
+- Activity `onCreate`: call `installSplashScreen()` **before** `super.onCreate(savedInstanceState)`.
+
+Use `Theme.SplashScreen.IconBackground` when the foreground artwork is transparent and must sit on a solid circular icon background.
+
+**Routing-only activity** (deep link / auth gate): keep a thin activity if routing demands it; hide its content while the system splash stays up, then `startActivity` the real target and `finish()`.
+
+```kotlin
+override fun onCreate(savedInstanceState: Bundle?) {
+    val splashScreen = installSplashScreen()
+    super.onCreate(savedInstanceState)
+    splashScreen.setKeepOnScreenCondition { true }
+    startActivity(Intent(this, MainActivity::class.java))
+    finish()
+}
+```
+
+**Branding-only second activity:** Prefer a single splash via theme attributes (`windowSplashScreenBrandingImage` where supported). If a second screen remains for branding, use `setOnExitAnimationListener` for a controlled handoff per [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen). Show dialogs only on the destination activity **after** the system splash is gone.
+
+**Indeterminate startup:** Forbidden: hold the splash for open-ended network work. Dismiss when local readiness is known; use in-app placeholders or skeleton UI for long or unknown-duration loads ([Migrate](https://developer.android.com/develop/ui/views/launch/splash-screen/migrate)).
+
+**Forbidden:**
+
+- `Thread.sleep()`, `Handler.postDelayed()`, or coroutine `delay()` used only to stretch splash time.
+- Heavy work, I/O, network, allocations, or `runBlocking` inside `setKeepOnScreenCondition { }`. Multiple cheap flag reads are allowed; blocking or unbounded work is not.
+
+**Launcher vs splash asset:** Use the same drawable as the launcher adaptive foreground **when** it fits the official splash icon mask without clipping. **Use when:** the launcher asset clips or fails the mask - supply a dedicated splash drawable per [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen).
+
+Theme shape (replace names and colors with project resources):
+
+```xml
+<style name="Theme.App.Splash" parent="Theme.SplashScreen">
+    <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+    <item name="windowSplashScreenBackground">@color/splash_background</item>
+    <item name="postSplashScreenTheme">@style/Theme.App</item>
+</style>
+```
+
+Compose apps call `setContent { }` on `ComponentActivity`; View-only apps call `setContentView(...)`. Theme, manifest, and `installSplashScreen()` stay the same. Full checklist and performance rules: `references/android-performance.md` → **App Startup & Initialization** → **Splash Screen**.
 
 ## Room 2.x to Room 3
 
