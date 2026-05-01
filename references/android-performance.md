@@ -125,7 +125,7 @@ Build a **`TimelineSpec`** (aggregation period, start/end in **`America/Los_Ange
 
 ### Startup time (user experience)
 
-Targets below are practical goals for **cold / warm / hot** start. If cold start routinely exceeds about **2 seconds** on mid-range hardware, show a splash or inline progress so the user sees feedback (see "App Startup & Initialization" elsewhere in this file).
+Targets below are practical goals for **cold / warm / hot** start. If cold start routinely exceeds about **2 seconds** on mid-range hardware, show a splash or inline progress so the user sees feedback ([App Startup & Initialization](#app-startup--initialization)).
 
 | Start type | Target (typical) | Investigate if worse than (rule of thumb) |
 |------------|------------------|-------------------------------------------|
@@ -846,35 +846,70 @@ fun DeferredContent(content: @Composable () -> Unit) {
 
 **What to initialize eagerly vs lazily:**
 
-| Timing | Components |
-|---|---|
-| Eager (App Startup) | Crash reporter, logging, StrictMode |
-| After first frame | Analytics, feature flags, remote config |
-| On demand | Image loader, ML models, database migrations, WorkManager |
+| Timing              | Components                                                |
+|---------------------|-----------------------------------------------------------|
+| Eager (App Startup) | Crash reporter, logging, StrictMode                       |
+| After first frame   | Analytics, feature flags, remote config                   |
+| On demand           | Image loader, ML models, database migrations, WorkManager |
 
 ### Splash Screen
 
-Use the `androidx.core:core-splashscreen` library for a consistent splash screen across API levels. It displays while App Startup initializers and early ViewModel loading complete.
+Required: Add `androidx.core:core-splashscreen` to `:app` (`implementation(libs.androidx.core.splashscreen)`); pin the version in `gradle/libs.versions.toml` using `assets/libs.versions.toml.template` (`splashscreen`). Module wiring: [gradle-setup.md](/references/gradle-setup.md).
 
-**1. Define splash theme:**
+Required: Call `installSplashScreen()` on the process launcher activity before `super.onCreate()` so Android 12+ system splash and compat pre-12 share one theme-backed path. Attribute list and platform rules: [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen). Legacy `windowBackground` themes and dedicated splash activities: [migration.md](/references/migration.md) → **Legacy splash to Splash Screen API**.
+
+**Icon mask:** Size `windowSplashScreenAnimatedIcon` per [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen): with `Theme.SplashScreen.IconBackground`, use **240×240 dp** artwork inside a **160 dp** diameter circle; with `Theme.SplashScreen` only, **288×288 dp** inside **192 dp**. Re-read the live doc when bumping `compileSdk`. On API 31+, check that doc for optional `splashScreenIconSize`.
+
+Use `Theme.SplashScreen.IconBackground` when the foreground needs a solid circular plate behind transparent artwork.
+
+| Setup                                 | Behavior                                                                                                                              |
+|---------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| `core-splashscreen`, API 30 and below | Library-backed splash; same theme attributes the compat library applies on that level.                                                |
+| API 31+                               | System splash; animated icon and `windowSplashScreenAnimationDuration` (milliseconds, max **1000** on API 31+) follow platform rules. |
+
+**Required: `onCreate` call order**
+
+`installSplashScreen()` → `super.onCreate()` → `setKeepOnScreenCondition { }` (if used) → `enableEdgeToEdge()` → `setContent { }`. The splash window is system-drawn until handoff; first app frames still need inset handling (`Scaffold` / `innerPadding` - see [migration.md](/references/migration.md) Edge-to-Edge, `references/compose-patterns.md`).
+
+Splash dismissal merges system-controlled minimum visibility, `windowSplashScreenAnimationDuration` when set (API 31+, max 1000 ms), and `setKeepOnScreenCondition` when registered. Copy the exact interaction from [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen) when auditing a new `compileSdk`.
+
+Test the launcher activity on **minSdk**, on **API 31+**, on at least one gesture or default edge-to-edge configuration, and on foldables **when** large-screen layouts ship.
+
+After handoff to Compose, call `ReportDrawn*` so metrics track full display when primary UI is ready, not only splash dismissal ([Startup Performance Metrics (TTID & TTFD)](#startup-performance-metrics-ttid--ttfd)).
+
+**Forbidden when:** Holding the splash for open-ended network work; dismiss for local readiness and use in-app placeholders for long remote work ([migration.md](/references/migration.md) → **Legacy splash to Splash Screen API**).
+
+**Wrong:**
+
+`setContent` omits `AppTheme` / root navigation while `isLoading` is true, so no composition subtree mounts under the splash.
+
+**Correct:**
+
+Always mount `AppTheme` and a composable root; branch **inside** the tree for loading vs main UI (or rely only on `setKeepOnScreenCondition` without stripping the root).
+
+**Required: splash theme (values)**
+
 ```xml
 <!-- app/src/main/res/values/themes.xml -->
 <style name="Theme.App.Splash" parent="Theme.SplashScreen">
     <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
     <item name="windowSplashScreenBackground">@color/splash_background</item>
+    <item name="windowSplashScreenAnimationDuration">1000</item>
     <item name="postSplashScreenTheme">@style/Theme.App</item>
+    <!-- optional API 31+: windowSplashScreenBrandingImage -->
 </style>
 
-<!-- For animated icon with background circle (optional) -->
 <style name="Theme.App.Splash.WithBackground" parent="Theme.SplashScreen.IconBackground">
     <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
     <item name="windowSplashScreenIconBackgroundColor">@color/splash_icon_bg</item>
     <item name="windowSplashScreenBackground">@color/splash_background</item>
+    <item name="windowSplashScreenAnimationDuration">1000</item>
     <item name="postSplashScreenTheme">@style/Theme.App</item>
 </style>
 ```
 
-**2. Set in manifest:**
+**Required: manifest (launcher activity)**
+
 ```xml
 <!-- app/src/main/AndroidManifest.xml -->
 <activity
@@ -885,9 +920,13 @@ Use the `androidx.core:core-splashscreen` library for a consistent splash screen
 </activity>
 ```
 
-**3. Install in Activity with Compose:**
+**Required: launcher `Activity` (Compose)**
+
 ```kotlin
 // app/src/main/kotlin/com/example/app/MainActivity.kt
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 class MainActivity : ComponentActivity() {
@@ -897,7 +936,6 @@ class MainActivity : ComponentActivity() {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        // Keep splash screen visible while loading
         splashScreen.setKeepOnScreenCondition {
             viewModel.isLoading.value
         }
@@ -906,9 +944,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-
-            if (!isLoading) {
-                AppTheme {
+            AppTheme {
+                if (isLoading) {
+                    Box(Modifier.fillMaxSize())
+                } else {
                     AppNavigation()
                 }
             }
@@ -917,7 +956,8 @@ class MainActivity : ComponentActivity() {
 }
 ```
 
-**4. MainViewModel for splash loading:**
+**ViewModel driving `setKeepOnScreenCondition`**
+
 ```kotlin
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -928,7 +968,6 @@ class MainViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            // Check auth state, load user prefs, etc.
             authRepository.isAuthenticated()
             _isLoading.value = false
         }
@@ -936,18 +975,22 @@ class MainViewModel @Inject constructor(
 }
 ```
 
+**Use when:** custom exit animation from the splash surface to the first frame - `setOnExitAnimationListener { splashScreenView -> ... }`; end with `splashScreenView.remove()` after the animator finishes. API and sample: [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen).
+
 **Required:**
+
 - Call `installSplashScreen()` before `super.onCreate()`.
-- `setKeepOnScreenCondition` runs on the main thread before each draw — return from a cheap boolean read only.
-- Splash dismisses when the condition returns `false`.
-- Animated icons are supported on API 31+; cap animations at 1000ms.
-- `postSplashScreenTheme` applies the real app theme after dismissal.
+- `setKeepOnScreenCondition` runs on the main thread before each draw; return only from cheap reads (multiple primitive flag reads allowed). Forbidden: I/O, network, heavy work, allocation, or `runBlocking` inside the lambda.
+- `setKeepOnScreenCondition` absent or returning `false` allows splash dismissal per platform timing; when present, the splash stays until the predicate is `false`.
+- Animated drawable and `windowSplashScreenAnimationDuration` apply on API 31+; cap duration at **1000** ms on API 31+.
+- Set `postSplashScreenTheme` to the theme used after splash handoff.
 
 ### Startup Optimization Checklist
 
 - [ ] Audit `ContentProvider` usage - remove or replace with App Startup initializers
 - [ ] Classify initializers as eager, after-first-frame, or on-demand
 - [ ] Use `installSplashScreen()` with `setKeepOnScreenCondition` for loading state
+- [ ] Test launcher splash on **minSdk**, **API 31+**, and at least one edge-to-edge or gesture-nav configuration ([Splash Screen](#splash-screen))
 - [ ] Generate Baseline Profiles for startup paths (see [Benchmark](#benchmark) section)
 - [ ] Measure cold start time with Macrobenchmark before/after changes
 - [ ] Avoid blocking the main thread with I/O, network, or heavy computation during startup
@@ -1203,6 +1246,8 @@ BasicTextField2(state = state)
 - [ ] Avoid calling `refresh()` on PagingData inside a composable body.
 
 ## References
+- Splash screen: https://developer.android.com/develop/ui/views/launch/splash-screen
+- Migrate to the Splash Screen API: https://developer.android.com/develop/ui/views/launch/splash-screen/migrate
 - Benchmarking overview: https://developer.android.com/topic/performance/benchmarking/benchmarking-overview
 - Macrobenchmark overview: https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview
 - Macrobenchmark metrics: https://developer.android.com/topic/performance/benchmarking/macrobenchmark-metrics
