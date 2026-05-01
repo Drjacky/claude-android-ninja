@@ -192,6 +192,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Follow [android-performance.md](references/android-performance.md) → "App Startup & Initialization" for App Startup library, lazy init, and splash screen  
 → Avoid ContentProvider-based auto-initialization - use `Initializer` interface instead  
 → Use `installSplashScreen()` with `setKeepOnScreenCondition` for loading state  
+→ Migrate `windowBackground`-only splash, dedicated `SplashActivity`, or Android 12+ double-splash issues via [migration.md](references/migration.md) → **Legacy splash to Splash Screen API**
 
 **Adding icons, images, or custom graphics?**
 → Use [android-graphics.md](references/android-graphics.md) for Material Symbols icons and custom drawing  
