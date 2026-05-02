@@ -144,4 +144,4 @@ Found a bug, outdated pattern, or incorrect guidance? Please report it so we can
 
 ### Star History Chart
 
-[![Star History Chart](https://api.star-history.com/svg?repos=drjacky%2Fclaude-android-ninja&Date=&type=Date)](https://api.star-history.com/svg?repos=drjacky%2Fclaude-android-ninja&Date=&type=Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=drjacky/claude-android-ninja&Date=&type=Date)](https://api.star-history.com/svg?repos=drjacky/claude-android-ninja&Date=&type=Date)
