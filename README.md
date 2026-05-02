@@ -141,3 +141,7 @@ If you need a best practice topic or pattern that's missing from this SKILL, ple
 Found a bug, outdated pattern, or incorrect guidance? Please report it so we can fix it.
 
 [Report a Bug](https://github.com/drjacky/claude-android-ninja/issues/new?template=bug_report.md)
+
+### Star History Chart
+
+[![Star History Chart](https://api.star-history.com/svg?repos=drjacky%2Fclaude-android-ninja&Date=&type=Date)](https://api.star-history.com/svg?repos=drjacky%2Fclaude-android-ninja&Date=&type=Date)
