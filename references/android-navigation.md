@@ -1950,6 +1950,28 @@ NavDisplay(
 
 **Dependency:** `androidx.lifecycle:lifecycle-viewmodel-navigation3` (already in `assets/libs.versions.toml.template`)
 
+### Scoping to a non-screen composable
+
+Use [`rememberViewModelStoreOwner()`](https://developer.android.com/reference/kotlin/androidx/lifecycle/viewmodel/compose/package-summary#rememberViewModelStoreOwner\(\)) only for genuinely complex, single-instance, non-screen composables (media-player widget, multi-step wizard, in-page editor). The default remains screen-level - see [`hiltViewModel()` Scope Mistakes](#hiltviewmodel-scope-mistakes).
+
+Required:
+
+- The composable encapsulates non-trivial state that does not belong on the parent screen's `UiState`.
+- Single-instance at the call site. Forbidden inside `LazyColumn` items, `ProductCard`, or any list/grid cell.
+- Hoist state to the parent screen first; reach for a scoped ViewModel only after that fails.
+
+```kotlin
+@Composable
+fun MediaPlayerWidget(uri: Uri) {
+    val owner = rememberViewModelStoreOwner()
+    CompositionLocalProvider(LocalViewModelStoreOwner provides owner) {
+        val viewModel: MediaPlayerViewModel = hiltViewModel()
+        // ViewModel is cleared when this composable leaves the composition
+        MediaPlayer(state = viewModel.uiState, onAction = viewModel::onAction)
+    }
+}
+```
+
 ### Passing NavKey Arguments to Hilt ViewModels
 
 Navigation 3 uses assisted injection to pass `NavKey` arguments directly to ViewModels:
@@ -2083,6 +2105,8 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
     // Pure UI component
 }
 ```
+
+Escape hatch for genuinely complex, single-instance, non-screen composables: [Scoping to a non-screen composable](#scoping-to-a-non-screen-composable). Never apply inside list cells.
 
 ### ViewModel Navigation
 
