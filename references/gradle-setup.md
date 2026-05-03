@@ -6,13 +6,13 @@ Required: Gradle 9 / AGP 9.0, JVM 17+, KSP (never kapt), version catalog, conven
 
 - **Built-in Kotlin**: AGP 9 has built-in Kotlin support. The `org.jetbrains.kotlin.android` plugin is no longer needed for Android modules. Remove it from all `build.gradle.kts` files and convention plugins.
 - **Compose Compiler**: The `org.jetbrains.kotlin.plugin.compose` plugin is still required for Compose modules.
-- **compileSdk syntax**: Use `compileSdk { version = release(36) }` instead of `compileSdk = 36`.
+- **compileSdk syntax**: Use `compileSdk { version = release(37) }` instead of `compileSdk = 37`. AGP 9.0+ supports `compileSdk` 37 (Android 17) on the stable channel; no `compileSdkPreview` flag is needed.
 - **Gradle Managed Devices**: Use `localDevices { create("name") { ... } }` instead of `devices { maybeCreate("name", ManagedVirtualDevice::class.java).apply { ... } }`. Device groups use `create("ci")` instead of `maybeCreate("ci")`. Reference devices via `localDevices[name]` instead of `devices[name]`.
 - **Removed gradle.properties**: `org.gradle.configureondemand`, `android.enableBuildCache`, `android.enableJetifier`, `android.defaults.buildfeatures.aidl`, `android.defaults.buildfeatures.renderscript`, `android.defaults.buildfeatures.resvalues`, `android.defaults.buildfeatures.shaders`, and `org.gradle.configuration-cache.problems=warn` are removed.
 - **CommonExtension**: Type parameters removed; use `CommonExtension` instead of `CommonExtension<*, *, *, *, *, *>`.
 - **KotlinAndroidProjectExtension**: Not registered with built-in Kotlin; configure compiler options via `tasks.withType<KotlinCompile>().configureEach { compilerOptions { ... } }` instead.
 - **Hilt**: Minimum version **2.59.2** required for AGP 9 (older versions access removed `BaseExtension`).
-- **KSP**: Minimum version **2.3.6** required for AGP 9. Use `2.x` suffix (e.g., `2.3.6-…`) instead of `1.x` (e.g., `2.2.21-1.0.32`); `1.x` KSP is incompatible with AGP 9.
+- **KSP**: Use the **KSP2 backend** (increment `2.0.x` or later, e.g. `2.2.21-2.0.5`). KSP1 (`2.2.21-1.0.x`) is incompatible with AGP 9. The Kotlin prefix tracks the catalog `kotlin` version.
 - **kapt fallback (`legacy-kapt`)**: Use KSP everywhere it exists. If a processor has no KSP equivalent under AGP 9, use the **`org.jetbrains.kotlin.kapt`** plugin (a.k.a. `legacy-kapt`) for that single module only; the new built-in Kotlin pipeline does not run kapt automatically.
 - **Type-safe project accessors**: Enabled by default in Gradle 9; `enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")` is no longer needed in `settings.gradle.kts`.
 - **JVM 17 minimum**: Gradle 9 requires JVM 17+ to run.

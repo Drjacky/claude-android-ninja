@@ -7,7 +7,7 @@
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.2.21-blue)
 ![AGP](https://img.shields.io/badge/AGP-9.0.0-orange)
 ![Min SDK](https://img.shields.io/badge/Min_SDK-24-green)
-![Target SDK](https://img.shields.io/badge/Target_SDK-36-green)
+![Target SDK](https://img.shields.io/badge/Target_SDK-37-green)
 
 This repository is an **Agent Skill** package for Android development with Kotlin and Jetpack Compose.  
 It provides a structured set of instructions, templates, and references that help agents build
