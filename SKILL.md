@@ -128,6 +128,11 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → If the user asks for **automated Play Console vitals** (CI/Slack, no Play Console UI), use [android-performance.md](references/android-performance.md) → **Optional: Play Vitals observability (Play Developer Reporting API)**
 → Use `BasicTextField2` for high-frequency text input
 
+**Auditing battery drain or stuck wake locks?**
+→ Use [android-performance.md](references/android-performance.md) → "Excessive partial wake locks (Play Vitals core metric)" for the threshold (>2 hr cumulative non-exempt per session, >5% of sessions over 28 days, enforced March 2026), the use-case-to-substitute matrix, sensor batching, and stuck-worker diagnosis
+→ Required: UIDT API for user-initiated transfers; WorkManager + `WorkInfo.stopReason` for syncs; manual wake lock acquired only **after** packet arrival on sockets
+→ Forbidden: a manual wake lock alongside `FusedLocationProviderClient` callbacks, `MediaSessionService` audio, or any system API that already wakes the CPU
+
 **Testing?**
 → Read [testing.md](references/testing.md) for testing philosophy and patterns
 → Use Turbine for testing Flow emissions (see [testing.md](references/testing.md) -> "Testing Flow Emissions with Turbine")
