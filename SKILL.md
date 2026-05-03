@@ -45,7 +45,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Design patterns                                                                                                                                                       | [design-patterns.md](references/design-patterns.md)                                           |
 | Performance, Play Vitals, Play Developer Reporting API (CI vitals), startup, recomposition, jank, battery, Perfetto / system traces                                   | [android-performance.md](references/android-performance.md)                                   |
 | Debugging, Logcat levels, ANR, Gradle error patterns, R8, memory leaks                                                                                                | [android-debugging.md](references/android-debugging.md)                                       |
-| Migration guides (XML, RxJava, Navigation, Compose, Room 2→3)                                                                                                         | [migration.md](references/migration.md)                                                       |
+| Migration guides (XML, RxJava, Navigation, Compose, Room 2→3, Android 17 / API 37)                                                                                    | [migration.md](references/migration.md)                                                       |
 
 ## Workflow Decision Tree
 
@@ -256,6 +256,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 
 **Going edge-to-edge / fixing IME, insets, or system-bar bugs?**
 → Use [compose-patterns.md](references/compose-patterns.md) → "Edge-to-Edge (Mandatory on API 36)" for IME insets (`fitInside(WindowInsetsRulers.Ime.current)` vs `imePadding()` ordering and double-padding pitfalls), system-bar appearance/contrast (`isAppearanceLight*Bars`, `isNavigationBarContrastEnforced`), `NavigationSuiteScaffold` / pane-scaffold inset handling, full-screen `Dialog` `decorFitsSystemWindows`, `StatusBarProtection` scrim, and the per-Activity edge-to-edge checklist  
+→ At target SDK 37, add IME visibility-after-rotation handling in the same guide's `#### IME (soft keyboard) insets` block  
 → Manifest must set `android:windowSoftInputMode="adjustResize"` for any Activity hosting text input
 
 **Debugging performance issues or memory leaks?**
@@ -278,6 +279,11 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Migrating legacy code (LiveData, Fragments, Accompanist, RxJava, Room 2.x)?**
 → Use [migration.md](references/migration.md) for all migration paths (including [Room 2.x → Room 3](references/migration.md#room-2x-to-room-3))  
 → Follow [architecture.md](references/architecture.md) for MVVM patterns  
+
+**Migrating to target SDK 37 (Android 17)?**
+→ Walk [migration.md → Android 17 (API 37) Migration](references/migration.md#android-17-api-37-migration) top to bottom, then open each cross-link inside that section for full rules  
+→ Required: catalog `compileSdk` / `targetSdk` 37; AGP 9+, Kotlin, KSP, Compose BOM per [gradle-setup.md](references/gradle-setup.md) and [dependencies.md](references/dependencies.md); cleartext, loopback, CT, and explicit URI grants per [android-security.md](references/android-security.md); adaptive large-screen layouts and IME-after-rotation per [compose-patterns.md](references/compose-patterns.md); background audio/video via [android-media.md](references/android-media.md); Robolectric JVM tests per [testing.md → Robolectric and SDK 37 (Android 17)](references/testing.md#robolectric-and-sdk-37-android-17)  
+→ Forbidden: production-wide cleartext without domain-scoped Network Security Config; cross-process loopback without the API 37 permission where the platform requires it; background `MediaPlayer` / `AudioTrack` / raw `ExoPlayer` without Media3 `MediaSessionService` + `mediaPlayback` FGS + `MediaSession`; Robolectric releases older than 4.13 on current JDKs; `ACTION_SEND` (and similar) intents that attach `content` URIs without explicit `FLAG_GRANT_READ_URI_PERMISSION` or `FLAG_GRANT_WRITE_URI_PERMISSION`  
 
 **Adding Compose animations?**
 → Use [compose-patterns.md](references/compose-patterns.md) → "Animation" for `AnimatedVisibility`, `AnimatedContent`, `animate*AsState`, `Animatable`, shared elements  
