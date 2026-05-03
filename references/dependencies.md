@@ -36,13 +36,23 @@ Use `androidx.paging:paging-testing` on test source sets only (`testImplementati
 
 **Production apps:**
 - Use **stable** versions only (e.g., `1.0.0`) for libraries that offer a stable channel
-- Exception: AndroidX alpha/beta when required for critical features (e.g. Navigation3 during its preview cycle)
 - Avoid alpha/beta/RC for **Hilt** and **Coroutines** in production
 - **Room 3:** Ship **stable** `androidx.room3` builds from [Room 3 releases](https://developer.android.com/jetpack/androidx/releases/room3). Preview builds require pinning the exact version from that page and scheduling the upgrade to stable.
 
 **Experimental projects:**
 - Can use alpha/beta for evaluation
 - Document experimental versions clearly
+
+### Pinned alpha required for feature parity
+
+These catalog entries stay on alpha until a feature-equivalent stable release ships. Replace each pin with the stable release as soon as one exists.
+
+- `room3` - no stable Room 3 release yet; track [Room 3 releases](https://developer.android.com/jetpack/androidx/releases/room3) and bump on every alpha tick.
+- `materialAdaptive` - 1.2.0 stable does not ship `material3-adaptive-navigation3`; the bridge artifact only exists on the 1.3 alpha line.
+- `androidxBiometric` - 1.1.0 stable lacks `BiometricPrompt` content view, logo, and `registerForAuthenticationResult()`; the alpha line is the only source for those APIs.
+- `tracing` - `tracing-wire-android` (Perfetto in-process tracing) is 2.x-only; the 1.3 stable line cannot be substituted.
+- `detekt` - 2.x is a new artifact group (`dev.detekt`); 1.23.x lives at `io.gitlab.arturbosch.detekt` and would require swapping coordinates.
+- `screenshot` - the Compose Preview screenshot test tooling has not shipped a stable release.
 
 ### Version update cadence
 
@@ -92,7 +102,7 @@ configurations.all {
 
 Current template versions:
 - Kotlin: `2.2.21`
-- Compose BOM: `2025.10.01`
+- Compose BOM: `2026.04.01`
 - Compose Compiler: Managed by `kotlin-compose` plugin
 
 The `kotlin-compose` plugin (formerly `compose-compiler`) is now part of Kotlin and automatically matches the Kotlin version.
