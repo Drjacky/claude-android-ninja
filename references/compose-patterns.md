@@ -1871,7 +1871,27 @@ fun LoginScreenAllStatesPreview(
 }
 ```
 
-## Performance Optimization
+### Preview wrappers (Compose 1.11+)
+
+Use `@PreviewWrapperProvider` to inject the app theme or other ambient setup into previews. Implement [`PreviewWrapper`](https://developer.android.com/reference/kotlin/androidx/compose/ui/tooling/preview/PreviewWrapper) once and apply the provider on a `@Preview` or `@MultiPreview` annotation.
+
+```kotlin
+class AppPreviewWrapper : PreviewWrapper {
+    @Composable
+    override fun Wrap(content: @Composable (() -> Unit)) {
+        AppTheme { content() }
+    }
+}
+
+@PreviewWrapperProvider(AppPreviewWrapper::class)
+@ThemePreviews
+@Composable
+private fun LoginButtonPreview() {
+    LoginButton(onClick = {})
+}
+```
+
+Apply `@PreviewWrapperProvider` on a `@MultiPreview` annotation to share the wrapper across all previews using it.
 
 ### Stability Annotations: `@Immutable` vs `@Stable`
 
@@ -2616,6 +2636,23 @@ Image(
 
 Navigation 3 shared elements: [android-navigation.md](/references/android-navigation.md).
 
+#### Visual debugging (Compose 1.11+)
+
+Wrap a `SharedTransitionLayout` with [`LookaheadAnimationVisualDebugging`](https://developer.android.com/reference/kotlin/androidx/compose/animation/package-summary#LookaheadAnimationVisualDebugging\(kotlin.Boolean,androidx.compose.ui.graphics.Color,androidx.compose.ui.graphics.Color,androidx.compose.ui.graphics.Color,kotlin.Boolean,kotlin.Function0\)) to overlay target bounds, animation trajectories, and unmatched / multi-match elements. Required: gate `isEnabled` behind `BuildConfig.DEBUG`.
+
+```kotlin
+LookaheadAnimationVisualDebugging(
+    isEnabled = BuildConfig.DEBUG,
+    overlayColor = Color(0x4AE91E63),
+    multipleMatchesColor = Color.Green,
+    unmatchedElementColor = Color.Red,
+) {
+    SharedTransitionLayout {
+        ...
+    }
+}
+```
+
 ### graphicsLayer for Animation Performance
 
 GPU-accelerated transforms that skip recomposition and relayout.
@@ -3238,6 +3275,20 @@ fun Modifier.onSwipeRight(onSwipe: () -> Unit) = pointerInput(Unit) {
     }
 }
 ```
+
+### Trackpad and mouse input (Compose 1.11+)
+
+Required: validate every gesture detector against trackpad, mouse, and stylus, not only touch.
+
+Behavior changes in Compose 1.11:
+
+- Basic trackpad events report `PointerType.Mouse` (previously `PointerType.Touch`).
+- Click-and-drag on a trackpad selects in text fields; it no longer scrolls.
+- `Modifier.scrollable` and `Modifier.transformable` recognise platform two-finger swipe and pinch on API 34+.
+
+Forbidden: branching gesture logic on `PointerType.Touch` to gate trackpad behaviour.
+
+Test trackpad gestures with `performTrackpadInput` - see [testing.md](/references/testing.md).
 
 ### graphicsLayer - GPU Transforms
 
@@ -3885,7 +3936,7 @@ fun ProductCard(product: Product, onClick: () -> Unit) { }
 All migration guides have been consolidated into [migration.md](/references/migration.md). It covers:
 
 - Accompanist to official APIs
-- Compose API migrations (`collectAsStateWithLifecycle`, `mutableIntStateOf`, `animateItem`, `Modifier.Node`)
+- Compose API migrations (`collectAsStateWithLifecycle`, `mutableIntStateOf`, `animateItem`, `Modifier.Node`, `Modifier.onFirstVisible` -> `Modifier.onVisibilityChanged`)
 - Material 2 to Material 3
 - Scaffold `innerPadding` (mandatory)
 - `@ExperimentalMaterial3Api` graduations

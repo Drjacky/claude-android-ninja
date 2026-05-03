@@ -487,6 +487,24 @@ fun Modifier.myModifier(value: Int) = composed {
 // See references/compose-patterns.md → Modifiers → Custom Modifiers with Modifier.Node
 ```
 
+### Modifier.onFirstVisible -> Modifier.onVisibilityChanged
+
+Deprecated in Compose 1.11 (April '26). Migrate to [`Modifier.onVisibilityChanged`](https://developer.android.com/reference/kotlin/androidx/compose/ui/layout/package-summary#\(androidx.compose.ui.Modifier\).onVisibilityChanged\(kotlin.Long,kotlin.Float,androidx.compose.ui.layout.LayoutBoundsHolder,kotlin.Function1\)) and track first-visible state manually when needed - `onFirstVisible` re-fires on every scroll pass through a lazy layout.
+
+```kotlin
+// Old (deprecated)
+Modifier.onFirstVisible { logImpression(item.id) }
+
+// New
+var alreadyLogged by remember(item.id) { mutableStateOf(false) }
+Modifier.onVisibilityChanged { event ->
+    if (!alreadyLogged && event.visibleFraction > 0f) {
+        logImpression(item.id)
+        alreadyLogged = true
+    }
+}
+```
+
 ### String Routes -> Type-Safe Routes -> Navigation3
 
 ```kotlin
