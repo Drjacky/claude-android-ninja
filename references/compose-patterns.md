@@ -764,7 +764,7 @@ fun ScrollableContentWithInsets(modifier: Modifier = Modifier) {
 
 Rule of thumb: start with `safeDrawingPadding()` for form screens, `safeContentPadding()` for hosts/panes, and add `safeGesturesPadding()` on any composable that consumes drag gestures. Do not stack more than one `safe*Padding` on the same node.
 
-**Target SDK floor:** the inset APIs below require **target SDK 35+**. `targetSdk = 36` is the project default; 35 is the minimum on which these APIs are guaranteed available.
+**Target SDK floor:** the inset APIs below require **target SDK 35+**. `targetSdk = 37` is the project default; 35 is the minimum on which these APIs are guaranteed available.
 
 #### IME (soft keyboard) insets
 
@@ -828,6 +828,22 @@ Box(modifier = Modifier.padding(WindowInsets.safeDrawing.asPaddingValues())) {
     Column(modifier = Modifier.imePadding()) { /* … */ }
 }
 ```
+
+**API 37: keyboard visibility after rotation.** At target SDK 37, the platform no longer restores IME visibility across configuration changes. For inputs that must stay open after rotation:
+
+- Manifest: set `android:windowSoftInputMode="stateAlwaysVisible|adjustResize"`. Keep `adjustResize` in the same value so the inset patterns above still apply.
+- Runtime: call `WindowInsetsControllerCompat.show(WindowInsetsCompat.Type.ime())` from `onCreate` after `setContent`, and re-issue it on configuration-change recomposition (e.g. `LaunchedEffect(configuration)`).
+
+```kotlin
+val view = LocalView.current
+val configuration = LocalConfiguration.current
+LaunchedEffect(configuration) {
+    val window = (view.context as Activity).window
+    WindowCompat.getInsetsController(window, view).show(WindowInsetsCompat.Type.ime())
+}
+```
+
+Forbidden: relying on the platform to reopen the keyboard automatically. The behaviour shipped in earlier APIs is removed at target 37.
 
 #### System bar appearance & contrast
 
@@ -975,11 +991,11 @@ class MyActivity : ComponentActivity() {
 - Dispatch `KeyEvent.KEYCODE_BACK` -- it is no longer dispatched
 - Use `android:enableOnBackInvokedCallback="false"` as a permanent solution
 
-### Adaptive Layouts (Mandatory on API 36 for Large Screens)
+### Adaptive Layouts (Mandatory on API 36+ for Large Screens)
 
-Starting with Android 16 (API 36), orientation, resizability, and aspect ratio restrictions are ignored on displays with smallest width >= 600dp. Apps fill the entire display window regardless of declared constraints.
+Starting with Android 16 (API 36) and reaffirmed at API 37 (Android 17), orientation, resizability, and aspect-ratio restrictions are ignored on displays with smallest width >= 600dp. Apps targeting SDK 37 fill the entire display window regardless of declared constraints; manifest attributes that contradict adaptive rendering are silently dropped.
 
-**What is ignored on large screens:**
+**Ignored on large screens (API 36 and API 37):**
 
 - `screenOrientation` manifest attribute
 - `resizableActivity="false"`
@@ -988,8 +1004,8 @@ Starting with Android 16 (API 36), orientation, resizability, and aspect ratio r
 
 **Exceptions:**
 
-- Games (based on `android:appCategory="game"`)
-- Screens smaller than `sw600dp`
+- Games (based on `android:appCategory="game"`) - still honored at API 37; verify against the [Android 17 migration guide](https://developer.android.com/about/versions/17/migration) before relying on it for production releases.
+- Screens smaller than `sw600dp`.
 
 **Build adaptive layouts by default:**
 
