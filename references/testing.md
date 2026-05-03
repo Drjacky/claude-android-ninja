@@ -1869,6 +1869,32 @@ class AuthScreenTest {
 
 ```
 
+### Compose tests v2 (Compose 1.11+)
+
+Required: write Compose UI tests against the v2 APIs. v1 APIs are deprecated.
+
+Behavior changes from v1:
+
+- Default Compose-internal dispatcher shifted from `UnconfinedTestDispatcher` to `StandardTestDispatcher`.
+- Coroutines launched inside a composable queue until the virtual clock advances; eager execution no longer happens by default.
+
+Migration: tests that relied on eager execution may need `composeTestRule.mainClock.advanceTimeBy(...)` or `composeTestRule.waitForIdle()` to flush queued work before assertions. Follow the [Compose test v2 migration guide](https://developer.android.com/develop/ui/compose/testing/migrate-v2) for the full API mapping.
+
+Forbidden: opting back into the v1 dispatcher to hide a race condition. Fix the test or the production code.
+
+The general-coroutine guidance in [Coroutine Testing](#coroutine-testing) (which still defaults to `UnconfinedTestDispatcher` in `runTest` blocks for ViewModel and repository tests) is unchanged - the v2 default applies inside the Compose test framework itself.
+
+### Trackpad input tests (Compose 1.11+)
+
+Use [`performTrackpadInput`](https://developer.android.com/reference/kotlin/androidx/compose/ui/test/SemanticsNodeInteraction#\(androidx.compose.ui.test.SemanticsNodeInteraction\).performTrackpadInput\(kotlin.Function1\)) to drive trackpad pointer events in instrumentation tests. Pair with `performTouchInput`, `performMouseInput`, and `performKeyInput` so each gesture detector is covered across every pointer type the screen can receive.
+
+Required when a screen exposes:
+
+- `Modifier.scrollable` or `Modifier.transformable` reachable on tablet, foldable, Chromebook, or desktop form factors.
+- Custom `pointerInput` gesture detectors that branch on drag, pinch, or two-finger swipe.
+
+Cross-reference: trackpad behavior change in [compose-patterns.md → Trackpad and mouse input](/references/compose-patterns.md#trackpad-and-mouse-input-compose-111).
+
 ## Screenshot Testing
 
 Required: use [Compose Preview Screenshot Testing](https://developer.android.com/studio/preview/compose-screenshot-testing) (host JVM, reuses `@Preview`). One test per meaningful state (loading, success, error, empty) for every key screen.
