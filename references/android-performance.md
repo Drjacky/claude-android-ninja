@@ -655,6 +655,77 @@ val locationRequest = LocationRequest.create().apply {
 }
 ```
 
+### Excessive partial wake locks (Play Vitals core metric)
+
+A user session is excessive when cumulative non-exempt wake locks exceed **2 hours in a 24-hour period**. The bad-behavior threshold trips when **>5% of sessions over 28 days** are excessive (enforced March 1, 2026). Crossing the threshold can warn users on the store listing and exclude the app from discovery surfaces. Inspect tag-level P90/P99 durations on the [Excessive partial wake locks dashboard](https://play.google.com/console/developers/app/vitals/metrics/details?metric=EXCESSIVE_BACKGROUND_WAKELOCKS&days=28); investigate any tag with P90/P99 > 60 minutes. Definition: [Android vitals - Excessive wake locks](https://developer.android.com/topic/performance/vitals/excessive-wakelock).
+
+Exempted: system-held wake locks for audio playback, location update callbacks, and user-initiated data transfer.
+
+Forbidden: acquiring a manual wake lock alongside an API that already wakes the CPU.
+
+#### Use case to substitute matrix
+
+Replace manual partial wake locks with the API listed for each use case. See [Choose the right API to keep the device awake](https://developer.android.com/develop/background-work/background-tasks/awake) for the platform decision flow.
+
+| Use case                                      | Substitute                                                                                                                                                                                                                                                                      |
+|-----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| User-initiated upload or download             | [UIDT API](https://developer.android.com/develop/background-work/background-tasks/uidt) (exempted from the metric).                                                                                                                                                             |
+| One-time or periodic background sync          | [WorkManager](https://developer.android.com/develop/background-work/background-tasks/persistent); observe `WorkInfo.stopReason`.                                                                                                                                                |
+| Location callbacks                            | `FusedLocationProviderClient` / `LocationManager` - the system holds the brief wake lock for the callback.                                                                                                                                                                      |
+| Caching location data for later upload        | Persist in memory or local storage; process via WorkManager. No separate wake lock.                                                                                                                                                                                             |
+| High-frequency sensor monitoring              | `SensorManager.registerListener(..., samplingPeriodUs, maxReportLatencyUs)` with `maxReportLatencyUs >= 30_000_000` (30 s) for batching.                                                                                                                                        |
+| Step or distance tracking                     | [Recording API](https://developer.android.com/health-and-fitness/guides/recording-api) or [Health Connect](https://developer.android.com/health-and-fitness/health-connect/features/steps).                                                                                     |
+| Bluetooth pairing or background communication | [CompanionDeviceManager](https://developer.android.com/develop/connectivity/bluetooth/companion-device-pairing) and [BLE background guidance](https://developer.android.com/develop/connectivity/bluetooth/ble/background). Manual wake lock only for the duration of activity. |
+| Remote messaging from a server                | FCM; schedule an [expedited worker](https://developer.android.com/develop/background-work/background-tasks/persistent/getting-started/define-work#expedited) if extra processing is required.                                                                                   |
+| Network socket waiting for packets            | Acquire a wake lock only **after** a packet arrives, never while waiting on `readChannel.readRemaining(...)`.                                                                                                                                                                   |
+
+#### Diagnose stuck workers
+
+Stuck workers (timing out, retried in a loop) hold wake locks under `WorkManager` and `JobScheduler` tags. Observe `WorkInfo.stopReason` to detect them; high `STOP_REASON_TIMEOUT` counts mean a worker is misconfigured.
+
+```kotlin
+workManager.getWorkInfoByIdFlow(syncWorker.id)
+    .collect { workInfo ->
+        if (workInfo != null) {
+            val stopReason = workInfo.stopReason
+            logStopReason(syncWorker.id, stopReason)
+        }
+    }
+```
+
+#### Sensor batching
+
+Set `maxReportLatencyUs` so the OS delivers buffered samples on its own wake schedule instead of the app polling.
+
+```kotlin
+val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+sensorManager.registerListener(
+    listener,
+    accelerometer,
+    samplingPeriodUs,
+    maxReportLatencyUs, // >= 30_000_000 (30 s) keeps tag duration under the excessive threshold
+)
+```
+
+#### Network socket wake-lock placement
+
+Hold a wake lock around packet processing only, never around the read loop.
+
+```kotlin
+val readChannel = socket.openReadChannel()
+while (!readChannel.isClosedForRead) {
+    // CPU may sleep here; the radio's hardware interrupt wakes it on packet arrival.
+    val packet = readChannel.readRemaining(1024)
+    if (!packet.isEmpty) {
+        performWorkWithWakeLock {
+            processPacket(packet.readBytes())
+        }
+    }
+}
+```
+
+Identifying the offending wake lock by tag (especially when an SDK created it): cross-reference the dashboard tag against [Identify wake locks created by other APIs](https://developer.android.com/develop/background-work/background-tasks/awake/wakelock/identify-wls). Capture a system trace via [Perfetto](https://developer.android.com/topic/performance/tracing/on-device) when the tag is unknown.
+
 ## Network Performance Optimization
 
 Required: never run network on the main thread; cache responses; batch requests; enable HTTP/2.
