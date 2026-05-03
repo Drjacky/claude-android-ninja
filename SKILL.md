@@ -23,7 +23,8 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Compose patterns, Material motion, animation, modifiers, stability                                                                                                    | [compose-patterns.md](references/compose-patterns.md)                                         |
 | Paging 3 + Room + network (`RemoteMediator`, remote keys, `initialize`)                                                                                               | [compose-patterns.md](references/compose-patterns.md#offline-first-paging-and-remotemediator) |
 | Accessibility, TalkBack, label copy, live regions, Espresso a11y checks                                                                                               | [android-accessibility.md](references/android-accessibility.md)                               |
-| Notifications, foreground services, media/audio, PiP, sharesheet                                                                                                      | [android-notifications.md](references/android-notifications.md)                               |
+| Notifications, foreground services, media-style notifications, PiP, sharesheet                                                                                        | [android-notifications.md](references/android-notifications.md)                               |
+| Background media playback (audio/video) at API 37, `MediaSessionService`, FGS type, audio focus                                                                       | [android-media.md](references/android-media.md)                                               |
 | Data sync & offline-first patterns                                                                                                                                    | [android-data-sync.md](references/android-data-sync.md)                                       |
 | Material 3 theming, spacing tokens, category fit, dynamic colors                                                                                                      | [android-theming.md](references/android-theming.md)                                           |
 | Navigation3, adaptive navigation, large-screen quality tiers                                                                                                          | [android-navigation.md](references/android-navigation.md)                                     |
@@ -171,6 +172,11 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 → Use [android-notifications.md](references/android-notifications.md) for notification channels, styles, actions, and foreground services  
 → Check POST_NOTIFICATIONS permission on API 33+ before showing notifications  
 → Create notification channels at app startup (required for API 26+)  
+
+**Playing audio or video in the background (target SDK 37)?**
+→ Use [android-media.md](references/android-media.md) → "Background media playback hardening (API 37)" for `MediaSessionService`, `mediaPlayback` foreground service type, and `MediaSession` lifecycle  
+→ Required: declare `FOREGROUND_SERVICE_MEDIA_PLAYBACK` and `android:foregroundServiceType="mediaPlayback"`; build a `MediaSession` around a Media3 `Player`; release session and player in `onDestroy()`; stop the service on `Player.STATE_ENDED`  
+→ Forbidden: standalone `MediaPlayer` / `AudioTrack` / raw `ExoPlayer` background playback without a `MediaSession`; `requestAudioFocus()` from a service with no session; manual wake locks alongside `MediaSessionService`  
 
 **Sharing logic across ViewModels or avoiding base classes?**
 → Use delegation via interfaces as described in [kotlin-delegation.md](references/kotlin-delegation.md)  

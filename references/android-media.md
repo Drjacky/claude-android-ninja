@@ -1,19 +1,23 @@
 # Android Media
 
-Required: at target SDK 37, every background audio session runs inside a `MediaSessionService` with a `mediaPlayback` foreground service type. Standalone `MediaPlayer` / `AudioTrack` background playback is silently dropped and `requestAudioFocus()` returns `AUDIOFOCUS_REQUEST_FAILED`.
+Required: at target SDK 37, every background media playback session - audio or video - runs inside a Media3 `MediaSessionService` with a `mediaPlayback` foreground service type. Standalone `MediaPlayer` / `AudioTrack` background audio is silently dropped and `requestAudioFocus()` returns `AUDIOFOCUS_REQUEST_FAILED`.
 
-## Background audio hardening (API 37)
+Scope: Media3 playback hardening. Image loading -> [android-graphics.md → Image Loading with Coil3](/references/android-graphics.md). Media-style notifications and PiP -> [android-notifications.md](/references/android-notifications.md). Camera capture, screen recording, partial screen sharing -> [android-security.md](/references/android-security.md).
+
+## Background media playback hardening (API 37)
+
+The same rule covers audio-only, video-only, and audio-with-video playback. The audio-focus enforcement bullet applies only when audio is playing.
 
 Required:
-- Subclass `MediaSessionService` and build a `MediaSession` from a Media3 `Player` (`ExoPlayer` is the default).
+- Subclass `MediaSessionService` and build a `MediaSession` from a Media3 `Player` (`ExoPlayer` is the default; works for audio, video, or both).
 - Set `android:foregroundServiceType="mediaPlayback"` on the service in the manifest.
 - Declare `android.permission.FOREGROUND_SERVICE` and `android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK`.
 - Release the `MediaSession` and the underlying `Player` in `onDestroy()`. A leaked session leaves an undismissible playback notification.
 - Stop the service when playback ends: `Player.STATE_ENDED` -> `stopSelf()`.
 
 Forbidden:
-- Standalone `MediaPlayer` / `AudioTrack` background playback without a `MediaSession`.
-- `requestAudioFocus()` from a service that has no `MediaSession`. The call returns `AUDIOFOCUS_REQUEST_FAILED` at target 37 with no exception.
+- Standalone `MediaPlayer`, `AudioTrack`, or raw `ExoPlayer` background playback without a `MediaSession` at target 37.
+- `requestAudioFocus()` from a service that has no `MediaSession` while audio is active. The call returns `AUDIOFOCUS_REQUEST_FAILED` at target 37 with no exception.
 - Holding a manual `PowerManager.WakeLock` alongside `MediaSessionService`. See [android-performance.md → Excessive partial wake locks](/references/android-performance.md#excessive-partial-wake-locks-play-vitals-core-metric).
 
 ### Manifest

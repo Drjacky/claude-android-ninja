@@ -27,7 +27,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Accessibility support (TalkBack, semantic properties, label copy, live regions, Espresso accessibility checks, WCAG alignment)
 - Internationalization & localization (i18n/l10n, RTL support, plurals)
 - Notifications (channels, styles, actions, foreground services, progress-centric, media/audio focus, PiP, system sharesheet, Navigation3 state from taps)
-- Background audio hardening at target SDK 37 (Media3 `MediaSessionService`, `mediaPlayback` foreground service type, `FOREGROUND_SERVICE_MEDIA_PLAYBACK` permission, standalone `MediaPlayer` forbidden in background)
+- Background media playback hardening at target SDK 37 (Media3 `MediaSessionService` for audio and video, `mediaPlayback` foreground service type, `FOREGROUND_SERVICE_MEDIA_PLAYBACK` permission, standalone `MediaPlayer`/`AudioTrack` forbidden in background, `requestAudioFocus` enforcement)
 - Data synchronization & offline-first (sync strategies, conflict resolution, cache invalidation)
 - Material Symbols icons, adaptive launcher icon specs, graphics, custom drawing with Canvas, and Coil3 image loading patterns (AsyncImage, SubcomposeAsyncImage, Hilt ImageLoader)
 - Gradle/build conventions, product flavors and BuildConfig, version catalog usage, KSP migration, and build performance optimization (diagnostics, lazy tasks, configuration cache)
@@ -57,7 +57,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - [`references/android-accessibility.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-accessibility.md) - accessibility, TalkBack, label copy, semantic properties, WCAG
 - [`references/android-i18n.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-i18n.md) - internationalization, localization, RTL support, plurals
 - [`references/android-notifications.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-notifications.md) - notifications, channels, media/PiP/sharesheet, foreground services
-- [`references/android-media.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-media.md) - background audio hardening at API 37 (Media3 `MediaSessionService`, FGS type, audio focus rules)
+- [`references/android-media.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-media.md) - background media playback (audio/video) at API 37 (Media3 `MediaSessionService`, FGS type, audio focus rules)
 - [`references/android-data-sync.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-data-sync.md) - offline-first, sync strategies, conflict resolution
 - [`references/kotlin-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/kotlin-patterns.md) - Kotlin best practices and View lifecycle interop (must-read for Kotlin code)
 - [`references/coroutines-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/coroutines-patterns.md) - coroutines best practices and patterns
