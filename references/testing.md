@@ -9,17 +9,18 @@ Required: hand-written fakes (no mocking libraries) in feature/core modules; Goo
 4. [Repository Tests](#repository-tests)
 5. [Coroutine Testing](#coroutine-testing)
 6. [Hilt Testing](#hilt-testing)
-7. [Room Database Testing](#room-database-testing)
-8. [SavedStateHandle Testing](#savedstatehandle-testing)
-9. [Navigation Tests](#navigation-tests)
-10. [Compose Stability Testing](#testing-compose-stability-annotations)
-11. [UI Tests](#ui-tests)
-12. [Screenshot Testing](#screenshot-testing)
-13. [Performance Benchmarks](#performance-benchmarks)
-14. [Test Utilities](#test-utilities)
-15. [Rules](#rules)
-16. [Paging 3 Testing](#paging-3-testing)
-17. [Localization Testing](#localization-testing)
+7. [Robolectric and SDK 37 (Android 17)](#robolectric-and-sdk-37-android-17)
+8. [Room Database Testing](#room-database-testing)
+9. [SavedStateHandle Testing](#savedstatehandle-testing)
+10. [Navigation Tests](#navigation-tests)
+11. [Compose Stability Testing](#testing-compose-stability-annotations)
+12. [UI Tests](#ui-tests)
+13. [Screenshot Testing](#screenshot-testing)
+14. [Performance Benchmarks](#performance-benchmarks)
+15. [Test Utilities](#test-utilities)
+16. [Rules](#rules)
+17. [Paging 3 Testing](#paging-3-testing)
+18. [Localization Testing](#localization-testing)
 
 ## Testing Philosophy
 
@@ -1001,6 +1002,23 @@ fun `ViewModel without Hilt injection`() = runTest {
     assertThat(viewModel.uiState.value).isInstanceOf(AuthUiState.Error::class.java)
 }
 ```
+
+## Robolectric and SDK 37 (Android 17)
+
+The catalog pins Robolectric `4.16.1`, which targets SDK 35 and SDK 36 (Baklava). No Robolectric release that targets SDK 37 has shipped yet.
+
+Required:
+- Compile against `compileSdk = 37` (catalog default) but annotate Robolectric tests with `@Config(sdk = [Build.VERSION_CODES.BAKLAVA])` until a Robolectric release that supports SDK 37 ships. Track [Robolectric releases](https://github.com/robolectric/robolectric/releases) and bump the catalog `robolectric` pin the moment one announces SDK 37 support.
+- Run JVM unit tests on JDK 21 when `sdk = 36` is in effect. Robolectric 4.16+ refuses to run on JDK 17 at SDK 36.
+- Stay on Robolectric `4.13` or newer regardless of the `@Config` SDK. Earlier releases predate the Android 17 `MessageQueue` rewrite and crash on launch when the platform's queue runs.
+
+```kotlin
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [Build.VERSION_CODES.BAKLAVA])
+class FooTest { /* ... */ }
+```
+
+Espresso `3.7.0` (catalog-pinned) is the latest stable AndroidX Test release; instrumented tests at target SDK 37 require no Espresso-side changes.
 
 ## Room Database Testing
 
