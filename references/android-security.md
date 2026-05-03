@@ -67,6 +67,8 @@ Reference: [Play Integrity API overview](https://developer.android.com/google/pl
 
 ### Network Security Configuration
 
+At target SDK 37, `android:usesCleartextTraffic` defaults to `false` and every HTTP request fails without a Network Security Config domain allowlist. Production: leave the manifest attribute absent or `false` and rely on the implicit deny. Dev/test: scope cleartext to a single `<domain-config>` for the local backend, never to the whole app.
+
 Create `res/xml/network_security_config.xml`:
 
 ```xml
@@ -96,6 +98,30 @@ Reference in `AndroidManifest.xml`:
     ... >
 </application>
 ```
+
+### Certificate Transparency (API 37)
+
+At target SDK 37, Certificate Transparency is enforced by default for every HTTPS connection routed through the platform stack. Per-domain opt-out is reserved for endpoints whose certs are issued by a non-public CA (internal corporate CAs, captive portals); never disable globally.
+
+```xml
+<!-- res/xml/network_security_config.xml -->
+<domain-config>
+    <domain includeSubdomains="true">internal.example.com</domain>
+    <ct-policy enabled="false" />
+</domain-config>
+```
+
+Forbidden: a global `<base-config><ct-policy enabled="false"/></base-config>` (disables CT for every domain and undoes the platform default).
+
+### Loopback access (API 37)
+
+Apps targeting Android 17 must declare `android.permission.USE_LOOPBACK_INTERFACE` to reach `127.0.0.1` / `::1` from another app's process. Same-process loopback (instrumented tests against `MockWebServer` in the test process) is unaffected.
+
+```xml
+<uses-permission android:name="android.permission.USE_LOOPBACK_INTERFACE" />
+```
+
+Required only for: cross-process bridges to a local Web/Node/HTTP server (custom dev shells, Detox-style test harnesses). Production apps that only talk to remote HTTPS endpoints do not need this permission.
 
 ### OkHttp Security Configuration
 
@@ -1545,6 +1571,21 @@ If JavaScript must be enabled, avoid `addJavascriptInterface()` as it exposes yo
     <cache-path name="cache" path="." />
 </paths>
 ```
+
+### Forward-compatible URI grants (Android 18 prep)
+
+Required: pass `Intent.FLAG_GRANT_READ_URI_PERMISSION` (or `FLAG_GRANT_WRITE_URI_PERMISSION`) explicitly on every cross-process Intent that carries an `EXTRA_STREAM` or `EXTRA_OUTPUT` URI - `ACTION_SEND`, `ACTION_SEND_MULTIPLE`, `IMAGE_CAPTURE`.
+
+```kotlin
+val sendIntent = Intent(Intent.ACTION_SEND).apply {
+    type = "image/jpeg"
+    putExtra(Intent.EXTRA_STREAM, fileUri)
+    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+}
+startActivity(Intent.createChooser(sendIntent, null))
+```
+
+Forbidden: relying on the system to infer URI permission from `EXTRA_STREAM` or `EXTRA_OUTPUT` alone.
 
 ## ProGuard / R8 Hardening
 
