@@ -694,7 +694,15 @@ Room 2.x remains in **maintenance** (bugfixes / dependency updates) while Room 3
 
 ## Android 17 (API 37) Migration
 
-Set `compileSdk` / `targetSdk` to 37 in the version catalog, align AGP, Kotlin, and KSP per `references/gradle-setup.md`, and align the Compose BOM and pins per `references/dependencies.md`. Then apply each topic below in order; authoritative rules live in the linked references.
+Install **Android SDK Platform 37** in the SDK Manager (distinct from platform-tools). `compileSdk = 37` without that platform package fails sync.
+
+Set `compileSdk` / `targetSdk` to 37 in the version catalog. Pin `agp`, Gradle wrapper, `kotlin`, and `ksp` as **independently verified** pairs per [gradle-setup.md](gradle-setup.md#agp-version-pin-resolve-before-merge), [gradle-setup.md → Example tested stack](gradle-setup.md#example-tested-stack-re-verify-after-every-bump), and [dependencies.md](dependencies.md#kotlin--compose-compiler-compatibility). Gradle wrapper 9.5.x does **not** imply AGP 9.5.x; HTTP 404 on `com.android.tools.build:gradle:<version>` means that AGP coordinate is not published yet on `google()` - pick a lower published AGP that still supports API 37. Catalog `kotlin` and `ksp` need a supported combination; KSP patch numbers may differ from Kotlin patch numbers - resolve from Maven Central / KSP release notes, then run `./gradlew help`. Leave AGP built-in Kotlin enabled; do not flip `android.builtInKotlin=false` mid-migration without a full plugin plan ([gradle-setup.md → Built-in Kotlin (AGP 9)](gradle-setup.md#built-in-kotlin-agp-9)). If `compile*JavaWithJavac` fails with `MissingValueException`, isolate JaCoCo combined coverage wiring before bumping Kotlin ([android-code-coverage.md](android-code-coverage.md)). Align the Compose BOM per [dependencies.md](dependencies.md).
+
+Apply each topic below in order; authoritative rules live in the linked references.
+
+### Launcher `Activity` soft input (IME baseline)
+
+Set `android:windowSoftInputMode="adjustResize"` on the launcher `Activity` that hosts Compose even when no `TextField` exists yet; first text input on target SDK 37 otherwise hits IME inset footguns. Full rules: [compose-patterns.md → IME (soft keyboard) insets](compose-patterns.md#ime-soft-keyboard-insets).
 
 ### Cleartext traffic
 
@@ -719,6 +727,10 @@ Route background audio and video through Media3 `MediaSessionService`, `mediaPla
 ### IME after rotation
 
 Target SDK 37 does not restore IME visibility across configuration changes by default. Wire `android:windowSoftInputMode` and runtime `WindowInsetsControllerCompat` per [compose-patterns.md → IME (soft keyboard) insets](compose-patterns.md#ime-soft-keyboard-insets).
+
+### JVM unit tests without Robolectric
+
+Pure ViewModel, coroutine, and JVM tests under `src/test/` that do not use `@RunWith(RobolectricTestRunner::class)` skip Robolectric pinning entirely.
 
 ### Robolectric JVM tests
 

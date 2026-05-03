@@ -101,7 +101,7 @@ configurations.all {
 **Critical**: Kotlin and Compose compiler versions must be compatible. Mismatches cause compile errors.
 
 Current template versions:
-- Kotlin: `2.2.21`
+- Kotlin: `2.3.21`
 - Compose BOM: `2026.04.01`
 - Compose Compiler: Managed by `kotlin-compose` plugin
 
@@ -110,7 +110,8 @@ The `kotlin-compose` plugin (formerly `compose-compiler`) is now part of Kotlin 
 **When updating Kotlin:**
 1. Check Compose compatibility: https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 2. Update both `kotlin` and `compose-bom` versions together
-3. Test compilation before committing
+3. Pick the matching KSP line on Maven Central or [KSP releases](https://github.com/google/ksp/releases); catalog `ksp` may use a `kotlinVersion-kspToolVersion` string or a standalone KSP release (patch digits need not match Kotlin)
+4. Run `./gradlew help` before committing
 
 ## Platform Dependencies (BOMs)
 
@@ -179,6 +180,7 @@ dependencies {
 - 2x faster than kapt
 - **Room 3 is KSP-only** (no kapt/Java annotation processing for Room)
 - Hilt supports KSP
+- Catalog `kotlin` and `ksp` are a **tested pair**, not identical patch strings. KSP ships on its own schedule; choose the highest KSP release that supports the catalog Kotlin version, then verify `./gradlew help`.
 
 **Migrate from kapt to KSP:**
 
@@ -199,7 +201,7 @@ dependencies {
 
 // New
 plugins {
-    id("com.google.devtools.ksp") version "2.2.21-2.0.5"
+    id("com.google.devtools.ksp") version "2.3.7"
 }
 
 dependencies {

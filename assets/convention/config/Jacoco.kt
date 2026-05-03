@@ -51,9 +51,11 @@ private fun String.capitalize() = replaceFirstChar {
  *
  * Example: `./gradlew createDebugCombinedCoverageReport`
  *
- * Note: Coverage data must exist before running the task. Run tests first:
+ * Coverage data must exist before running the task. Run tests first:
  * - Unit tests: `./gradlew testDebugUnitTest`
  * - Instrumented tests: `./gradlew connectedDebugAndroidTest`
+ *
+ * If configuration fails with MissingValueException / unresolved providers on `compile*JavaWithJavac` after an AGP bump, isolate `ScopedArtifacts` wiring here before chasing Kotlin pins; see `references/android-code-coverage.md`.
  */
 internal fun Project.configureJacoco(
     commonExtension: CommonExtension,

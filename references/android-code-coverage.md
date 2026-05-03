@@ -1,6 +1,15 @@
 # Code Coverage with JaCoCo
 
-Required: combined unit + instrumented coverage on every PR. Apply via the JaCoCo convention plugins in `assets/convention/`.
+Required: ship JaCoCo on `debug` with unit-test execution data on every PR. Combined unit + instrumented reports are the default convention path; treat that path as **Tier 2** below.
+
+## Coverage tiers
+
+| Tier       | Scope                                                                                                                                            | Use when                                                                                                                                           |
+|------------|--------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Tier 1** | JaCoCo plugin + `enableUnitTestCoverage` / `enableAndroidTestCoverage` on `debug`, unit tests (`testDebugUnitTest`), optional instrumented tests | AGP upgrade surfaces `MissingValueException` / "provider has no value" during `compile*JavaWithJavac`, or configure-time failures before tests run |
+| **Tier 2** | Tier 1 plus `createDebugCombinedCoverageReport` from `assets/convention/config/Jacoco.kt` (`ScopedArtifacts` wiring for merged class dirs)       | Green `./gradlew help` and stable `compile*JavaWithJavac` after the AGP bump                                                                       |
+
+Escalate from Tier 1 to Tier 2 only after `./gradlew help` and `./gradlew testDebugUnitTest` succeed.
 
 ## Setup
 
@@ -30,11 +39,11 @@ The JaCoCo convention plugins (from `assets/convention/`) automatically:
 - Configure JaCoCo version from version catalog
 - Enable coverage for debug builds only
 - Exclude generated code (Hilt, R files, BuildConfig)
-- Create combined coverage report tasks
+- Register combined coverage report tasks (Tier 2 `ScopedArtifacts` path)
 
 ## Generating Coverage Reports
 
-Run tests then the combined report task. Instrumented tests require a connected device or emulator:
+Run tests then the combined report task when Tier 2 is enabled. Instrumented tests require a connected device or emulator:
 
 ```bash
 ./gradlew testDebugUnitTest connectedDebugAndroidTest
@@ -95,6 +104,7 @@ jobs:
           script: ./gradlew connectedDebugAndroidTest
 
       - name: Generate Coverage Report
+        # Tier 2: requires working ScopedArtifacts + combined report task from JaCoCo convention
         run: ./gradlew createDebugCombinedCoverageReport
 
       - name: Upload Coverage to Codecov
@@ -121,9 +131,9 @@ tasks.withType<JacocoCoverageVerification>().configureEach {
 ## Rules
 
 Required:
-- Run `createDebugCombinedCoverageReport` on every PR.
-- Target ≥ 80% line coverage on `core/domain` and `core/data`. UI modules are measured but not gated.
-- Keep instrumented tests under `src/androidTest/` and unit tests under `src/test/`. Coverage tasks read both paths.
+- Run `testDebugUnitTest` on every PR; gate coverage on `core/domain` and `core/data` using whichever tier is active.
+- Target ≥ 80% line coverage on `core/domain` and `core/data` when Tier 2 reports are enabled. UI modules are measured but not gated.
+- Keep instrumented tests under `src/androidTest/` and unit tests under `src/test/`. Coverage tasks read both paths when Tier 2 runs.
 - Cover Compose UI through Compose UI tests and screenshot tests, not by gating composable line coverage.
 
 Forbidden:
@@ -137,6 +147,8 @@ Forbidden:
 | No coverage data generated          | Confirm tests run and pass; confirm `src/test/` vs `src/androidTest/` placement; coverage runs on `debug` only.                                                                                    |
 | Classes missing from report         | Check exclusion patterns in `assets/convention/config/Jacoco.kt`; confirm module applies the JaCoCo convention plugin.                                                                             |
 | Robolectric / JDK 11+ class loading | Convention plugin already sets `isIncludeNoLocationClasses = true` and `excludes = listOf("jdk.internal.*")`. If overriding, keep both.                                                            |
+| `MissingValueException` / unresolved `Provider` during `compile*JavaWithJavac` after AGP or API bump | Drop to **Tier 1**: remove `app.android.application.jacoco` / `app.android.library.jacoco` from the failing module temporarily or fork `Jacoco.kt` without the `ScopedArtifacts.forScope(...).toGet(...)` block; rerun `./gradlew help --stacktrace`. Re-enable Tier 2 only after configuration is green. |
+| Unknown configure failure           | Run `./gradlew help --stacktrace` (and a build scan when CI allows) before bumping Kotlin or KSP; see [gradle-setup.md](/references/gradle-setup.md#agp-9-verification).                            |
 
 ## References
 

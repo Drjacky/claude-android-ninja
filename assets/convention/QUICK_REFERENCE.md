@@ -18,11 +18,11 @@ Forbidden: drift `build-logic` from `assets/convention/` without re-copying — 
 | Plugin ID                          | File                                                   | Purpose                    | Common Apply To                  |
 |------------------------------------|--------------------------------------------------------|----------------------------|----------------------------------|
 | `app.android.application`          | `AndroidApplicationConventionPlugin.kt`                | Root app module config     | `:app`                           |
-| `app.android.application.compose`  | `AndroidApplicationComposeConventionPlugin.kt`         | Compose for app            | `:app`                           |
+| `app.android.application.compose`  | `AndroidApplicationComposeConventionPlugin.kt`         | Compose compiler only; apply after `app.android.application` | `:app`                           |
 | `app.android.application.baseline` | `AndroidApplicationBaselineProfileConventionPlugin.kt` | Baseline profiles          | `:app`                           |
 | `app.android.application.jacoco`   | `AndroidApplicationJacocoConventionPlugin.kt`          | Code coverage for app      | `:app` (when coverage needed)    |
 | `app.android.library`              | `AndroidLibraryConventionPlugin.kt`                    | Android library            | `:core:*`, `:feature:*`          |
-| `app.android.library.compose`      | `AndroidLibraryComposeConventionPlugin.kt`             | Compose for library        | UI libraries                     |
+| `app.android.library.compose`      | `AndroidLibraryComposeConventionPlugin.kt`             | Compose compiler only; apply after `app.android.library` | UI libraries                     |
 | `app.android.library.jacoco`       | `AndroidLibraryJacocoConventionPlugin.kt`              | Code coverage for library  | Libraries (when coverage needed) |
 | `app.android.feature`              | `AndroidFeatureConventionPlugin.kt`                    | Feature module             | `:feature:auth`, etc.            |
 | `app.android.test`                 | `AndroidTestConventionPlugin.kt`                       | Test-only module           | `:benchmark`                     |
@@ -38,6 +38,8 @@ Forbidden: drift `build-logic` from `assets/convention/` without re-copying — 
 | `app.play.vitals`                  | `PlayVitalsReportingConventionPlugin.kt`               | Root-only Play Vitals task | **Root** `build.gradle.kts` only |
 
 ## Common Plugin Combinations
+
+Required: declare the base Android plugin (`app.android.application` or `app.android.library`) **before** the matching Compose plugin (`app.android.application.compose` or `app.android.library.compose`). Compose convention plugins apply only `org.jetbrains.kotlin.plugin.compose`; they assume `com.android.application` / `com.android.library` is already on the classpath from the base convention.
 
 ### Application Module
 ```kotlin

@@ -1,6 +1,7 @@
 /*
  * Convention plugin for Android application with Compose
  * Applies: Compose compiler plugin and configures Compose options
+ * Requires: `app.android.application` (or equivalent) already applied so `com.android.application` runs exactly once.
  */
 
 import com.android.build.api.dsl.ApplicationExtension
@@ -12,7 +13,6 @@ import org.gradle.kotlin.dsl.getByType
 class AndroidApplicationComposeConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
-            apply(plugin = "com.android.application")
             apply(plugin = "org.jetbrains.kotlin.plugin.compose")
 
             val extension = extensions.getByType<ApplicationExtension>()

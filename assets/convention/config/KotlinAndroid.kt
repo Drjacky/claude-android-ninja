@@ -1,7 +1,7 @@
 /*
  * Kotlin and Android configuration utilities
  * Configures: compileSdk, minSdk, Java version, Kotlin compiler options
- * Note: AGP 9+ has built-in Kotlin support; compiler options are set via KotlinCompile tasks
+ * AGP 9+ uses built-in Kotlin; compiler options are set via KotlinCompile tasks.
  */
 
 import com.android.build.api.dsl.CommonExtension

@@ -1005,6 +1005,10 @@ fun `ViewModel without Hilt injection`() = runTest {
 
 ## Robolectric and SDK 37 (Android 17)
 
+Use when: the module contains `@RunWith(RobolectricTestRunner::class)` tests.
+
+Skip entirely when: tests are plain JVM unit tests (ViewModels, coroutines, fakes) with no Robolectric runner.
+
 The catalog pins Robolectric `4.16.1`, which targets SDK 35 and SDK 36 (Baklava). No Robolectric release that targets SDK 37 has shipped yet.
 
 Required:

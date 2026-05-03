@@ -4,8 +4,8 @@
 
 # Android Agent Skill
 
-![Kotlin](https://img.shields.io/badge/Kotlin-2.2.21-blue)
-![AGP](https://img.shields.io/badge/AGP-9.0.0-orange)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-blue)
+![AGP](https://img.shields.io/badge/AGP-9.2.0-orange)
 ![Min SDK](https://img.shields.io/badge/Min_SDK-24-green)
 ![Target SDK](https://img.shields.io/badge/Target_SDK-37-green)
 

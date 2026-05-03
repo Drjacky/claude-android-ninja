@@ -1,6 +1,6 @@
 # Gradle & Build Configuration
 
-Required: Gradle 9 / AGP 9.0, JVM 17+, KSP (never kapt), version catalog, convention plugins in `build-logic/convention`. Module structure follows [modularization.md](/references/modularization.md).
+Required: Gradle 9.x wrapper, JVM 17+, KSP (never kapt), version catalog, convention plugins in `build-logic/convention`. Module structure follows [modularization.md](/references/modularization.md). Gradle wrapper and catalog `agp` are independent pins; a high Gradle version does not force a matching AGP patch.
 
 ## AGP 9 Key Changes
 
@@ -12,7 +12,7 @@ Required: Gradle 9 / AGP 9.0, JVM 17+, KSP (never kapt), version catalog, conven
 - **CommonExtension**: Type parameters removed; use `CommonExtension` instead of `CommonExtension<*, *, *, *, *, *>`.
 - **KotlinAndroidProjectExtension**: Not registered with built-in Kotlin; configure compiler options via `tasks.withType<KotlinCompile>().configureEach { compilerOptions { ... } }` instead.
 - **Hilt**: Minimum version **2.59.2** required for AGP 9 (older versions access removed `BaseExtension`).
-- **KSP**: Use the **KSP2 backend** (increment `2.0.x` or later, e.g. `2.2.21-2.0.5`). KSP1 (`2.2.21-1.0.x`) is incompatible with AGP 9. The Kotlin prefix tracks the catalog `kotlin` version.
+- **KSP**: Use the **KSP2** line on Maven Central ([KSP releases](https://github.com/google/ksp/releases)). Catalog `ksp` may be a `kotlinVersion-kspToolVersion` string (e.g. `2.2.21-2.0.5`) or a standalone KSP release (e.g. `2.3.7`); the KSP patch does not have to match the Kotlin patch. Pick the highest KSP release that lists support for the catalog `kotlin` version, then verify `./gradlew help`. KSP1 (`*-1.0.x`) is incompatible with AGP 9.
 - **kapt fallback (`legacy-kapt`)**: Use KSP everywhere it exists. If a processor has no KSP equivalent under AGP 9, use the **`org.jetbrains.kotlin.kapt`** plugin (a.k.a. `legacy-kapt`) for that single module only; the new built-in Kotlin pipeline does not run kapt automatically.
 - **Type-safe project accessors**: Enabled by default in Gradle 9; `enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")` is no longer needed in `settings.gradle.kts`.
 - **JVM 17 minimum**: Gradle 9 requires JVM 17+ to run.
@@ -29,6 +29,26 @@ After completing the AGP 9 upgrade, remove these now-obsolete flags from `gradle
 
 Do **not** add `android.disallowKotlinSourceSets=false`. It re-enables a removed escape hatch and masks real migration work.
 
+### Built-in Kotlin (AGP 9)
+
+| Situation                                   | Action                                                                                                                                                                                                                                            |
+|---------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Default Android modules on AGP 9            | Leave AGP built-in Kotlin enabled. Do not apply `org.jetbrains.kotlin.android` on Android modules. Keep `org.jetbrains.kotlin.plugin.compose` on Compose modules via the compose convention plugins.                                              |
+| `gradle.properties` during API 37 migration | Do not set `android.builtInKotlin=false` to chase a standalone Kotlin Gradle plugin unless plugin order and extension wiring are fully planned; disabling built-in Kotlin mid-migration causes extension type mismatches with convention plugins. |
+| After AGP 9 stabilizes                      | Delete stale `android.builtInKotlin` lines from `gradle.properties` as part of [AGP 9 Migration: Post-Upgrade Cleanup](#agp-9-migration-post-upgrade-cleanup).                                                                                    |
+
+### AGP version pin (resolve before merge)
+
+Required:
+- After changing catalog `agp`, run `./gradlew help`. Failure to resolve `com.android.tools.build:gradle:<version>` (HTTP 404 from `google()`) means that exact version is not published yet; pick the highest published AGP that still supports `compileSdk` 37. Cross-check [Android Gradle Plugin release notes](https://developer.android.com/build/releases/gradle-plugin).
+- Treat Gradle compatibility tables as JVM / Gradle runtime guidance only; they do not guarantee every future AGP coordinate exists on Maven.
+
+### Example tested stack (re-verify after every bump)
+
+| Gradle wrapper | catalog `agp` | catalog `kotlin` | catalog `ksp` | Verify                                                                                                  |
+|----------------|---------------|------------------|---------------|---------------------------------------------------------------------------------------------------------|
+| 9.5.x          | 9.2.x         | 2.3.21           | 2.3.7         | `./gradlew help` on a clean checkout after editing `libs.versions.toml`; swap pins if resolution fails. |
+
 ### AGP 9 Verification
 
 Run after every AGP 9 build-config change. Do **not** run `clean` first - it does not validate the DSL.
@@ -38,7 +58,7 @@ Run after every AGP 9 build-config change. Do **not** run `clean` first - it doe
 ./gradlew build --dry-run   # Configures every task without executing
 ```
 
-On failure, the failing task name identifies the module / DSL block to fix.
+On failure, the failing task name identifies the module / DSL block to fix. For `MissingValueException` / "provider has no value" during `compile*JavaWithJavac`, capture `./gradlew help --stacktrace` before changing Kotlin; isolate JaCoCo combined-report wiring per [android-code-coverage.md](/references/android-code-coverage.md).
 
 ### AGP 9 Toolchain Compatibility Notes
 
@@ -76,6 +96,17 @@ Plugin sources live in `assets/convention/`:
 - `build.gradle.kts`, `QUICK_REFERENCE.md`.
 
 Copy them to `build-logic/convention/src/main/kotlin/`.
+
+### Android and Compose plugin order
+
+Required:
+- Each module applies `com.android.application` or `com.android.library` at most once, from `app.android.application` / `app.android.library` (or from `app.android.feature`, which wraps the library plugins). `app.android.application.compose` and `app.android.library.compose` apply only `org.jetbrains.kotlin.plugin.compose` and read the existing Android extension; they must run **after** the base Android convention on that module (`assets/convention/QUICK_REFERENCE.md` shows alias order).
+
+### androidTest dependencies when androidTest is off
+
+Use when: Gradle warns that `androidTestImplementation` is ignored because androidTest is disabled.
+
+Required: enable `androidTest` for that module or stop adding `androidTestImplementation` from convention plugins for that module. Mismatched wiring produces configure-time noise only; fix by aligning source sets with dependency declarations.
 
 ### Build Logic Setup
 
