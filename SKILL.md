@@ -42,7 +42,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Code coverage (JaCoCo)                                                                                                                                                | [android-code-coverage.md](references/android-code-coverage.md)                               |
 | Security, Play Integrity (Standard/Classic), server decode, `requestHash`/`nonce`, tiered policy, remediation; Credential Manager; local root checks as supplementary | [android-security.md](references/android-security.md)                                         |
 | Design patterns                                                                                                                                                       | [design-patterns.md](references/design-patterns.md)                                           |
-| Performance, Play Vitals, Play Developer Reporting API (CI vitals), startup, recomposition, jank, battery                                                             | [android-performance.md](references/android-performance.md)                                   |
+| Performance, Play Vitals, Play Developer Reporting API (CI vitals), startup, recomposition, jank, battery, Perfetto / system traces                                   | [android-performance.md](references/android-performance.md)                                   |
 | Debugging, Logcat levels, ANR, Gradle error patterns, R8, memory leaks                                                                                                | [android-debugging.md](references/android-debugging.md)                                       |
 | Migration guides (XML, RxJava, Navigation, Compose, Room 2→3)                                                                                                         | [migration.md](references/migration.md)                                                       |
 
@@ -186,7 +186,8 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Measuring performance regressions or startup/jank?**
 → Use [android-performance.md](references/android-performance.md) for Macrobenchmark, Baseline Profiles, and ProfileInstaller setup  
 → Keep benchmark module aligned with `benchmark` build type in [gradle-setup.md](references/gradle-setup.md)  
-→ If the user explicitly requests to investigate jank or add custom trace points, use [android-performance.md](references/android-performance.md) for System Tracing (`androidx.tracing`) setup
+→ If the user explicitly requests to investigate jank or add custom trace points, use [android-performance.md](references/android-performance.md) for System Tracing (`androidx.tracing`) setup  
+→ For trace-backed debugging rules (what to require from the user, what not to infer without artifacts), use [android-performance.md](references/android-performance.md#perfetto-system-traces)
 
 **Setting up app initialization or splash screen?**
 → Follow [android-performance.md](references/android-performance.md) → "App Startup & Initialization" for App Startup library, lazy init, and splash screen  
@@ -249,6 +250,7 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 **Debugging performance issues or memory leaks?**
 → Enable [android-strictmode.md](references/android-strictmode.md) for development builds  
 → Use [android-performance.md](references/android-performance.md) for profiling and benchmarking  
+→ For ANR, jank, or main-thread claims without measurements, follow [android-performance.md](references/android-performance.md#perfetto-system-traces) before concluding cause  
 → Use [android-debugging.md](references/android-debugging.md) for LeakCanary and heap dump analysis  
 → Check [coroutines-patterns.md](references/coroutines-patterns.md) for coroutine cancellation patterns  
 
