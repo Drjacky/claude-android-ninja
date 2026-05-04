@@ -1,6 +1,7 @@
 ---
 name: claude-android-ninja
-description: Build Android apps with Kotlin, Jetpack Compose, MVVM, Hilt, Room 3 (KSP, SQLiteDriver, Flow/suspend DAOs), and multi-module architecture. Triggers on requests to create Android projects, modules, screens, ViewModels, or repositories.
+description: Build Android apps with Kotlin, Jetpack Compose, MVVM, Hilt, Room 3 (KSP, SQLiteDriver, Flow/suspend DAOs), and multi-module architecture. Triggers on requests to create Android projects, modules, screens, ViewModels, repositories, or Android architecture questions. Not for iOS, Flutter, React Native, KMP-only shared code without an Android app module, or backend-only APIs with no Android client.
+compatibility: JDK 17+. Android Studio with Android SDK installed. Network access for Gradle dependency downloads. Version pins in assets/templates follow the repo catalog; align AGP/Kotlin/KSP with the user project before applying upgrades.
 license: Apache-2.0
 metadata:
   author: DrJacky
@@ -10,9 +11,7 @@ metadata:
 ---
 # Android Kotlin Compose Development
 
-Use when building Android apps with Kotlin, Jetpack Compose, MVVM, Hilt, Room 3, DataStore, Paging 3, or multi-module projects.
-Triggers on requests to create Android projects, screens, ViewModels, repositories, feature modules, or asks about Android architecture patterns.
-
+Route tasks through the Quick Reference table and Workflow Decision Tree; open linked `references/` files only for the active task.
 
 ## Quick Reference
 
@@ -46,6 +45,50 @@ Triggers on requests to create Android projects, screens, ViewModels, repositori
 | Performance, Play Vitals, Play Developer Reporting API (CI vitals), startup, recomposition, jank, battery, Perfetto / system traces                                   | [android-performance.md](references/android-performance.md)                                   |
 | Debugging, Logcat levels, ANR, Gradle error patterns, R8, memory leaks                                                                                                | [android-debugging.md](references/android-debugging.md)                                       |
 | Migration guides (XML, RxJava, Navigation, Compose, Room 2→3, Android 17 / API 37)                                                                                    | [migration.md](references/migration.md)                                                       |
+
+## Examples
+
+**Greenfield Android app with convention plugins**
+
+User goal: new repo matching the skill stack.
+
+Actions: copy `assets/settings.gradle.kts.template`, `assets/libs.versions.toml.template`, `assets/convention/` into `build-logic/` per `assets/convention/QUICK_REFERENCE.md`; wire `includeBuild("build-logic")`; read [modularization.md](references/modularization.md) and [gradle-setup.md](references/gradle-setup.md).
+
+Result: root + `app` + core modules with version catalog and convention plugins applied.
+
+**New feature screen (Compose + ViewModel)**
+
+User goal: one new flow in a feature module.
+
+Actions: [modularization.md](references/modularization.md) for module naming and dependency direction; [compose-patterns.md](references/compose-patterns.md) for Screen, state, effects; [kotlin-patterns.md](references/kotlin-patterns.md) + [coroutines-patterns.md](references/coroutines-patterns.md) for `StateFlow` / events; [architecture.md](references/architecture.md) for domain vs data boundaries.
+
+Result: feature module with Screen composable, ViewModel, `UiState`, and DI aligned to existing graphs.
+
+**Offline-first list with Room 3 and remote API**
+
+User goal: cached list + network refresh.
+
+Actions: [compose-patterns.md](references/compose-patterns.md#offline-first-paging-and-remotemediator) for Paging 3 + `RemoteMediator`; [architecture.md](references/architecture.md) for repository placement; Room 3 + `SQLiteDriver` per Workflow Decision Tree database bullets and [migration.md](references/migration.md#room-2x-to-room-3) if upgrading.
+
+Result: single source of truth in Room, UI driven by `PagingData` or equivalent pattern from the guide.
+
+**Target SDK / compile SDK bump (e.g. API 37)**
+
+User goal: migrate toolchain and platform requirements.
+
+Actions: walk [migration.md](references/migration.md#android-17-api-37-migration); pin AGP/Kotlin/KSP using [gradle-setup.md](references/gradle-setup.md) and [dependencies.md](references/dependencies.md); cross-check edge-to-edge, media, security sections linked from the Workflow Decision Tree for API 37.
+
+Result: `compileSdk` / `targetSdk` raised with manifest, Gradle, and feature code adjusted per the migration doc.
+
+## Troubleshooting
+
+| Symptom                                                              | Likely cause                                                                             | Fix                                                                                                                                                                                                                                   |
+|----------------------------------------------------------------------|------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Gradle sync fails, plugin not found, or version catalog errors       | Missing `google()` / `mavenCentral()`, wrong plugin id, or catalog alias drift           | [gradle-setup.md](references/gradle-setup.md) for repositories, plugins, and catalog wiring; align with `assets/libs.versions.toml.template` when bootstrapping                                                                       |
+| KSP errors on Room, or Room 3 builder rejects missing driver         | Room 3 expects `setDriver(BundledSQLiteDriver())` (or project equivalent) per convention | [migration.md](references/migration.md#room-2x-to-room-3); module layout in [modularization.md](references/modularization.md); DAO patterns in [architecture.md](references/architecture.md)                                          |
+| Compose runtime warnings about unstable / skippable recompositions   | Unstable parameter types or state held incorrectly                                       | [compose-patterns.md](references/compose-patterns.md) stability sections; [android-performance.md](references/android-performance.md) Compose recomposition; [kotlin-patterns.md](references/kotlin-patterns.md) for immutable models |
+| Release build crashes, `ClassNotFoundException`, or missing R8 rules | Shrinking removed reflective or JNI entry points                                         | [gradle-setup.md](references/gradle-setup.md) R8 keep-rules audit; [android-debugging.md](references/android-debugging.md) for stack traces and mapping files                                                                         |
+| ANR or jank claims without evidence                                  | Main-thread or measurement assumptions                                                   | [android-performance.md](references/android-performance.md#perfetto-system-traces) before changing architecture; [android-debugging.md](references/android-debugging.md) for ANR traces                                               |
 
 ## Workflow Decision Tree
 
