@@ -603,7 +603,7 @@ For full edge-to-edge setup including `WindowInsets` handling, see `references/c
 
 Required: Migrate off `android:windowBackground`-only splash themes and off dedicated splash `Activity` stacks before relying on Android 12+ launch behavior. Read [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen) and [Migrate to the Splash Screen API](https://developer.android.com/develop/ui/views/launch/splash-screen/migrate) for current attributes and activity patterns.
 
-**P0 —** On API 31+, the system always draws a splash on cold and warm start. A legacy drawable-only launcher theme may be replaced by the default system treatment; a separate `SplashActivity` yields **system splash then your activity** (double splash).
+On API 31+, the system always draws a splash on cold and warm start. A legacy drawable-only launcher theme may be replaced by the default system treatment; a separate `SplashActivity` yields **system splash then your activity** (double splash).
 
 Required: Add `androidx.core:core-splashscreen` (version catalog: `assets/libs.versions.toml.template`, wiring: `references/gradle-setup.md`). Use the compat library so the same themed splash applies across API levels; platform-only `SplashScreen` without compat leaves pre-12 behavior unchanged.
 
@@ -699,6 +699,27 @@ Install **Android SDK Platform 37** in the SDK Manager (distinct from platform-t
 Set `compileSdk` / `targetSdk` to 37 in the version catalog. Pin `agp`, Gradle wrapper, `kotlin`, and `ksp` as **independently verified** pairs per [gradle-setup.md](gradle-setup.md#agp-version-pin-resolve-before-merge), [gradle-setup.md → Example tested stack](gradle-setup.md#example-tested-stack-re-verify-after-every-bump), and [dependencies.md](dependencies.md#kotlin--compose-compiler-compatibility). Gradle wrapper 9.5.x does **not** imply AGP 9.5.x; HTTP 404 on `com.android.tools.build:gradle:<version>` means that AGP coordinate is not published yet on `google()` - pick a lower published AGP that still supports API 37. Catalog `kotlin` and `ksp` need a supported combination; KSP patch numbers may differ from Kotlin patch numbers - resolve from Maven Central / KSP release notes, then run `./gradlew help`. Leave AGP built-in Kotlin enabled; do not flip `android.builtInKotlin=false` mid-migration without a full plugin plan ([gradle-setup.md → Built-in Kotlin (AGP 9)](gradle-setup.md#built-in-kotlin-agp-9)). If `compile*JavaWithJavac` fails with `MissingValueException`, isolate JaCoCo combined coverage wiring before bumping Kotlin ([android-code-coverage.md](android-code-coverage.md)). Align the Compose BOM per [dependencies.md](dependencies.md).
 
 Apply each topic below in order; authoritative rules live in the linked references.
+
+### 16 KB memory page size (Play and native code)
+
+Google Play blocks new apps and updates to existing apps that target Android 15+ on 64-bit when packaged native libraries fail 16 KB page-size compatibility. Read [Support 16 KB page sizes](https://developer.android.com/guide/practices/page-sizes) and [Prepare Play apps for 16 KB devices](https://android-developers.googleblog.com/2025/05/prepare-play-apps-for-devices-with-16kb-page-size.html) for deadlines, ELF rules, NDK/AGP defaults, packaging, and emulator images.
+
+Required: treat every `*.so` under `arm64-v8a` and `x86_64` (CMake/ndk-build outputs, `jniLibs/`, prebuilts, game engines, SQL/ML/media SDKs).
+
+Use when: a release APK or AAB contains `lib/` - run alignment verification on that artifact before upload.
+
+Forbidden: skipping the audit on Kotlin-only app modules; transitive AARs still inject native libs.
+
+Verification:
+
+- Run APK Analyzer on the release build; inspect each `.so` Alignment column per the page-size guide.
+- Run AOSP `check_elf_alignment.sh` on the release APK, or inspect extracted `lib/**/*.so` with `llvm-readelf` / `readelf` exactly as [ELF alignment checks](https://developer.android.com/guide/practices/page-sizes#elf-alignment) describe.
+- Boot a 16 KB emulator image and execute the app’s critical paths per [Test in a 16 KB environment](https://developer.android.com/guide/practices/page-sizes#test).
+
+Build and supply chain:
+
+- Bump NDK and AGP only through pairs already validated in [gradle-setup.md](gradle-setup.md) and [dependencies.md](dependencies.md); follow the page-size guide **Build** / **Compile** sections for linker flags and defaults on the active NDK line.
+- Prebuilt `.so` files from vendors: upgrade the SDK, obtain a 16 KB-aligned artifact, or drop the dependency - relinking inside the app does not fix an opaque third-party binary.
 
 ### Launcher `Activity` soft input (IME baseline)
 

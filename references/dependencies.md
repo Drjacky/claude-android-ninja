@@ -57,15 +57,18 @@ These catalog entries stay on alpha until a feature-equivalent stable release sh
 ### Version update cadence
 
 **Security patches:**
-- **P0 —** Update immediately for CVEs
+
+- Update immediately for CVEs
 - Check dependency-check tools or GitHub security alerts
 
 **Feature updates:**
-- **P1 —** Update when needed for specific features
+
+- Update when needed for specific features
 - Test thoroughly in feature branches
 
 **Breaking changes:**
-- **P2 —** Update during planned refactoring windows
+
+- Update during planned refactoring windows
 - Review migration guides first
 
 ### Version Conflict Resolution
