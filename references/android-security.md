@@ -1643,6 +1643,8 @@ See [gradle-setup.md](/references/gradle-setup.md#r8--proguard-configuration) fo
 
 ## CI/CD Security
 
+Route AAB defaults, Play tracks, staged rollout, and upload automation through [android-ci-cd.md](android-ci-cd.md).
+
 ### Secrets Management
 
 ```yaml

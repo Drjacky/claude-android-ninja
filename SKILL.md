@@ -30,6 +30,7 @@ Route tasks through the Quick Reference table and Workflow Decision Tree; open l
 | Kotlin patterns, View lifecycle interop                                                                                                                               | [kotlin-patterns.md](references/kotlin-patterns.md)                                           |
 | Coroutine patterns                                                                                                                                                    | [coroutines-patterns.md](references/coroutines-patterns.md)                                   |
 | Gradle, product flavors, BuildConfig, build performance                                                                                                               | [gradle-setup.md](references/gradle-setup.md)                                                 |
+| Play CI/CD: AAB, tracks, signing boundaries, rollout, upload automation                                                                                                | [android-ci-cd.md](references/android-ci-cd.md)                                               |
 | Testing approach                                                                                                                                                      | [testing.md](references/testing.md)                                                           |
 | Internationalization & localization                                                                                                                                   | [android-i18n.md](references/android-i18n.md)                                                 |
 | Icons, adaptive launcher specs, custom drawing                                                                                                                        | [android-graphics.md](references/android-graphics.md)                                         |
@@ -310,6 +311,7 @@ Result: `compileSdk` / `targetSdk` raised with manifest, Gradle, and feature cod
 → Check [coroutines-patterns.md](references/coroutines-patterns.md) for coroutine cancellation patterns  
 
 **Setting up CI/CD or code quality checks?**
+→ Use [android-ci-cd.md](references/android-ci-cd.md) for Play-bound AAB, tracks, signing boundaries, staged rollout, and upload automation routing  
 → Use [code-quality.md](references/code-quality.md) for Detekt baseline and CI integration  
 → Use [gradle-setup.md](references/gradle-setup.md) for build cache and convention plugins  
 → Use [testing.md](references/testing.md) for test organization and coverage  
