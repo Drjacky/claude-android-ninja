@@ -15,12 +15,13 @@ Required: hand-written fakes (no mocking libraries) in feature/core modules; Goo
 10. [Navigation Tests](#navigation-tests)
 11. [Compose Stability Testing](#testing-compose-stability-annotations)
 12. [UI Tests](#ui-tests)
-13. [Screenshot Testing](#screenshot-testing)
-14. [Performance Benchmarks](#performance-benchmarks)
-15. [Test Utilities](#test-utilities)
-16. [Rules](#rules)
-17. [Paging 3 Testing](#paging-3-testing)
-18. [Localization Testing](#localization-testing)
+13. [Agent automation (ADB and UIAutomator)](#agent-automation-adb-and-uiautomator)
+14. [Screenshot Testing](#screenshot-testing)
+15. [Performance Benchmarks](#performance-benchmarks)
+16. [Test Utilities](#test-utilities)
+17. [Rules](#rules)
+18. [Paging 3 Testing](#paging-3-testing)
+19. [Localization Testing](#localization-testing)
 
 ## Testing Philosophy
 
@@ -1916,6 +1917,110 @@ Required when a screen exposes:
 - Custom `pointerInput` gesture detectors that branch on drag, pinch, or two-finger swipe.
 
 Cross-reference: trackpad behavior change in [compose-patterns.md → Trackpad and mouse input](/references/compose-patterns.md#trackpad-and-mouse-input-compose-111).
+
+## Agent automation (ADB and UIAutomator)
+
+Commands and test shapes an **agent** proposes or runs **only when** a device or emulator is already attached, `adb` resolves, and the user (or CI) allows shell access. Physical taps, USB attachment, and emulator creation stay with the human or the CI runner. Crash analysis and long `dumpsys`: [android-debugging.md](/references/android-debugging.md). Deep-link `am start` and `pm verify-app-links` matrices: [Testing Deep Links](#testing-deep-links).
+
+### Agent vs device
+
+| Action | Agent | Human or CI |
+|--------|-------|-------------|
+| Run `adb devices` and parse serial list | Yes, when shell runs | Provides hardware or starts emulator |
+| Build `adb -s SERIAL …` command lines for copy-paste | Yes | Confirms correct `SERIAL` when multiple devices |
+| Install APK the build produced | Yes, when file exists and `adb install` allowed | Produced the artifact; unlocks device if needed |
+| Author `androidTest` UIAutomator or Espresso smoke | Yes | Runs `./gradlew connectedCheck` or CI with emulator |
+| Instrumented test on real device without CI | No | Runs Studio or Gradle on a connected device |
+
+Stop: never `adb install` over production user data without explicit user confirmation; never `pm clear` on a device the user did not identify as disposable.
+
+### Device targeting
+
+Required: when more than one line appears under `adb devices`, every mutating command uses `-s <serial>`.
+
+Forbidden: pick a serial not present in the latest `adb devices` output the session captured.
+
+```bash
+adb devices -l
+adb -s emulator-5554 install -r path/to/app-debug.apk
+```
+
+### Install, reset, launch
+
+```bash
+adb -s SERIAL install -r app/build/outputs/apk/debug/app-debug.apk
+adb -s SERIAL shell pm clear com.example.app
+adb -s SERIAL shell am start -W -n com.example.app/.MainActivity
+```
+
+Use `am start -W` when the agent needs a deterministic return after cold start (timeout and exit code surface launch failures).
+
+Cold-start measurement stays in [android-performance.md → Macrobenchmark (Compose)](/references/android-performance.md#macrobenchmark-compose); keep ADB launch checks lightweight.
+
+### Logcat for smoke proof
+
+```bash
+adb -s SERIAL logcat --pid=$(adb -s SERIAL shell pidof -s com.example.app)
+adb -s SERIAL logcat -d -s AndroidRuntime:E | tail -n 80
+```
+
+Use after install or `am start` to confirm absence of immediate process death; full crash triage stays in [android-debugging.md](/references/android-debugging.md).
+
+### UIAutomator v2 (instrumented smoke)
+
+Use when: black-box smoke across process boundaries, launcher widgets, or system UI; single-process Compose surfaces use `createComposeRule` as in [UI Tests](#ui-tests).
+
+Agent-allowed: add or edit a class under `src/androidTest/...` with `@RunWith(AndroidJUnit4::class)`, `InstrumentationRegistry.getInstrumentation()`, `UiDevice.getInstance(instrumentation)`, then `device.wait(Until.hasObject(By.pkg("com.example.app").depth(0)), 5000)` (replace package and timeout with real values).
+
+Minimal pattern (`src/androidTest/...`; replace `pkg` with the debug `applicationId`):
+
+```kotlin
+import android.content.Intent
+import androidx.core.content.ContextCompat
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.Until
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class SmokeLaunchTest {
+    @Test
+    fun coldStart_reachesPackageSurface() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val device = UiDevice.getInstance(instrumentation)
+        val context = instrumentation.targetContext
+        val pkg = "com.example.app"
+        val launchIntent = context.packageManager.getLaunchIntentForPackage(pkg)
+            ?: error("missing launch intent for $pkg")
+        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        ContextCompat.startActivity(context, launchIntent, null)
+        device.wait(Until.hasObject(By.pkg(pkg).depth(0)), 10_000)
+    }
+}
+```
+
+Dependencies: add `androidx.test.uiautomator:uiautomator` on `androidTestImplementation`; pin the version beside other AndroidX Test libraries in the catalog ([dependencies.md](/references/dependencies.md)).
+
+### When Compose test vs UIAutomator
+
+| Surface                                           | Use                                                                                                     |
+|---------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| Single-process Compose tree                       | `createComposeRule` + semantics in [UI Tests](#ui-tests)                                                |
+| Cross-app or hybrid View/Compose with stable `id` | UIAutomator `By.res` / `By.text`                                                                        |
+| Macrobenchmark / Baseline Profile collection      | [android-performance.md](/references/android-performance.md) generator patterns with `UiAutomator` APIs |
+
+### CI wiring (reference only)
+
+Agent-allowed: add a workflow job that starts an emulator action (or uses the team's existing emulator service), runs `./gradlew :app:connectedDebugAndroidTest` with `ANDROID_SERIAL` set, uploads log artifacts on failure.
+
+Human: supplies API level matrix, hardware acceleration, and runner minutes.
+
+### Further ADB
+
+Meminfo, `gfxinfo`, port forwarding, `run-as` listing: [android-debugging.md → ADB Quick Reference](/references/android-debugging.md#adb-quick-reference).
 
 ## Screenshot Testing
 

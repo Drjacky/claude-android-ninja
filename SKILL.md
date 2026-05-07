@@ -30,7 +30,7 @@ Route tasks through the Quick Reference table and Workflow Decision Tree; open l
 | Kotlin patterns, View lifecycle interop                                                                                                                               | [kotlin-patterns.md](references/kotlin-patterns.md)                                           |
 | Coroutine patterns                                                                                                                                                    | [coroutines-patterns.md](references/coroutines-patterns.md)                                   |
 | Gradle, product flavors, BuildConfig, build performance                                                                                                               | [gradle-setup.md](references/gradle-setup.md)                                                 |
-| Play CI/CD: AAB, tracks, signing boundaries, rollout, upload automation                                                                                                | [android-ci-cd.md](references/android-ci-cd.md)                                               |
+| Play CI/CD: AAB, tracks, signing boundaries, rollout, upload automation                                                                                               | [android-ci-cd.md](references/android-ci-cd.md)                                               |
 | Testing approach                                                                                                                                                      | [testing.md](references/testing.md)                                                           |
 | Internationalization & localization                                                                                                                                   | [android-i18n.md](references/android-i18n.md)                                                 |
 | Icons, adaptive launcher specs, custom drawing                                                                                                                        | [android-graphics.md](references/android-graphics.md)                                         |
@@ -45,6 +45,7 @@ Route tasks through the Quick Reference table and Workflow Decision Tree; open l
 | Design patterns                                                                                                                                                       | [design-patterns.md](references/design-patterns.md)                                           |
 | Performance, Play Vitals, Play Developer Reporting API (CI vitals), startup, recomposition, jank, battery, Perfetto / system traces                                   | [android-performance.md](references/android-performance.md)                                   |
 | Debugging, Logcat levels, ANR, Gradle error patterns, R8, memory leaks                                                                                                | [android-debugging.md](references/android-debugging.md)                                       |
+| ADB device targeting, install or launch smoke, UIAutomator black-box checks                                                                                           | [testing.md](references/testing.md#agent-automation-adb-and-uiautomator)                      |
 | Migration guides (XML, RxJava, Navigation, Compose, Room 2→3, Android 17 / API 37)                                                                                    | [migration.md](references/migration.md)                                                       |
 
 ## Examples
@@ -293,7 +294,10 @@ Result: `compileSdk` / `targetSdk` raised with manifest, Gradle, and feature cod
 **Debugging crashes, ANRs, or obfuscated stack traces?**
 → Follow [android-debugging.md](references/android-debugging.md) for Logcat, ANR traces, and Compose recomposition debugging  
 → Use [android-debugging.md](references/android-debugging.md) for R8 mapping files and manual de-obfuscation  
-→ See [gradle-setup.md](references/gradle-setup.md) for R8 build configuration and keep rules
+
+**Proposing install, cold start, or black-box smoke driven by ADB or UIAutomator?**
+→ Use [testing.md](references/testing.md#agent-automation-adb-and-uiautomator) for device targeting, `am start`, logcat smoke, and instrumented UIAutomator skeletons  
+→ Use [testing.md](references/testing.md#testing-deep-links) for `am start` deep-link matrices and `pm verify-app-links` when the task is link verification, not generic launch  
 
 **Auditing R8 keep rules / fixing release size or release-only crashes?**
 → Use [gradle-setup.md](references/gradle-setup.md) → "R8 Keep-Rules Audit" for the redundant-library list, impact hierarchy, subsuming-rule detection, reflection-narrowing playbook, and AGP 9 default-optimization re-audit

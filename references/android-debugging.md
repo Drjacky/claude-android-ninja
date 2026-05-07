@@ -273,6 +273,8 @@ Remove debug logging before committing.
 
 ## ADB Quick Reference
 
+Route scripted install, launch, and black-box smoke checks through [testing.md](testing.md#agent-automation-adb-and-uiautomator); keep the snippets below for ad hoc debugging and `dumpsys`.
+
 ```bash
 # List connected devices
 adb devices
