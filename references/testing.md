@@ -2044,6 +2044,17 @@ Stop: do not treat a screen as complete when only the success branch exists in C
 
 Required: use [Compose Preview Screenshot Testing](https://developer.android.com/studio/preview/compose-screenshot-testing) (host JVM, reuses `@Preview`). One test per meaningful state (loading, success, error, empty) for every key screen.
 
+### Preview Screenshot Testing vs Roborazzi
+
+| Approach                                                                              | Use when                                                                                                                           | Avoid when                                                                                                           |
+|---------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| Compose Preview Screenshot Testing (`screenshot` plugin, `screenshotTest` source set) | Layout and state fit a `@Preview` composable; CI without an emulator farm; fast diff of preview renders                            | Flow requires real navigation, gestures, or hybrid View surfaces previews cannot model                               |
+| Roborazzi (Gradle-recorded bitmap diffs)                                              | Need captures after `composeTestRule` / `AndroidComposeTestRule` interactions, Robolectric JVM runs, or full-screen bitmap compare | Team has not pinned Roborazzi coordinates and policy in the catalog yet - add explicit version entries before wiring |
+
+Required: pick one primary visual-regression stack per module family; do not duplicate the same golden coverage in Preview Screenshot and Roborazzi without ownership rules.
+
+Catalog pins for the Compose Preview screenshot plugin live in `assets/libs.versions.toml.template`; refresh those pins whenever Android Studio or AGP release notes change the supported plugin line. Roborazzi coordinates are not template-default - add them to the project catalog only when Roborazzi is adopted, using the versions the [Roborazzi project](https://github.com/takahirom/roborazzi) documents for the chosen setup.
+
 ### Setup
 
 **1. `gradle.properties`:**

@@ -23,7 +23,7 @@ Route tasks through the Quick Reference table and Workflow Decision Tree; open l
 | Paging 3 + Room + network (`RemoteMediator`, remote keys, `initialize`)                                                                                               | [compose-patterns.md](references/compose-patterns.md#offline-first-paging-and-remotemediator) |
 | Accessibility, TalkBack, label copy, live regions, Espresso a11y checks                                                                                               | [android-accessibility.md](references/android-accessibility.md)                               |
 | Notifications, foreground services, media-style notifications, PiP, sharesheet                                                                                        | [android-notifications.md](references/android-notifications.md)                               |
-| Background media playback (audio/video) at API 37, `MediaSessionService`, FGS type, audio focus                                                                       | [android-media.md](references/android-media.md)                                               |
+| Media: API 37 background playback (`MediaSessionService`, FGS), picking, FileProvider, sharesheet routing                                                             | [android-media.md](references/android-media.md)                                               |
 | Data sync & offline-first patterns                                                                                                                                    | [android-data-sync.md](references/android-data-sync.md)                                       |
 | Material 3 theming, spacing tokens, category fit, dynamic colors                                                                                                      | [android-theming.md](references/android-theming.md)                                           |
 | Navigation3, adaptive navigation, large-screen quality tiers                                                                                                          | [android-navigation.md](references/android-navigation.md)                                     |
@@ -208,12 +208,14 @@ Result: `compileSdk` / `targetSdk` raised with manifest, Gradle, and feature cod
 **Adding tests?**
 → Use [testing.md](references/testing.md) for patterns and examples  
 → Use [testing.md](references/testing.md#pre-release-ui-state-checklist) for empty, loading, error, offline, permission-denied, and session-loss routing before tightening coverage  
+→ Use [testing.md](references/testing.md#preview-screenshot-testing-vs-roborazzi) when choosing Compose Preview Screenshot Testing vs Roborazzi for visual regression  
 → Use [testing.md](references/testing.md) → "Screenshot Testing" for Compose Preview Screenshot Testing setup  
 → Keep test doubles in `core/testing`  
 
 **Handling runtime permissions?**
 → Follow [android-permissions.md](references/android-permissions.md) for manifest declarations and Compose permission patterns  
 → Request permissions contextually and handle "Don't ask again" flows  
+→ For Photo Picker, document contracts, FileProvider, URI grants, and sharesheet routing, use [android-media.md](references/android-media.md#picking-media-and-documents) and [android-media.md → Sharing media and files](references/android-media.md#sharing-media-and-files)
 
 **Showing notifications or foreground services?**
 → Use [android-notifications.md](references/android-notifications.md) for notification channels, styles, actions, and foreground services  

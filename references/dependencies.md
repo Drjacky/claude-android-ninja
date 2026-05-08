@@ -52,7 +52,14 @@ These catalog entries stay on alpha until a feature-equivalent stable release sh
 - `androidxBiometric` - 1.1.0 stable lacks `BiometricPrompt` content view, logo, and `registerForAuthenticationResult()`; the alpha line is the only source for those APIs.
 - `tracing` - `tracing-wire-android` (Perfetto in-process tracing) is 2.x-only; the 1.3 stable line cannot be substituted.
 - `detekt` - 2.x is a new artifact group (`dev.detekt`); 1.23.x lives at `io.gitlab.arturbosch.detekt` and would require swapping coordinates.
-- `screenshot` - the Compose Preview screenshot test tooling has not shipped a stable release.
+- `screenshot` - Compose Preview Screenshot Testing plugin line; still pre-stable on many stacks - bump only from Android Studio / AGP release notes and re-run `screenshotTest` validation after every pin change. Roborazzi is optional visual-regression tooling; pin `io.github.takahirom.roborazzi` artifacts in the catalog only when the project adopts it ([testing.md → Preview Screenshot Testing vs Roborazzi](/references/testing.md#preview-screenshot-testing-vs-roborazzi)).
+
+### Visual regression tooling (catalog)
+
+| Tooling                            | Catalog                                                                                     | Rule                                                                                |
+|------------------------------------|---------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| Compose Preview Screenshot Testing | `screenshot` plugin + `screenshot-validation-api` from `assets/libs.versions.toml.template` | Keep in `screenshotTest`; align pins with Studio docs                               |
+| Roborazzi                          | Not in the template catalog until a project adds explicit coordinates                       | Add `io.github.takahirom.roborazzi` modules only when Roborazzi is the chosen stack |
 
 ### Version update cadence
 

@@ -221,6 +221,8 @@ fun NotificationSettingsScreen(
 
 ### Photo Picker (Preferred for Media on Android 13+)
 
+Start here for **permission-free** picks. For a single router that also lists document contracts, FileProvider, URI grants, and sharesheet targets, see [android-media.md → Picking media and documents](android-media.md#picking-media-and-documents).
+
 Photo Picker avoids permission requests entirely. Use this instead of requesting media permissions when possible.
 
 Photo Picker requires API 33+. On API 24-32, fall back to the legacy media permission flow (`READ_EXTERNAL_STORAGE`).

@@ -31,12 +31,12 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Data synchronization & offline-first (sync strategies, conflict resolution, cache invalidation)
 - Material Symbols icons, adaptive launcher icon specs, graphics, custom drawing with Canvas, and Coil3 image loading patterns (AsyncImage, SubcomposeAsyncImage, Hilt ImageLoader)
 - Gradle/build conventions, product flavors and BuildConfig, version catalog usage, KSP migration, and build performance optimization (diagnostics, lazy tasks, configuration cache)
-- Testing practices with fakes, Hilt testing, Room 3 testing (`SQLiteDriver`, `room3-testing`), Compose Preview Screenshot Testing, pre-release UI state checklist (empty, loading, error, offline, permissions), ADB device targeting, install or launch smoke, and UIAutomator black-box checks (`references/testing.md`)
+- Testing practices with fakes, Hilt testing, Room 3 testing (`SQLiteDriver`, `room3-testing`), Compose Preview Screenshot Testing and Roborazzi trade routing, pre-release UI state checklist (empty, loading, error, offline, permissions), ADB device targeting, install or launch smoke, and UIAutomator black-box checks (`references/testing.md`)
 - Coroutines patterns, structured concurrency, Flow (callbackFlow, backpressure, combine, shareIn), and common pitfalls
 - Kotlin delegation patterns and composition over inheritance
 - Dependency management rules and templates
 - Crash reporting with provider-agnostic interfaces (Firebase/Sentry)
-- Runtime permissions with Compose patterns
+- Runtime permissions with Compose patterns (`references/android-permissions.md`); media playback, picking, FileProvider, and sharesheet routing (`references/android-media.md`)
 - Performance benchmarking (Macrobenchmark, Microbenchmark, Baseline Profiles, ProfileInstaller, System Tracing), Google Play Vitals context (crash/ANR bars, startup targets, frame budgets, battery/background), optional Play Developer Reporting API vitals, Compose recomposition optimization (three phases, deferred state reads, Strong Skipping Mode), and app startup optimization (App Startup library, splash screen, lazy initialization)
 - StrictMode guardrails and Compose compiler stability diagnostics
 - Code coverage with JaCoCo (unit + instrumented tests)
@@ -58,13 +58,13 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - [`references/android-accessibility.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-accessibility.md) - accessibility, TalkBack, label copy, semantic properties, WCAG
 - [`references/android-i18n.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-i18n.md) - internationalization, localization, RTL support, plurals
 - [`references/android-notifications.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-notifications.md) - notifications, channels, media/PiP/sharesheet, foreground services
-- [`references/android-media.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-media.md) - background media playback (audio/video) at API 37 (Media3 `MediaSessionService`, FGS type, audio focus rules)
+- [`references/android-media.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-media.md) - picking and sharing media/files (router), plus background playback (audio/video) at API 37 (Media3 `MediaSessionService`, FGS type, audio focus rules)
 - [`references/android-data-sync.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-data-sync.md) - offline-first, sync strategies, conflict resolution
 - [`references/kotlin-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/kotlin-patterns.md) - Kotlin best practices and View lifecycle interop (must-read for Kotlin code)
 - [`references/coroutines-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/coroutines-patterns.md) - coroutines best practices and patterns
 - [`references/gradle-setup.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/gradle-setup.md) - build logic, product flavors, BuildConfig, conventions, build files, and registering optional root tasks (for example Play Vitals reporting)
 - [`references/android-ci-cd.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-ci-cd.md) - Play release AAB, tracks, signing boundaries, staged rollout, bundletool sideloads, CI release lane ordering
-- [`references/testing.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/testing.md) - testing patterns with fakes, Hilt, Room 3, Navigation3, Compose and UIAutomator smoke, ADB device targeting, pre-release UI state checklist, deep links, and screenshot testing
+- [`references/testing.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/testing.md) - testing patterns with fakes, Hilt, Room 3, Navigation3, Compose and UIAutomator smoke, ADB device targeting, pre-release UI state checklist, Preview vs Roborazzi visual regression routing, deep links, and screenshot testing
 - [`references/android-graphics.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-graphics.md) - Material Symbols icons, adaptive launcher icons, Canvas drawing, Palette API
 - [`references/android-permissions.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-permissions.md) - runtime permissions and best practices
 - [`references/kotlin-delegation.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/kotlin-delegation.md) - delegation patterns and composition guidance
