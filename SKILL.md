@@ -32,6 +32,7 @@ Route tasks through the Quick Reference table and Workflow Decision Tree; open l
 | Gradle, product flavors, BuildConfig, build performance                                                                                                               | [gradle-setup.md](references/gradle-setup.md)                                                 |
 | Play CI/CD: AAB, tracks, signing boundaries, rollout, upload automation                                                                                               | [android-ci-cd.md](references/android-ci-cd.md)                                               |
 | Testing approach                                                                                                                                                      | [testing.md](references/testing.md)                                                           |
+| Pre-release UI states (empty, loading, error, offline, permissions, session loss)                                                                                     | [testing.md](references/testing.md#pre-release-ui-state-checklist)                            |
 | Internationalization & localization                                                                                                                                   | [android-i18n.md](references/android-i18n.md)                                                 |
 | Icons, adaptive launcher specs, custom drawing                                                                                                                        | [android-graphics.md](references/android-graphics.md)                                         |
 | Runtime permissions                                                                                                                                                   | [android-permissions.md](references/android-permissions.md)                                   |
@@ -206,6 +207,7 @@ Result: `compileSdk` / `targetSdk` raised with manifest, Gradle, and feature cod
 
 **Adding tests?**
 → Use [testing.md](references/testing.md) for patterns and examples  
+→ Use [testing.md](references/testing.md#pre-release-ui-state-checklist) for empty, loading, error, offline, permission-denied, and session-loss routing before tightening coverage  
 → Use [testing.md](references/testing.md) → "Screenshot Testing" for Compose Preview Screenshot Testing setup  
 → Keep test doubles in `core/testing`  
 

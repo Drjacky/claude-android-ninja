@@ -16,12 +16,13 @@ Required: hand-written fakes (no mocking libraries) in feature/core modules; Goo
 11. [Compose Stability Testing](#testing-compose-stability-annotations)
 12. [UI Tests](#ui-tests)
 13. [Agent automation (ADB and UIAutomator)](#agent-automation-adb-and-uiautomator)
-14. [Screenshot Testing](#screenshot-testing)
-15. [Performance Benchmarks](#performance-benchmarks)
-16. [Test Utilities](#test-utilities)
-17. [Rules](#rules)
-18. [Paging 3 Testing](#paging-3-testing)
-19. [Localization Testing](#localization-testing)
+14. [Pre-release UI state checklist](#pre-release-ui-state-checklist)
+15. [Screenshot Testing](#screenshot-testing)
+16. [Performance Benchmarks](#performance-benchmarks)
+17. [Test Utilities](#test-utilities)
+18. [Rules](#rules)
+19. [Paging 3 Testing](#paging-3-testing)
+20. [Localization Testing](#localization-testing)
 
 ## Testing Philosophy
 
@@ -1920,17 +1921,17 @@ Cross-reference: trackpad behavior change in [compose-patterns.md → Trackpad a
 
 ## Agent automation (ADB and UIAutomator)
 
-Commands and test shapes an **agent** proposes or runs **only when** a device or emulator is already attached, `adb` resolves, and the user (or CI) allows shell access. Physical taps, USB attachment, and emulator creation stay with the human or the CI runner. Crash analysis and long `dumpsys`: [android-debugging.md](/references/android-debugging.md). Deep-link `am start` and `pm verify-app-links` matrices: [Testing Deep Links](#testing-deep-links).
+Commands and test shapes an **agent** proposes or runs **only when** a device or emulator is already attached, `adb` resolves, and the session allows shell access. Crash analysis and long `dumpsys`: [android-debugging.md](/references/android-debugging.md). Deep-link `am start` and `pm verify-app-links` matrices: [Testing Deep Links](#testing-deep-links).
 
 ### Agent vs device
 
-| Action | Agent | Human or CI |
-|--------|-------|-------------|
-| Run `adb devices` and parse serial list | Yes, when shell runs | Provides hardware or starts emulator |
-| Build `adb -s SERIAL …` command lines for copy-paste | Yes | Confirms correct `SERIAL` when multiple devices |
-| Install APK the build produced | Yes, when file exists and `adb install` allowed | Produced the artifact; unlocks device if needed |
-| Author `androidTest` UIAutomator or Espresso smoke | Yes | Runs `./gradlew connectedCheck` or CI with emulator |
-| Instrumented test on real device without CI | No | Runs Studio or Gradle on a connected device |
+| Action                                               | Agent                                           | Prerequisite                                        |
+|------------------------------------------------------|-------------------------------------------------|-----------------------------------------------------|
+| Run `adb devices` and parse serial list              | Yes, when shell runs                            | Device or emulator online                           |
+| Build `adb -s SERIAL …` command lines for copy-paste | Yes                                             | Correct `SERIAL` when multiple devices              |
+| Install APK the build produced                       | Yes, when file exists and `adb install` allowed | Artifact path valid; device unlocked if required    |
+| Author `androidTest` UIAutomator or Espresso smoke   | Yes                                             | `./gradlew connectedCheck` or CI emulator available |
+| Instrumented test on real device without CI          | No                                              | Connected device and local Gradle or Studio run     |
 
 Stop: never `adb install` over production user data without explicit user confirmation; never `pm clear` on a device the user did not identify as disposable.
 
@@ -2016,11 +2017,28 @@ Dependencies: add `androidx.test.uiautomator:uiautomator` on `androidTestImpleme
 
 Agent-allowed: add a workflow job that starts an emulator action (or uses the team's existing emulator service), runs `./gradlew :app:connectedDebugAndroidTest` with `ANDROID_SERIAL` set, uploads log artifacts on failure.
 
-Human: supplies API level matrix, hardware acceleration, and runner minutes.
-
 ### Further ADB
 
 Meminfo, `gfxinfo`, port forwarding, `run-as` listing: [android-debugging.md → ADB Quick Reference](/references/android-debugging.md#adb-quick-reference).
+
+## Pre-release UI state checklist
+
+Routing for auditing **screens and flows** before ship. Pair with [Screenshot Testing](#screenshot-testing) so each meaningful branch has a `@Preview` or screenshot test.
+
+### State routing
+
+| State or edge                          | Audit in code (agent)                                       | Deep rules                                                                                                                                                                                              |
+|----------------------------------------|-------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Empty first load                       | `UiState` branches, empty lists, placeholders               | [compose-patterns.md → Loading and refresh UX](/references/compose-patterns.md#loading-and-refresh-ux)                                                                                                  |
+| Loading / pull-to-refresh              | Skeleton vs full-screen replacement, stale-while-revalidate | [compose-patterns.md → Loading and refresh UX](/references/compose-patterns.md#loading-and-refresh-ux)                                                                                                  |
+| Recoverable error                      | Retry control, dismissible error surface                    | [compose-patterns.md](/references/compose-patterns.md), [kotlin-patterns.md](/references/kotlin-patterns.md)                                                                                            |
+| Offline / no network path              | Cached reads, queued writes, visible offline state          | [android-data-sync.md → Offline-First Architecture](/references/android-data-sync.md#offline-first-architecture), [Network State Monitoring](/references/android-data-sync.md#network-state-monitoring) |
+| Sync conflict in UI                    | User path to resolve or defer                               | [android-data-sync.md → Conflict Resolution](/references/android-data-sync.md#conflict-resolution)                                                                                                      |
+| Permission denied or settings required | Rationale, link to app settings where applicable            | [android-permissions.md → Requesting Runtime Permissions in Compose](/references/android-permissions.md#requesting-runtime-permissions-in-compose)                                                      |
+| Session expired / forced sign-out      | Navigation to auth, cleared back stack                      | [architecture.md](/references/architecture.md)                                                                                                                                                          |
+| RTL / long strings / density           | Truncation, mirroring, overflow                             | [android-i18n.md](/references/android-i18n.md)                                                                                                                                                          |
+
+Stop: do not treat a screen as complete when only the success branch exists in Compose unless domain rules make other branches impossible; then document that exhaustively (for example sealed `when` with a comment or test proving exhaustiveness).
 
 ## Screenshot Testing
 
