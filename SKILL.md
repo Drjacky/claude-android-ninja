@@ -329,6 +329,7 @@ Result: `compileSdk` / `targetSdk` raised with manifest, Gradle, and feature cod
 
 **Migrating legacy code (LiveData, Fragments, Accompanist, RxJava, Room 2.x)?**
 → Use [migration.md](references/migration.md) for all migration paths (including [Room 2.x → Room 3](references/migration.md#room-2x-to-room-3))  
+→ Use [migration.md → Compose-XML interop (hardening)](references/migration.md#compose-xml-interop-hardening) when `ComposeView` / `AndroidView` share a screen with XML or focus-sensitive Views  
 → Follow [architecture.md](references/architecture.md) for MVVM patterns  
 
 **Migrating to target SDK 37 (Android 17)?**
