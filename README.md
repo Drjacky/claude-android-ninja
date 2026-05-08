@@ -44,9 +44,9 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Retrofit/networking patterns (service interfaces, nullable JSON DTOs, Hilt NetworkModule, AuthInterceptor)
 - Haptic feedback, touch targets, and forms/input patterns (keyboard types, autofill, validation)
 - Debugging guide (Logcat levels, ANR timeouts, Gradle error patterns, LeakCanary, Compose recomposition, R8 mapping and manual de-obfuscation)
-- Consolidated migration guide (XML to Compose, LiveData to StateFlow, RxJava to Coroutines, Navigation 2.x to Navigation3, Accompanist to official APIs, Material 2 to 3, Edge-to-Edge, Room 2.x to Room 3)
+- Consolidated migration guide (XML to Compose, LiveData to StateFlow, RxJava to Coroutines, Navigation 2.x to Navigation3, Accompanist to official APIs, Material 2 to 3, Edge-to-Edge, Room 2.x to Room 3, Android 17 / API 37 checklist, 16 KB native page size and Play alignment, Compose-XML interop hardening, Splash Screen API; [`references/migration.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/migration.md))
 - Code quality with Detekt and Compose rules
-- Play CI/CD: AAB, release tracks, signing boundaries, staged rollout, and upload automation (fastlane vs Gradle Play Publisher routing)
+- Play CI/CD: AAB, release tracks, signing boundaries, staged rollout, and upload automation (fastlane vs Gradle Play Publisher routing; [`references/android-ci-cd.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-ci-cd.md))
 
 ## Key Files
 - [`SKILL.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/SKILL.md) - entry point and workflow decision tree
@@ -76,7 +76,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - [`references/dependencies.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/dependencies.md) - dependency rules and version catalog guidance
 - [`references/android-performance.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-performance.md) - Play Vitals thresholds, optional Play Developer Reporting API (CI/Slack), benchmarking, recomposition, app startup, splash screen
 - [`references/android-debugging.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-debugging.md) - Logcat levels, ANR timeouts, LeakCanary, R8 de-obfuscation, Gradle errors, Compose recomposition
-- [`references/migration.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/migration.md) - XML to Compose, LiveData to StateFlow, RxJava, Navigation, Accompanist, Material, Edge-to-Edge, and Room 2.x → Room 3
+- [`references/migration.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/migration.md) - XML to Compose, LiveData to StateFlow, RxJava, Navigation, Accompanist, Material, Edge-to-Edge, Room 2.x → Room 3, Android 17 / API 37 checklist, [16 KB native / Play](https://github.com/Drjacky/claude-android-ninja/blob/master/references/migration.md#16-kb-memory-page-size-play-and-native-code), [Compose-XML interop hardening](https://github.com/Drjacky/claude-android-ninja/blob/master/references/migration.md#compose-xml-interop-hardening), legacy splash
 - [`references/design-patterns.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/design-patterns.md) - Android-focused design patterns
 - [`assets/proguard-rules.pro.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/assets/proguard-rules.pro.template) - R8/ProGuard rules for all libraries
 - [`assets/detekt.yml.template`](https://github.com/Drjacky/claude-android-ninja/blob/master/assets/detekt.yml.template) - Detekt static analysis configuration
