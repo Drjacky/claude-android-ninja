@@ -9,17 +9,17 @@ Required: Material 3, Navigation 3, adaptive layouts, edge-to-edge, lifecycle-aw
    - [Loading and refresh UX](#loading-and-refresh-ux)
 3. [Component Patterns](#component-patterns)
 4. [Adaptive UI](#adaptive-ui)
-5. [Theming & Design System](#theming--design-system)
-6. [Previews & Testing](#previews--testing)
-7. [Performance Optimization](#performance-optimization)
+5. [Theming & Design System](#theming-design-system)
+6. [Previews & Testing](#previews-testing)
+7. [Stability annotations & persistent collections](#stability-annotations-immutable-vs-stable)
 8. [Animation](#animation)
 9. [Side Effects](#side-effects)
 10. [Modifiers](#modifiers)
-11. [Deprecated Patterns & Migrations](#deprecated-patterns--migrations)
+11. [Deprecated Patterns & Migrations](#deprecated-patterns-migrations)
 12. [CompositionLocal](#compositionlocal)
-13. [Lists & Scrolling](#lists--scrolling)
+13. [Lists & Scrolling](#lists-scrolling)
 14. [View Composition Rules](#view-composition-rules)
-15. [Forms & Input](#forms--input)
+15. [Forms & Input](#forms-input)
 
 ## Screen Architecture
 
@@ -1731,7 +1731,7 @@ Every M3 component reads its corner radius from `MaterialTheme.shapes` via a `*D
 | `IconButton`, `FilledIconButton`, etc.                                          | `IconButtonDefaults.*Shape`                                                | `shapes.full`                                                       | Always circular at rest                                                      |
 | `FloatingActionButton`                                                          | `FloatingActionButtonDefaults.shape`                                       | `shapes.large`                                                      | 16dp corners                                                                 |
 | `ExtendedFloatingActionButton`                                                  | `FloatingActionButtonDefaults.extendedFabShape`                            | `shapes.large`                                                      |                                                                              |
-| `Card`, `OutlinedCard`, `ElevatedCard`                                          | `CardDefaults.shape` / `outlinedShape` / `elevatedShape`                   | `shapes.medium`                                                     | 12dp corners; see [Card Variants](#card-variants-filled--outlined--elevated) |
+| `Card`, `OutlinedCard`, `ElevatedCard`                                          | `CardDefaults.shape` / `outlinedShape` / `elevatedShape`                   | `shapes.medium`                                                     | 12dp corners; see [Card Variants](#card-variants-filled-outlined-elevated) |
 | `AssistChip`, `FilterChip`, `InputChip`, `SuggestionChip`                       | `ChipDefaults.*Shape`                                                      | `shapes.small`                                                      | 8dp corners                                                                  |
 | `TextField`, `OutlinedTextField`                                                | `TextFieldDefaults.shape` / `OutlinedTextFieldDefaults.shape`              | top-only `extraSmall` (filled), `extraSmall` all corners (outlined) | Filled rounds **top corners only**                                           |
 | `AlertDialog`, `BasicAlertDialog`                                               | `AlertDialogDefaults.shape`                                                | `shapes.extraLarge`                                                 | 28dp corners                                                                 |
@@ -1915,7 +1915,7 @@ Compose skips more work when the compiler can prove stability. Declare that cont
 
 **Required:** Import `@Immutable` / `@Stable` from `androidx.compose.runtime`.
 
-**Domain models:** Either add `androidx.compose.runtime` to the Gradle module that owns annotated domain types (Kotlin-only) or keep annotations on UI-layer models and cover domain types with the stability configuration in [`android-strictmode.md`](/references/android-strictmode.md#compose-stability-guardrails).
+**Domain models:** Either add `androidx.compose.runtime` to the Gradle module that owns annotated domain types (Kotlin-only) or keep annotations on UI-layer models and cover domain types with the stability configuration in [`android-strictmode.md`](/references/android-strictmode.md#2-compose-stability-guardrails).
 
 ```kotlin
 // core/domain/build.gradle.kts
