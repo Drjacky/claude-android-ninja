@@ -2533,4 +2533,12 @@ Forbidden:
 ## Localization Testing
 
 See [android-i18n.md](/references/android-i18n.md#testing-localization) for locales, plurals, RTL, parameterized locale tests, RTL screenshots, and date/time/currency formatting.
-- [Hilt Testing](https://developer.android.com/training/dependency-injection/hilt-testing) - Official Hilt testing guide
+
+## Cross-references
+
+- [architecture.md](/references/architecture.md) — Layering and fakes
+- [compose-patterns.md](/references/compose-patterns.md) — UiState, previews, screenshot tests
+- [android-performance.md](/references/android-performance.md) — Macrobenchmark and Baseline Profiles
+- [android-debugging.md](/references/android-debugging.md) — ADB and release triage
+- [coroutines-patterns.md](/references/coroutines-patterns.md) — Flow and `runTest`
+- [Hilt Testing](https://developer.android.com/training/dependency-injection/hilt-testing) — Official Hilt testing guide
