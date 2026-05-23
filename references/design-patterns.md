@@ -24,7 +24,7 @@ Required:
 ## Architectural Patterns
 
 ### MVVM (Model-View-ViewModel)
-- **When**: All feature modules (this is our base architecture).
+- **When**: All feature modules (required base architecture).
 - **Android use**: ViewModel holds `StateFlow<UiState>`, Composables observe and render.
 - Full repository / state-flow contract: [architecture.md](/references/architecture.md).
 
