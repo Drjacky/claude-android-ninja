@@ -148,7 +148,7 @@ Result: `compileSdk` / `targetSdk` raised with manifest, Gradle, and feature cod
 → Enable dynamic color (Material You) for API 31+, harmonize brand/extended colors against `primary` - see [Brand Color Harmonization](references/android-theming.md#brand-color-harmonization)  
 → Honor the system contrast slider on Android 14+ (API 34) by shipping Medium/High-contrast scheme variants and reading `UiModeManager.getContrast()` - see [User Contrast Preference](references/android-theming.md#user-contrast-preference-android-14)  
 → For region-local palette overrides (destructive scopes, on-media toolbars), use a nested `MaterialTheme` with `colorScheme.copy(...)` - see [Scoped Themes](references/android-theming.md#scoped-themes)  
-→ Pick `Card` / `OutlinedCard` / `ElevatedCard` by surface separation, not importance, and override shapes at the **token** level - see [Card Variants](references/compose-patterns.md#card-variants-filled--outlined--elevated) and [Component Shape Defaults](references/compose-patterns.md#component-shape-defaults)  
+→ Pick `Card` / `OutlinedCard` / `ElevatedCard` by surface separation, not importance, and override shapes at the **token** level - see [Card Variants](references/compose-patterns.md#card-variants-filled-outlined-elevated) and [Component Shape Defaults](references/compose-patterns.md#component-shape-defaults)  
 
 **Writing any Kotlin code?**
 → **Always** follow [kotlin-patterns.md](references/kotlin-patterns.md)  
@@ -168,6 +168,9 @@ Result: `compileSdk` / `targetSdk` raised with manifest, Gradle, and feature cod
 
 **Handling Navigation?**
 → Use Navigation3 for adaptive navigation (see [android-navigation.md](references/android-navigation.md))
+→ Follow [android-navigation.md](references/android-navigation.md) for state management and adaptive navigation
+→ See [modularization.md](references/modularization.md) for feature module navigation components (Destination, Navigator, Graph)
+→ Configure navigation graph in the app module; use feature navigation destinations and navigator interfaces
 → Avoid navigation anti-patterns (see [android-navigation.md](references/android-navigation.md) -> "Navigation Anti-Patterns")
 
 **Optimizing Performance?**
@@ -183,21 +186,12 @@ Result: `compileSdk` / `targetSdk` raised with manifest, Gradle, and feature cod
 **Testing?**
 → Read [testing.md](references/testing.md) for testing philosophy and patterns
 → Use Turbine for testing Flow emissions (see [testing.md](references/testing.md) -> "Testing Flow Emissions with Turbine")
-→ Create Repository interfaces in `core/domain`
-→ Implement Repository in `core/data`
-→ Create DataSource + DAO in `core/data`
 
 **Implementing offline-first or data synchronization?**
 → Follow [android-data-sync.md](references/android-data-sync.md) for sync strategies, conflict resolution, and cache invalidation  
 → Use Room 3 as single source of truth with sync metadata (syncStatus, lastModified)  
 → Schedule background sync with WorkManager  
 → Monitor network state before syncing  
-
-**Setting up navigation?**
-→ Follow [android-navigation.md](references/android-navigation.md) for Navigation3 architecture, state management, and adaptive navigation  
-→ See [modularization.md](references/modularization.md) for feature module navigation components (Destination, Navigator, Graph)  
-→ Configure navigation graph in the app module  
-→ Use feature navigation destinations and navigator interfaces  
 
 **Setting up deep links, App Links, Digital Asset Links, verification, Dynamic App Links, or custom schemes?**
 → Read [android-navigation.md](references/android-navigation.md) → "Deep Links" for `NavKey` parsing, synthetic back stack, manifest filters, `assetlinks.json`, verification, `DomainVerificationManager`, Dynamic App Links (API 35), custom schemes, troubleshooting  
