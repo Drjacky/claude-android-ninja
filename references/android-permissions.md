@@ -10,7 +10,8 @@ Compose-first runtime permission patterns. Declare in the `:app` manifest only; 
 5. [Rationale and Don't Ask Again](#rationale-and-dont-ask-again)
 6. [Version-Specific Handling](#version-specific-handling)
 7. [Android 16 (API 36) Permission Changes](#android-16-api-36-permission-changes)
-8. [Testing](#testing)
+8. [Android 17 (API 37) location privacy](#android-17-location-privacy)
+9. [Testing](#testing)
 
 ## Where Permissions Live
 
@@ -72,6 +73,45 @@ Notification implementation, channels, and foreground services: `references/andr
 ```xml
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+```
+
+API 37-specific routing (approximate-first, background, FGS): [Android 17 location privacy](#android-17-location-privacy).
+
+### Contact picker (privacy-first)
+
+**Use when:** the user selects one or more contacts to share (invite, tag, forward) without `READ_CONTACTS`.
+
+**Forbidden:** `READ_CONTACTS` when the system contact picker satisfies the UX.
+
+Required: set `ContactsContract.Contacts.EXTRA_USE_SYSTEM_CONTACTS_PICKER` to `true` on the pick Intent so the platform contact picker UI is used. Official flow: [Contact picker (Android 17)](https://developer.android.com/about/versions/17/features/contact-picker).
+
+```kotlin
+@Composable
+fun ContactPickButton(
+    onContactPicked: (Uri) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickContact()
+    ) { uri ->
+        uri?.let(onContactPicked)
+    }
+
+    Button(
+        onClick = { launcher.launch(null) },
+        modifier = modifier
+    ) {
+        Text("Choose contact")
+    }
+}
+```
+
+Raw Intent (multi-select or custom caller): set the platform extra before `startActivity`.
+
+```kotlin
+val pickIntent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI).apply {
+    putExtra(ContactsContract.Contacts.EXTRA_USE_SYSTEM_CONTACTS_PICKER, true)
+}
 ```
 
 ## Requesting Runtime Permissions in Compose
@@ -314,6 +354,16 @@ fun MultiPhotoPickerScreen(
     }
 }
 ```
+
+### Embedded Photo Picker
+
+**Use when:** the picker surface must render inside app layout (sheet, pane, or inline slot) instead of a full-screen system sheet.
+
+**Use when:** full-screen Photo Picker is enough: stay on [Photo Picker (Preferred for Media on Android 13+)](#photo-picker-preferred-for-media-on-android-13) with `PickVisualMedia`.
+
+Required: follow [Embedded photo picker](https://developer.android.com/training/data-storage/shared/photopicker#embedded-photo-picker) for API level gates and `ActivityResult` wiring; keep the same permission-free goal as standalone Photo Picker on supported releases.
+
+Forbidden: `READ_MEDIA_*` when embedded or full-screen Photo Picker covers the UX on that API level.
 
 ## Requesting Special Permissions
 
@@ -693,6 +743,24 @@ fun LocalNetworkPermissionRequest(
 
 When targeting API 36, the photo picker pre-selects photos owned by the requesting app. Users can deselect these to revoke access. No code changes are needed, but be aware that users may deselect previously accessible photos.
 
+## Android 17 location privacy
+
+Required at target SDK 37: request the narrowest location tier the feature needs; justify background and precise access in UX copy and Play declarations.
+
+| Need | Permission / API | Rule |
+|------|------------------|------|
+| City-level or coarse map pin | `ACCESS_COARSE_LOCATION` only | Do not request `ACCESS_FINE_LOCATION` unless the feature fails with coarse |
+| Turn-by-turn, geofence edge, sub-100 m accuracy | `ACCESS_FINE_LOCATION` | Pair with in-use rationale; drop to coarse when the screen leaves the map |
+| Location while app is not visible | `ACCESS_BACKGROUND_LOCATION` | Separate runtime step after foreground grant; use only with a visible ongoing use case |
+| Continuous background fixes | Foreground service with type `location` | Declare FGS permission and show a user-visible notification; see [android-notifications.md](android-notifications.md) |
+| Periodic or deferrable work | WorkManager + last-known or fused one-shot | Forbidden: FGS or background permission for work that fits deferrable scheduling |
+
+**Wrong:** request fine + background on first launch before the user starts a location-dependent action.
+
+**Correct:** foreground coarse or fine in context, then background only after the user enables a feature that needs it.
+
+Cross-links: [android-performance.md → Excessive partial wake locks](android-performance.md#excessive-partial-wake-locks-play-vitals-core-metric) for wake-lock substitutes; [migration.md → Android 17 location privacy](migration.md#android-17-location-privacy); platform summary: [Redefining location privacy (Android 17)](https://developer.android.com/about/versions/17/behavior-changes-17).
+
 ## Testing
 
 ### Grant Permission in Tests
@@ -738,4 +806,6 @@ If permission flows impact startup or navigation timing, use Macrobenchmark to m
 - Request runtime permissions: https://developer.android.com/training/permissions/requesting
 - Request special permissions: https://developer.android.com/training/permissions/requesting-special
 - Photo Picker: https://developer.android.com/training/data-storage/shared/photopicker
+- Embedded photo picker: https://developer.android.com/training/data-storage/shared/photopicker#embedded-photo-picker
+- Contact picker (Android 17): https://developer.android.com/about/versions/17/features/contact-picker
 - App permissions best practices: https://developer.android.com/training/permissions/best-practices
