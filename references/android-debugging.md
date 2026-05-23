@@ -134,6 +134,23 @@ builds. Crash stack traces from production are obfuscated and unreadable without
 
 For R8 build configuration and keep rules, see [gradle-setup.md](/references/gradle-setup.md#r8--proguard-configuration).
 
+### R8 keep-rules troubleshooting
+
+**Use when:** release-only `ClassNotFoundException`, missing reflective entry points, or shrinking removed code that still works in debug.
+
+Required workflow:
+
+1. Reproduce with `./gradlew assembleRelease` (or the project's release bundle task).
+2. Inspect `app/build/outputs/mapping/<variant>/usage.txt` and `seeds.txt` before adding keeps ([Debugging Unexpected Removal](#debugging-unexpected-removal)).
+3. Run the keep-rules audit in [gradle-setup.md → R8 Keep-Rules Audit](/references/gradle-setup.md#r8-keep-rules-audit).
+4. Cross-check official guidance: [Configure and troubleshoot R8 Keep Rules](https://developer.android.com/blog/posts/configure-and-troubleshoot-r8-keep-rules).
+
+Required: upload `mapping.txt` with every release (Crashlytics/Sentry plugins when configured).
+
+**Wrong:** add `-keep class com.example.** { *; }` before checking `usage.txt` / `seeds.txt`.
+
+**Correct:** narrow `-keepclassmembers` to the reflected symbol after the audit steps above.
+
 ### R8 Output Files
 
 After a release build (`./gradlew assembleRelease`), R8 produces these files in
