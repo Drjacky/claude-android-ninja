@@ -7,20 +7,20 @@ Required: server is the trust boundary; the client only collects credentials and
 2. [Network Security](#network-security)
 3. [Certificate Pinning](#certificate-pinning)
 4. [Data Encryption at Rest](#data-encryption-at-rest)
-5. [Android Keystore, TEE & StrongBox](#android-keystore-tee--strongbox)
+5. [Android Keystore, TEE & StrongBox](#android-keystore-tee-strongbox)
 6. [Biometric Authentication](#biometric-authentication)
 7. [Credential Manager and Sign-In](#credential-manager-and-sign-in)
 8. [Device Identifiers and Privacy](#device-identifiers-and-privacy)
 9. [Android 15+ Platform Privacy](#android-15-platform-privacy)
 10. [Play Console Data Safety](#play-console-data-safety)
 11. [Play Integrity API](#play-integrity-api)
-12. [Root & Emulator Detection](#root--emulator-detection)
-13. [Screenshot & Screen Recording Prevention](#screenshot--screen-recording-prevention)
-14. [Secure Database (Room)](#secure-database-room)
+12. [Root & Emulator Detection](#root-emulator-detection)
+13. [Screenshot & Screen Recording Prevention](#screenshot-screen-recording-prevention)
+14. [Secure Database (Room)](#secure-database-room-3)
 15. [Secure Clipboard](#secure-clipboard)
 16. [WebView Security](#webview-security)
 17. [Content Provider Security](#content-provider-security)
-18. [ProGuard / R8 Hardening](#proguard--r8-hardening)
+18. [ProGuard / R8 Hardening](#proguard-r8-hardening)
 19. [CI/CD Security](#cicd-security)
 20. [Security Checklist](#security-checklist)
 
@@ -58,7 +58,7 @@ Local `su` / Magisk / package checks are evadable and tamperable. Use them only 
 2. Use Play Integrity for Play-distributed apps. Integrate **Standard** for frequent checks (prepare provider, request with `requestHash`); use **Classic** for rare high-value checks (`nonce`). See [Play Integrity API](#play-integrity-api).
 3. Bind every token to the action: hash a canonical request representation. Never put secrets in plaintext into the hash input.
 4. Roll out enforcement gradually: log verdicts first, then tighten rules.
-5. Combine with Android Keystore-backed keys for device-bound signing/encryption of high-value operations (see [Android Keystore, TEE & StrongBox](#android-keystore-tee--strongbox)).
+5. Combine with Android Keystore-backed keys for device-bound signing/encryption of high-value operations (see [Android Keystore, TEE & StrongBox](#android-keystore-tee-strongbox)).
 6. Treat optional runtime signals (overlays, accessibility abuse, automation) as risk inputs to policy/fraud engines - not the sole gate unless product requires it.
 
 Reference: [Play Integrity API overview](https://developer.android.com/google/play/integrity/overview).
@@ -870,7 +870,7 @@ override fun onStop() {
 Rules:
 
 - The callback only detects *this app's* windows being recorded. It does not catch foreground-level global recording by system-signed tools.
-- This is a **detection signal**, not a prevention mechanism. Pair it with `FLAG_SECURE` on screens that must never be captured (see [Screenshot & Screen Recording Prevention](#screenshot--screen-recording-prevention)).
+- This is a **detection signal**, not a prevention mechanism. Pair it with `FLAG_SECURE` on screens that must never be captured (see [Screenshot & Screen Recording Prevention](#screenshot-screen-recording-prevention)).
 - Do not use it as a DRM substitute. Determined attackers capture the framebuffer through other channels.
 
 ### Private Space awareness (API 35+)
@@ -1613,7 +1613,7 @@ Use `assets/proguard-rules.pro.template` as the source of truth for all keep rul
 - **Crash report readability** - `SourceFile,LineNumberTable` attributes preserved
 - **Mapping file upload** - Firebase and Sentry Gradle plugins handle this automatically
 
-See [gradle-setup.md](/references/gradle-setup.md#r8--proguard-configuration) for build configuration and debugging shrunk builds.
+See [gradle-setup.md](/references/gradle-setup.md#r8-proguard-configuration) for build configuration and debugging shrunk builds.
 
 ### Manifest Security
 
