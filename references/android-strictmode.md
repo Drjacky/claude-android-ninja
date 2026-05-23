@@ -6,6 +6,14 @@ StrictMode is a three-tier guardrail. Required in debug builds; optional with `p
 2. Compose compiler stability diagnostics.
 3. CI guardrails.
 
+## Table of Contents
+
+1. [Classic StrictMode (Thread + VM)](#1-classic-strictmode-thread-vm)
+2. [Compose Stability Guardrails](#2-compose-stability-guardrails)
+3. [CI Guardrails (Optional)](#3-ci-guardrails-optional)
+4. [Uploading StrictMode Signals to Crash Reporters](#uploading-strictmode-signals-to-crash-reporters)
+5. [References](#references)
+
 ## 1) Classic StrictMode (Thread + VM)
 
 Initialize in `Application` for debug builds. Keep it app-level only.
@@ -96,7 +104,7 @@ class MyApplication : Application() {
 
 Enable compiler reports + metrics for Compose stability diagnostics.
 
-**Best practice:** Gate metrics/reports behind Gradle properties to avoid generating them during normal builds (they can be large and slow down compilation).
+Gate metrics/reports behind Gradle properties to avoid generating them during normal builds (they can be large and slow down compilation).
 
 ```kotlin
 // module build.gradle.kts
