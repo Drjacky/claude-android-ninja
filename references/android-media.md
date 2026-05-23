@@ -2,6 +2,8 @@
 
 **Use when:** routing media or document picks, sharing app-owned `content` URIs, or implementing Media3 background playback at target SDK 37.
 
+Required: declare Media3 through `assets/libs.versions.toml.template` (`media3` version ref, `media3-playback` bundle: `media3-exoplayer`, `media3-session`). Pin from [Media3 releases](https://developer.android.com/jetpack/androidx/releases/media3). Catalog routing: [dependencies.md → Media3](/references/dependencies.md#media3).
+
 Use [Picking media and documents](#picking-media-and-documents), [Sharing media and files](#sharing-media-and-files), and [Scoped storage and permissions](#scoped-storage-and-permissions) as indexes into [android-permissions.md](/references/android-permissions.md), [android-security.md](/references/android-security.md), and [android-notifications.md](/references/android-notifications.md). Implement playback under [Background media playback hardening (API 37)](#background-media-playback-hardening-api-37).
 
 Image loading: [android-graphics.md → Image Loading with Coil3](/references/android-graphics.md). Camera, screen recording, partial screen share: [android-security.md](/references/android-security.md). Playback notifications and PiP: [android-notifications.md](/references/android-notifications.md).
@@ -11,7 +13,8 @@ Image loading: [android-graphics.md → Image Loading with Coil3](/references/an
 1. [Picking media and documents](#picking-media-and-documents)
 2. [Sharing media and files](#sharing-media-and-files)
 3. [Scoped storage and permissions](#scoped-storage-and-permissions)
-4. [Background media playback hardening (API 37)](#background-media-playback-hardening-api-37)
+4. [Playback preloading (Media3)](#playback-preloading-media3)
+5. [Background media playback hardening (API 37)](#background-media-playback-hardening-api-37)
 
 ## Picking media and documents
 
@@ -33,6 +36,14 @@ Use the table as an index only; contracts and samples sit in the linked rows.
 ## Scoped storage and permissions
 
 **Use:** [android-permissions.md](/references/android-permissions.md) for scoped-storage capability matrix; [android-security.md](/references/android-security.md) for outbound `content` trust boundaries and profile edge cases.
+
+## Playback preloading (Media3)
+
+**Use when:** the next queue item must start with less startup latency (feeds, playlists, autoplay chains).
+
+**Forbidden:** preloading entire catalogs or unbounded URL lists; cap concurrent preload windows.
+
+Required: use Media3 `PreloadManager` (and related APIs) per official guides - [Introducing preloading with Media3 - Part 1](https://developer.android.com/blog/posts/elevating-media-playback-introducing-preloading-with-media3-part-1), [PreloadManager deep dive - Part 2](https://developer.android.com/blog/posts/elevating-media-playback-a-deep-dive-into-media3-s-preload-manager-part-2). Wire the same `Player` / `MediaSession` stack as [Background media playback hardening (API 37)](#background-media-playback-hardening-api-37).
 
 ## Background media playback hardening (API 37)
 
