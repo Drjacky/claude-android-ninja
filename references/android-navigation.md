@@ -2,7 +2,11 @@
 
 Required: Navigation 3 with type-safe `@Serializable` `NavKey` destinations, feature-defined `Navigator` interfaces, app-module wiring. Kotlin code must align with [kotlin-patterns.md](/references/kotlin-patterns.md). Versions live in `assets/libs.versions.toml.template` (`navigation3` bundle).
 
-Navigation 3 1.0 is stable; pin a current version from [Navigation 3 releases](https://developer.android.com/jetpack/androidx/releases/navigation3). Reference the [nav3-recipes](https://github.com/android/nav3-recipes) repository for advanced patterns (multi-back-stack, Hilt integration, ...).
+Pin the catalog `navigation3` ref to the latest **stable** release from [Navigation 3 releases](https://developer.android.com/jetpack/androidx/releases/navigation3) (template: `1.1.2`). Reference [nav3-recipes](https://github.com/android/nav3-recipes) for multi-back-stack, Hilt, and scene patterns.
+
+**Use when:** Navigation3 **1.2+** (`DeepLinkRequest`, `UriDeepLinkMatcher`, expanded matcher APIs) - pin an alpha from the same release page; keep the template catalog on stable until 1.2 graduates.
+
+**Use when:** shared-element transitions across Navigation3 scenes - [Navigation with shared elements](https://developer.android.com/develop/ui/compose/animation/shared-elements/navigation) and [compose-patterns.md → Shared Element Transitions](/references/compose-patterns.md#shared-element-transitions).
 
 ## Table of Contents
 1. [Navigation3 Architecture](#navigation3-architecture)
@@ -484,7 +488,7 @@ Navigation 2.x → Navigation3: [migration.md → Navigation 2.x to Navigation3]
 
 ## Animations
 
-`NavDisplay` provides built-in animation support via `ContentTransform`. Customize globally or per-entry.
+`NavDisplay` provides built-in animation support via `ContentTransform`. Customize globally or per-entry. Scene-level shared elements: pass `SharedTransitionScope` to `NavDisplay` or `rememberSceneState` ([Navigation 3 releases](https://developer.android.com/jetpack/androidx/releases/navigation3)); Compose setup: [Navigation with shared elements](https://developer.android.com/develop/ui/compose/animation/shared-elements/navigation).
 
 ### Global Transitions
 
