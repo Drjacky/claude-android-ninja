@@ -1,5 +1,12 @@
 # Coroutines Patterns
 
+## Table of Contents
+
+1. [Android coroutine rules](#android-coroutine-rules)
+2. [Bridging Imperative Callbacks to Coroutines](#bridging-imperative-callbacks-to-coroutines)
+3. [Common Pitfalls](#common-pitfalls)
+4. [Coexisting with RxJava (Legacy Code)](#coexisting-with-rxjava-legacy-code)
+
 ## Android coroutine rules
 
 Use coroutines in a testable, lifecycle-aware way. Reference: [developer.android.com/kotlin/coroutines/coroutines-best-practices](https://developer.android.com/kotlin/coroutines/coroutines-best-practices).
