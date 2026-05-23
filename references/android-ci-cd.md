@@ -11,6 +11,7 @@ Directives for **repo and CI files** an agent edits, versus **Play Console, cred
 | Add `.gitignore` rules and remove committed keystores or password files    | Yes   | Keys created; secrets stored in CI or HSM                     |
 | Choose next safe `versionCode` from Play history                           | No    | Next value or API output supplied; agent wires injection only |
 | Upload AAB, create release, set track, set rollout %, promote              | No    | Play Console or authenticated publish CLI                     |
+| Complete Play developer identity verification                            | No    | Play Console or Android Developer Console (human step)        |
 | Complete Data safety, release notes, store listing text in Play            | No    | In-repo `CHANGELOG` / templates drafted on request only       |
 | Run `./gradlew` locally or in CI when the environment exposes Gradle + SDK | Yes   | Network and secrets policy satisfied                          |
 | Run `bundletool` when the binary is on disk and the tool is on `PATH`      | Yes   | `.aab` path and device spec JSON available                    |
@@ -27,7 +28,8 @@ Stop: do not fabricate `versionCode`, signing passwords, Play service account JS
 6. [Upload automation routing](#upload-automation-routing)
 7. [CI job composition (release lane)](#ci-job-composition-release-lane)
 8. [Internal sharing without Play Console](#internal-sharing-without-play-console)
-9. [Release notes and policy surfaces](#release-notes-and-policy-surfaces)
+9. [Play developer verification](#play-developer-verification)
+10. [Release notes and policy surfaces](#release-notes-and-policy-surfaces)
 
 ## Ship artifact format
 
@@ -107,6 +109,16 @@ Native `.so` gates: reference [migration.md](migration.md#16-kb-memory-page-size
 ## Internal sharing without Play Console
 
 Agent-allowed: document the exact `bundletool build-apks` invocation and device-spec JSON layout; add a `Makefile` or script target that wraps the command when paths are parameterized.
+
+## Play developer verification
+
+Google requires [Android developer verification](https://developer.android.com/blog/posts/android-developer-verification-rolling-out-to-all-developers-on-play-console-and-android-developer-console) for developers using Play Console and the Android Developer Console.
+
+Required: complete verification in Console before upload, signing, or policy actions that the UI blocks.
+
+Forbidden for an agent: substitute Gradle or CI changes for identity verification; the human account owner must finish Console steps.
+
+Use when: CI fails only at upload with a Console policy error about verification - route the user to Console, not repo edits.
 
 ## Release notes and policy surfaces
 
