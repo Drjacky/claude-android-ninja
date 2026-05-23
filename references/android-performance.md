@@ -267,15 +267,27 @@ suspend fun taskOne(tracer: Tracer) {
 
 Custom `trace` / `traceCoroutine` slices from [Custom System Tracing](#custom-system-tracing) show up in system traces opened in Perfetto-capable viewers.
 
+### Android Performance Analyzer (APA)
+
+**Use APA** for interactive system profiling in Android Studio when the goal is frame timing, thread scheduling, memory bandwidth, or GPU counter analysis on a captured trace.
+
+Required: start from [Android Performance Analyzer](https://developer.android.com/android-performance-analyzer) and [APA quickstart](https://developer.android.com/android-performance-analyzer/quickstart).
+
+**Use when:** platform docs redirect AGI system profiling to APA ([Introducing Android Performance Analyzer](https://developer.android.com/blog/posts/introducing-android-performance-analyzer-the-next-evolution-in-profiling-for-android)).
+
+**Use when:** the user attaches `.perfetto-trace` or `bugreport.zip` without Studio - [Perfetto UI](https://perfetto.dev/docs/visualization/perfetto-ui) and [Perfetto (system traces)](#perfetto-system-traces) below still apply.
+
+Forbidden: treating APA as a substitute for Macrobenchmark regression numbers on startup or scroll; pair trace analysis with [Macrobenchmark](#macrobenchmark) metrics when claiming a regression.
+
 ### Perfetto (system traces)
 
 Required: treat scheduling, Binder/IPC waits, I/O blocks, and frame pipeline timing as **trace-backed** claims; Kotlin-only reasoning does not substitute for timeline evidence.
 
 | Symptom or goal                                      | Collection path                                                                                                                                                                                                           |
 |------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Jank, missed frame deadlines, UI latency             | System trace with Frame Timeline context: Android Studio Profiler, Macrobenchmark trace output, or headless `perfetto` / SDK capture ([Android Perfetto](https://developer.android.com/tools/perfetto)).                  |
+| Jank, missed frame deadlines, UI latency             | APA or Android Studio Profiler system trace; Macrobenchmark trace output; headless `perfetto` / SDK capture ([Android Perfetto](https://developer.android.com/tools/perfetto)).                                         |
 | Repeatable startup or scroll regressions             | Macrobenchmark metrics plus trace artifacts; align slice names with `trace {}` / `traceCoroutine` strings in app code.                                                                                                    |
-| GPU-focused render stages / counters                 | Android GPU Inspector (Perfetto-backed); follow AGI docs for capture scope.                                                                                                                                               |
+| GPU-focused render stages / counters                 | APA ([frame times](https://developer.android.com/android-performance-analyzer/analyze/frame-times), [texture memory bandwidth](https://developer.android.com/android-performance-analyzer/analyze/texture-mem-bw)); legacy AGI pages redirect to APA. |
 | Programmatic on-device capture                       | `ProfilingManager` and related Android SDK APIs when the task requires SDK-driven sessions ([Android Perfetto](https://developer.android.com/tools/perfetto)).                                                            |
 | User supplies `bugreport.zip` or a `.perfetto-trace` | User opens the artifact in [Perfetto UI](https://perfetto.dev/docs/visualization/perfetto-ui); routing and tool choice: [How do I start using Perfetto?](https://perfetto.dev/docs/getting-started/start-using-perfetto). |
 
@@ -1352,6 +1364,7 @@ BasicTextField2(state = state)
 - Create Baseline Profiles: https://developer.android.com/topic/performance/baselineprofiles/create-baselineprofile
 - Configure Baseline Profiles: https://developer.android.com/topic/performance/baselineprofiles/configure-baselineprofiles
 - Measure Baseline Profiles: https://developer.android.com/topic/performance/baselineprofiles/measure-baselineprofile
+- Android Performance Analyzer: https://developer.android.com/android-performance-analyzer
 - Android `perfetto` CLI and tools: https://developer.android.com/tools/perfetto
 - Perfetto tracing docs (overview): https://perfetto.dev/docs/
 - Perfetto: How do I start using Perfetto?: https://perfetto.dev/docs/getting-started/start-using-perfetto
