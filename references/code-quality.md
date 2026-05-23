@@ -1,12 +1,17 @@
 # Code Quality (Detekt)
 
-Detekt is the required static analysis tool. Apply it to every module through the `build-logic` convention plugin so configuration stays identical across modules.
+Required: Detekt on every module via the `build-logic` convention plugin. Single rules source (`plugins/detekt.yml`) with optional per-module overrides; type-resolution enabled on Android modules; Compose ruleset; Kotlin 2.2.x without legacy `buildscript`.
 
-## Goals
-- Single source of truth for rules (`plugins/detekt.yml`) with optional per-module overrides.
-- Type-resolution enabled tasks for accurate analysis in Android modules.
-- Compose-specific rules via the Compose detekt ruleset plugin.
-- Kotlin 2.2.x compatible configuration without legacy `buildscript` usage.
+## Table of Contents
+
+1. [Version Catalog](#version-catalog)
+2. [Detekt Convention Plugin (Build Logic)](#detekt-convention-plugin-build-logic)
+3. [Apply in Modules](#apply-in-modules)
+4. [Running Detekt](#running-detekt)
+5. [Baselines & CI](#baselines-ci)
+6. [Compose Rules](#compose-rules)
+7. [Suppressing Violations](#suppressing-violations)
+8. [Suppression rules](#suppression-rules)
 
 ## Version Catalog
 Use `assets/libs.versions.toml.template` as the source of truth for:
