@@ -695,6 +695,10 @@ Room 3 is backed by the **`androidx.sqlite`** driver APIs. **`SupportSQLiteDatab
 
 Step-by-step **SupportSQLite → driver** guidance: [Migrate from SupportSQLite](https://developer.android.com/kotlin/multiplatform/room#migrate) (Android-relevant parts apply even in Android-only apps).
 
+### Composite relation keys (Room 3.0.0-alpha05+)
+
+`@Relation` and `@Junction` accept **array**-valued `parentColumns` and `entityColumns` for composite foreign keys. Regenerate with KSP after bumping the catalog `room3` pin.
+
 ### Invalidation and tests
 
 - **`InvalidationTracker.Observer`** / **`addObserver`** are removed; use **`InvalidationTracker.createFlow`** ([release notes](https://developer.android.com/jetpack/androidx/releases/room3)).
