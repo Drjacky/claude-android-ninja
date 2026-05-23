@@ -2,6 +2,18 @@
 
 Required: every dependency goes through `assets/libs.versions.toml.template`. Do not hard-code coordinates or versions in module `build.gradle.kts`.
 
+## Table of Contents
+
+1. [Version Catalog Source of Truth](#version-catalog-source-of-truth)
+2. [Dependency Selection](#dependency-selection)
+3. [Version Strategy](#version-strategy)
+4. [Kotlin & Compose Compiler Compatibility](#kotlin-compose-compiler-compatibility)
+5. [Platform Dependencies (BOMs)](#platform-dependencies-boms)
+6. [Testing Dependencies](#testing-dependencies)
+7. [Build Performance Considerations](#build-performance-considerations)
+8. [ProGuard/R8 Considerations](#proguardr8-considerations)
+9. [Adding a New Dependency](#adding-a-new-dependency)
+
 ## Version Catalog Source of Truth
 Always check `assets/libs.versions.toml.template` before adding or changing dependencies.
 
