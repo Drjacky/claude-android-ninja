@@ -122,25 +122,27 @@ Paths below are each tool's **primary** install locations. Many tools also scan 
 | [Roo Code](https://docs.roocode.com/features/skills)                                                           | `.roo/skills/claude-android-ninja/`                 | `~/.roo/skills/claude-android-ninja/`                | [Skills](https://docs.roocode.com/features/skills)                                                      |
 | [OpenCode](https://opencode.ai/docs/skills)                                                                    | `.opencode/skills/claude-android-ninja/`            | `~/.config/opencode/skills/claude-android-ninja/`    | [Skills](https://opencode.ai/docs/skills)                                                               |
 | [OpenClaw](https://docs.openclaw.ai/tools/skills)                                                              | `skills/claude-android-ninja/` (workspace root)     | `~/.openclaw/skills/claude-android-ninja/`           | [Skills](https://docs.openclaw.ai/tools/skills)                                                         |
-| [Hermes](https://nousresearch-hermes-agent.mintlify.app/user-guide/features/skills)                            | — (global only)                                     | `~/.hermes/skills/claude-android-ninja/`             | [Skills system](https://nousresearch-hermes-agent.mintlify.app/user-guide/features/skills)              |
+| [Hermes](https://nousresearch-hermes-agent.mintlify.app/user-guide/features/skills)                            | - (global only)                                     | `~/.hermes/skills/claude-android-ninja/`             | [Skills system](https://nousresearch-hermes-agent.mintlify.app/user-guide/features/skills)              |
 | [Kilo Code](https://kilo.ai/docs/customize/skills)                                                             | `.kilo/skills/claude-android-ninja/`                | `~/.kilo/skills/claude-android-ninja/`               | [Skills](https://kilo.ai/docs/customize/skills)                                                         |
 | [Google Antigravity](https://antigravity.google/docs/skills)                                                   | `.agent/skills/claude-android-ninja/` (workspace)   | `~/.gemini/antigravity/skills/claude-android-ninja/` | [Skills codelab](https://codelabs.developers.google.com/getting-started-with-antigravity-skills)        |
 
 
-**Multi-agent / one `AGENTS.md`:** install to a shared tree so Claude Code, Cursor, Codex, and others do not fight over `.claude/skills/`:
+**CLI installers (multi-agent):** use [OpenSkills](#openskills-cli) for a shared `.agent/skills/` tree plus `AGENTS.md` sync, or [Vercel Skills](#vercel-skills-cli) to install into each agent's native path (50+ agents, auto-detect).
 
 ```bash
+# OpenSkills - shared tree + AGENTS.md
 npx openskills install drjacky/claude-android-ninja --universal
 npx openskills sync
+
+# Vercel Skills - per-agent native paths (auto-detect agents)
+npx skills add drjacky/claude-android-ninja
 ```
 
-That writes to `.agent/skills/claude-android-ninja/` (project) or `~/.agent/skills/` (global). Alternative installer: [`npx skills add drjacky/claude-android-ninja`](https://github.com/vercel-labs/skills) with `-a` for specific agents (50+ tools).
-
-| Step | Action |
-|------|--------|
-| 1 | Install via the table above, [manual install](#manual-install), or [OpenSkills](#openskills-cli). |
-| 2 | Start a **new** agent session (skills load at startup). |
-| 3 | Route Android tasks through `SKILL.md`; load linked reference files on demand. |
+| Step | Action                                                                                                                                 |
+|------|----------------------------------------------------------------------------------------------------------------------------------------|
+| 1    | Install via the table above, [manual install](#manual-install), [OpenSkills](#openskills-cli), or [Vercel Skills](#vercel-skills-cli). |
+| 2    | Start a **new** agent session (skills load at startup).                                                                                |
+| 3    | Route Android tasks through `SKILL.md`; load linked reference files on demand.                                                         |
 
 Load without copying files (when [OpenSkills](https://github.com/numman-ali/openskills) is available):
 
@@ -154,7 +156,7 @@ Clone this repo, then copy the whole folder into the **project** or **global** p
 
 ```bash
 git clone https://github.com/Drjacky/claude-android-ninja.git
-# Example: Claude Code global — swap the destination for your agent's path
+# Example: Claude Code global - swap the destination for your agent's path
 mkdir -p ~/.claude/skills
 cp -r claude-android-ninja ~/.claude/skills/claude-android-ninja
 ```
@@ -191,11 +193,42 @@ Universal install (shared across supported agents):
 npx openskills install drjacky/claude-android-ninja --universal
 ```
 
+### Vercel Skills CLI
+
+[Vercel Skills](https://github.com/vercel-labs/skills) (`npx skills`) installs this repo into each agent's **native** skills directory (see the [For AI agents](#for-ai-agents) table). It auto-detects installed agents, or you can target them with `-a`. Browse more skills at [skills.sh](https://skills.sh).
+
+Project install (default; symlinks into detected agents):
+
+```bash
+npx skills add drjacky/claude-android-ninja
+```
+
+Global install (available in all projects):
+
+```bash
+npx skills add drjacky/claude-android-ninja -g
+```
+
+Install to specific agents (non-interactive):
+
+```bash
+npx skills add drjacky/claude-android-ninja -a claude-code -a cursor -y
+```
+
+Install to all supported agents without prompts:
+
+```bash
+npx skills add drjacky/claude-android-ninja --all
+```
+
+Use `--copy` instead of symlinks when your environment does not support symlinks. Other useful commands: `npx skills list`, `npx skills update claude-android-ninja`, `npx skills remove claude-android-ninja`, `npx skills find android`.
+
 ### Verify install
 
 - Folder contains `SKILL.md`, `references/`, and `assets/` (templates and convention plugins).
 - Agent session was restarted after copy or install.
-- Optional: `npx openskills read claude-android-ninja` prints skill content when using OpenSkills.
+- OpenSkills: `npx openskills read claude-android-ninja` prints skill content.
+- Vercel Skills: `npx skills list` shows `claude-android-ninja` under the expected agent paths.
 
 ## Contributing
 
