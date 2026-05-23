@@ -375,7 +375,7 @@ class AuthViewModelTest {
 
 ### Test Dispatcher Rule (in `core:testing`)
 
-See [Coroutine Testing → Test Dispatcher Rule](#test-dispatcher-rule-in-coretesting-1) for the full implementation.
+See [Coroutine Testing → Test Dispatcher Rule](#test-dispatcher-rule-in-coretesting) for the full implementation.
 
 ### Testing StateFlow with Turbine and Truth
 
