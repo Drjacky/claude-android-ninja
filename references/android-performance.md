@@ -125,7 +125,7 @@ Build a **`TimelineSpec`** (aggregation period, start/end in **`America/Los_Ange
 
 ### Startup time (user experience)
 
-Targets below are practical goals for **cold / warm / hot** start. If cold start routinely exceeds about **2 seconds** on mid-range hardware, show a splash or inline progress so the user sees feedback ([App Startup & Initialization](#app-startup--initialization)).
+Targets below are practical goals for **cold / warm / hot** start. If cold start routinely exceeds about **2 seconds** on mid-range hardware, show a splash or inline progress so the user sees feedback ([App Startup & Initialization](#app-startup-initialization)).
 
 | Start type | Target (typical) | Investigate if worse than (rule of thumb) |
 |------------|------------------|-------------------------------------------|
@@ -277,7 +277,7 @@ Required: start from [Android Performance Analyzer](https://developer.android.co
 
 **Use when:** the user attaches `.perfetto-trace` or `bugreport.zip` without Studio - [Perfetto UI](https://perfetto.dev/docs/visualization/perfetto-ui) and [Perfetto (system traces)](#perfetto-system-traces) below still apply.
 
-Forbidden: treating APA as a substitute for Macrobenchmark regression numbers on startup or scroll; pair trace analysis with [Macrobenchmark](#macrobenchmark) metrics when claiming a regression.
+Forbidden: treating APA as a substitute for Macrobenchmark regression numbers on startup or scroll; pair trace analysis with [Macrobenchmark](#macrobenchmark-compose) metrics when claiming a regression.
 
 ### Perfetto (system traces)
 
@@ -294,7 +294,7 @@ Required: treat scheduling, Binder/IPC waits, I/O blocks, and frame pipeline tim
 **Required:**
 
 - Add or extend `androidx.tracing` slices with **stable, grep-friendly names** before recommending thread splits, dispatcher changes, or Binder-heavy refactors when the symptom is jank, frozen frames, or ANRs.
-- When the user has **no** trace and **no** benchmark numbers: output a minimal repro (physical device, animation scales off, one Macrobenchmark scenario or one manual capture) and the benchmark output paths from [Reports & Artifacts](#reports--artifacts); do not assert root cause from static code alone.
+- When the user has **no** trace and **no** benchmark numbers: output a minimal repro (physical device, animation scales off, one Macrobenchmark scenario or one manual capture) and the benchmark output paths from [Reports & Artifacts](#reports-artifacts); do not assert root cause from static code alone.
 - When the user pastes **text** from a trace viewer (slice names, durations, thread labels): map those names to code paths by identifier; when they attach only a binary trace or bugreport without description, state that timeline truth needs local inspection in Perfetto UI (or trace processor output they paste) and ask for named slices or exported text.
 
 **Forbidden when:**
@@ -983,7 +983,7 @@ Splash dismissal merges system-controlled minimum visibility, `windowSplashScree
 
 Test the launcher activity on **minSdk**, on **API 31+**, on at least one gesture or default edge-to-edge configuration, and on foldables **when** large-screen layouts ship.
 
-After handoff to Compose, call `ReportDrawn*` so metrics track full display when primary UI is ready, not only splash dismissal ([Startup Performance Metrics (TTID & TTFD)](#startup-performance-metrics-ttid--ttfd)).
+After handoff to Compose, call `ReportDrawn*` so metrics track full display when primary UI is ready, not only splash dismissal ([Startup Performance Metrics (TTID & TTFD)](#startup-performance-metrics-ttid-ttfd)).
 
 **Forbidden when:** Holding the splash for open-ended network work; dismiss for local readiness and use in-app placeholders for long remote work ([migration.md](/references/migration.md) → **Legacy splash to Splash Screen API**).
 
