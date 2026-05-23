@@ -2,6 +2,20 @@
 
 Required: measure with Macrobenchmark + Baseline Profiles before and after every change to startup, navigation, or list rendering. Track production via Play Vitals + Crashlytics/Sentry. Apply StrictMode guardrails ([android-strictmode.md](/references/android-strictmode.md)).
 
+## Table of Contents
+
+1. [Google Play Vitals and production targets](#google-play-vitals-and-production-targets)
+2. [Benchmark](#benchmark)
+3. [Compose Stability Validation (Optional)](#compose-stability-validation-optional)
+4. [CPU Optimization](#cpu-optimization)
+5. [Battery Optimization](#battery-optimization)
+6. [Network Performance Optimization](#network-performance-optimization)
+7. [Image Optimization](#image-optimization)
+8. [APK Size Optimization](#apk-size-optimization)
+9. [App Startup & Initialization](#app-startup-initialization)
+10. [Compose Recomposition Performance](#compose-recomposition-performance)
+11. [References](#references)
+
 ## Google Play Vitals and production targets
 
 [Android vitals](https://developer.android.com/topic/performance/vitals) reports user-perceived crash rate, ANR rate, and slow-start metrics; exceeding bad-behavior thresholds reduces distribution and discovery.
