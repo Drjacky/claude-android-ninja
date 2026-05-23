@@ -105,56 +105,68 @@ Agent entry point after install: [`SKILL.md`](SKILL.md) (Quick Reference table a
 
 ### For AI agents
 
+This skill uses the open [Agent Skills](https://agentskills.io/home) format: a folder named `claude-android-ninja/` with `SKILL.md`, `references/`, and `assets/`. Agents load skill metadata at session start; route Android work through [`SKILL.md`](SKILL.md) and open reference files only when needed.
+
+| Agent                                                                                                             | Project path                                                                                                           | Global path                                          |
+|-------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------|
+| [Claude Code](https://code.claude.com/docs/en/skills)                                                             | `.claude/skills/claude-android-ninja/`                                                                                 | `~/.claude/skills/claude-android-ninja/`             |
+| [GitHub Copilot](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills) (VS Code / agent mode)    | `.github/skills/claude-android-ninja/`                                                                                 | `~/.copilot/skills/claude-android-ninja/`            |
+| [GitHub Copilot CLI](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills)                       | Use [OpenSkills](#openskills-cli) `sync` into `AGENTS.md`, or copy to `.github/skills/` if your CLI build discovers it | `~/.copilot/skills/claude-android-ninja/`            |
+| [Cursor](https://cursor.com/docs/context/skills)                                                                  | `.cursor/skills/claude-android-ninja/`                                                                                 | `~/.cursor/skills/claude-android-ninja/`             |
+| [Gemini CLI](https://geminicli.com/docs/cli/skills/)                                                              | `.gemini/skills/claude-android-ninja/`                                                                                 | `~/.gemini/skills/claude-android-ninja/`             |
+| [Codex](https://developers.openai.com/codex/skills)                                                               | `.codex/skills/claude-android-ninja/`                                                                                  | `~/.codex/skills/claude-android-ninja/`              |
+| [Windsurf](https://docs.windsurf.com/windsurf/cascade/skills) (Cascade)                                           | `.windsurf/skills/claude-android-ninja/`                                                                               | `~/.codeium/windsurf/skills/claude-android-ninja/`   |
+| [Cline](https://docs.cline.bot/cline/customization/skills) / [Roo Code](https://docs.roocode.com/features/skills) | `.agents/skills/claude-android-ninja/` (also `.cline/skills/`, `.roo/skills/`)                                         | `~/.agents/skills/claude-android-ninja/`             |
+| [OpenCode](https://opencode.ai/docs/skills)                                                                       | `.opencode/skills/claude-android-ninja/`                                                                               | `~/.config/opencode/skills/claude-android-ninja/`    |
+| [OpenClaw](https://github.com/openclaw/openclaw)                                                                  | `skills/claude-android-ninja/` (project root)                                                                          | `~/.openclaw/skills/claude-android-ninja/`           |
+| [Hermes](https://github.com/NousResearch/hermes-agent)                                                            | `.hermes/skills/claude-android-ninja/`                                                                                 | `~/.hermes/skills/claude-android-ninja/`             |
+| [Kilo Code](https://kilo.ai/docs/customize/skills)                                                                | `.kilo/skills/claude-android-ninja/` (also `.kilocode/skills/`, `.agents/skills/`)                                     | `~/.kilo/skills/claude-android-ninja/`               |
+| [Google Antigravity](https://antigravity.google/docs/skills)                                                      | `.agent/skills/claude-android-ninja/`                                                                                  | `~/.gemini/antigravity/skills/claude-android-ninja/` |
+
+**Multi-agent / one `AGENTS.md`:** install to a shared tree so Claude Code, Cursor, Codex, and others do not fight over `.claude/skills/`:
+
+```bash
+npx openskills install drjacky/claude-android-ninja --universal
+npx openskills sync
+```
+
+That writes to `.agent/skills/claude-android-ninja/` (project) or `~/.agent/skills/` (global). Alternative installer: [`npx skills add drjacky/claude-android-ninja`](https://github.com/vercel-labs/skills) with `-a` for specific agents (50+ tools).
+
 | Step | Action |
 |------|--------|
-| 1 | Install via one of the methods below so the skill folder contains `SKILL.md`, `references/`, and `assets/`. |
+| 1 | Install via the table above, [manual install](#manual-install), or [OpenSkills](#openskills-cli). |
 | 2 | Start a **new** agent session (skills load at startup). |
 | 3 | Route Android tasks through `SKILL.md`; load linked reference files on demand. |
-| 4 | Optional smoke: ask the agent to scaffold a Compose screen using `references/compose-patterns.md`. |
 
-Load this skill on demand without a full install (when [OpenSkills](https://github.com/numman-ali/openskills) is available):
+Load without copying files (when [OpenSkills](https://github.com/numman-ali/openskills) is available):
 
 ```bash
 npx openskills read claude-android-ninja
 ```
 
-### 1. Claude Code (manual)
+### Manual install
 
-Clone or download this repo, then copy the skill folder into Claude's skills directory:
+Clone this repo, then copy the whole folder into the **project** or **global** path for your agent from the table above (same tree for every tool):
 
 ```bash
 git clone https://github.com/Drjacky/claude-android-ninja.git
+# Example: Claude Code global — swap the destination for your agent's path
 mkdir -p ~/.claude/skills
 cp -r claude-android-ninja ~/.claude/skills/claude-android-ninja
 ```
 
-Expected layout:
+Expected layout (destination varies by agent):
 
 ```
-~/.claude/skills/claude-android-ninja/
+<agent-skills-dir>/claude-android-ninja/
 ├── SKILL.md
 ├── references/
 └── assets/
 ```
 
-Project-local install: `.claude/skills/claude-android-ninja/` inside your Android project.
+Restart the agent or start a new session so the skill is discovered.
 
-Restart Claude Code or start a new session so the skill is discovered.
-
-### 2. Cursor and other Agent Skills-compatible tools
-
-Project-local:
-
-```
-.cursor/skills/claude-android-ninja/
-├── SKILL.md
-├── references/
-└── assets/
-```
-
-Copy the same tree from this repository, or use OpenSkills `--universal` (below) if your toolchain supports it. Restart Cursor or start a new chat after installing.
-
-### 3. OpenSkills CLI
+### OpenSkills CLI
 
 [OpenSkills](https://github.com/numman-ali/openskills) installs the skill and can generate `AGENTS.md` / skills metadata for multiple agents.
 
