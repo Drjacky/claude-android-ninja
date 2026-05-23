@@ -27,6 +27,12 @@ Hilt module patterns, scopes, and anti-patterns: [architecture.md → Dependency
 ### Room 3
 Required artifacts: `androidx.room3:room3-runtime`, `sqlite-bundled`, KSP `room3-compiler` (see version catalog). DAOs are coroutine-first (`suspend`, `Flow`). Add `room3-paging` only when a DAO returns `PagingSource`; `room3-testing` only for instrumented DB tests.
 
+### Media3
+Required for background playback at target SDK 37: `androidx.media3:media3-exoplayer`, `media3-session` (catalog `media3` version ref, bundle `media3-playback`). Pin from [Media3 releases](https://developer.android.com/jetpack/androidx/releases/media3). Playback rules: [android-media.md](/references/android-media.md).
+
+### Navigation3 and SavedState
+Pin `navigation3` from [Navigation 3 releases](https://developer.android.com/jetpack/androidx/releases/navigation3) (template: latest stable). Pin `savedstateCompose` from [SavedState releases](https://developer.android.com/jetpack/androidx/releases/savedstate) when using `savedstate-compose` with `@Serializable` `NavKey` graphs.
+
 ### Paging 3 test artifact
 Use `androidx.paging:paging-testing` on test source sets only (`testImplementation(libs.androidx.paging.testing)` from the version catalog). Keep the `paging` version ref aligned with `paging-runtime` / `paging-compose`. Align snapshot and scroll test code with [Test your Paging implementation](https://developer.android.com/topic/libraries/architecture/paging/test).
 
@@ -47,8 +53,9 @@ Use `androidx.paging:paging-testing` on test source sets only (`testImplementati
 
 These catalog entries stay on alpha until a feature-equivalent stable release ships. Replace each pin with the stable release as soon as one exists.
 
-- `room3` - no stable Room 3 release yet; track [Room 3 releases](https://developer.android.com/jetpack/androidx/releases/room3) and bump on every alpha tick.
-- `materialAdaptive` - 1.2.0 stable does not ship `material3-adaptive-navigation3`; the bridge artifact only exists on the 1.3 alpha line.
+- `room3` - no stable Room 3 release yet; template pins `3.0.0-alpha05` (track [Room 3 releases](https://developer.android.com/jetpack/androidx/releases/room3) and bump on every alpha tick).
+- `materialAdaptive` - [Material3 Adaptive 1.2.0](https://developer.android.com/jetpack/androidx/releases/compose-material3-adaptive) is stable, but `material3-adaptive-navigation3` still ships only on the 1.3 alpha line; keep `materialAdaptive` on 1.3 alpha until the bridge artifact has a stable coordinate.
+- `navigation3` - production template uses latest **stable** (currently `1.1.2`). `DeepLinkRequest` / `UriDeepLinkMatcher` require Navigation3 **1.2** ([release notes](https://developer.android.com/jetpack/androidx/releases/navigation3)); adopt 1.2 only on an alpha pin when the feature is required before 1.2 stable.
 - `androidxBiometric` - 1.1.0 stable lacks `BiometricPrompt` content view, logo, and `registerForAuthenticationResult()`; the alpha line is the only source for those APIs.
 - `tracing` - `tracing-wire-android` (Perfetto in-process tracing) is 2.x-only; the 1.3 stable line cannot be substituted.
 - `detekt` - 2.x is a new artifact group (`dev.detekt`); 1.23.x lives at `io.gitlab.arturbosch.detekt` and would require swapping coordinates.
