@@ -30,7 +30,7 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Background media playback hardening at target SDK 37 (Media3 `MediaSessionService` for audio and video, `mediaPlayback` foreground service type, `FOREGROUND_SERVICE_MEDIA_PLAYBACK` permission, standalone `MediaPlayer`/`AudioTrack` forbidden in background, `requestAudioFocus` enforcement) and Media3 ExoPlayer catalog wiring with playback preloading guidance
 - Data synchronization & offline-first (sync strategies, conflict resolution, cache invalidation)
 - Material Symbols icons, adaptive launcher icon specs, graphics, custom drawing with Canvas, and Coil3 image loading patterns (AsyncImage, SubcomposeAsyncImage, Hilt ImageLoader)
-- Gradle/build conventions, product flavors and BuildConfig, version catalog usage, KSP migration, and build performance optimization (diagnostics, lazy tasks, configuration cache)
+- Gradle/build conventions, product flavors and BuildConfig, version catalog usage, KSP migration, Spotless formatting, and build performance optimization (diagnostics, lazy tasks, configuration cache)
 - Testing practices with fakes, Hilt testing, Room 3 testing (`SQLiteDriver`, `room3-testing`), Compose Preview Screenshot Testing and Roborazzi trade routing, pre-release UI state checklist (empty, loading, error, offline, permissions), ADB device targeting, install or launch smoke, and UIAutomator black-box checks (`references/testing.md`)
 - Coroutines patterns, structured concurrency, Flow (callbackFlow, backpressure, combine, shareIn), and common pitfalls
 - Kotlin delegation patterns and composition over inheritance
@@ -87,10 +87,8 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 ## Scope
 This skill is focused on Android app development using:
 - **Kotlin** (with coroutines, Flow, and kotlinx-datetime)
-- **Jetpack Compose** (Material 3 with Material Symbols icons)
-- **Material 3 Adaptive** (NavigationSuiteScaffold, adaptive pane scaffolds)
+- **Jetpack Compose** and **Material 3** (dynamic color, Material Symbols icons, adaptive layouts: NavigationSuiteScaffold and pane scaffolds)
 - **Navigation3** (type-safe routing)
-- **Material 3**
 - **Hilt** (dependency injection)
 - **Room 3** (`androidx.room3`, KSP, `SQLiteDriver` / `sqlite-bundled`, Flow and `suspend` DAOs)
 - **Retrofit** + **OkHttp** (networking)
@@ -103,8 +101,34 @@ This skill is focused on Android app development using:
 
 ## Installation
 
+Agent entry point after install: [`SKILL.md`](SKILL.md) (Quick Reference table and Workflow Decision Tree). Open `references/` files only for the task at hand. Format spec: [agentskills.io](https://agentskills.io/home).
+
+### For AI agents
+
+| Step | Action |
+|------|--------|
+| 1 | Install via one of the methods below so the skill folder contains `SKILL.md`, `references/`, and `assets/`. |
+| 2 | Start a **new** agent session (skills load at startup). |
+| 3 | Route Android tasks through `SKILL.md`; load linked reference files on demand. |
+| 4 | Optional smoke: ask the agent to scaffold a Compose screen using `references/compose-patterns.md`. |
+
+Load this skill on demand without a full install (when [OpenSkills](https://github.com/numman-ali/openskills) is available):
+
+```bash
+npx openskills read claude-android-ninja
+```
+
 ### 1. Claude Code (manual)
-Clone or download this repo, then place it in Claude's skills folder and refresh skills.
+
+Clone or download this repo, then copy the skill folder into Claude's skills directory:
+
+```bash
+git clone https://github.com/Drjacky/claude-android-ninja.git
+mkdir -p ~/.claude/skills
+cp -r claude-android-ninja ~/.claude/skills/claude-android-ninja
+```
+
+Expected layout:
 
 ```
 ~/.claude/skills/claude-android-ninja/
@@ -113,25 +137,49 @@ Clone or download this repo, then place it in Claude's skills folder and refresh
 └── assets/
 ```
 
-If you prefer project-local skills, use `.claude/skills/` inside your project.
+Project-local install: `.claude/skills/claude-android-ninja/` inside your Android project.
 
-### 2. OpenSkills CLI
-[OpenSkills](https://github.com/numman-ali/openskills) can install any skill repo and generate the AGENTS/skills metadata for multiple agents.
+Restart Claude Code or start a new session so the skill is discovered.
+
+### 2. Cursor and other Agent Skills-compatible tools
+
+Project-local:
+
+```
+.cursor/skills/claude-android-ninja/
+├── SKILL.md
+├── references/
+└── assets/
+```
+
+Copy the same tree from this repository, or use OpenSkills `--universal` (below) if your toolchain supports it. Restart Cursor or start a new chat after installing.
+
+### 3. OpenSkills CLI
+
+[OpenSkills](https://github.com/numman-ali/openskills) installs the skill and can generate `AGENTS.md` / skills metadata for multiple agents.
 
 ```bash
 npx openskills install drjacky/claude-android-ninja
 npx openskills sync
 ```
 
-Global install (installs to `~/.claude/skills/`, shared across all projects):
+Global install (`~/.claude/skills/`, shared across projects):
+
 ```bash
 npx openskills install drjacky/claude-android-ninja --global
 ```
 
-Optional universal install (shared across agents):
+Universal install (shared across supported agents):
+
 ```bash
 npx openskills install drjacky/claude-android-ninja --universal
 ```
+
+### Verify install
+
+- Folder contains `SKILL.md`, `references/`, and `assets/` (templates and convention plugins).
+- Agent session was restarted after copy or install.
+- Optional: `npx openskills read claude-android-ninja` prints skill content when using OpenSkills.
 
 ## Contributing
 
