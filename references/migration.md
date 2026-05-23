@@ -773,6 +773,26 @@ Robolectric 4.16.x shadows top out at SDK 36 until a newer release adds SDK 37; 
 
 Keep **androidx.test.espresso:espresso-core** on the catalog version (`3.7.0`); sync Gradle after the catalog bump. No separate Espresso migration path for API 37.
 
+### Memory limiter (all apps on affected devices)
+
+A subset of devices enforce per-app memory caps; exceeding the cap kills the process. Applies regardless of `targetSdk`.
+
+Required for reproduction: use platform `am memory-limiter` commands on a supported image. Full behavior: [Behavior changes: all apps](https://developer.android.com/about/versions/17/behavior-changes-all).
+
+```bash
+adb shell am memory-limiter status
+adb shell am memory-limiter manual <packageName> <limitMb>
+adb shell am memory-limiter ignore <packageName>
+```
+
+Use when: investigating unexplained background kills or OOM on specific OEM builds without a reproducible leak.
+
+Route diagnosis: [android-debugging.md → Process kill under memory caps](android-debugging.md#process-kill-under-memory-caps).
+
+### Android 17 location privacy
+
+Target SDK 37 tightens location access patterns (approximate-first flows, background justification, FGS types). Directive table and Compose contracts: [android-permissions.md → Android 17 location privacy](android-permissions.md#android-17-location-privacy).
+
 ### Explicit URI grants on shares
 
-Attach `FLAG_GRANT_READ_URI_PERMISSION` or `FLAG_GRANT_WRITE_URI_PERMISSION` explicitly when putting `content` URIs on `ACTION_SEND` (and similar) intents. Rules: [android-security.md → Forward-compatible URI grants (Android 18 prep)](android-security.md#forward-compatible-uri-grants-android-18-prep).
+Attach `FLAG_GRANT_READ_URI_PERMISSION` or `FLAG_GRANT_WRITE_URI_PERMISSION` explicitly when putting `content` URIs on intents that do **not** receive implicit URI grants. Which actions get implicit grants vs explicit flags: [android-security.md → URI grants on outbound intents](android-security.md#uri-grants-on-outbound-intents).
