@@ -6,6 +6,22 @@ Required:
 - Swap providers by changing the Hilt binding + convention plugin only - never by touching feature code.
 - Play Vitals is optional store-level signal, not a Crashlytics replacement: see [android-performance.md → Optional: Play Vitals observability](/references/android-performance.md#optional-play-vitals-observability-play-developer-reporting-api).
 
+## Table of Contents
+
+1. [Architecture Placement](#architecture-placement)
+2. [Provider-Agnostic Interface](#provider-agnostic-interface)
+3. [Implementation Examples](#implementation-examples)
+4. [Sentry Setup (Convention Plugin + Compose)](#sentry-setup-convention-plugin-compose)
+5. [Firebase Crashlytics Setup (Convention Plugin + Compose)](#firebase-crashlytics-setup-convention-plugin-compose)
+6. [Wiring in the App Module](#wiring-in-the-app-module)
+7. [Rules](#rules)
+8. [ProGuard/R8 Mapping Upload](#proguardr8-mapping-upload)
+9. [Breadcrumbs](#breadcrumbs)
+10. [Network Request Tracking](#network-request-tracking)
+11. [Testing Crash Reporting](#testing-crash-reporting)
+12. [Data Scrubbing (Privacy/GDPR)](#data-scrubbing-privacygdpr)
+13. [Gradle & Setup Guidance](#gradle-setup-guidance)
+
 ## Architecture Placement
 
 | Layer       | Module                            | Responsibility                                  |
