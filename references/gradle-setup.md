@@ -782,6 +782,8 @@ retrace build/outputs/mapping/release/mapping.txt stacktrace.txt
 
 Check `build/outputs/mapping/release/` for the mapping file after each release build.
 
+Official troubleshooting walkthrough: [Configure and troubleshoot R8 Keep Rules](https://developer.android.com/blog/posts/configure-and-troubleshoot-r8-keep-rules). Release-only crash triage: [android-debugging.md → R8 keep-rules troubleshooting](/references/android-debugging.md#r8-keep-rules-troubleshooting).
+
 See [android-security.md](/references/android-security.md#proguard--r8-hardening) for security-specific hardening rules (log stripping, aggressive obfuscation, manifest settings).
 
 ### R8 Keep-Rules Audit
