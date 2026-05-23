@@ -128,28 +128,17 @@ Paths below are each agent's **primary** install locations. Many agents also sca
 | [Windsurf](https://docs.windsurf.com/windsurf/cascade/skills) (Cascade)                                        | `.windsurf/skills/claude-android-ninja/`            | `~/.codeium/windsurf/skills/claude-android-ninja/`   | [Skills](https://docs.windsurf.com/windsurf/cascade/skills)                                             |
 
 
-**CLI installers (multi-agent):** use [OpenSkills](#openskills-cli) for a shared `.agent/skills/` tree plus `AGENTS.md` sync, or [Vercel Skills](#vercel-skills-cli) to install into each agent's native path (50+ agents, auto-detect).
+**Recommended install:** [Vercel Skills](#vercel-skills-cli) (`npx skills`) writes into each agent's native path (50+ agents, auto-detect). See [supported agents](https://github.com/vercel-labs/skills#supported-agents) for CLI path overrides.
 
 ```bash
-# OpenSkills - shared tree + AGENTS.md
-npx openskills install drjacky/claude-android-ninja --universal
-npx openskills sync
-
-# Vercel Skills - per-agent native paths (auto-detect agents)
 npx skills add drjacky/claude-android-ninja
 ```
 
-| Step | Action                                                                                                                                 |
-|------|----------------------------------------------------------------------------------------------------------------------------------------|
-| 1    | Install via the table above, [manual install](#manual-install), [OpenSkills](#openskills-cli), or [Vercel Skills](#vercel-skills-cli). |
-| 2    | Start a **new** agent session (skills load at startup).                                                                                |
-| 3    | Route Android tasks through `SKILL.md`; load linked reference files on demand.                                                         |
-
-Load without copying files (when [OpenSkills](https://github.com/numman-ali/openskills) is available):
-
-```bash
-npx openskills read claude-android-ninja
-```
+| Step | Action                                                                                                  |
+|------|---------------------------------------------------------------------------------------------------------|
+| 1    | Install via [Vercel Skills](#vercel-skills-cli), [manual install](#manual-install), or the table above. |
+| 2    | Start a **new** agent session (skills load at startup).                                                 |
+| 3    | Route Android tasks through `SKILL.md`; load linked reference files on demand.                          |
 
 ### Manual install
 
@@ -172,27 +161,6 @@ Expected layout (destination varies by agent):
 ```
 
 Restart the agent or start a new session so the skill is discovered.
-
-### OpenSkills CLI
-
-[OpenSkills](https://github.com/numman-ali/openskills) installs the skill and can generate `AGENTS.md` / skills metadata for multiple agents.
-
-```bash
-npx openskills install drjacky/claude-android-ninja
-npx openskills sync
-```
-
-Global install (`~/.claude/skills/`, shared across projects):
-
-```bash
-npx openskills install drjacky/claude-android-ninja --global
-```
-
-Universal install (shared across supported agents):
-
-```bash
-npx openskills install drjacky/claude-android-ninja --universal
-```
 
 ### Vercel Skills CLI
 
@@ -228,8 +196,7 @@ Use `--copy` instead of symlinks when your environment does not support symlinks
 
 - Folder contains `SKILL.md`, `references/`, and `assets/` (templates and convention plugins).
 - Agent session was restarted after copy or install.
-- OpenSkills: `npx openskills read claude-android-ninja` prints skill content.
-- Vercel Skills: `npx skills list` shows `claude-android-ninja` under the expected agent paths.
+- `npx skills list` shows `claude-android-ninja` under the expected agent paths.
 
 ## Contributing
 
