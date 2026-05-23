@@ -27,7 +27,7 @@ Use the table as an index only; contracts and samples sit in the linked rows.
 | Need                                                       | Route                                                                                                                                                  |
 |------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `content://` backed by app files for another package       | [android-security.md → FileProvider for Secure File Sharing](/references/android-security.md#fileprovider-for-secure-file-sharing)                     |
-| `ACTION_SEND` / `ACTION_SEND_MULTIPLE` with `content` URIs | [android-security.md → Forward-compatible URI grants (Android 18 prep)](/references/android-security.md#forward-compatible-uri-grants-android-18-prep) |
+| `ACTION_SEND` / `ACTION_SEND_MULTIPLE` with `content` URIs | [android-security.md → URI grants on outbound intents](/references/android-security.md#uri-grants-on-outbound-intents) |
 | System chooser UX for text or streams                      | [android-notifications.md → System sharesheet](/references/android-notifications.md#system-sharesheet)                                                 |
 
 ## Scoped storage and permissions
