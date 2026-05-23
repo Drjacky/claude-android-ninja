@@ -1572,9 +1572,21 @@ If JavaScript must be enabled, avoid `addJavascriptInterface()` as it exposes yo
 </paths>
 ```
 
-### Forward-compatible URI grants (Android 18 prep)
+### URI grants on outbound intents
 
-Required: pass `Intent.FLAG_GRANT_READ_URI_PERMISSION` (or `FLAG_GRANT_WRITE_URI_PERMISSION`) explicitly on every cross-process Intent that carries an `EXTRA_STREAM` or `EXTRA_OUTPUT` URI - `ACTION_SEND`, `ACTION_SEND_MULTIPLE`, `IMAGE_CAPTURE`.
+#### Implicit URI grants (platform)
+
+On current Android versions, the system grants read (or write for capture) access to the target package for `content` URIs on these actions without `FLAG_GRANT_*` on the Intent:
+
+- `Intent.ACTION_SEND`
+- `Intent.ACTION_SEND_MULTIPLE`
+- `MediaStore.ACTION_IMAGE_CAPTURE` / `Intent.ACTION_IMAGE_CAPTURE`
+
+Authority: [Behavior changes: all apps](https://developer.android.com/about/versions/17/behavior-changes-all).
+
+#### Explicit URI grants (required elsewhere)
+
+Required: pass `Intent.FLAG_GRANT_READ_URI_PERMISSION` (or `FLAG_GRANT_WRITE_URI_PERMISSION`) on every other cross-process Intent that carries `EXTRA_STREAM`, `EXTRA_OUTPUT`, or clip-data `content` URIs (custom actions, `ACTION_VIEW`, provider-specific contracts).
 
 ```kotlin
 val sendIntent = Intent(Intent.ACTION_SEND).apply {
@@ -1585,7 +1597,11 @@ val sendIntent = Intent(Intent.ACTION_SEND).apply {
 startActivity(Intent.createChooser(sendIntent, null))
 ```
 
-Forbidden: relying on the system to infer URI permission from `EXTRA_STREAM` or `EXTRA_OUTPUT` alone.
+**Wrong:** omitting explicit flags on a non-listed action and assuming the recipient can read the URI.
+
+**Correct:** add `FLAG_GRANT_READ_URI_PERMISSION` (or write) for every outbound `content` URI outside the implicit-grant action list above.
+
+Forbidden: relying on implicit grant behavior for actions outside the three listed intents.
 
 ## ProGuard / R8 Hardening
 
