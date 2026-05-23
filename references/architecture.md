@@ -936,3 +936,13 @@ Call navigate() → Contract → Implementation → Routing → Render New UI
 - **Navigation is coordinated centrally** (app module)
 - **Data flows through defined layers** (UI → Domain → Data)
 - **Each concern has clear boundaries** (navigation vs. business logic vs. UI rendering)
+
+## Cross-references
+
+- [compose-patterns.md](/references/compose-patterns.md) — UiState, screens, edge-to-edge
+- [modularization.md](/references/modularization.md) — Module layout and dependency direction
+- [dependencies.md](/references/dependencies.md) — Version catalog and BOMs
+- [kotlin-patterns.md](/references/kotlin-patterns.md) — Kotlin conventions
+- [design-patterns.md](/references/design-patterns.md) — Pattern catalog
+- [testing.md](/references/testing.md) — Fakes, Turbine, Hilt tests
+- [android-data-sync.md](/references/android-data-sync.md) — Offline-first and sync
