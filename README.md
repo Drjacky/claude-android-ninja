@@ -116,6 +116,7 @@ Paths below are each agent's **primary** install locations. Many agents also sca
 | [GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills)      | `.github/skills/claude-android-ninja/`              | `~/.copilot/skills/claude-android-ninja/`            | [Add skills (CLI)](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills) |
 | [Cursor](https://cursor.com/docs/context/skills)                                                               | `.cursor/skills/claude-android-ninja/`              | `~/.cursor/skills/claude-android-ninja/`             | [Agent Skills](https://cursor.com/docs/context/skills)                                                  |
 | [Gemini CLI](https://geminicli.com/docs/cli/skills/)                                                           | `.gemini/skills/claude-android-ninja/`              | `~/.gemini/skills/claude-android-ninja/`             | [Agent Skills](https://geminicli.com/docs/cli/skills/)                                                  |
+| [Goose](https://goose-docs.ai/docs/guides/context-engineering/using-skills/)                                   | `.goose/skills/claude-android-ninja/`               | `~/.config/goose/skills/claude-android-ninja/`       | [Using skills](https://goose-docs.ai/docs/guides/context-engineering/using-skills/)                     |
 | [Codex](https://developers.openai.com/codex/skills)                                                            | `.agents/skills/claude-android-ninja/` (repo / CWD) | `~/.codex/skills/claude-android-ninja/`              | [Agent Skills](https://developers.openai.com/codex/skills)                                              |
 | [Windsurf](https://docs.windsurf.com/windsurf/cascade/skills) (Cascade)                                        | `.windsurf/skills/claude-android-ninja/`            | `~/.codeium/windsurf/skills/claude-android-ninja/`   | [Skills](https://docs.windsurf.com/windsurf/cascade/skills)                                             |
 | [Cline](https://docs.cline.bot/customization/skills)                                                           | `.cline/skills/claude-android-ninja/`               | `~/.cline/skills/claude-android-ninja/`              | [Skills](https://docs.cline.bot/customization/skills)                                                   |
@@ -212,7 +213,7 @@ npx skills add drjacky/claude-android-ninja -g
 Install to specific agents (non-interactive):
 
 ```bash
-npx skills add drjacky/claude-android-ninja -a claude-code -a cursor -y
+npx skills add drjacky/claude-android-ninja -a claude-code -a cursor -a goose -y
 ```
 
 Install to all supported agents without prompts:
