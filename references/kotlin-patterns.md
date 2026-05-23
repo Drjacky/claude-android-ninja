@@ -7,10 +7,10 @@ Time-related examples use `kotlin.time.Duration` and `kotlinx.datetime.Clock`. D
 ## Table of Contents
 1. [Kotlin 2.x and the K2 Compiler](#kotlin-2x-and-the-k2-compiler)
 2. [Delegation (Composition over Inheritance)](#delegation-composition-over-inheritance)
-3. [Pragmatic layering & import hygiene](#pragmatic-layering--import-hygiene)
+3. [Pragmatic layering & import hygiene](#pragmatic-layering-import-hygiene)
 4. [Collection APIs](#collection-apis)
-5. [Sealed Classes & Exhaustive When](#sealed-classes--exhaustive-when)
-6. [Generics & Reified Types](#generics--reified-types)
+5. [Sealed Classes & Exhaustive When](#sealed-classes-exhaustive-when)
+6. [Generics & Reified Types](#generics-reified-types)
 7. [Extension Functions](#extension-functions)
 8. [Inline Value Classes](#inline-value-classes)
 9. [Sequences for Lazy Evaluation](#sequences-for-lazy-evaluation)
@@ -191,7 +191,7 @@ fun reduceSessions(
 ### Persistent Collections for State
 
 When you store lists in Compose or ViewModel state, prefer persistent collections for structural
-sharing and stable updates. See: `references/compose-patterns.md` → "Performance Optimization" → "Persistent Collections for Performance".
+sharing and stable updates. See: [compose-patterns.md](compose-patterns.md#persistent-collections-for-performance).
 
 ## Sealed Classes & Exhaustive When
 
