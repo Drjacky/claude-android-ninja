@@ -111,6 +111,22 @@ adb pull /data/local/tmp/heap.hprof ./heap.hprof
 
 Open the `.hprof` file in Android Studio's Memory Profiler for analysis.
 
+### Process kill under memory caps
+
+Use when: the app dies in background with no ANR trace and no LeakCanary hit, especially on one OEM or beta image.
+
+Required: confirm whether the device applies a memory limiter before chasing heap leaks.
+
+```bash
+adb shell am memory-limiter status
+adb shell am memory-limiter manual <packageName> <limitMb>
+adb shell am memory-limiter ignore <packageName>
+```
+
+Reproduce under a manual cap, then profile retained size (Memory Profiler / heap dump). Cross-link: [migration.md → Memory limiter (all apps on affected devices)](migration.md#memory-limiter-all-apps-on-affected-devices).
+
+Forbidden: treating every background kill as a leak without checking limiter status on the test device.
+
 ## R8 Stack Trace De-obfuscation
 
 R8 (the default code shrinker/obfuscator in AGP) renames classes, methods, and fields in release
