@@ -1052,3 +1052,12 @@ Forbidden:
 # Build all variants
 ./gradlew assemble
 ```
+
+## Cross-references
+
+- [dependencies.md](/references/dependencies.md) — Version catalog and BOMs
+- [code-quality.md](/references/code-quality.md) — Detekt convention plugin
+- [modularization.md](/references/modularization.md) — Module templates
+- [android-performance.md](/references/android-performance.md) — Benchmark and Baseline Profile modules
+- [android-code-coverage.md](/references/android-code-coverage.md) — JaCoCo convention wiring
+- [QUICK_REFERENCE.md](../assets/convention/QUICK_REFERENCE.md) — Convention plugin IDs
