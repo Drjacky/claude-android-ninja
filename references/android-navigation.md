@@ -17,7 +17,7 @@ Pin the catalog `navigation3` ref to the latest **stable** release from [Navigat
 6. [Navigation Flow](#navigation-flow)
 7. [Migration](#migration)
 8. [Animations](#animations)
-9. [Scenes & Custom Layouts](#scenes--custom-layouts)
+9. [Scenes & Custom Layouts](#scenes-custom-layouts)
 10. [Deep Links](#deep-links)
 11. [Conditional Navigation](#conditional-navigation)
 12. [Returning Results](#returning-results)
@@ -328,7 +328,7 @@ Icon(
 )
 ```
 
-**Analytics Integration**: Inject `Analytics` interface (from `references/crashlytics.md`) instead of using Firebase directly. This provides abstraction for crash reporting and analytics.
+**Analytics Integration**: Inject `Analytics` interface (from [crashlytics.md](crashlytics.md)) instead of using Firebase directly. This provides abstraction for crash reporting and analytics.
 
 ## Navigation 3 State Management
 
@@ -1579,7 +1579,7 @@ Forbidden: load deep-link URLs in a `WebView` without an allowlist that matches 
 
 Use HTTPS App Links for untrusted ingress. Forbidden: custom URI schemes as the only entry for auth, payments, or account recovery.
 
-Required: log deep-link attempts for anomaly detection ([crashlytics.md](references/crashlytics.md)).
+Required: log deep-link attempts for anomaly detection ([crashlytics.md](crashlytics.md)).
 
 ### Custom-Scheme Deep Linking
 
