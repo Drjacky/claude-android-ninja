@@ -10,7 +10,7 @@ Forbidden: drift `build-logic` from `assets/convention/` without re-copying — 
 - [Common Plugin Combinations](#common-plugin-combinations)
 - [Setup Instructions](#setup-instructions)
 - [What Each Plugin Provides](#what-each-plugin-provides)
-- [Version Catalog Requirements](#version-catalog-entries-libsversiontoml)
+- [Version Catalog Requirements](#version-catalog-entries-libsversionstoml)
 - [Troubleshooting](#troubleshooting)
 
 ## Plugin Mapping Table
