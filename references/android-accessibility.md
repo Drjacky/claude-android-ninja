@@ -7,7 +7,7 @@ Required target: **WCAG 2.2 Level AA** plus the Android-specific rules below (48
 2. [Semantic Properties](#semantic-properties)
 3. [Touch Target Sizes](#touch-target-sizes)
 4. [Screen Reader Navigation](#screen-reader-navigation)
-5. [Color & Visual Accessibility](#color--visual-accessibility)
+5. [Color & Visual Accessibility](#color-visual-accessibility)
 6. [Focus Management](#focus-management)
 7. [Common Patterns](#common-patterns)
 8. [Testing Accessibility](#testing-accessibility)
@@ -25,7 +25,7 @@ WCAG 2.2 adds nine success criteria on top of 2.1. Required on Android Compose:
 | 3.3.7 Redundant Entry                     | Do not ask the user for the same info twice in one session. Prefill or pull from state.                                                                            | Multi-step forms, signup-then-onboarding flows.                                                                      |
 | 3.3.8 Accessible Authentication (Minimum) | Do not require a cognitive test (puzzle, exact recall, captcha without alternative) unless another factor exists. Paste and autofill must work on password fields. | Login, signup, password reset. Use Credential Manager - see `references/android-security.md`.                        |
 
-Always-applicable 2.1 AA criteria still in force: **1.4.3 Contrast (Minimum)** and **2.4.7 Focus Visible** - see `#color--visual-accessibility` and `#focus-management`.
+Always-applicable 2.1 AA criteria still in force: **1.4.3 Contrast (Minimum)** and **2.4.7 Focus Visible** - see `#color-visual-accessibility` and `#focus-management`.
 
 ## Semantic Properties
 
