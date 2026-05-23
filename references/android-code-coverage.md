@@ -2,6 +2,17 @@
 
 Required: ship JaCoCo on `debug` with unit-test execution data on every PR. Combined unit + instrumented reports are the default convention path; treat that path as **Tier 2** below.
 
+## Table of Contents
+
+1. [Coverage tiers](#coverage-tiers)
+2. [Setup](#setup)
+3. [Generating Coverage Reports](#generating-coverage-reports)
+4. [Coverage Exclusions](#coverage-exclusions)
+5. [CI Integration](#ci-integration)
+6. [Rules](#rules)
+7. [Troubleshooting](#troubleshooting)
+8. [References](#references)
+
 ## Coverage tiers
 
 | Tier       | Scope                                                                                                                                            | Use when                                                                                                                                           |
