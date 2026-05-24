@@ -14,7 +14,7 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 
 # Every line (including inside fenced samples — comment conventions only).
 LINE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
@@ -84,7 +84,7 @@ def main() -> int:
             print(f"  {err}", file=sys.stderr)
         print(
             f"\n{len(all_errors)} violation(s). "
-            "Fix the line or add an exception in scripts/check_skill_voice.py.",
+            "Fix the line or add an exception in .github/scripts/check_skill_voice.py.",
             file=sys.stderr,
         )
         return 1

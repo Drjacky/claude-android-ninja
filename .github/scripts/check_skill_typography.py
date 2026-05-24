@@ -17,7 +17,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 
 SCAN_GLOBS = (
     "SKILL.md",
@@ -141,7 +141,7 @@ def main() -> int:
             print(f"  {err}", file=sys.stderr)
         print(
             f"\n{len(all_errors)} violation(s). "
-            "Fix the character or extend scripts/check_skill_typography.py.",
+            "Fix the character or extend .github/scripts/check_skill_typography.py.",
             file=sys.stderr,
         )
         return 1

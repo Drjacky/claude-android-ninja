@@ -6,7 +6,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 SKILL = ROOT / "SKILL.md"
 INDEX = ROOT / "references" / "INDEX.md"
 REFERENCES = ROOT / "references"

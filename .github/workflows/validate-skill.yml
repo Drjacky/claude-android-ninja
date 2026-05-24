@@ -11,14 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Check internal markdown links
-        run: ./scripts/check-skill-links.sh
-
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: false
 
-      - name: Validate SKILL.md frontmatter (agentskills skills-ref)
-        run: |
-          uv tool install "skills-ref @ git+https://github.com/agentskills/agentskills.git#subdirectory=skills-ref"
-          skills-ref validate "${GITHUB_WORKSPACE}"
+      - name: Validate skill package
+        run: ./.github/scripts/validate-skill.sh

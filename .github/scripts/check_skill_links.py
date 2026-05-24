@@ -7,7 +7,7 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 LINK_RE = re.compile(r"\]\(([^)]+)\)")
 FORBIDDEN_ABS_REF = "](/references/"
 SCAN_GLOBS = (

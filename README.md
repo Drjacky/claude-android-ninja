@@ -206,15 +206,15 @@ Use `--copy` instead of symlinks when your environment does not support symlinks
 From the repo root:
 
 ```bash
-./scripts/check-skill-links.sh       # internal markdown links only
-./scripts/validate-skill.sh          # links + ergonomics + voice + agentskills skills-ref frontmatter
-./scripts/check-skill-ergonomics.sh  # INDEX/SKILL line caps; -quick.md for refs >= 1500 lines
-./scripts/check-skill-voice.sh       # directive-first prose ban-list (SKILL.md + references/)
-./scripts/check-skill-typography.sh  # ASCII dashes, quotes, spaces, ellipsis (skill markdown)
-./scripts/validate_translations.sh   # Android res/ locale key parity (run from app repo root)
+./.github/scripts/validate-skill.sh          # links + ergonomics + voice + typography + skills-ref frontmatter
+./.github/scripts/check-skill-links.sh       # internal markdown links only
+./.github/scripts/check-skill-ergonomics.sh  # INDEX/SKILL line caps; -quick.md for refs >= 1500 lines
+./.github/scripts/check-skill-voice.sh       # directive-first prose ban-list (SKILL.md + references/)
+./.github/scripts/check-skill-typography.sh  # ASCII dashes, quotes, spaces, ellipsis (skill markdown)
+./scripts/validate_translations.sh           # Android res/ locale key parity (run from app repo root)
 ```
 
-CI runs link and frontmatter checks on push and pull requests (`.github/workflows/validate-skill.yml`). `skills-ref` checks `name` / `description` frontmatter only; it does not require renaming `claude-android-ninja`.
+CI runs the full skill package validation on push and pull requests (`.github/workflows/validate-skill.yml`). `skills-ref` checks `name` / `description` frontmatter only; it does not require renaming `claude-android-ninja`.
 
 `validate_translations.sh` is for Android app repositories: copy or symlink it into the app repo, or run it with the project path as an argument.
 

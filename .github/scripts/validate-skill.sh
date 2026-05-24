@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 # Validate Agent Skills frontmatter (skills-ref) and internal markdown links.
 set -euo pipefail
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT}"
 
 echo "==> Internal markdown links"
-"${ROOT}/scripts/check-skill-links.sh"
+"${ROOT}/.github/scripts/check-skill-links.sh"
 
 echo "==> Agent ergonomics (INDEX/SKILL size, -quick.md coverage)"
-"${ROOT}/scripts/check-skill-ergonomics.sh"
+"${ROOT}/.github/scripts/check-skill-ergonomics.sh"
 
 echo "==> Skill-doc voice"
-"${ROOT}/scripts/check-skill-voice.sh"
+"${ROOT}/.github/scripts/check-skill-voice.sh"
 
 echo "==> Markdown typography (ASCII punctuation and spaces)"
-"${ROOT}/scripts/check-skill-typography.sh"
+"${ROOT}/.github/scripts/check-skill-typography.sh"
 
 run_skills_ref() {
   # skills-ref requires the path basename to match `name:` in frontmatter (not ".").
