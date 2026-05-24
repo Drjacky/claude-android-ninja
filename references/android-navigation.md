@@ -2157,4 +2157,4 @@ data class ProductDetail(
 ) : ProductsDestination
 ```
 
-Re-orient: [android-navigation-quick.md](android-navigation-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-navigationmd-2152-lines)
+Re-orient: [android-navigation-quick.md](android-navigation-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-navigationmd-2160-lines)

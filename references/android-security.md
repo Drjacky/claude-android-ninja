@@ -1787,7 +1787,7 @@ Use this checklist for every release:
 
 ## Rules
 
-Re-orient: [android-security-quick.md](android-security-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-securitymd-1795-lines)
+Re-orient: [android-security-quick.md](android-security-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-securitymd-1805-lines)
 
 Required:
 - Server is the trust boundary; client never makes the final authorization decision.

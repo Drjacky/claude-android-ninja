@@ -6,7 +6,7 @@ Forbidden: load this file on every task; it is large by design.
 
 ## Sections by file
 
-### android-accessibility.md (1526 lines)
+### android-accessibility.md (1534 lines)
 
 Open when: TalkBack, semantics, touch targets, contrast, WCAG, Espresso a11y checks
 Quick routing: [android-accessibility-quick.md](android-accessibility-quick.md)
@@ -87,7 +87,7 @@ Open when: JaCoCo unit + instrumented coverage, CI, ScopedArtifacts pitfalls
 - [Troubleshooting](android-code-coverage.md#troubleshooting)
 - [References](android-code-coverage.md#references)
 
-### android-data-sync.md (2344 lines)
+### android-data-sync.md (2350 lines)
 
 Open when: Offline-first, WorkManager sync, conflict resolution, cache invalidation
 Quick routing: [android-data-sync-quick.md](android-data-sync-quick.md)
@@ -292,7 +292,7 @@ Open when: Media3 background playback API 37, picking, sharing, preloading
   - [Manifest](android-media.md#manifest)
   - [Service skeleton](android-media.md#service-skeleton)
 
-### android-navigation.md (2152 lines)
+### android-navigation.md (2160 lines)
 
 Open when: Navigation3, deep links, App Links, adaptive layouts, large screens
 Quick routing: [android-navigation-quick.md](android-navigation-quick.md)
@@ -494,7 +494,7 @@ Open when: Runtime permissions, Photo Picker, contacts, API 37 location privacy
   - [Performance Checks (Macrobenchmark)](android-permissions.md#performance-checks-macrobenchmark)
 - [References](android-permissions.md#references)
 
-### android-security.md (1795 lines)
+### android-security.md (1805 lines)
 
 Open when: Pinning, encryption, biometrics, Play Integrity, Credential Manager, URI grants
 Quick routing: [android-security-quick.md](android-security-quick.md)
@@ -609,7 +609,7 @@ Open when: StrictMode, cleartext detection, Compose stability diagnostics
 - [Uploading StrictMode Signals to Crash Reporters](android-strictmode.md#uploading-strictmode-signals-to-crash-reporters)
 - [References](android-strictmode.md#references)
 
-### android-theming.md (2118 lines)
+### android-theming.md (2126 lines)
 
 Open when: Material 3 color roles, dynamic color, contrast, typography, shapes
 Quick routing: [android-theming-quick.md](android-theming-quick.md)
@@ -776,7 +776,7 @@ Open when: Detekt convention plugin, custom rules, CI
   - [Forbidden suppressions](code-quality.md#forbidden-suppressions)
 - [Suppression rules](code-quality.md#suppression-rules)
 
-### compose-patterns.md (4092 lines)
+### compose-patterns.md (4105 lines)
 
 Open when: Screens, state, side effects, lists, edge-to-edge, forms, animation
 Quick routing: [compose-patterns-quick.md](compose-patterns-quick.md)
@@ -894,7 +894,7 @@ Quick routing: [compose-patterns-quick.md](compose-patterns-quick.md)
   - [Validation Timing](compose-patterns.md#validation-timing)
 - [Cross-references](compose-patterns.md#cross-references)
 
-### coroutines-patterns.md (1625 lines)
+### coroutines-patterns.md (1633 lines)
 
 Open when: Dispatchers, Flow, StateFlow, testing coroutines, callbackFlow
 Quick routing: [coroutines-patterns-quick.md](coroutines-patterns-quick.md)
@@ -1012,7 +1012,7 @@ Open when: Version catalog, BOMs, pins, brownfield alignment, adding dependencie
 - [ProGuard/R8 Considerations](dependencies.md#proguardr8-considerations)
 - [Adding a New Dependency](dependencies.md#adding-a-new-dependency)
 
-### design-patterns.md (1750 lines)
+### design-patterns.md (1760 lines)
 
 Open when: Gang-of-four style patterns adapted for Android modules
 Quick routing: [design-patterns-quick.md](design-patterns-quick.md)
@@ -1284,7 +1284,7 @@ Open when: Module types, dependency rules, feature modules, existing-project ali
 - [Navigation Coordination](modularization.md#navigation-coordination)
 - [Build Configuration](modularization.md#build-configuration)
 
-### testing.md (2544 lines)
+### testing.md (2552 lines)
 
 Open when: Fakes, Turbine, Hilt tests, Compose UI, ADB/UIAutomator, deep links
 Quick routing: [testing-quick.md](testing-quick.md)
@@ -1369,7 +1369,7 @@ Quick routing: [testing-quick.md](testing-quick.md)
 - [Localization Testing](testing.md#localization-testing)
 - [Cross-references](testing.md#cross-references)
 
-### workflows.md (322 lines)
+### workflows.md (336 lines)
 
 Open when: Task not in Quick Reference; greenfield bootstrap; multi-topic routing
 

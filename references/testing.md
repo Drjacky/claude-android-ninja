@@ -2327,7 +2327,7 @@ object TestData {
 
 ## Rules
 
-Re-orient: [testing-quick.md](testing-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#testingmd-2544-lines)
+Re-orient: [testing-quick.md](testing-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#testingmd-2552-lines)
 
 Required:
 - Use Google Truth (`assertThat(actual).isEqualTo(expected)`); never JUnit `assertEquals` / `assertTrue` / `assertNotNull`.

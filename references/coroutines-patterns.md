@@ -1630,4 +1630,4 @@ actually matters (it suspends when the buffer is full).
 For RxJava coexistence patterns (StateFlow bridge, disposal management, paging) and the
 RxJava-to-Coroutines migration path, see [migration.md](migration.md#rxjava-to-coroutines).
 
-Re-orient: [coroutines-patterns-quick.md](coroutines-patterns-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#coroutines-patternsmd-1625-lines)
+Re-orient: [coroutines-patterns-quick.md](coroutines-patterns-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#coroutines-patternsmd-1633-lines)

@@ -4090,7 +4090,7 @@ fun ValidatedEmailField(
 
 ## Cross-references
 
-Re-orient: [compose-patterns-quick.md](compose-patterns-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#compose-patternsmd-4092-lines)
+Re-orient: [compose-patterns-quick.md](compose-patterns-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#compose-patternsmd-4105-lines)
 
 
 - [architecture.md](architecture.md) - ViewModel patterns and state management

@@ -1,6 +1,6 @@
 # Design patterns (quick)
 
-Full guide: [design-patterns.md](design-patterns.md) (~1750 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#design-patternsmd-1750-lines).
+Full guide: [design-patterns.md](design-patterns.md) (~1760 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#design-patternsmd-1760-lines).
 
 Required before introducing a pattern:
 

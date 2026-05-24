@@ -1756,5 +1756,5 @@ interface NoteDao {
 }
 ```
 
-Re-orient: [design-patterns-quick.md](design-patterns-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#design-patternsmd-1750-lines)
+Re-orient: [design-patterns-quick.md](design-patterns-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#design-patternsmd-1760-lines)
 

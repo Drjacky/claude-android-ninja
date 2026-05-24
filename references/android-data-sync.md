@@ -2290,7 +2290,7 @@ fun `syncState reflects WorkInfo state`() = runTest {
 
 ## Rules
 
-Re-orient: [android-data-sync-quick.md](android-data-sync-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-data-syncmd-2344-lines)
+Re-orient: [android-data-sync-quick.md](android-data-sync-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-data-syncmd-2350-lines)
 
 Required:
 - Local DB is the only source UI observes; networking results land in the DB before reaching UI.

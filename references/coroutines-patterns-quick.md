@@ -1,6 +1,6 @@
 # Coroutines patterns (quick)
 
-Full guide: [coroutines-patterns.md](coroutines-patterns.md) (~1625 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#coroutines-patternsmd-1625-lines).
+Full guide: [coroutines-patterns.md](coroutines-patterns.md) (~1630 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#coroutines-patternsmd-1633-lines).
 
 Required before coroutine work in ViewModels/repositories:
 

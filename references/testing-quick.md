@@ -1,6 +1,6 @@
 # Testing (quick)
 
-Full guide: [testing.md](testing.md) (~2500 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#testingmd-2544-lines).
+Full guide: [testing.md](testing.md) (~2550 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#testingmd-2552-lines).
 
 ## Section routing
 

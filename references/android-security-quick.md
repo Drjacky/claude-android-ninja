@@ -1,6 +1,6 @@
 # Android security (quick)
 
-Full guide: [android-security.md](android-security.md) (~1800 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#android-securitymd-1795-lines).
+Full guide: [android-security.md](android-security.md) (~1800 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#android-securitymd-1805-lines).
 
 Required before security-sensitive work:
 

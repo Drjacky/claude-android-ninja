@@ -1505,7 +1505,7 @@ android {
 
 ## Rules
 
-Re-orient: [android-accessibility-quick.md](android-accessibility-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-accessibilitymd-1526-lines)
+Re-orient: [android-accessibility-quick.md](android-accessibility-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-accessibilitymd-1534-lines)
 
 **Required:**
 - Provide `contentDescription` for all icons and images
