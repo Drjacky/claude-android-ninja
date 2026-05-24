@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 LINK_RE = re.compile(r"\]\(([^)]+)\)")
+FORBIDDEN_ABS_REF = "](/references/"
 SCAN_GLOBS = ("SKILL.md", "references/**/*.md", "assets/convention/*.md", "README.md")
 
 
@@ -37,6 +38,10 @@ def collect_markdown_files() -> list[Path]:
 def check_file(md_path: Path) -> list[str]:
     errors: list[str] = []
     text = md_path.read_text(encoding="utf-8")
+    if md_path.parent == ROOT / "references" and FORBIDDEN_ABS_REF in text:
+        errors.append(
+            f"{md_path.relative_to(ROOT)}: use relative links (foo.md), not {FORBIDDEN_ABS_REF}..."
+        )
     for match in LINK_RE.finditer(text):
         target = match.group(1).strip()
         if not target or is_external(target):
