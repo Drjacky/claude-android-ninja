@@ -2,7 +2,7 @@
 
 Required: copy sources from `assets/convention/` into `build-logic/` per [Setup Instructions](#setup-instructions); consumer projects never edit `assets/convention/` in place.
 
-Forbidden: drift `build-logic` from `assets/convention/` without re-copying — stale plugins ship wrong SDKs, Detekt rules, and Room 3 wiring.
+Forbidden: drift `build-logic` from `assets/convention/` without re-copying - stale plugins ship wrong SDKs, Detekt rules, and Room 3 wiring.
 
 ## Table of Contents
 
@@ -170,11 +170,11 @@ Required: merge the `[plugins]` block from `assets/libs.versions.toml.template` 
 
 ### Create Detekt configuration
 
-Required: `config/detekt.yml` at repo root — start from `assets/detekt.yml.template`.
+Required: `config/detekt.yml` at repo root - start from `assets/detekt.yml.template`.
 
 ### Compose stability configuration
 
-Use when: enabling Compose compiler stability packages for `core` model classes — add `compose_compiler_config.conf` at repo root:
+Use when: enabling Compose compiler stability packages for `core` model classes - add `compose_compiler_config.conf` at repo root:
 
 ```
 // Classes that should be considered stable for Compose
@@ -278,7 +278,7 @@ Configuration utilities are located in the `config/` subdirectory:
 
 ## Version Catalog Entries (libs.versions.toml)
 
-Required: align `gradle/libs.versions.toml` with `assets/libs.versions.toml.template` — full copy for greenfield repos, selective merge when preserving existing catalog blocks.
+Required: align `gradle/libs.versions.toml` with `assets/libs.versions.toml.template` - full copy for greenfield repos, selective merge when preserving existing catalog blocks.
 
 ## gradle.properties Flags
 

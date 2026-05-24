@@ -753,7 +753,7 @@ fun BottomSheetExample() {
 
 **Required:**
 - Mark sheet entries with `metadata = BottomSheetSceneStrategy.bottomSheet()`; unmarked entries keep `SinglePaneSceneStrategy`.
-- Bind `onDismissRequest` to `backStack.removeLastOrNull()` so scrim and swipe-dismiss stay stack-driven — no parallel boolean dismiss flags.
+- Bind `onDismissRequest` to `backStack.removeLastOrNull()` so scrim and swipe-dismiss stay stack-driven - no parallel boolean dismiss flags.
 - Predictive back follows the back stack without extra glue.
 
 ### Custom Scene: List-Detail Layout
@@ -907,7 +907,7 @@ fun MaterialListDetailExample() {
 ```
 
 **Material3 metadata helpers:**
-- `ListDetailSceneStrategy.listPane(detailPlaceholder = { ... })` — marks the list pane; supply `detailPlaceholder` when the detail pane can be empty
+- `ListDetailSceneStrategy.listPane(detailPlaceholder = { ... })` - marks the list pane; supply `detailPlaceholder` when the detail pane can be empty
 - `ListDetailSceneStrategy.detailPane()` - marks entry as detail pane
 - `ListDetailSceneStrategy.extraPane()` - marks entry as extra pane (three-pane layout)
 
@@ -1914,9 +1914,9 @@ fun AppNavigation() {
 
 **Required:**
 - Scope result holders to the `backStack` (`remember` inside `AppNavigation`) so they survive stack mutations and dispose with `NavDisplay`.
-- Receivers **read** `LocalFilterResult.current.value` like any other state — skip `LaunchedEffect` bridges.
+- Receivers **read** `LocalFilterResult.current.value` like any other state - skip `LaunchedEffect` bridges.
 - One-shot results expose `consume()` that clears after read; sticky results expose `value` directly.
-- One `CompositionLocal` holder per result type — no generic cross-feature result bus.
+- One `CompositionLocal` holder per result type - no generic cross-feature result bus.
 
 ### Choosing a pattern
 

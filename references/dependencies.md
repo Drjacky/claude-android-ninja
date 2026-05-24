@@ -32,7 +32,7 @@ Always check `assets/libs.versions.toml.template` before adding or changing depe
 | Image loading        | Coil 3.x (`coil-compose` + `coil-network-okhttp`)                            | Glide (only when migrating heavy View-based usage) |
 | JSON serialization   | `kotlinx-serialization`                                                      | Gson (only with deep existing investment)          |
 | Dependency injection | Hilt (required)                                                              | Manual DI, Koin                                    |
-| AndroidX             | `-ktx` artifacts (`core-ktx`, `lifecycle-runtime-ktx`, …)                    | `com.android.support.*` (deprecated)               |
+| AndroidX             | `-ktx` artifacts (`core-ktx`, `lifecycle-runtime-ktx`, ...)                    | `com.android.support.*` (deprecated)               |
 
 Hilt module patterns, scopes, and anti-patterns: [architecture.md → Dependency Injection Setup](architecture.md#dependency-injection-setup).
 
@@ -205,7 +205,7 @@ These are defined in `assets/libs.versions.toml.template`.
 
 ### `api` vs `implementation`
 
-**`implementation`:** default for module-private dependencies — hides transitives from downstream compilation units and limits recompilation when internals change.
+**`implementation`:** default for module-private dependencies - hides transitives from downstream compilation units and limits recompilation when internals change.
 
 **`api`:** dependency types appear in the module's public API (signatures, public properties), e.g. `core:domain` exporting `Flow` from `kotlinx-coroutines`.
 

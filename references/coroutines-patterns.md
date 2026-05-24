@@ -40,7 +40,7 @@ class AuthRepository @Inject constructor(
 
 ### Use `limitedParallelism` for Custom Dispatcher Pools
 
-Use `limitedParallelism` instead of custom `ExecutorService` dispatchers — fewer threads and proper structured-concurrency integration.
+Use `limitedParallelism` instead of custom `ExecutorService` dispatchers - fewer threads and proper structured-concurrency integration.
 
 ```kotlin
 // Define qualifier annotations to distinguish dispatchers of the same type
@@ -248,7 +248,7 @@ Note on buffering with SharedFlow:
 
 - `replay` controls how many values new subscribers receive.
 - `extraBufferCapacity` adds temporary queue space for bursts from active emitters.
-- For **one-shot commands**, `replay = 1` (or higher) replays to every new collector — wrong default. Use `replay = 0` with an explicit buffer/overflow policy, or
+- For **one-shot commands**, `replay = 1` (or higher) replays to every new collector - wrong default. Use `replay = 0` with an explicit buffer/overflow policy, or
   use a `Channel` instead of fighting multicast semantics.
 When **late subscribers** must read only the **latest** value (state-like behavior),
 `replay = 1` plus explicit `extraBufferCapacity` can match the product; treat that as sticky state, not

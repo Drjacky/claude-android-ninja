@@ -135,7 +135,7 @@ Build a **`TimelineSpec`** (aggregation period, start/end in **`America/Los_Ange
 
 **CI/CD:** schedule a job (for example nightly) that runs `./gradlew <yourReportingTask>` and injects secrets at runtime: service account JSON, Slack token or webhook URL, and the **`apps/...`** resource name for the app you report on.
 
-**Kotlin and coroutines:** Gradle tasks run on the build JVM; I/O belongs in **`@TaskAction`** (or a worker). Use **`suspend`** + **`withContext(Dispatchers.IO)`** in a dedicated class for clarity and tests; the task only **`runBlocking { … }`**. Avoid duplicate **`Dispatchers.IO`** if the task already uses **`runBlocking(Dispatchers.IO)`**. See [kotlin-patterns.md](kotlin-patterns.md) and [coroutines-patterns.md](coroutines-patterns.md). Avoid heavy work during **configuration** phase.
+**Kotlin and coroutines:** Gradle tasks run on the build JVM; I/O belongs in **`@TaskAction`** (or a worker). Use **`suspend`** + **`withContext(Dispatchers.IO)`** in a dedicated class for clarity and tests; the task only **`runBlocking { ... }`**. Avoid duplicate **`Dispatchers.IO`** if the task already uses **`runBlocking(Dispatchers.IO)`**. See [kotlin-patterns.md](kotlin-patterns.md) and [coroutines-patterns.md](coroutines-patterns.md). Avoid heavy work during **configuration** phase.
 
 ### Startup time (user experience)
 
@@ -413,7 +413,7 @@ Baseline Profiles improve app startup and runtime performance by pre-compiling c
 
 #### Use baseline profiles when:
 
-- Cold start time must drop (typical gains 10–30%).
+- Cold start time must drop (typical gains 10-30%).
 - Critical journeys (scroll, navigation, animation) need AOT coverage.
 - High-traffic screens show persistent jank without profiles.
 
@@ -668,7 +668,7 @@ wakeLock.acquire()
 wakeLock.acquire(10 * 60 * 1000L)
 ```
 
-2. **Use `PRIORITY_BALANCED_POWER_ACCURACY` and intervals ≥ 30 s for foreground location.**
+2. **Use `PRIORITY_BALANCED_POWER_ACCURACY` and intervals >= 30 s for foreground location.**
 ```kotlin
 // WRONG
 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0f, listener)
@@ -801,7 +801,7 @@ imageView.load(imageUrl) {
 }
 ```
 
-2. **Decode at display size.** Never decode a 4000×3000 bitmap into a 200 dp view; let Coil size it.
+2. **Decode at display size.** Never decode a 4000*3000 bitmap into a 200 dp view; let Coil size it.
 
 3. **Format selection:** JPEG for photos, PNG for transparent icons, **WebP** for everything else (smaller than JPEG, supports transparency).
 
@@ -980,7 +980,7 @@ Required: Add `androidx.core:core-splashscreen` to `:app` (`implementation(libs.
 
 Required: Call `installSplashScreen()` on the process launcher activity before `super.onCreate()` so Android 12+ system splash and compat pre-12 share one theme-backed path. Attribute list and platform rules: [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen). Legacy `windowBackground` themes and dedicated splash activities: [migration.md](migration.md) → **Legacy splash to Splash Screen API**.
 
-**Icon mask:** Size `windowSplashScreenAnimatedIcon` per [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen): with `Theme.SplashScreen.IconBackground`, use **240×240 dp** artwork inside a **160 dp** diameter circle; with `Theme.SplashScreen` only, **288×288 dp** inside **192 dp**. Re-read the live doc when bumping `compileSdk`. On API 31+, check that doc for optional `splashScreenIconSize`.
+**Icon mask:** Size `windowSplashScreenAnimatedIcon` per [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen): with `Theme.SplashScreen.IconBackground`, use **240*240 dp** artwork inside a **160 dp** diameter circle; with `Theme.SplashScreen` only, **288*288 dp** inside **192 dp**. Re-read the live doc when bumping `compileSdk`. On API 31+, check that doc for optional `splashScreenIconSize`.
 
 Use `Theme.SplashScreen.IconBackground` when the foreground needs a solid circular plate behind transparent artwork.
 

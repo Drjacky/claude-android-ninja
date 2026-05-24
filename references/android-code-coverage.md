@@ -143,7 +143,7 @@ tasks.withType<JacocoCoverageVerification>().configureEach {
 
 Required:
 - Run `testDebugUnitTest` on every PR; gate coverage on `core/domain` and `core/data` using whichever tier is active.
-- Target ≥ 80% line coverage on `core/domain` and `core/data` when Tier 2 reports are enabled. UI modules are measured but not gated.
+- Target >= 80% line coverage on `core/domain` and `core/data` when Tier 2 reports are enabled. UI modules are measured but not gated.
 - Keep instrumented tests under `src/androidTest/` and unit tests under `src/test/`. Coverage tasks read both paths when Tier 2 runs.
 - Cover Compose UI through Compose UI tests and screenshot tests, not by gating composable line coverage.
 

@@ -603,9 +603,9 @@ In M3, depth is communicated through **container tone first**. Reach for a shado
 | 1               | `surfaceContainerLow`       | Elevated card, banner, modal bottom sheet                                |
 | 2               | `surfaceContainer`          | Navigation bar, scrolled top app bar, menus, toolbar                     |
 | 3               | `surfaceContainerHigh`      | FAB, dialogs, search bar, date/time pickers                              |
-| 4–5             | `surfaceContainerHighest`   | Hover/focus increase only - never a resting state                        |
+| 4-5             | `surfaceContainerHighest`   | Hover/focus increase only - never a resting state                        |
 
-Setting `Surface(tonalElevation = 3.dp)` blends `surfaceTint` into `surface` to approximate level 3. **Use the explicit `surfaceContainer*` role** instead — clearer mapping, survives dynamic color and user contrast, and matches what M3 components do internally.
+Setting `Surface(tonalElevation = 3.dp)` blends `surfaceTint` into `surface` to approximate level 3. **Use the explicit `surfaceContainer*` role** instead - clearer mapping, survives dynamic color and user contrast, and matches what M3 components do internally.
 
 ### Compose: prefer container role, add shadow only when needed
 
@@ -1787,7 +1787,7 @@ The `Button` reads `colorScheme.primary` like any other M3 component; inside `Er
 
 ### Don'ts
 
-- **Don't scope shapes or typography** unless the design genuinely diverges — those tokens rebuild the visual identity beyond palette swaps and rarely belong in a scope.
+- **Don't scope shapes or typography** unless the design genuinely diverges - those tokens rebuild the visual identity beyond palette swaps and rarely belong in a scope.
 - **Don't scope to override a single component**. If only one `Button` needs a different fill, pass `ButtonDefaults.buttonColors(containerColor = ...)`. Reach for a scoped theme when **multiple** components in a subtree need the override.
 - **Don't nest more than one level deep.** Two layered scopes mean the inner subtree should read the outer color roles instead of adding another theme layer.
 - **Don't introduce a scoped theme for accessibility-critical actions** without re-checking contrast - the new pairing must still satisfy WCAG. Run the same checks as for the base scheme (see `references/android-accessibility.md`).

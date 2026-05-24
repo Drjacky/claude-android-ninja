@@ -102,8 +102,8 @@ build:
 
 **Forbidden:**
 
-- Greenfield projects — fix findings instead of freezing debt.
-- Active refactors that need signal — baselines mask regressions.
+- Greenfield projects - fix findings instead of freezing debt.
+- Active refactors that need signal - baselines mask regressions.
 
 ### Creating Per-Module Baselines
 

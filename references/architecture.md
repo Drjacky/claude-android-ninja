@@ -128,7 +128,7 @@ Domain-specific pitfalls (navigation, Room 3, Paging, etc.) live in their topic 
 | Display strings fully formatted in ViewModel                                       | Locale/layout rigidity, duplicated presentation                          | Keep canonical values; format with resources at the Compose boundary (`references/android-i18n.md`)                                                                                            |
 | Lazy list keys missing or index-based                                              | Wrong item state after reorder/delete                                    | Stable domain id as key (`references/compose-patterns.md`)                                                                                                                                     |
 | Many trivial composables (thin wrappers around one `Text` / `Spacer`)              | Noise, weak boundaries                                                   | Extract only meaningful, reused UI blocks                                                                                                                                                      |
-| Fully qualified package names inline                                               | Hard to read                                                             | Top-level imports; `import … as …` when names clash (`references/kotlin-patterns.md`)                                                                                                          |
+| Fully qualified package names inline                                               | Hard to read                                                             | Top-level imports; `import ... as ...` when names clash (`references/kotlin-patterns.md`)                                                                                                          |
 
 ## Module Structure
 
@@ -643,7 +643,7 @@ abstract class DataModule {
 2. The operation centralizes domain logic reused across features or ViewModels.
 3. The logic is too heavy for the `ViewModel` but does not belong in a repository.
 
-**Forbidden:** pass-through use cases that only wrap a single repository call — call the repository from the `ViewModel` instead.
+**Forbidden:** pass-through use cases that only wrap a single repository call - call the repository from the `ViewModel` instead.
 
 ```kotlin
 // WRONG: Unnecessary use case (simple pass-through)
@@ -952,10 +952,10 @@ Call navigate() → Contract → Implementation → Routing → Render New UI
 
 ## Cross-references
 
-- [compose-patterns.md](compose-patterns.md) — UiState, screens, edge-to-edge
-- [modularization.md](modularization.md) — Module layout and dependency direction
-- [dependencies.md](dependencies.md) — Version catalog and BOMs
-- [kotlin-patterns.md](kotlin-patterns.md) — Kotlin conventions
-- [design-patterns.md](design-patterns.md) — Pattern catalog
-- [testing.md](testing.md) — Fakes, Turbine, Hilt tests
-- [android-data-sync.md](android-data-sync.md) — Offline-first and sync
+- [compose-patterns.md](compose-patterns.md) - UiState, screens, edge-to-edge
+- [modularization.md](modularization.md) - Module layout and dependency direction
+- [dependencies.md](dependencies.md) - Version catalog and BOMs
+- [kotlin-patterns.md](kotlin-patterns.md) - Kotlin conventions
+- [design-patterns.md](design-patterns.md) - Pattern catalog
+- [testing.md](testing.md) - Fakes, Turbine, Hilt tests
+- [android-data-sync.md](android-data-sync.md) - Offline-first and sync

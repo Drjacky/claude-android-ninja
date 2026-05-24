@@ -141,7 +141,7 @@ fun rememberCoroutineScope(): CoroutineScope = // ...
 
 ### Loading and refresh UX
 
-**Required:** keep **stable layout** and **preserved context** during loads and refresh — retain visible content, scroll position, and in-flight form state while network work runs.
+**Required:** keep **stable layout** and **preserved context** during loads and refresh - retain visible content, scroll position, and in-flight form state while network work runs.
 
 | Situation                                                  | Default                                                                                           |
 |------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
@@ -648,7 +648,7 @@ These APIs differ in **how long** state is kept and **what types** you can store
 | Survives recompositions               | Yes                  | Yes                                                                                                                                    | Yes                                                                        |
 | Survives activity / config recreation | No                   | Yes (restored value may be a **new** instance, `==` but not `===`)                                                                     | Same as `rememberSaveable`                                                 |
 | Survives process death                | No                   | Yes                                                                                                                                    | Yes                                                                        |
-| Custom / complex types                | Any (in memory only) | Primitives, `String`, arrays, built-in support for common types (`List`, `Map`, `State`, …), **`@Parcelize`**, or a **custom `Saver`** | Types you can represent with **`kotlinx.serialization`** (`@Serializable`) |
+| Custom / complex types                | Any (in memory only) | Primitives, `String`, arrays, built-in support for common types (`List`, `Map`, `State`, ...), **`@Parcelize`**, or a **custom `Saver`** | Types you can represent with **`kotlinx.serialization`** (`@Serializable`) |
 
 **When to use which**
 
@@ -909,7 +909,7 @@ Status- and navigation-bar icon legibility is controlled in the theme/Activity, 
 
 `NavigationSuiteScaffold` and the `*PaneScaffold` family (`ListDetailPaneScaffold`, `SupportingPaneScaffold`) **do not propagate `PaddingValues`** to their inner content lambdas. The scaffolds manage insets for their own chrome (rail, bar, drawer); each pane is responsible for its own content insets.
 
-- Apply insets per-pane / per-screen, e.g. `LazyColumn(contentPadding = …)` and `Modifier.safeContentPadding()` on `AnimatedPane`.
+- Apply insets per-pane / per-screen, e.g. `LazyColumn(contentPadding = ...)` and `Modifier.safeContentPadding()` on `AnimatedPane`.
 - **Do not** wrap the `NavigationSuiteScaffold` itself in `safeDrawingPadding()` / `safeContentPadding()` - that clips the chrome and breaks edge-to-edge.
 
 #### Full-screen Dialogs
@@ -3479,9 +3479,9 @@ Values are scoped to descendants. Inner providers override outer ones.
 - Parameter drilling would cross five or more layers.
 
 **Forbidden:**
-- Data only one or two levels deep — pass parameters.
-- Rapidly changing values that need explicit ownership — model them in state or a `ViewModel`.
-- App-wide service graphs — wire those through Hilt, not `CompositionLocal`.
+- Data only one or two levels deep - pass parameters.
+- Rapidly changing values that need explicit ownership - model them in state or a `ViewModel`.
+- App-wide service graphs - wire those through Hilt, not `CompositionLocal`.
 
 ### CompositionLocal Anti-Patterns
 
@@ -3671,10 +3671,10 @@ Without `contentType`, all items share one pool. With it, items reuse layouts ef
 
 - `animateScrollToItem` / `scrollToItem` (FAB, deep link, 'jump to')
 - Reading `firstVisibleItemIndex`, `firstVisibleItemScrollOffset`, or `layoutInfo` (progress indicators, scroll-aware headers)
-- `derivedStateOf { … }` tied to scroll (e.g. show/hide scroll-to-top)
+- `derivedStateOf { ... }` tied to scroll (e.g. show/hide scroll-to-top)
 - `Modifier.nestedScroll` or other APIs that need the list's `NestedScrollConnection` / state
 
-If none of that applies, use a plain `LazyColumn { … }` with no `state` parameter.
+If none of that applies, use a plain `LazyColumn { ... }` with no `state` parameter.
 
 **Do not** copy `firstVisibleItemIndex`, `firstVisibleItemScrollOffset`, or similar into the ViewModel's `StateFlow` for a normal feed - those values change constantly and will spam state updates without business value.
 
@@ -4093,13 +4093,13 @@ fun ValidatedEmailField(
 Re-orient: [compose-patterns-quick.md](compose-patterns-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#compose-patternsmd-4092-lines)
 
 
-- [architecture.md](architecture.md) — ViewModel patterns and state management
-- [modularization.md](modularization.md) — Feature modules and dependency rules
-- [android-navigation.md](android-navigation.md) — Navigation 3 and adaptive navigation
-- [android-accessibility-quick.md](android-accessibility-quick.md) — Semantics and TalkBack
-- [android-theming-quick.md](android-theming-quick.md) — Material 3, dynamic color, typography
-- [android-i18n.md](android-i18n.md) — Localization, RTL, string resources
-- [kotlin-patterns.md](kotlin-patterns.md) — Immutability and data classes
-- [testing-quick.md](testing-quick.md) — Compose UI tests
-- [migration.md](migration.md) — Accompanist, Compose, Material, RxJava, Navigation migrations
+- [architecture.md](architecture.md) - ViewModel patterns and state management
+- [modularization.md](modularization.md) - Feature modules and dependency rules
+- [android-navigation.md](android-navigation.md) - Navigation 3 and adaptive navigation
+- [android-accessibility-quick.md](android-accessibility-quick.md) - Semantics and TalkBack
+- [android-theming-quick.md](android-theming-quick.md) - Material 3, dynamic color, typography
+- [android-i18n.md](android-i18n.md) - Localization, RTL, string resources
+- [kotlin-patterns.md](kotlin-patterns.md) - Immutability and data classes
+- [testing-quick.md](testing-quick.md) - Compose UI tests
+- [migration.md](migration.md) - Accompanist, Compose, Material, RxJava, Navigation migrations
 

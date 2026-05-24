@@ -193,7 +193,7 @@ For files with a `-quick.md` companion, open the **quick** file first; open the 
 **Ensuring accessibility compliance (TalkBack, touch targets, color contrast)?**
 → Follow [android-accessibility-quick.md](android-accessibility-quick.md); open [android-accessibility.md](android-accessibility.md) for WCAG tables and Espresso samples  
 → Provide `contentDescription` for all icons and images  
-→ Ensure 48dp × 48dp minimum touch targets  
+→ Ensure 48dp * 48dp minimum touch targets  
 → Test with TalkBack and Accessibility Scanner  
 
 **Working with images and color extraction?**

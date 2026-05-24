@@ -1673,7 +1673,7 @@ class DeepLinkParsingTest {
 
 Required: the deep-link `Activity` uses `android:launchMode="singleTask"` and forwards `onNewIntent` through the same parser as `onCreate` ([android-navigation.md → onNewIntent for singleTask](android-navigation.md#onnewintent-for-singletask)).
 
-Required: the destination composable root exposes `Modifier.testTag("…")` for every node the test asserts.
+Required: the destination composable root exposes `Modifier.testTag("...")` for every node the test asserts.
 
 Forbidden: launching a second `Activity` with `startActivity` to simulate a second link - `singleTask` reuses the instance; call `onNewIntent` on the running `Activity` only.
 
@@ -1932,7 +1932,7 @@ Commands and test shapes an **agent** proposes or runs **only when** a device or
 | Action                                               | Agent                                           | Prerequisite                                        |
 |------------------------------------------------------|-------------------------------------------------|-----------------------------------------------------|
 | Run `adb devices` and parse serial list              | Yes, when shell runs                            | Device or emulator online                           |
-| Build `adb -s SERIAL …` command lines for copy-paste | Yes                                             | Correct `SERIAL` when multiple devices              |
+| Build `adb -s SERIAL ...` command lines for copy-paste | Yes                                             | Correct `SERIAL` when multiple devices              |
 | Install APK the build produced                       | Yes, when file exists and `adb install` allowed | Artifact path valid; device unlocked if required    |
 | Author `androidTest` UIAutomator or Espresso smoke   | Yes                                             | `./gradlew connectedCheck` or CI emulator available |
 | Instrumented test on real device without CI          | No                                              | Connected device and local Gradle or Studio run     |
@@ -2544,9 +2544,9 @@ See [android-i18n.md](android-i18n.md#testing-localization) for locales, plurals
 
 ## Cross-references
 
-- [architecture.md](architecture.md) — Layering and fakes
-- [compose-patterns.md](compose-patterns.md) — UiState, previews, screenshot tests
-- [android-performance.md](android-performance.md) — Macrobenchmark and Baseline Profiles
-- [android-debugging.md](android-debugging.md) — ADB and release triage
-- [coroutines-patterns.md](coroutines-patterns.md) — Flow and `runTest`
-- [Hilt Testing](https://developer.android.com/training/dependency-injection/hilt-testing) — Official Hilt testing guide
+- [architecture.md](architecture.md) - Layering and fakes
+- [compose-patterns.md](compose-patterns.md) - UiState, previews, screenshot tests
+- [android-performance.md](android-performance.md) - Macrobenchmark and Baseline Profiles
+- [android-debugging.md](android-debugging.md) - ADB and release triage
+- [coroutines-patterns.md](coroutines-patterns.md) - Flow and `runTest`
+- [Hilt Testing](https://developer.android.com/training/dependency-injection/hilt-testing) - Official Hilt testing guide

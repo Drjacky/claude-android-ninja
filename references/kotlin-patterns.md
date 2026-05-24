@@ -70,7 +70,7 @@ Per-compilation form: `explicitApi = ExplicitApiMode.Strict`.
 
 ### Things to remove on Kotlin 2.x
 
-- `kotlinCompilerExtensionVersion = "…"` inside `composeOptions { }` - ignored, warns.
+- `kotlinCompilerExtensionVersion = "..."` inside `composeOptions { }` - ignored, warns.
 - `languageVersion = "1.9"` - obsolete.
 - `useK2 = true` - obsolete; K2 is default.
 
@@ -102,7 +102,7 @@ Keep types and file structure easy to read. This aligns with `references/archite
 
 ### Import hygiene
 
-Never bury types behind long fully qualified names in business logic. Import at the top of the file; use `import … as …` when two layers expose the same simple name.
+Never bury types behind long fully qualified names in business logic. Import at the top of the file; use `import ... as ...` when two layers expose the same simple name.
 
 ```kotlin
 // WRONG - package noise hides intent

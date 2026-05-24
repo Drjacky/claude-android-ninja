@@ -730,7 +730,7 @@ Verification:
 
 - Run APK Analyzer on the release build; inspect each `.so` Alignment column per the page-size guide.
 - Run AOSP `check_elf_alignment.sh` on the release APK, or inspect extracted `lib/**/*.so` with `llvm-readelf` / `readelf` exactly as [ELF alignment checks](https://developer.android.com/guide/practices/page-sizes#elf-alignment) describe.
-- Boot a 16 KB emulator image and execute the app’s critical paths per [Test in a 16 KB environment](https://developer.android.com/guide/practices/page-sizes#test).
+- Boot a 16 KB emulator image and execute the app's critical paths per [Test in a 16 KB environment](https://developer.android.com/guide/practices/page-sizes#test).
 
 Build and supply chain:
 

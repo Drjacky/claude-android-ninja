@@ -317,7 +317,7 @@ Required:
 - DAO methods are `suspend` or return `Flow` / `PagingSource`. Never return `List<T>` from a non-suspend DAO method.
 - Add `@Index` to every column used in a `WHERE`, `JOIN`, or `ORDER BY`.
 - Wrap multi-statement writes in `@Transaction` (or use `@Insert` on `List<Entity>` for batch insert).
-- Cap result sets with `LIMIT … OFFSET …` or Paging 3 (`androidx.room3:room3-paging` + `@DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)`); never `SELECT *` on tables that can grow beyond ~1k rows.
+- Cap result sets with `LIMIT ... OFFSET ...` or Paging 3 (`androidx.room3:room3-paging` + `@DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)`); never `SELECT *` on tables that can grow beyond ~1k rows.
 
 ```kotlin
 @Dao
@@ -1705,7 +1705,7 @@ Required:
 - Configure `setBackoffCriteria(BackoffPolicy.EXPONENTIAL, ...)` on retry-eligible work.
 - Use expedited work (API 31+) only for user-visible, time-sensitive operations and pass `OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST`.
 - Report progress with `setProgress(Data)` for long-running sync; observe via `WorkManager.getWorkInfoByIdFlow` in the ViewModel.
-- Pass data between chained workers via `Data.Builder()` (≤ 10 KB).
+- Pass data between chained workers via `Data.Builder()` (<= 10 KB).
 - Cancel periodic work (`cancelUniqueWork`) when the feature toggles off.
 - Test with `WorkManagerTestInitHelper` + `TestDriver`, simulating constraints.
 

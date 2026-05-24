@@ -24,7 +24,7 @@ WCAG 2.2 adds nine success criteria on top of 2.1. Required on Android Compose:
 |-------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
 | 2.4.11 Focus Not Obscured (Minimum)       | A focused element must not be fully hidden by author-created overlays (bottom sheets, IME, snackbars).                                                             | `#focus-management`; apply `Modifier.imePadding()` and inset-aware Scaffolds (see `references/compose-patterns.md`). |
 | 2.5.7 Dragging Movements                  | Every drag gesture must have a single-pointer alternative (tap, long-press, button).                                                                               | Sliders, reorderable lists, maps, swipe-to-dismiss. Provide explicit buttons.                                        |
-| 2.5.8 Target Size (Minimum)               | Interactive targets must be at least 24 × 24 CSS px.                                                                                                               | Android's 48dp × 48dp rule is stricter; enforce 48dp. See `#touch-target-sizes`.                                     |
+| 2.5.8 Target Size (Minimum)               | Interactive targets must be at least 24 * 24 CSS px.                                                                                                               | Android's 48dp * 48dp rule is stricter; enforce 48dp. See `#touch-target-sizes`.                                     |
 | 3.2.6 Consistent Help                     | Help mechanisms (contact, chat, FAQ) must appear in the same relative order on every screen.                                                                       | App-level navigation, not per-screen.                                                                                |
 | 3.3.7 Redundant Entry                     | Do not ask the user for the same info twice in one session. Prefill or pull from state.                                                                            | Multi-step forms, signup-then-onboarding flows.                                                                      |
 | 3.3.8 Accessible Authentication (Minimum) | Do not require a cognitive test (puzzle, exact recall, captcha without alternative) unless another factor exists. Paste and autofill must work on password fields. | Login, signup, password reset. Use Credential Manager - see `references/android-security.md`.                        |
@@ -358,7 +358,7 @@ Modifier.semantics {
 
 ## Touch Target Sizes
 
-All interactive elements must have a minimum touch target size of **48dp × 48dp** for accessibility.
+All interactive elements must have a minimum touch target size of **48dp * 48dp** for accessibility.
 
 ### Minimum Touch Targets
 
@@ -551,7 +551,7 @@ fun ArticleScreen(article: Article) {
 
 Announce dynamic content changes to screen readers.
 
-**Modes:** In `Modifier.semantics`, `liveRegion = LiveRegionMode.Polite` queues announcements when the user is idle; `LiveRegionMode.Assertive` interrupts — reserve it for critical errors. Default to **polite** live regions on the composable that changed, or rely on **stateDescription** / **error** semantics so TalkBack picks up updates without extra noise.
+**Modes:** In `Modifier.semantics`, `liveRegion = LiveRegionMode.Polite` queues announcements when the user is idle; `LiveRegionMode.Assertive` interrupts - reserve it for critical errors. Default to **polite** live regions on the composable that changed, or rely on **stateDescription** / **error** semantics so TalkBack picks up updates without extra noise.
 
 **Avoid** firing raw `AccessibilityEvent.TYPE_ANNOUNCEMENT` for every minor UI tick. Drive updates through semantics; emit one-off announcements only when no stable node can carry the change.
 
@@ -1510,7 +1510,7 @@ Re-orient: [android-accessibility-quick.md](android-accessibility-quick.md) | Se
 **Required:**
 - Provide `contentDescription` for all icons and images
 - Write concise labels (purpose, not "button" / "tap here")
-- Ensure 48dp × 48dp minimum touch targets
+- Ensure 48dp * 48dp minimum touch targets
 - Use `mergeDescendants` to group related content
 - Announce state changes with `stateDescription`
 - Support dark mode and high contrast

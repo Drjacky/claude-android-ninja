@@ -115,7 +115,7 @@ Required:
 
 Plugin sources live in `assets/convention/`:
 - `*ConventionPlugin.kt` (incl. `PlayVitalsReportingConventionPlugin.kt` for root-only Play Vitals), `PlayVitalsReportingTask.kt`, and related `.kt` files.
-- `config/` (`KotlinAndroid.kt`, `AndroidCompose.kt`, `Jacoco.kt`, …).
+- `config/` (`KotlinAndroid.kt`, `AndroidCompose.kt`, `Jacoco.kt`, ...).
 - `build.gradle.kts`, `QUICK_REFERENCE.md`.
 
 Copy them to `build-logic/convention/src/main/kotlin/`.
@@ -690,7 +690,7 @@ android {
 
 **Flavor-specific source sets:** Optional overrides live next to `main` - for example `app/src/development/`, `app/src/staging/`, `app/src/production/` for resources or code only for that flavor; `app/src/debug/` and `app/src/release/` apply per build type across flavors.
 
-**Multiple flavor dimensions:** If you add another dimension (e.g. `tier` = `free` / `paid`), variants become combinations such as `developmentFreeDebug`. Cap flavor dimensions — each new dimension multiplies variant count and CI time.
+**Multiple flavor dimensions:** If you add another dimension (e.g. `tier` = `free` / `paid`), variants become combinations such as `developmentFreeDebug`. Cap flavor dimensions - each new dimension multiplies variant count and CI time.
 
 ### Build Optimization Configuration
 
@@ -817,7 +817,7 @@ Run when `proguard-rules.pro` grows past ~50 lines, release APK/AAB size regress
 
 | Library group                                          | App-side rules needed?                                                                                                                                  |
 |--------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
-| AndroidX / Jetpack (lifecycle, room3, paging, work, …) | No. Consumer rules are bundled.                                                                                                                         |
+| AndroidX / Jetpack (lifecycle, room3, paging, work, ...) | No. Consumer rules are bundled.                                                                                                                         |
 | Kotlin stdlib, kotlinx.coroutines, kotlinx.collections | No. Only `-dontwarn kotlinx.coroutines.**` for residual warnings.                                                                                       |
 | kotlinx.serialization                                  | Library bundles rules since 1.6+. Keep only the **`@Serializable` generic-parameter** rules (R8 full-mode strips classes used only as `List<MyModel>`). |
 | Retrofit / OkHttp                                      | Retrofit needs the `@retrofit2.http.*` interface keeps for R8 full-mode (Proxy). OkHttp 5.x: only `-dontwarn` for optional Conscrypt/BouncyCastle.      |
@@ -840,9 +840,9 @@ If a release build fails after deleting one of the above, the failure points to 
 
 **Step 3 - Detect subsuming rules and remove the broader half.** When two rules overlap, keep only the narrower one:
 
-- `-keep class com.example.Foo { *; }` subsumes any `-keepclassmembers class com.example.Foo { … }` - **delete the class-wide rule**, keep the member rule.
+- `-keep class com.example.Foo { *; }` subsumes any `-keepclassmembers class com.example.Foo { ... }` - **delete the class-wide rule**, keep the member rule.
 - `-keep class com.example.** { *; }` subsumes every per-class rule under that package - **delete the package-wide rule**, keep the per-class rules.
-- A conditional `-if … -keep <1>` subsumes the equivalent unconditional `-keep` for the same class - delete the unconditional one.
+- A conditional `-if ... -keep <1>` subsumes the equivalent unconditional `-keep` for the same class - delete the unconditional one.
 
 R8 emits no "redundant rule" report. To verify a suspected redundancy, comment the broader rule out, run `./gradlew assembleRelease`, and confirm `mapping.txt` still contains the narrower-kept symbol.
 
@@ -1078,9 +1078,9 @@ Forbidden:
 
 ## Cross-references
 
-- [dependencies.md](dependencies.md) — Version catalog and BOMs
-- [code-quality.md](code-quality.md) — Detekt convention plugin
-- [modularization.md](modularization.md) — Module templates
-- [android-performance.md](android-performance.md) — Benchmark and Baseline Profile modules
-- [android-code-coverage.md](android-code-coverage.md) — JaCoCo convention wiring
-- [QUICK_REFERENCE.md](../assets/convention/QUICK_REFERENCE.md) — Convention plugin IDs
+- [dependencies.md](dependencies.md) - Version catalog and BOMs
+- [code-quality.md](code-quality.md) - Detekt convention plugin
+- [modularization.md](modularization.md) - Module templates
+- [android-performance.md](android-performance.md) - Benchmark and Baseline Profile modules
+- [android-code-coverage.md](android-code-coverage.md) - JaCoCo convention wiring
+- [QUICK_REFERENCE.md](../assets/convention/QUICK_REFERENCE.md) - Convention plugin IDs
