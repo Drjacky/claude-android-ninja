@@ -433,7 +433,7 @@ class Navigator(val state: NavigationState) {
             error("Stack for ${state.topLevelRoute} not found")
         val currentRoute = currentStack.last()
 
-        // If we're at the base of the current route, go back to the start route stack.
+        // CORRECT: at the base of the current route, pop to the start route stack
         if (currentRoute == state.topLevelRoute) {
             state.topLevelRoute = state.startRoute
         } else {

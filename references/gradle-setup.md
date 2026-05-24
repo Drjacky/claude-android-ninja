@@ -968,12 +968,12 @@ Local-only profile (no upload): `./gradlew assembleDebug --profile` → `build/r
 Required: `tasks.register` for every custom task; `tasks.create` is forbidden (eagerly configures on every build).
 
 ```kotlin
-// Bad
+// WRONG
 tasks.create("generateBuildInfo") {
     doLast { /* ... */ }
 }
 
-// Good
+// CORRECT
 tasks.register("generateBuildInfo") {
     doLast { /* ... */ }
 }
@@ -984,19 +984,19 @@ tasks.register("generateBuildInfo") {
 Forbidden in configuration phase: `File.readText()`, network calls, `exec { }`. They run every build and break the configuration cache. Defer via `providers`.
 
 ```kotlin
-// Bad
+// WRONG
 val version = file("version.txt").readText()
 
-// Good
+// CORRECT
 val version = providers.fileContents(layout.projectDirectory.file("version.txt")).asText
 ```
 
 ```kotlin
-// Bad
+// WRONG
 val gitHash = Runtime.getRuntime().exec("git rev-parse --short HEAD")
     .inputStream.bufferedReader().readText().trim()
 
-// Good
+// CORRECT
 val gitHash = providers.exec {
     commandLine("git", "rev-parse", "--short", "HEAD")
 }.standardOutput.asText.map { it.trim() }
@@ -1007,10 +1007,10 @@ val gitHash = providers.exec {
 Forbidden: dynamic versions (`1.+`, `latest.release`, `-SNAPSHOT`). Always pin via the version catalog.
 
 ```kotlin
-// Bad
+// WRONG
 implementation("com.example:lib:1.0.+")
 
-// Good
+// CORRECT
 implementation(libs.example.lib)
 ```
 

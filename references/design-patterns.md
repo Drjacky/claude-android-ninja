@@ -1690,11 +1690,11 @@ Use `@Insert(onConflict = OnConflictStrategy.REPLACE)` instead of `@Upsert` if y
 ```kotlin
 @Dao
 interface UserDao {
-    // Bad: Returns -1 if the user already exists and is updated
+    // WRONG: Returns -1 if the user already exists and is updated
     @Upsert
     suspend fun upsertUser(user: UserEntity): Long
 
-    // Good: Always returns the row ID
+    // CORRECT: Always returns the row ID
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdateUser(user: UserEntity): Long
 }

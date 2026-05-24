@@ -22,7 +22,7 @@ Use the table as an index only; contracts and samples sit in the linked rows.
 
 | Need                                                                   | Route                                                                                                                                                           |
 |------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Pick images or video without broad `READ_MEDIA_*` when UX allows       | [android-permissions.md → Photo Picker (Preferred for Media on Android 13+)](android-permissions.md#photo-picker-preferred-for-media-on-android-13) |
+| Pick images or video without broad `READ_MEDIA_*` when UX allows       | [android-permissions.md → Photo Picker (Android 13+)](android-permissions.md#photo-picker-android-13) |
 | Generic MIME or documents (`GetContent`, `OpenDocument`, multi-select) | [android-permissions.md → Requesting Runtime Permissions in Compose](android-permissions.md#requesting-runtime-permissions-in-compose)              |
 
 ## Sharing media and files

@@ -15,7 +15,7 @@ Use Material Symbols (drawable XML) for every standard glyph. Avoid `androidx.co
 
 ### Downloading Icons
 
-Iconify API (preferred for automation):
+Use Iconify API for scripted downloads:
 
 ```bash
 # Download icon as SVG using curl

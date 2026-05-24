@@ -150,7 +150,7 @@ Reports will be in `build/compose-metrics/` and `build/compose-reports/` for eac
 
 Create `stability_config.conf` in your **root project directory** to mark external types as stable.
 
-This follows Google's recommended filename convention (see [Compose Compiler documentation](https://developer.android.com/develop/ui/compose/performance/stability/fix#configuration-file)).
+Use the filename from the [Compose Compiler stability configuration](https://developer.android.com/develop/ui/compose/performance/stability/fix#configuration-file) documentation.
 
 Use this when third-party or generated types are immutable in fact but lack `@Stable`/`@Immutable`. Without an entry here, Compose marks them unstable and recomposes unnecessarily.
 

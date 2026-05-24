@@ -259,7 +259,7 @@ fun NotificationSettingsScreen(
 }
 ```
 
-### Photo Picker (Preferred for Media on Android 13+)
+### Photo Picker (Android 13+)
 
 Start here for **permission-free** picks. For a single router that also lists document contracts, FileProvider, URI grants, and sharesheet targets, see [android-media.md → Picking media and documents](android-media.md#picking-media-and-documents).
 
@@ -359,7 +359,7 @@ fun MultiPhotoPickerScreen(
 
 **Use when:** the picker surface must render inside app layout (sheet, pane, or inline slot) instead of a full-screen system sheet.
 
-**Use when:** full-screen Photo Picker is enough: stay on [Photo Picker (Preferred for Media on Android 13+)](#photo-picker-preferred-for-media-on-android-13) with `PickVisualMedia`.
+**Use when:** full-screen Photo Picker is enough: stay on [Photo Picker (Android 13+)](#photo-picker-android-13) with `PickVisualMedia`.
 
 Required: follow [Embedded photo picker](https://developer.android.com/training/data-storage/shared/photopicker#embedded-photo-picker) for API level gates and `ActivityResult` wiring; keep the same permission-free goal as standalone Photo Picker on supported releases.
 

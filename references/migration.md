@@ -565,7 +565,7 @@ Since Compose 1.6, `Scaffold` requires using `innerPadding`. Ignoring it causes 
 with system bars.
 
 ```kotlin
-// Bad: ignoring innerPadding (does not compile on Compose 1.6+)
+// WRONG: ignoring innerPadding (does not compile on Compose 1.6+)
 Scaffold(topBar = { TopAppBar { } }) {
     LazyColumn { }
 }

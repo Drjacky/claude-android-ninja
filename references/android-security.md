@@ -159,7 +159,9 @@ object NetworkModule {
 
 Pin your server's public key hash to prevent MITM attacks even with compromised CAs.
 
-### Option 1: Network Security Config (Recommended)
+Use **Network Security Config** by default. Use **OkHttp CertificatePinner** when pins must be set or rotated in application code.
+
+### Network Security Config
 
 ```xml
 <!-- res/xml/network_security_config.xml -->
@@ -189,7 +191,7 @@ Pin your server's public key hash to prevent MITM attacks even with compromised 
 </network-security-config>
 ```
 
-### Option 2: OkHttp Certificate Pinner (Programmatic)
+### OkHttp CertificatePinner (programmatic)
 
 For more control (e.g., dynamic pins, per-request):
 
@@ -464,7 +466,7 @@ class SoftwareEncryption {
 }
 ```
 
-**Warning:** Store the software-generated key securely (e.g., derive from user password via PBKDF2). Never hardcode keys or store them in `SharedPreferences` in plaintext.
+**Required:** Store software-generated keys via a password-derived secret (for example PBKDF2). Forbidden: hardcoded keys or plaintext `SharedPreferences` storage.
 
 ## Android Keystore, TEE & StrongBox
 
@@ -1061,7 +1063,7 @@ sequenceDiagram
 Use the official matrix: [Handle Play Integrity API error codes](https://developer.android.com/google/play/integrity/error-codes).
 
 - **Often retry with backoff** (transient): `NETWORK_ERROR`, `TOO_MANY_REQUESTS`, `GOOGLE_SERVER_UNAVAILABLE`, `CLIENT_TRANSIENT_ERROR`, `INTERNAL_ERROR`; follow Google guidance (initial delay, exponential backoff, cap attempts).
-- **Usually fix environment or config** (not a blind retry): `API_NOT_AVAILABLE`, `PLAY_STORE_NOT_FOUND`, `PLAY_STORE_VERSION_OUTDATED`, `PLAY_SERVICES_NOT_FOUND`, `PLAY_SERVICES_VERSION_OUTDATED`, `CLOUD_PROJECT_NUMBER_IS_INVALID`, `CANNOT_BIND_TO_SERVICE` - prompt user to update Play Store or Play services, or fix the Cloud project number you pass from the engineer.
+- **Fix environment or config** (not a blind retry): `API_NOT_AVAILABLE`, `PLAY_STORE_NOT_FOUND`, `PLAY_STORE_VERSION_OUTDATED`, `PLAY_SERVICES_NOT_FOUND`, `PLAY_SERVICES_VERSION_OUTDATED`, `CLOUD_PROJECT_NUMBER_IS_INVALID`, `CANNOT_BIND_TO_SERVICE` - prompt user to update Play Store or Play services, or fix the Cloud project number you pass from the engineer.
 - **Standard only:** `INTEGRITY_TOKEN_PROVIDER_INVALID` - **invalidate the cached provider**, clear it, run **`warmUp()`** again, then retry the token request.
 - **`REQUEST_HASH_TOO_LONG`** - shorten the digest input or hash to a fixed-length string before sending.
 

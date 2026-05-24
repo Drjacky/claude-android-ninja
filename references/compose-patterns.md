@@ -150,7 +150,7 @@ fun rememberCoroutineScope(): CoroutineScope = // ...
 **Do not:** replace the whole screen with a spinner on every refresh, clear forms when a reload runs, or drop the last good result on transient errors.
 
 ```kotlin
-// Bad
+// WRONG
 @Composable
 fun SummarySection(summary: SummaryUi?, isLoading: Boolean) {
     if (isLoading) {
@@ -160,7 +160,7 @@ fun SummarySection(summary: SummaryUi?, isLoading: Boolean) {
     }
 }
 
-// Good
+// CORRECT
 @Composable
 fun SummarySection(summary: SummaryUi?, isLoading: Boolean) {
     SummaryCardSlot {
@@ -294,7 +294,7 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.LoginForm())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
     
-    // Preferred for one-shot navigation commands (unicast); see references/coroutines-patterns.md
+    // CORRECT: Channel for one-shot navigation commands; see coroutines-patterns.md
     private val _navigationEvents = Channel<AuthNavigationEvent>(Channel.BUFFERED)
     val navigationEvents: Flow<AuthNavigationEvent> = _navigationEvents.receiveAsFlow()
 
@@ -2509,7 +2509,7 @@ Box(
 
 
 ```kotlin
-// Spring - physics-based, no fixed duration (recommended for interactions)
+// CORRECT: spring - physics-based, no fixed duration (use for interactions)
 spring(
     dampingRatio = Spring.DampingRatioMediumBouncy, // NoBouncy(1f), LowBouncy(0.75f), MediumBouncy(0.5f), HighBouncy(0.2f)
     stiffness = Spring.StiffnessLow // Low, Medium, MediumLow, High, VeryLow
@@ -2673,7 +2673,7 @@ LookaheadAnimationVisualDebugging(
 GPU-accelerated transforms that skip recomposition and relayout.
 
 ```kotlin
-// Good
+// CORRECT
 val offset by animateFloatAsState(targetValue = 100f, label = "offset")
 Box(modifier = Modifier.graphicsLayer(translationX = offset))
 
@@ -2691,12 +2691,12 @@ Box(modifier = Modifier.offset(x = offsetDp))
 ```kotlin
 // WRONG: instant visibility flip
 if (visible) { Text("Content") }
-// Good
+// CORRECT
 AnimatedVisibility(visible = visible) { Text("Content") }
 
 // WRONG: recreated every recomposition
 val animatable = Animatable(0f)
-// Good
+// CORRECT
 val animatable = remember { Animatable(0f) }
 
 // WRONG: state mutation during composition (infinite loop)
@@ -2709,12 +2709,12 @@ LaunchedEffect(Unit) {
 
 // WRONG: missing label
 val size by animateDpAsState(targetValue = 100.dp)
-// Good
+// CORRECT
 val size by animateDpAsState(targetValue = 100.dp, label = "card_size")
 
 // WRONG: ignores reduced-motion preference
 AnimatedVisibility(visible = visible, enter = fadeIn() + slideInVertically()) { Content() }
-// Good
+// CORRECT
 val reducedMotion = LocalReducedMotion.current
 AnimatedVisibility(
     visible = visible,
@@ -2871,7 +2871,7 @@ Button(onClick = {
     runBlocking { fetchData() }
 }) { Text("Fetch") }
 
-// Good
+// CORRECT
 val scope = rememberCoroutineScope()
 Button(onClick = {
     scope.launch { fetchData() }
@@ -3066,7 +3066,7 @@ fun UserProfile(userId: String) {
         user = repository.loadUser(userId)
     }
 }
-// Good
+// CORRECT
 LaunchedEffect(userId) {
     user = repository.loadUser(userId)
 }
@@ -3076,7 +3076,7 @@ DisposableEffect(Unit) {
     val listener = Listener()
     manager.register(listener)
 }
-// Good
+// CORRECT
 DisposableEffect(Unit) {
     val listener = Listener()
     manager.register(listener)
@@ -3089,7 +3089,7 @@ LaunchedEffect(Unit) {
     delay(1000)
     println(count)
 }
-// Good
+// CORRECT
 LaunchedEffect(Unit) {
     snapshotFlow { count }.collect { println("Count: $it") }
 }
@@ -3098,7 +3098,7 @@ LaunchedEffect(Unit) {
 if (isLoggedIn) {
     navigator.navigateToHome()
 }
-// Good
+// CORRECT
 LaunchedEffect(isLoggedIn) {
     if (isLoggedIn) navigator.navigateToHome()
 }
@@ -3222,7 +3222,7 @@ Place `clickable` AFTER `clip` (for ripple bounds) but BEFORE `padding` (for lar
 Use `Modifier.then()` for conditional chaining:
 
 ```kotlin
-// Good
+// CORRECT
 Box(
     Modifier
         .fillMaxWidth()
@@ -3230,14 +3230,14 @@ Box(
         .padding(16.dp)
 )
 
-// Bad
+// WRONG
 val mod = if (isSelected) Modifier.background(selectedColor) else Modifier
 Box(mod.padding(16.dp))
 ```
 
 ### Custom Modifiers with Modifier.Node
 
-`Modifier.Node` is the recommended API for custom modifiers. `Modifier.composed` is deprecated.
+Use `Modifier.Node` for custom modifiers. `Modifier.composed` is deprecated.
 
 ```kotlin
 // CORRECT: Modifier.Node API (Modifier.composed is deprecated)
@@ -3350,7 +3350,7 @@ Comprehensive accessibility patterns: [android-accessibility.md](android-accessi
 Every public composable must accept `modifier: Modifier = Modifier`.
 
 ```kotlin
-// Good
+// CORRECT
 @Composable
 fun UserCard(
     user: User,
@@ -3362,7 +3362,7 @@ fun UserCard(
     }
 }
 
-// Bad
+// WRONG
 @Composable
 fun UserCard(user: User, onClick: () -> Unit) {
     Card { Text(user.name) }
@@ -3374,17 +3374,17 @@ fun UserCard(user: User, onClick: () -> Unit) {
 ```kotlin
 // WRONG: padding before size
 Modifier.padding(16.dp).size(100.dp)
-// Good
+// CORRECT
 Modifier.size(100.dp).padding(16.dp)
 
 // WRONG: clickable before clip (ripple overflows)
 Modifier.clickable { }.clip(RoundedCornerShape(8.dp))
-// Good
+// CORRECT
 Modifier.clip(RoundedCornerShape(8.dp)).clickable { }
 
 // WRONG: background before clip
 Modifier.background(Color.Blue).clip(RoundedCornerShape(8.dp))
-// Good
+// CORRECT
 Modifier.clip(RoundedCornerShape(8.dp)).background(Color.Blue)
 
 // WRONG: hardcoded modifier
@@ -3392,7 +3392,7 @@ Modifier.clip(RoundedCornerShape(8.dp)).background(Color.Blue)
 fun BadCard() {
     Box(Modifier.padding(16.dp).background(Color.Blue)) { }
 }
-// Good
+// CORRECT
 @Composable
 fun GoodCard(modifier: Modifier = Modifier) {
     Box(modifier.padding(16.dp).background(Color.Blue)) { }
@@ -3888,7 +3888,7 @@ fun UserInput(): String {
     return text
 }
 
-// Good
+// CORRECT
 @Composable
 fun UserInput(onValueChange: (String) -> Unit) {
     var text by remember { mutableStateOf("") }

@@ -543,7 +543,7 @@ class AuthSessionWorker @AssistedInject constructor(
 - Encapsulate complex business logic
 - Remove duplicate logic from ViewModels
 - Combine and transform data from multiple repositories
-- **Optional but recommended** for complex applications
+- Use for complex applications when multiple bounded contexts need separate graphs
 
 ### Module Setup
 

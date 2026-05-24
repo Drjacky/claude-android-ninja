@@ -105,16 +105,16 @@ Keep types and file structure easy to read. This aligns with `references/archite
 Never bury types behind long fully qualified names in business logic. Import at the top of the file; use `import … as …` when two layers expose the same simple name.
 
 ```kotlin
-// Bad - package noise hides intent
+// WRONG - package noise hides intent
 val unit = com.example.app.data.db.entity.enums.WeightUnit.entries
     .find { it.name == rawValue }
 
-// Good
+// CORRECT
 import com.example.app.data.db.entity.enums.WeightUnit
 
 val unit = WeightUnit.entries.find { it.name == rawValue }
 
-// Good - clash between DB and domain enums
+// CORRECT - clash between DB and domain enums
 import com.example.app.data.db.entity.enums.WeightUnit as DbWeightUnit
 import com.example.app.domain.model.WeightUnit
 

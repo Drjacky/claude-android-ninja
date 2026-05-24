@@ -229,12 +229,12 @@ class AuthViewModel @Inject constructor(
 }
 ```
 
-**Common Mistake:** Using `StateFlow` for a one-off snackbar.
+**Wrong:** Using `StateFlow` for a one-off snackbar.
 ```kotlin
-// Bad: StateFlow holds the value forever. You have to manually reset it to null after showing the snackbar.
+// WRONG: StateFlow holds the value forever. You have to manually reset it to null after showing the snackbar.
 private val _snackbarMessage = MutableStateFlow<String?>(null)
 
-// Good: same patterns as other one-shot commands (Channel preferred; SharedFlow if you accept its tradeoffs)
+// CORRECT: Channel for one-shot commands; SharedFlow when multicast or replay is intended
 private val _snackbarMessage = Channel<String>(Channel.BUFFERED)
 val snackbarMessages: Flow<String> = _snackbarMessage.receiveAsFlow()
 // Or: MutableSharedFlow<String>(replay = 0, extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
@@ -385,7 +385,7 @@ requestFlow.zip(responseFlow) { request, response -> Result(request, response) }
 Don't use `async` followed immediately by `await` in the same scope. Use `withContext` for sequential work or call the suspend function directly.
 
 ```kotlin
-// Good: direct call or withContext for sequential work
+// CORRECT: direct call or withContext for sequential work
 suspend fun fetchAuthProfile(): AuthProfile {
     val profile = withContext(Dispatchers.IO) {
         authRemote.fetchProfile()
@@ -393,7 +393,7 @@ suspend fun fetchAuthProfile(): AuthProfile {
     return profile.toDomain()
 }
 
-// Good: simple sequential call
+// CORRECT: simple sequential call
 suspend fun refreshAuth(): AuthResult {
     return authRemote.refresh()
 }
@@ -556,7 +556,7 @@ suspend fun refreshAuthCaches(): Unit = supervisorScope {
 }
 ```
 
-Exceptions from failed children are **contained** - they don't crash the app or propagate upward. You can optionally catch them inside each child for logging/recovery.
+Exceptions from failed children are **contained** - they do not crash the app or propagate upward. Catch inside each child when logging or recovery is required.
 
 #### `SupervisorJob` - Explicit Scope with Manual Error Handling
 
@@ -607,19 +607,19 @@ Forbidden: `withContext(SupervisorJob())` - see anti-pattern below.
 Never pass `SupervisorJob()` directly to `withContext`. It creates an orphaned root Job - cancellation from outside won't propagate in, and child exceptions have no handler.
 
 ```kotlin
-// BAD: orphaned Job, breaks structured concurrency, unhandled exceptions crash
+// WRONG: orphaned Job, breaks structured concurrency, unhandled exceptions crash
 suspend fun bad() = withContext(SupervisorJob()) {
     launch { throw Exception() } // no handler - crashes app
     launch { delay(1000) }       // parent cancellation won't reach here
 }
 
-// GOOD: supervisorScope for scoped supervision in suspend functions
+// CORRECT: supervisorScope for scoped supervision in suspend functions
 suspend fun good() = supervisorScope {
     launch { throw Exception() } // contained, siblings continue
     launch { delay(1000) }       // runs independently
 }
 
-// GOOD: SupervisorJob scope with explicit error handling
+// CORRECT: SupervisorJob scope with explicit error handling
 val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
     Log.e("Sync", "Child failed: ${throwable.message}", throwable)
 }
@@ -760,13 +760,13 @@ accelerometerFlow()
 #### Anti-Pattern
 
 ```kotlin
-// BAD: Slow collector blocks fast producer, no backpressure handling
+// WRONG: Slow collector blocks fast producer, no backpressure handling
 fastProducer()
     .collect { item ->
         heavyProcessing(item) // Producer suspended until this completes
     }
 
-// GOOD: Buffer decouples producer and collector
+// CORRECT: Buffer decouples producer and collector
 fastProducer()
     .buffer(64, BufferOverflow.DROP_OLDEST)
     .collect { item ->
@@ -920,7 +920,7 @@ class CameraRepository(
 }
 ```
 
-Warning: Never wrap normal business logic in `NonCancellable`. It should only guard cleanup code that prevents resource leaks or corruption.
+**Forbidden:** Wrap normal business logic in `NonCancellable`. Use it only for cleanup that must finish after cancellation.
 
 ### Timeouts for hardware and uncontrolled APIs
 
@@ -1073,13 +1073,13 @@ fun observeStableNetworkStatus(
 #### `callbackFlow` Anti-Patterns
 
 ```kotlin
-// BAD: Missing awaitClose - flow completes immediately
+// WRONG: Missing awaitClose - flow completes immediately
 fun badFlow(): Flow<Event> = callbackFlow {
     api.registerListener { trySend(it) }
     // Flow closes here! Listener never cleaned up
 }
 
-// GOOD: Always include awaitClose
+// CORRECT: Always include awaitClose
 fun goodFlow(): Flow<Event> = callbackFlow {
     val cleanedUp = java.util.concurrent.atomic.AtomicBoolean(false)
     val listener = EventListener { trySend(it) }
@@ -1094,7 +1094,7 @@ fun goodFlow(): Flow<Event> = callbackFlow {
 ```
 
 ```kotlin
-// BAD: Using send() from callback thread
+// WRONG: Using send() from callback thread
 fun badFlow(): Flow<Event> = callbackFlow {
     api.registerListener { event ->
         send(event) // Compile error or crash: send is suspending
@@ -1102,7 +1102,7 @@ fun badFlow(): Flow<Event> = callbackFlow {
     awaitClose { api.unregisterListener() }
 }
 
-// GOOD: Use trySend() from callbacks
+// CORRECT: Use trySend() from callbacks
 fun goodFlow(): Flow<Event> = callbackFlow {
     api.registerListener { event ->
         trySend(event) // Non-suspending, thread-safe
@@ -1112,7 +1112,7 @@ fun goodFlow(): Flow<Event> = callbackFlow {
 ```
 
 ```kotlin
-// BAD: Non-thread-safe awaitClose cleanup (races with callback thread cleanup)
+// WRONG: Non-thread-safe awaitClose cleanup (races with callback thread cleanup)
 fun badCleanupFlow(): Flow<Event> = callbackFlow {
     var cleanedUp = false
 
@@ -1140,7 +1140,7 @@ fun badCleanupFlow(): Flow<Event> = callbackFlow {
     }
 }
 
-// GOOD: Idempotent cleanup shared by callback and awaitClose
+// CORRECT: Idempotent cleanup shared by callback and awaitClose
 fun goodCleanupFlow(): Flow<Event> = callbackFlow {
     val cleanedUp = java.util.concurrent.atomic.AtomicBoolean(false)
 
@@ -1314,13 +1314,13 @@ suspend fun awaitConnectSafe(client: LegacyClient): Connection =
 #### Anti-Patterns
 
 ```kotlin
-// BAD: Using suspendCoroutine - ignores cancellation
+// WRONG: Using suspendCoroutine - ignores cancellation
 suspend fun badFetch(): Result = suspendCoroutine { cont ->
     api.fetch { result -> cont.resume(result) }
     // If coroutine is cancelled, api.fetch keeps running and cont.resume may crash
 }
 
-// GOOD: Using suspendCancellableCoroutine
+// CORRECT: Using suspendCancellableCoroutine
 suspend fun goodFetch(): Result = suspendCancellableCoroutine { cont ->
     val call = api.fetch { result ->
         if (cont.isActive) cont.resume(result)
@@ -1330,13 +1330,13 @@ suspend fun goodFetch(): Result = suspendCancellableCoroutine { cont ->
 ```
 
 ```kotlin
-// BAD: Resuming multiple times
+// WRONG: Resuming multiple times
 suspend fun bad(): String = suspendCancellableCoroutine { cont ->
     api.onSuccess { cont.resume(it) }
     api.onRetry { cont.resume(it) } // Crash: already resumed
 }
 
-// GOOD: Guard with isActive
+// CORRECT: Guard with isActive
 suspend fun good(): String = suspendCancellableCoroutine { cont ->
     api.onSuccess { if (cont.isActive) cont.resume(it) }
     api.onRetry { if (cont.isActive) cont.resume(it) }
@@ -1344,7 +1344,7 @@ suspend fun good(): String = suspendCancellableCoroutine { cont ->
 ```
 
 ```kotlin
-// BAD: Non-thread-safe invokeOnCancellation cleanup (races with callback thread)
+// WRONG: Non-thread-safe invokeOnCancellation cleanup (races with callback thread)
 suspend fun badCleanup(): Result = suspendCancellableCoroutine { cont ->
     var cleanedUp = false
 
@@ -1376,7 +1376,7 @@ suspend fun badCleanup(): Result = suspendCancellableCoroutine { cont ->
     }
 }
 
-// GOOD: Idempotent cleanup shared by callback and cancellation paths
+// CORRECT: Idempotent cleanup shared by callback and cancellation paths
 suspend fun goodCleanup(): Result = suspendCancellableCoroutine { cont ->
     val cleanedUp = java.util.concurrent.atomic.AtomicBoolean(false)
 
@@ -1466,12 +1466,12 @@ suspend fun restorePurchases(): CustomerInfo =
 #### Anti-Pattern: Losing Error Metadata
 
 ```kotlin
-// BAD: Throws away typed error code/cause metadata
+// WRONG: Throws away typed error code/cause metadata
 onError = { error ->
     cont.resumeWithException(Exception(error.message))
 }
 
-// GOOD: Preserve structured error for caller handling
+// CORRECT: Preserve structured error for caller handling
 onError = { error ->
     cont.resumeWithException(PurchaseBridgeException(error))
 }
@@ -1487,7 +1487,7 @@ Quick-reference table of coroutine and Flow mistakes that are easy to miss durin
 that breaks structured concurrency.
 
 ```kotlin
-// BAD: redundant SupervisorJob, creates orphaned scope
+// WRONG: redundant SupervisorJob, creates orphaned scope
 class MyViewModel : ViewModel() {
     private val scope = CoroutineScope(viewModelScope.coroutineContext + SupervisorJob())
 
@@ -1496,7 +1496,7 @@ class MyViewModel : ViewModel() {
     }
 }
 
-// GOOD: viewModelScope already has SupervisorJob
+// CORRECT: viewModelScope already has SupervisorJob
 class MyViewModel : ViewModel() {
     fun load() {
         viewModelScope.launch { /* ... */ }
@@ -1510,13 +1510,13 @@ In `supervisorScope`, exceptions from unawaited `async` blocks are silently swal
 completes exceptionally but nobody observes it. Use `launch` when you don't need the result.
 
 ```kotlin
-// BAD: exception silently lost - nobody calls await()
+// WRONG: exception silently lost - nobody calls await()
 suspend fun syncAll() = supervisorScope {
     async { syncUsers() }   // if this throws, nobody knows
     async { syncOrders() }  // same problem
 }
 
-// GOOD: use launch when you don't need the return value
+// CORRECT: use launch when you don't need the return value
 suspend fun syncAll() = supervisorScope {
     launch { syncUsers() }
     launch { syncOrders() }
@@ -1530,13 +1530,13 @@ Transform lambdas in `combine`, `map`, and similar operators re-execute on every
 duplicate side effects.
 
 ```kotlin
-// BAD: launches a coroutine on every resubscription (rotation fires it again)
+// WRONG: launches a coroutine on every resubscription (rotation fires it again)
 val uiState = combine(userFlow, settingsFlow) { user, settings ->
     viewModelScope.launch { analytics.trackView(user.id) } // fires on every rotation
     UiState(user, settings)
 }
 
-// GOOD: move side effects to onEach or a dedicated handler
+// CORRECT: move side effects to onEach or a dedicated handler
 val uiState = combine(userFlow, settingsFlow) { user, settings ->
     UiState(user, settings)
 }.onEach { state ->
@@ -1551,13 +1551,13 @@ sequential fetch that re-executes on every upstream emission. Use `combine` to m
 reactively instead.
 
 ```kotlin
-// BAD: hidden suspend call inside combine, re-fetches on every emission
+// WRONG: hidden suspend call inside combine, re-fetches on every emission
 val uiState = userFlow.map { user ->
     val settings = settingsFlow.first() // blocks, re-fetches every time userFlow emits
     UiState(user, settings)
 }
 
-// GOOD: combine both flows reactively
+// CORRECT: combine both flows reactively
 val uiState = combine(userFlow, settingsFlow) { user, settings ->
     UiState(user, settings)
 }
@@ -1569,7 +1569,7 @@ A common pattern is cancelling a previous `Job` and re-launching on new input. `
 handles this automatically and is less error-prone.
 
 ```kotlin
-// BAD: manual Job? tracking
+// WRONG: manual Job? tracking
 class SearchViewModel : ViewModel() {
     private var searchJob: Job? = null
 
@@ -1582,7 +1582,7 @@ class SearchViewModel : ViewModel() {
     }
 }
 
-// GOOD: flatMapLatest cancels previous automatically
+// CORRECT: flatMapLatest cancels previous automatically
 class SearchViewModel : ViewModel() {
     private val query = MutableStateFlow("")
 

@@ -178,7 +178,7 @@ class MyApplication : Application() {
             // Use this for production profiling of sampled transactions
             options.profilesSampleRate = 1.0
             
-            // Alternative: profileSessionSampleRate profiles % of sessions (not transactions)
+            // Use profileSessionSampleRate to profile a percent of sessions (not per-transaction)
             // Only use ONE of profilesSampleRate OR profileSessionSampleRate, not both
             // options.profileSessionSampleRate = 0.2
             
@@ -425,7 +425,7 @@ plugins {
 }
 ```
 
-**Switching providers:** Simply change the binding and convention plugin. Feature modules remain unchanged.
+**Switching providers:** Change the binding and convention plugin. Feature modules remain unchanged.
 
 ## Rules
 

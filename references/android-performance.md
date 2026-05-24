@@ -619,24 +619,24 @@ Required:
 
 1. **Hoist invariants out of loops.**
 ```kotlin
-// Bad
+// WRONG
 for (i in 0 until items.size) {
     process(items[i])
 }
 
-// Good
+// CORRECT
 items.forEach(::process)
 ```
 
 2. **Use `StringBuilder` for any concatenation in a loop.**
 ```kotlin
-// Bad
+// WRONG
 var result = ""
 for (i in 1..1000) {
     result += "Item $i\n"
 }
 
-// Good
+// CORRECT
 val result = StringBuilder()
 for (i in 1..1000) {
     result.append("Item $i\n")
@@ -645,11 +645,11 @@ for (i in 1..1000) {
 
 3. **Cache compiled `Regex` instances.**
 ```kotlin
-// Bad
+// WRONG
 fun validateEmail(email: String): Boolean =
     email.matches(Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"))
 
-// Good
+// CORRECT
 private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")
 
 fun validateEmail(email: String): Boolean = email.matches(EMAIL_REGEX)
@@ -661,19 +661,19 @@ Required:
 
 1. **Always release `WakeLock` or acquire with a timeout.**
 ```kotlin
-// Bad
+// WRONG
 wakeLock.acquire()
 
-// Good
+// CORRECT
 wakeLock.acquire(10 * 60 * 1000L)
 ```
 
 2. **Use `PRIORITY_BALANCED_POWER_ACCURACY` and intervals ≥ 30 s for foreground location.**
 ```kotlin
-// Bad
+// WRONG
 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0f, listener)
 
-// Good
+// CORRECT
 val locationRequest = LocationRequest.create().apply {
     interval = 60000
     fastestInterval = 30000
@@ -1137,14 +1137,14 @@ Every frame runs three phases. State reads in each phase only trigger work for t
 Read state in the layout or draw phase instead of composition to avoid recomposition:
 
 ```kotlin
-// Bad: read in composition phase
+// WRONG: read in composition phase
 @Composable
 fun AnimatedBox(offsetState: State<Float>) {
     val x = offsetState.value
     Box(modifier = Modifier.offset(x.dp, 0.dp))
 }
 
-// Good: deferred to layout phase
+// CORRECT: deferred to layout phase
 @Composable
 fun AnimatedBox(offsetState: State<Float>) {
     Box(
@@ -1179,7 +1179,7 @@ Enabled by default on the current Compose compiler. Recomposition skipping rules
 - `@Stable` and `@Immutable` annotations are critical for custom types
 
 ```kotlin
-// Good: stable lambda (captures only stable Int)
+// CORRECT: stable lambda (captures only stable Int)
 @Composable
 fun Counter(count: Int) {
     Button(onClick = { println(count) }) {
@@ -1187,7 +1187,7 @@ fun Counter(count: Int) {
     }
 }
 
-// Bad: unstable parameter
+// WRONG: unstable parameter
 @Composable
 fun UserCard(config: Config) {
     Text(config.title)
@@ -1205,7 +1205,7 @@ Stability annotations (`@Immutable`, `@Stable`): [compose-patterns.md → Stabil
 Only recomposes when the derived result actually changes, not on every input change:
 
 ```kotlin
-// Bad: filter recomputed every recomposition
+// WRONG: filter recomputed every recomposition
 @Composable
 fun FilteredList(items: List<Item>, query: String) {
     val filtered = items.filter { query in it.title }
@@ -1214,7 +1214,7 @@ fun FilteredList(items: List<Item>, query: String) {
     }
 }
 
-// Good
+// CORRECT
 @Composable
 fun FilteredList(items: List<Item>, query: String) {
     val filtered by remember(items, query) {
@@ -1240,10 +1240,10 @@ Only use `derivedStateOf` for non-trivial computations. For cheap operations (st
 ### remember with Keys
 
 ```kotlin
-// Bad: recomputed every recomposition
+// WRONG: recomputed every recomposition
 val metadata = computeMetadata(id)
 
-// Good
+// CORRECT
 val metadata = remember(id) { computeMetadata(id) }
 
 // Multiple keys
@@ -1303,13 +1303,13 @@ High recomposition counts indicate:
 ### Common Hot Paths
 
 ```kotlin
-// Bad: new ButtonColors per recomposition
+// WRONG: new ButtonColors per recomposition
 Button(
     colors = ButtonDefaults.buttonColors(
         containerColor = if (isPressed) Color.Red else Color.Blue
     )
 ) { Text("Click") }
-// Good
+// CORRECT
 val buttonColors = remember(isPressed) {
     ButtonDefaults.buttonColors(
         containerColor = if (isPressed) Color.Red else Color.Blue
@@ -1317,11 +1317,11 @@ val buttonColors = remember(isPressed) {
 }
 Button(colors = buttonColors) { Text("Click") }
 
-// Bad: filter inside items()
+// WRONG: filter inside items()
 LazyColumn {
     items(items.filter(predicate)) { ItemRow(it) }
 }
-// Good
+// CORRECT
 val filtered by remember(items, predicate) {
     derivedStateOf { items.filter(predicate) }
 }
@@ -1329,14 +1329,14 @@ LazyColumn {
     items(filtered) { ItemRow(it) }
 }
 
-// Bad: per-item remember + missing key
+// WRONG: per-item remember + missing key
 LazyColumn {
     items(users) { user ->
         val state = remember { mutableStateOf(user) }
         UserRow(state.value)
     }
 }
-// Good
+// CORRECT
 LazyColumn {
     items(users, key = { it.id }) { user ->
         UserRow(user)
@@ -1349,11 +1349,11 @@ LazyColumn {
 `BasicTextField2` (`rememberTextFieldState()`) is required for high-frequency input; `TextField` / `OutlinedTextField` round-trip through the ViewModel and drop keystrokes under load.
 
 ```kotlin
-// Bad
+// WRONG
 var text by remember { mutableStateOf("") }
 TextField(value = text, onValueChange = { text = it })
 
-// Good
+// CORRECT
 val state = rememberTextFieldState()
 BasicTextField2(state = state)
 ```
