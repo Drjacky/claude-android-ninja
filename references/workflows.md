@@ -4,6 +4,21 @@ Required: use when Quick Reference has no matching row, or the task needs greenf
 
 Pick one `**...?**` block below; follow its `→` lines only before opening unrelated references.
 
+For files with a `-quick.md` companion, open the **quick** file first; open the full reference only for the linked section (samples, checklists, deep anchors).
+
+**Existing project - first 5 minutes**
+
+→ Read `settings.gradle.kts`, `gradle/libs.versions.toml`, and the `app` module `build.gradle.kts` (use the real app module name) - [dependencies.md → Existing project (brownfield)](dependencies.md#existing-project-brownfield), [modularization.md → Existing project alignment](modularization.md#existing-project-alignment)  
+→ Note stack signals: Navigation 2 vs 3, Room 2 vs 3, single- vs multi-module, XML- vs Compose-heavy UI  
+→ If the project stack differs from skill templates, open [migration.md](migration.md) before copying `assets/` or bumping catalog pins  
+→ Forbidden: replace the user's `libs.versions.toml` with `assets/libs.versions.toml.template` without an explicit user request  
+→ Then pick a `**...?**` block below for the task
+
+**Multi-hop recipes (common paths)**
+
+1. **New feature screen:** [modularization.md](modularization.md) → [compose-patterns-quick.md](compose-patterns-quick.md) → [architecture.md](architecture.md)  
+2. **Offline-first list + API:** [android-data-sync-quick.md](android-data-sync-quick.md) → [compose-patterns.md → Offline-first paging](compose-patterns.md#offline-first-paging-and-remotemediator) → [architecture.md](architecture.md)  
+3. **Brownfield toolchain bump:** [dependencies.md → Version strategy](dependencies.md#version-strategy) → [migration.md](migration.md) → `./gradlew help` then `:app:assembleDebug` per [gradle-setup.md → Verify after toolchain or module changes](gradle-setup.md#verify-after-toolchain-or-module-changes)
 
 **Creating a new project?**
 → Start with `../assets/settings.gradle.kts.template` for settings and module includes  
@@ -37,19 +52,18 @@ Pick one `**...?**` block below; follow its `→` lines only before opening unre
 → Follow dependency flow: Feature → Core/Domain → Core/Data
 
 **Building UI screens/components?**
-→ Read [compose-patterns.md](compose-patterns.md) for screen architecture, state, components, modifiers  
-→ Use [compose-patterns.md](compose-patterns.md) -> State Management -> "Loading and refresh UX" for stable layout during loads and refreshes (avoid full-screen spinners that wipe context)  
-→ Use [android-theming.md](android-theming.md) for Material 3 colors, typography, and shapes  
+→ Read [compose-patterns-quick.md](compose-patterns-quick.md); open [compose-patterns.md](compose-patterns.md) only for linked sections (e.g. [Loading and refresh UX](compose-patterns.md#loading-and-refresh-ux))  
+→ Use [android-theming-quick.md](android-theming-quick.md) for Material 3 colors, typography, and shapes  
 → **Always** align Kotlin code with [kotlin-patterns.md](kotlin-patterns.md)  
 → Create Screen + ViewModel + UiState in the feature module  
 → Use shared components from `core/ui` when possible
 
 **Handling State and Events?**
-→ Use `StateFlow` for state; `Channel` + `receiveAsFlow()` for strict one-shot UI commands; `SharedFlow` for multicast or replay-intended events (see [coroutines-patterns.md](coroutines-patterns.md))
-→ Survive process death with `SavedStateHandle` (see [compose-patterns.md](compose-patterns.md))
+→ Use `StateFlow` for state; `Channel` + `receiveAsFlow()` for strict one-shot UI commands; `SharedFlow` for multicast or replay-intended events (see [coroutines-patterns-quick.md](coroutines-patterns-quick.md))
+→ Survive process death with `SavedStateHandle` (see [compose-patterns.md → State Management](compose-patterns.md#state-management))
 
 **Setting up app theme (colors, typography, shapes)?**
-→ Follow [android-theming.md](android-theming.md) for Material 3 theming and dynamic colors  
+→ Follow [android-theming-quick.md](android-theming-quick.md); open [android-theming.md](android-theming.md) only for linked sections below  
 → Use semantic color roles from `MaterialTheme.colorScheme` (never hardcoded colors); pair every fill with its `on*` partner - see [Color Pairing Rules](android-theming.md#color-pairing-rules)  
 → Declare the **full** M3 color set in `Color.kt` (surface containers, dim/bright, `*Fixed`/`*FixedDim`) so dynamic color and contrast variants stay consistent - see [Full Color Role Reference](android-theming.md#full-color-role-reference-m3) and [Surface Container Hierarchy](android-theming.md#surface-container-hierarchy)  
 → Express depth via container tone first, shadows only for components that float over arbitrary content - see [Tonal Elevation vs Shadows](android-theming.md#tonal-elevation-vs-shadows)  
@@ -62,7 +76,7 @@ Pick one `**...?**` block below; follow its `→` lines only before opening unre
 
 **Writing any Kotlin code?**
 → **Always** follow [kotlin-patterns.md](kotlin-patterns.md)  
-→ Ensure practices align with [architecture.md](architecture.md), [modularization.md](modularization.md), and [compose-patterns.md](compose-patterns.md)
+→ Ensure practices align with [architecture.md](architecture.md), [modularization.md](modularization.md), and [compose-patterns-quick.md](compose-patterns-quick.md)
 
 **Setting up data/domain layers?**
 → Read [architecture.md](architecture.md)  
@@ -72,13 +86,13 @@ Pick one `**...?**` block below; follow its `→` lines only before opening unre
 → Use DataStore for simple key-value pairs, Room 3 for complex relational data (`suspend` / `Flow` DAOs, `SQLiteDriver`)
 
 **Implementing Lists and Scrolling?**
-→ Use `LazyColumn`/`LazyRow` with stable keys and `contentType` (see [compose-patterns.md](compose-patterns.md))
-→ For large datasets, use Paging 3 (see [compose-patterns.md](compose-patterns.md) -> "Paging 3")
+→ Use `LazyColumn`/`LazyRow` with stable keys and `contentType` (see [compose-patterns-quick.md](compose-patterns-quick.md) → Lists & Scrolling)
+→ For large datasets, use Paging 3 (see [compose-patterns.md → Lists & Scrolling](compose-patterns.md#lists-scrolling))
 → For Room-backed grids with a remote API, use `RemoteMediator` ([compose-patterns.md](compose-patterns.md#offline-first-paging-and-remotemediator))
 
 **Handling Navigation?**
-→ Use Navigation3 for adaptive navigation (see [android-navigation.md](android-navigation.md))
-→ Follow [android-navigation.md](android-navigation.md) for state management and adaptive navigation
+→ Use Navigation3 for adaptive navigation (see [android-navigation-quick.md](android-navigation-quick.md))
+→ Open [android-navigation.md](android-navigation.md) only for sections linked from the quick file (e.g. state management, anti-patterns)
 → See [modularization.md](modularization.md) for feature module navigation components (Destination, Navigator, Graph)
 → Configure navigation graph in the app module; use feature navigation destinations and navigator interfaces
 → Avoid navigation anti-patterns (see [android-navigation.md](android-navigation.md) -> "Navigation Anti-Patterns")
@@ -94,23 +108,23 @@ Pick one `**...?**` block below; follow its `→` lines only before opening unre
 → Forbidden: a manual wake lock alongside `FusedLocationProviderClient` callbacks, `MediaSessionService` audio, or any system API that already wakes the CPU
 
 **Testing?**
-→ Read [testing.md](testing.md) for testing philosophy and patterns
-→ Use Turbine for testing Flow emissions (see [testing.md](testing.md) -> "Testing Flow Emissions with Turbine")
+→ Read [testing-quick.md](testing-quick.md) for testing philosophy and routing
+→ Use Turbine for testing Flow emissions (see [testing.md → Testing Flow Emissions with Turbine](testing.md#testing-flow-emissions-with-turbine))
 
 **Implementing offline-first or data synchronization?**
-→ Follow [android-data-sync.md](android-data-sync.md) for sync strategies, conflict resolution, and cache invalidation  
+→ Follow [android-data-sync-quick.md](android-data-sync-quick.md); open [android-data-sync.md](android-data-sync.md) for Worker/repository samples  
 → Use Room 3 as single source of truth with sync metadata (syncStatus, lastModified)  
 → Schedule background sync with WorkManager  
 → Monitor network state before syncing  
 
 **Setting up deep links, App Links, Digital Asset Links, verification, Dynamic App Links, or custom schemes?**
-→ Read [android-navigation.md](android-navigation.md) → "Deep Links" for `NavKey` parsing, synthetic back stack, manifest filters, `assetlinks.json`, verification, `DomainVerificationManager`, Dynamic App Links (API 35), custom schemes, troubleshooting  
+→ Read [android-navigation-quick.md](android-navigation-quick.md) first; then [android-navigation.md → Deep Links](android-navigation.md#deep-links) for `NavKey` parsing, synthetic back stack, manifest filters, `assetlinks.json`, verification, `DomainVerificationManager`, Dynamic App Links (API 35), custom schemes, troubleshooting  
 → Use [testing.md](testing.md) → "Testing Deep Links" for `am start`, `pm set-app-links` / `pm verify-app-links --re-verify` / `pm get-app-links` / `dumpsys package d`, Digital Asset Links REST (append `return_relation_extensions=true` for dynamic rules), custom-scheme launch semantics, and instrumented `onNewIntent` tests  
 → Required: Play Console → Release → Setup → App signing → uppercase SHA-256 in `assetlinks.json`; deep-link Activity `android:exported="true"`, `android:launchMode="singleTask"`, `onNewIntent` + `setIntent`; `android:autoVerify="true"` only on HTTPS intent-filters  
 → Forbidden: security-critical flows on custom URI schemes - use HTTPS App Links  
 
 **Adding tests?**
-→ Use [testing.md](testing.md) for patterns and examples  
+→ Use [testing-quick.md](testing-quick.md) for patterns and routing; open [testing.md](testing.md) for linked sections below  
 → Use [testing.md](testing.md#pre-release-ui-state-checklist) for empty, loading, error, offline, permission-denied, and session-loss routing before tightening coverage  
 → Use [testing.md](testing.md#preview-screenshot-testing-vs-roborazzi) when choosing Compose Preview Screenshot Testing vs Roborazzi for visual regression  
 → Use [testing.md](testing.md) → "Screenshot Testing" for Compose Preview Screenshot Testing setup  
@@ -151,7 +165,7 @@ Pick one `**...?**` block below; follow its `→` lines only before opening unre
 → Use Sentry/Firebase init from [crashlytics.md](crashlytics.md) to ship StrictMode logs  
 
 **Choosing design patterns for a new feature, business logic, or system?**
-→ Use [design-patterns.md](design-patterns.md) for Android-focused pattern guidance  
+→ Use [design-patterns-quick.md](design-patterns-quick.md) for Android-focused pattern routing  
 → Align with [architecture.md](architecture.md) and [modularization.md](modularization.md)  
 
 **Measuring performance regressions or startup/jank?**
@@ -177,7 +191,7 @@ Pick one `**...?**` block below; follow its `→` lines only before opening unre
 → Use `rememberInfiniteTransition` for animated effects  
 
 **Ensuring accessibility compliance (TalkBack, touch targets, color contrast)?**
-→ Follow [android-accessibility.md](android-accessibility.md) for semantic properties and WCAG guidelines  
+→ Follow [android-accessibility-quick.md](android-accessibility-quick.md); open [android-accessibility.md](android-accessibility.md) for WCAG tables and Espresso samples  
 → Provide `contentDescription` for all icons and images  
 → Ensure 48dp × 48dp minimum touch targets  
 → Test with TalkBack and Accessibility Scanner  
@@ -187,9 +201,9 @@ Pick one `**...?**` block below; follow its `→` lines only before opening unre
 → Use [android-graphics.md](android-graphics.md) for Palette API and color extraction  
 
 **Implementing complex coroutine flows or background work?**
-→ Follow [coroutines-patterns.md](coroutines-patterns.md) for structured concurrency patterns  
+→ Follow [coroutines-patterns-quick.md](coroutines-patterns-quick.md); open [coroutines-patterns.md](coroutines-patterns.md) for `callbackFlow` samples and pitfall code blocks  
 → Use appropriate dispatchers (IO, Default, Main) and proper cancellation handling  
-→ Prefer `StateFlow` (and `SharedFlow` where appropriate) over `Channel` for observable **state**; use `Channel` for one-shot commands as in [coroutines-patterns.md](coroutines-patterns.md)  
+→ Prefer `StateFlow` (and `SharedFlow` where appropriate) over `Channel` for observable **state**; use `Channel` for one-shot commands as in [coroutines-patterns-quick.md](coroutines-patterns-quick.md)  
 → Use `callbackFlow` to wrap Android callback APIs (connectivity, sensors, location) into Flow  
 → Use `suspendCancellableCoroutine` for one-shot callbacks (Play Services tasks, biometrics)  
 → Use `combine()` to merge multiple Flows in ViewModels, `shareIn` to share expensive upstream  
@@ -203,7 +217,7 @@ Pick one `**...?**` block below; follow its `→` lines only before opening unre
 **Refactoring existing code or improving architecture?**
 → Review [architecture.md](architecture.md) for layer responsibilities  
 → Read [architecture.md](architecture.md) -> "Cross-cutting anti-patterns (quick reference)" for common layering mistakes  
-→ Check [design-patterns.md](design-patterns.md) for applicable patterns  
+→ Check [design-patterns-quick.md](design-patterns-quick.md) for applicable patterns  
 → Follow [kotlin-patterns.md](kotlin-patterns.md) for Kotlin-specific improvements  
 → Ensure compliance with [modularization.md](modularization.md) dependency rules  
 
@@ -222,7 +236,7 @@ Pick one `**...?**` block below; follow its `→` lines only before opening unre
 → Use [gradle-setup.md → R8 Keep-Rules Audit](gradle-setup.md#r8-keep-rules-audit) for redundant-library removal, impact hierarchy, subsuming-rule detection, reflection narrowing, and AGP 9 default-optimization re-audit
 
 **Going edge-to-edge / fixing IME, insets, or system-bar bugs?**
-→ Use [compose-patterns.md](compose-patterns.md) → "Edge-to-Edge (Mandatory on API 36)" for IME insets (`fitInside(WindowInsetsRulers.Ime.current)` vs `imePadding()` ordering and double-padding pitfalls), system-bar appearance/contrast (`isAppearanceLight*Bars`, `isNavigationBarContrastEnforced`), `NavigationSuiteScaffold` / pane-scaffold inset handling, full-screen `Dialog` `decorFitsSystemWindows`, `StatusBarProtection` scrim, and the per-Activity edge-to-edge checklist  
+→ Use [compose-patterns-quick.md](compose-patterns-quick.md) first; then [compose-patterns.md → Edge-to-Edge (Mandatory on API 36)](compose-patterns.md#edge-to-edge-mandatory-on-api-36) for IME insets (`fitInside(WindowInsetsRulers.Ime.current)` vs `imePadding()` ordering and double-padding pitfalls), system-bar appearance/contrast (`isAppearanceLight*Bars`, `isNavigationBarContrastEnforced`), `NavigationSuiteScaffold` / pane-scaffold inset handling, full-screen `Dialog` `decorFitsSystemWindows`, `StatusBarProtection` scrim, and the per-Activity edge-to-edge checklist  
 → At target SDK 37, add IME visibility-after-rotation handling in the same guide's `#### IME (soft keyboard) insets` block  
 → Manifest must set `android:windowSoftInputMode="adjustResize"` for any Activity hosting text input
 
@@ -232,14 +246,14 @@ Pick one `**...?**` block below; follow its `→` lines only before opening unre
 → System traces in Studio: [android-performance.md → Android Performance Analyzer (APA)](android-performance.md#android-performance-analyzer-apa)  
 → For ANR, jank, or main-thread claims without measurements, follow [android-performance.md → Perfetto (system traces)](android-performance.md#perfetto-system-traces) before concluding cause  
 → Use [android-debugging.md](android-debugging.md) for LeakCanary and heap dump analysis  
-→ Check [coroutines-patterns.md](coroutines-patterns.md) for coroutine cancellation patterns  
+→ Check [coroutines-patterns-quick.md](coroutines-patterns-quick.md) for coroutine cancellation routing  
 
 **Setting up CI/CD or code quality checks?**
 → Use [android-ci-cd.md](android-ci-cd.md) for Play-bound AAB, tracks, signing boundaries, staged rollout, and upload automation routing  
 → Play Console blocks upload for identity verification: [android-ci-cd.md → Play developer verification](android-ci-cd.md#play-developer-verification) (outside-repo human step)  
 → Use [code-quality.md](code-quality.md) for Detekt baseline and CI integration  
 → Use [gradle-setup.md](gradle-setup.md) for build cache and convention plugins  
-→ Use [testing.md](testing.md) for test organization and coverage  
+→ Use [testing-quick.md](testing-quick.md) for test organization routing  
 
 **Handling sensitive data or privacy concerns?**
 → Follow [crashlytics.md](crashlytics.md) for data scrubbing patterns  
@@ -260,18 +274,18 @@ Pick one `**...?**` block below; follow its `→` lines only before opening unre
 → `MissingValueException` / unresolved providers on `compile*JavaWithJavac`: isolate JaCoCo Tier 2 (`ScopedArtifacts` combined report) per [android-code-coverage.md](android-code-coverage.md) before chasing Kotlin or KSP bumps  
 
 **Adding Compose animations?**
-→ Use [compose-patterns.md](compose-patterns.md) → "Animation" for `AnimatedVisibility`, `AnimatedContent`, `animate*AsState`, `Animatable`, shared elements  
+→ Use [compose-patterns-quick.md](compose-patterns-quick.md) first; then [compose-patterns.md → Animation](compose-patterns.md#animation) for `AnimatedVisibility`, `AnimatedContent`, `animate*AsState`, `Animatable`, shared elements  
 → Use `graphicsLayer` for GPU-accelerated transforms (no recomposition)  
 → Always provide `label` parameter for Layout Inspector debugging  
 
 **Using side effects (LaunchedEffect, DisposableEffect)?**
-→ Use [compose-patterns.md](compose-patterns.md) → "Side Effects" for effect selection guide  
+→ Use [compose-patterns-quick.md](compose-patterns-quick.md) first; then [compose-patterns.md → Side Effects](compose-patterns.md#side-effects) for effect selection guide  
 → `LaunchedEffect(key)` for state-driven coroutines, `rememberCoroutineScope` for event-driven  
 → `DisposableEffect` for listener/resource cleanup, always include `onDispose`  
 → `LifecycleResumeEffect` for onResume/onPause work (camera, media), `LifecycleStartEffect` for onStart/onStop (location, sensors)  
 
 **Working with Modifier ordering or custom modifiers?**
-→ Use [compose-patterns.md](compose-patterns.md) → "Modifiers" for chain ordering rules and patterns  
+→ Use [compose-patterns-quick.md](compose-patterns-quick.md) first; then [compose-patterns.md → Modifiers](compose-patterns.md#modifiers) for chain ordering rules and patterns  
 → Use `Modifier.Node` for custom modifiers (not deprecated `Modifier.composed`)  
 → Order: size → padding → drawing → interaction  
 
@@ -280,21 +294,21 @@ Pick one `**...?**` block below; follow its `→` lines only before opening unre
 → See [compose-patterns.md](compose-patterns.md) → "Deprecated Patterns & Migrations" for a summary list  
 
 **Optimizing Compose recomposition or stability?**
-→ Use [compose-patterns.md](compose-patterns.md) for `@Immutable`/`@Stable` annotations  
+→ Use [compose-patterns-quick.md](compose-patterns-quick.md) first; then [compose-patterns.md → Stability annotations](compose-patterns.md#stability-annotations-immutable-vs-stable) for `@Immutable`/`@Stable`  
 → Use [android-performance.md](android-performance.md) → "Compose Recomposition Performance" for three phases, deferred state reads, Strong Skipping Mode  
 → Check [gradle-setup.md](gradle-setup.md) for Compose Compiler metrics and stability reports  
 → Use [kotlin-patterns.md](kotlin-patterns.md) for immutable data structures  
 
 **Working with databases (Room 3)?**
 → Define DAOs and entities in `core/database` per [modularization.md](modularization.md); use **`androidx.room3`**, KSP, and **`setDriver(BundledSQLiteDriver())`** on the builder (see `app.android.room` convention)  
-→ Use [testing.md](testing.md) for in-memory database testing and Room 3 migration tests  
+→ Use [testing-quick.md](testing-quick.md) first; then [testing.md](testing.md) for in-memory database and Room 3 migration test samples  
 → Follow [architecture.md](architecture.md) for repository patterns  
 → Upgrading from Room 2.x: [migration.md → Room 2.x to Room 3](migration.md#room-2x-to-room-3)  
 
 **Need internationalization/localization (i18n/l10n)?**
 → Use [android-i18n.md](android-i18n.md) for string resources, plurals, and RTL support  
-→ Follow [compose-patterns.md](compose-patterns.md) for RTL-aware Compose layouts  
-→ Use [testing.md](testing.md) for locale-specific testing  
+→ Follow [compose-patterns-quick.md](compose-patterns-quick.md); open [compose-patterns.md](compose-patterns.md) for RTL layout samples  
+→ Use [testing-quick.md](testing-quick.md); open [testing.md → Localization Testing](testing.md#localization-testing) for locale-specific testing  
 
 **Implementing network calls (Retrofit)?**
 → Use [architecture.md](architecture.md) → "Network Layer Setup" for Retrofit service interfaces, Hilt NetworkModule, and AuthInterceptor  
@@ -309,14 +323,14 @@ Pick one `**...?**` block below; follow its `→` lines only before opening unre
 
 **Need code coverage reporting?**
 → Use [android-code-coverage.md](android-code-coverage.md) for JaCoCo setup  
-→ Follow [testing.md](testing.md) for test strategies  
+→ Follow [testing-quick.md](testing-quick.md) for test routing  
 → Check [gradle-setup.md](gradle-setup.md) for convention plugin integration
 
 **Implementing security features (encryption, biometrics, pinning)?**
-→ Use [android-security.md](android-security.md) for comprehensive security guide  
+→ Use [android-security-quick.md](android-security-quick.md) for security routing; open [android-security.md](android-security.md) for Play Integrity samples and checklists  
 → Follow [android-permissions.md](android-permissions.md) for runtime permissions  
 → Check [crashlytics.md](crashlytics.md) for PII scrubbing and data privacy
 
 **Implementing fraud-resistant or high-value flows (payments, session bootstrap, integrity-gated APIs)?**
-→ Read [android-security.md](android-security.md): **Device trust and abuse resistance**, **Play Integrity API** (prerequisites, Standard vs Classic, server checklist, errors, remediation), **Root and Emulator Detection** (how this fits next to Play Integrity), **Security Checklist**  
-→ If Cloud Console / Play Console enablement or the **Google Cloud project number** is missing, list the missing prerequisites (see that guide) and stop before wiring client code
+→ Read [android-security-quick.md](android-security-quick.md) first; then [android-security.md](android-security.md) sections: [Device trust](android-security.md#device-trust-and-abuse-resistance), [Play Integrity API](android-security.md#play-integrity-api), [Root & Emulator Detection](android-security.md#root-emulator-detection), [Security Checklist](android-security.md#security-checklist)  
+→ If Cloud Console / Play Console enablement or the **Google Cloud project number** is missing, list the missing prerequisites (see [android-security-quick.md](android-security-quick.md)) and stop before wiring client code
