@@ -65,7 +65,7 @@ Forbidden:
 - Bump AGP/Kotlin/KSP/Room in the same task as an unrelated feature without `./gradlew help` passing on the result.
 - Assume `compileSdk` / `targetSdk` 37 when the project pins lower values.
 
-Greenfield bootstrap pins: [SKILL.md](../SKILL.md) Workflow Decision Tree ("Creating a new project?") and `assets/libs.versions.toml.template`.
+Greenfield bootstrap pins: [workflows.md](workflows.md) ("Creating a new project?") and `assets/libs.versions.toml.template`.
 
 ### Stability Requirements
 

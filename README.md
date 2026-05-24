@@ -49,7 +49,8 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 - Play CI/CD: AAB, release tracks, signing boundaries, staged rollout, upload automation (fastlane vs Gradle Play Publisher routing), and Play developer identity verification (Console human step outside the repo; [`references/android-ci-cd.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-ci-cd.md))
 
 ## Key Files
-- [`SKILL.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/SKILL.md) - entry point and workflow decision tree
+- [`SKILL.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/SKILL.md) - entry point (Quick Reference, Examples, Troubleshooting)
+- [`references/workflows.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/workflows.md) - extended task routing when Quick Reference is not enough
 - [`references/architecture.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/architecture.md) - architecture principles, data/domain/ui/common layers, nullable network DTOs, and flows
 - [`references/modularization.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/modularization.md) - module structure, dependency rules, and feature module creation
 - [`references/android-navigation.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/android-navigation.md) - Navigation3 (stable pin, deep links, shared elements), adaptive navigation, large-screen quality tiers
@@ -101,7 +102,7 @@ This skill is focused on Android app development using:
 
 ## Installation
 
-Agent entry point after install: [`SKILL.md`](SKILL.md) (Quick Reference table and Workflow Decision Tree). Open `references/` files only for the task at hand. Format spec: [agentskills.io](https://agentskills.io/home).
+Agent entry point after install: [`SKILL.md`](SKILL.md) (Quick Reference table; extended routing in [`references/workflows.md`](references/workflows.md)). Open `references/` files only for the task at hand. Format spec: [agentskills.io](https://agentskills.io/home).
 
 ### For AI agents
 
