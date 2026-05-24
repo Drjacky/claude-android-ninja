@@ -1,0 +1,22 @@
+name: Validate skill
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check internal markdown links
+        run: ./scripts/check-skill-links.sh
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Validate SKILL.md frontmatter (agentskills skills-ref)
+        run: |
+          uv tool install "skills-ref @ git+https://github.com/agentskills/agentskills.git#subdirectory=skills-ref"
+          skills-ref validate "${GITHUB_WORKSPACE}"

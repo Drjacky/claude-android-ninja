@@ -198,6 +198,17 @@ Use `--copy` instead of symlinks when your environment does not support symlinks
 - Agent session was restarted after copy or install.
 - `npx skills list` shows `claude-android-ninja` under the expected agent paths.
 
+### Validate skill package (contributors)
+
+From the repo root:
+
+```bash
+./scripts/check-skill-links.sh    # internal markdown links only
+./scripts/validate-skill.sh       # links + agentskills skills-ref frontmatter
+```
+
+CI runs the same checks on push and pull requests (`.github/workflows/validate-skill.yml`). `skills-ref` checks `name` / `description` frontmatter only; it does not require renaming `claude-android-ninja`.
+
 ## Contributing
 
 ### Request Missing Best Practices
