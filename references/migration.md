@@ -693,7 +693,7 @@ Room 3 is backed by the **`androidx.sqlite`** driver APIs. **`SupportSQLiteDatab
 - **Transactions:** e.g. **`runInTransaction`**-style usage moves to **`withWriteTransaction`** (see [Room 3 release notes](https://developer.android.com/jetpack/androidx/releases/room3)).
 - **Builder options** (e.g. pre-packaged database, query callback, multi-instance invalidation): verify each against the current [Room 3](https://developer.android.com/jetpack/androidx/releases/room3) and [Room training guide](https://developer.android.com/training/data-storage/room) for your AGP/targets; some APIs differ or moved with the driver model.
 
-Step-by-step **SupportSQLite → driver** guidance: [Migrate from SupportSQLite](https://developer.android.com/kotlin/multiplatform/room#migrate) (Android-relevant parts apply even in Android-only apps).
+**SupportSQLite → driver** migration: [Migrate from SupportSQLite](https://developer.android.com/kotlin/multiplatform/room#migrate) (Android-relevant parts apply even in Android-only apps).
 
 ### Composite relation keys (Room 3.0.0-alpha05+)
 
