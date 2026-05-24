@@ -412,7 +412,7 @@ class SettingsViewModel @Inject constructor(
 
 ### Complex Real-World Example
 
-[`crashlytics.md`](/references/crashlytics.md) defines the `CrashReporter` surface and provider-agnostic implementations.
+[`crashlytics.md`](crashlytics.md) defines the `CrashReporter` surface and provider-agnostic implementations.
 
 ```kotlin
 // Interfaces for different concerns
@@ -507,7 +507,7 @@ class AuthViewModel @Inject constructor(
 
 ### Creating Test Fakes
 
-[`crashlytics.md`](/references/crashlytics.md) carries the `CrashReporter` contract used by these fakes.
+[`crashlytics.md`](crashlytics.md) carries the `CrashReporter` contract used by these fakes.
 
 ```kotlin
 // Test fakes for delegated interfaces

@@ -2,7 +2,7 @@
 
 Required: local Room 3 DB is the single source of truth, UI observes it, all writes are local-first + WorkManager-scheduled.
 
-Kotlin code must align with [kotlin-patterns.md](/references/kotlin-patterns.md). Repository / data-layer rules: [architecture.md](/references/architecture.md). Async + structured concurrency: [coroutines-patterns.md](/references/coroutines-patterns.md). Foreground sync services: [android-notifications.md](/references/android-notifications.md).
+Kotlin code must align with [kotlin-patterns.md](kotlin-patterns.md). Repository / data-layer rules: [architecture.md](architecture.md). Async + structured concurrency: [coroutines-patterns.md](coroutines-patterns.md). Foreground sync services: [android-notifications.md](android-notifications.md).
 
 ## Table of Contents
 

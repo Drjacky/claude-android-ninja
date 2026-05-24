@@ -34,13 +34,13 @@ Always check `assets/libs.versions.toml.template` before adding or changing depe
 | Dependency injection | Hilt (required)                                                              | Manual DI, Koin                                    |
 | AndroidX             | `-ktx` artifacts (`core-ktx`, `lifecycle-runtime-ktx`, …)                    | `com.android.support.*` (deprecated)               |
 
-Hilt module patterns, scopes, and anti-patterns: [architecture.md → Dependency Injection Setup](/references/architecture.md#dependency-injection-setup).
+Hilt module patterns, scopes, and anti-patterns: [architecture.md → Dependency Injection Setup](architecture.md#dependency-injection-setup).
 
 ### Room 3
 Required artifacts: `androidx.room3:room3-runtime`, `sqlite-bundled`, KSP `room3-compiler` (see version catalog). DAOs are coroutine-first (`suspend`, `Flow`). Add `room3-paging` only when a DAO returns `PagingSource`; `room3-testing` only for instrumented DB tests.
 
 ### Media3
-Required for background playback at target SDK 37: `androidx.media3:media3-exoplayer`, `media3-session` (catalog `media3` version ref, bundle `media3-playback`). Pin from [Media3 releases](https://developer.android.com/jetpack/androidx/releases/media3). Playback rules: [android-media.md](/references/android-media.md).
+Required for background playback at target SDK 37: `androidx.media3:media3-exoplayer`, `media3-session` (catalog `media3` version ref, bundle `media3-playback`). Pin from [Media3 releases](https://developer.android.com/jetpack/androidx/releases/media3). Playback rules: [android-media.md](android-media.md).
 
 ### Navigation3 and SavedState
 Pin `navigation3` from [Navigation 3 releases](https://developer.android.com/jetpack/androidx/releases/navigation3) (template: latest stable). Pin `savedstateCompose` from [SavedState releases](https://developer.android.com/jetpack/androidx/releases/savedstate) when using `savedstate-compose` with `@Serializable` `NavKey` graphs.
@@ -88,7 +88,7 @@ These catalog entries stay on alpha until a feature-equivalent stable release sh
 - `androidxBiometric` - 1.1.0 stable lacks `BiometricPrompt` content view, logo, and `registerForAuthenticationResult()`; the alpha line is the only source for those APIs.
 - `tracing` - `tracing-wire-android` (Perfetto in-process tracing) is 2.x-only; the 1.3 stable line cannot be substituted.
 - `detekt` - 2.x is a new artifact group (`dev.detekt`); 1.23.x lives at `io.gitlab.arturbosch.detekt` and would require swapping coordinates.
-- `screenshot` - Compose Preview Screenshot Testing plugin line; still pre-stable on many stacks - bump only from Android Studio / AGP release notes and re-run `screenshotTest` validation after every pin change. Roborazzi is optional visual-regression tooling; pin `io.github.takahirom.roborazzi` artifacts in the catalog only when the project adopts it ([testing.md → Preview Screenshot Testing vs Roborazzi](/references/testing.md#preview-screenshot-testing-vs-roborazzi)).
+- `screenshot` - Compose Preview Screenshot Testing plugin line; still pre-stable on many stacks - bump only from Android Studio / AGP release notes and re-run `screenshotTest` validation after every pin change. Roborazzi is optional visual-regression tooling; pin `io.github.takahirom.roborazzi` artifacts in the catalog only when the project adopts it ([testing.md → Preview Screenshot Testing vs Roborazzi](testing.md#preview-screenshot-testing-vs-roborazzi)).
 
 ### Visual regression tooling (catalog)
 
@@ -261,7 +261,7 @@ dependencies {
 
 Use `assets/proguard-rules.pro.template` as the source of truth for all keep rules. It includes rules for every library in the version catalog (Retrofit, kotlinx-serialization, Room 3, OkHttp, Hilt, SQLCipher, etc.).
 
-Copy the template to `app/proguard-rules.pro` and adjust `com.example.*` package names. See [gradle-setup.md](/references/gradle-setup.md#r8-proguard-configuration) for build configuration.
+Copy the template to `app/proguard-rules.pro` and adjust `com.example.*` package names. See [gradle-setup.md](gradle-setup.md#r8-proguard-configuration) for build configuration.
 
 ## Adding a New Dependency
 
@@ -286,4 +286,4 @@ dependencies {
 }
 ```
 
-Convention-plugin and module wiring details: [gradle-setup.md](/references/gradle-setup.md).
+Convention-plugin and module wiring details: [gradle-setup.md](gradle-setup.md).

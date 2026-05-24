@@ -1,6 +1,6 @@
 # Design Patterns (Android-Focused)
 
-Pattern catalog for feature, module, business-logic, and utility design. Aligned with [architecture.md](/references/architecture.md) and [modularization.md](/references/modularization.md). Cache, conflict-resolution, and sync patterns live in [android-data-sync.md](/references/android-data-sync.md).
+Pattern catalog for feature, module, business-logic, and utility design. Aligned with [architecture.md](architecture.md) and [modularization.md](modularization.md). Cache, conflict-resolution, and sync patterns live in [android-data-sync.md](android-data-sync.md).
 
 ## Table of Contents
 1. [Principles](#principles)
@@ -14,7 +14,7 @@ Pattern catalog for feature, module, business-logic, and utility design. Aligned
 ## Principles
 
 Required:
-- Use composition and delegation over inheritance ([kotlin-delegation.md](/references/kotlin-delegation.md)).
+- Use composition and delegation over inheritance ([kotlin-delegation.md](kotlin-delegation.md)).
 - Keep patterns local to the layer they belong to (UI / Domain / Data).
 - Avoid framework-heavy base classes; keep components testable.
 - Use DI scopes for app-wide lifetimes; never roll manual singletons.
@@ -26,7 +26,7 @@ Required:
 ### MVVM (Model-View-ViewModel)
 - **When**: All feature modules (required base architecture).
 - **Android use**: ViewModel holds `StateFlow<UiState>`, Composables observe and render.
-- Full repository / state-flow contract: [architecture.md](/references/architecture.md).
+- Full repository / state-flow contract: [architecture.md](architecture.md).
 
 ```kotlin
 // Feature: Auth
@@ -86,7 +86,7 @@ fun AuthRoute(
 ### Repository Pattern
 - **When**: All data access (single source of truth).
 - **Android use**: Hide local/remote/cache complexity behind a clean interface.
-- Implementation contract: [architecture.md](/references/architecture.md).
+- Implementation contract: [architecture.md](architecture.md).
 
 ```kotlin
 // core/domain
@@ -498,7 +498,7 @@ fun provideCrashReporter(
 ### Delegation
 - **When**: You want to reuse behavior without inheritance.
 - **Android use**: Delegating interface implementations, ViewModel delegation, repository delegation.
-- Use Kotlin `by`. Patterns and pitfalls: [kotlin-delegation.md](/references/kotlin-delegation.md).
+- Use Kotlin `by`. Patterns and pitfalls: [kotlin-delegation.md](kotlin-delegation.md).
 
 ```kotlin
 // core/domain
@@ -538,7 +538,7 @@ class AuthViewModel @Inject constructor(
 ### Facade
 - **When**: Provide a simplified API to complex subsystems.
 - **Android use**: Repositories hiding local/remote/cache details.
-- Repository is the only public entry to a data subsystem. Contract: [architecture.md](/references/architecture.md).
+- Repository is the only public entry to a data subsystem. Contract: [architecture.md](architecture.md).
 
 ```kotlin
 // core/data - Complex subsystems (hidden)
@@ -672,7 +672,7 @@ class CachedAuthDataSource @Inject constructor(
 ### Observer
 - **When**: Many dependents must react to state changes.
 - **Android use**: `Flow`, `StateFlow` in ViewModels and repositories.
-- Required: `Flow` / `StateFlow`. Forbidden: `LiveData`. Patterns: [coroutines-patterns.md](/references/coroutines-patterns.md).
+- Required: `Flow` / `StateFlow`. Forbidden: `LiveData`. Patterns: [coroutines-patterns.md](coroutines-patterns.md).
 
 ```kotlin
 // core/domain
@@ -858,7 +858,7 @@ fun provideOkHttpClient(
 ### Command
 - **When**: You want to encapsulate actions as objects.
 - **Android use**: UI actions/intents from screens → ViewModel.
-- Required: sealed `Action` types in the presentation layer; one `onAction` entry point. Patterns: [compose-patterns.md](/references/compose-patterns.md).
+- Required: sealed `Action` types in the presentation layer; one `onAction` entry point. Patterns: [compose-patterns.md](compose-patterns.md).
 
 ```kotlin
 // feature/auth - Commands (Actions)
@@ -969,7 +969,7 @@ class DatabaseCursor(private val cursor: Cursor) : Iterator<User> {
 ### Mediator
 - **When**: Multiple components need coordinated interaction.
 - **Android use**: App-level navigation coordinator (`AppNavigation`).
-- Features stay independent; only the `app` module knows the full graph. See [modularization.md](/references/modularization.md).
+- Features stay independent; only the `app` module knows the full graph. See [modularization.md](modularization.md).
 
 ```kotlin
 // app - Mediator coordinates feature navigation using Navigation3
@@ -1085,7 +1085,7 @@ class AuthViewModel @Inject constructor(
 ### State
 - **When**: Behavior changes with state.
 - **Android use**: `UiState` sealed types and state-driven UI.
-- Transitions live in the ViewModel; UI is a pure render of `UiState`. See [compose-patterns.md](/references/compose-patterns.md).
+- Transitions live in the ViewModel; UI is a pure render of `UiState`. See [compose-patterns.md](compose-patterns.md).
 
 ```kotlin
 // feature/auth - State hierarchy
@@ -1165,7 +1165,7 @@ fun AuthScreen(uiState: AuthUiState) {
 ### Template Method
 - **When**: You need a fixed algorithm with varying steps.
 - **Android use**: Base worker patterns or shared use case flows (use sparingly).
-- Forbidden: `abstract` "Base*UseCase" hierarchies. Compose with strategies / delegation instead. See [kotlin-delegation.md](/references/kotlin-delegation.md).
+- Forbidden: `abstract` "Base*UseCase" hierarchies. Compose with strategies / delegation instead. See [kotlin-delegation.md](kotlin-delegation.md).
 
 ```kotlin
 // WRONG: Inheritance-based template method

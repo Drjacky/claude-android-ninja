@@ -33,7 +33,7 @@ Security-related libraries available in the version catalog:
 - `play-integrity` - Play Integrity API (device/app attestation)
 - `sqlcipher-android` - SQLCipher for encrypted Room databases
 
-Add them to your module as needed, following [dependencies.md → Adding a New Dependency](/references/dependencies.md#adding-a-new-dependency).
+Add them to your module as needed, following [dependencies.md → Adding a New Dependency](dependencies.md#adding-a-new-dependency).
 
 ## Device trust and abuse resistance
 
@@ -1613,7 +1613,7 @@ Use `assets/proguard-rules.pro.template` as the source of truth for all keep rul
 - **Crash report readability** - `SourceFile,LineNumberTable` attributes preserved
 - **Mapping file upload** - Firebase and Sentry Gradle plugins handle this automatically
 
-See [gradle-setup.md](/references/gradle-setup.md#r8-proguard-configuration) for build configuration and debugging shrunk builds.
+See [gradle-setup.md](gradle-setup.md#r8-proguard-configuration) for build configuration and debugging shrunk builds.
 
 ### Manifest Security
 
@@ -1792,4 +1792,4 @@ Forbidden:
 - Treating local root/emulator checks as authoritative.
 - Hardcoding API keys, signing material, or secrets in source.
 
-Reference: [Android Security Tips](https://developer.android.com/privacy-and-security/security-tips). Cross-links: [crashlytics.md](/references/crashlytics.md), [android-permissions.md](/references/android-permissions.md), [gradle-setup.md](/references/gradle-setup.md), [architecture.md](/references/architecture.md), [android-data-sync.md](/references/android-data-sync.md), [android-strictmode.md](/references/android-strictmode.md).
+Reference: [Android Security Tips](https://developer.android.com/privacy-and-security/security-tips). Cross-links: [crashlytics.md](crashlytics.md), [android-permissions.md](android-permissions.md), [gradle-setup.md](gradle-setup.md), [architecture.md](architecture.md), [android-data-sync.md](android-data-sync.md), [android-strictmode.md](android-strictmode.md).

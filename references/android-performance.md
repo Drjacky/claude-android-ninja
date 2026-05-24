@@ -1,6 +1,6 @@
 # Android Performance
 
-Required: measure with Macrobenchmark + Baseline Profiles before and after every change to startup, navigation, or list rendering. Track production via Play Vitals + Crashlytics/Sentry. Apply StrictMode guardrails ([android-strictmode.md](/references/android-strictmode.md)).
+Required: measure with Macrobenchmark + Baseline Profiles before and after every change to startup, navigation, or list rendering. Track production via Play Vitals + Crashlytics/Sentry. Apply StrictMode guardrails ([android-strictmode.md](android-strictmode.md)).
 
 ## Table of Contents
 
@@ -33,11 +33,11 @@ Use Vitals alongside Firebase Crashlytics or similar to see stack traces and rel
 
 ### Optional: Play Vitals observability (Play Developer Reporting API)
 
-This is **opt-in**. Use it when you explicitly want **Play Console-grade aggregates** (ANR rate, crash rate, slow start, stuck background wakelocks, error counts, and related metric sets) **automated in your repo and CI** - for example a daily **Slack** (or similar) summary so the team sees health **without opening Play Console**. It does **not** replace in-app crash reporting ([Crashlytics/Sentry](/references/crashlytics.md)); it complements it with **store-aggregated** signals.
+This is **opt-in**. Use it when you explicitly want **Play Console-grade aggregates** (ANR rate, crash rate, slow start, stuck background wakelocks, error counts, and related metric sets) **automated in your repo and CI** - for example a daily **Slack** (or similar) summary so the team sees health **without opening Play Console**. It does **not** replace in-app crash reporting ([Crashlytics/Sentry](crashlytics.md)); it complements it with **store-aggregated** signals.
 
 The [Play Developer Reporting API](https://developers.google.com/play/developer/reporting/reference/rest) exposes the same families of metrics as the console: each metric set supports **`get`** (describe the set) and **`query`** with a **`TimelineSpec`** (for example **`DAILY`** aggregation; the API commonly expects timezone such as **`America/Los_Angeles`** for timeline bounds - follow the reference for current rules).
 
-**Do not** put service account credentials or Reporting API calls inside the **`:app`** module or ship them in the APK. Align with this project's layout by implementing reporting as **Kotlin in `build-logic`** (or a small Gradle plugin module): a **`DefaultTask`** that queries the API and posts formatted output to Slack (Incoming Webhook or Slack Web API). That keeps secrets in **CI/environment variables** and leaves feature modules unchanged - see [modularization.md](/references/modularization.md) and [gradle-setup.md](/references/gradle-setup.md).
+**Do not** put service account credentials or Reporting API calls inside the **`:app`** module or ship them in the APK. Align with this project's layout by implementing reporting as **Kotlin in `build-logic`** (or a small Gradle plugin module): a **`DefaultTask`** that queries the API and posts formatted output to Slack (Incoming Webhook or Slack Web API). That keeps secrets in **CI/environment variables** and leaves feature modules unchanged - see [modularization.md](modularization.md) and [gradle-setup.md](gradle-setup.md).
 
 **Authentication:** use a Google Cloud **service account** with access to your Play Developer account; load JSON from an **environment variable** or CI secret (never commit keys). Request OAuth scope:
 
@@ -131,11 +131,11 @@ Build a **`TimelineSpec`** (aggregation period, start/end in **`America/Los_Ange
 
 **Gradle task entry point:** the canonical task body lives in **[`PlayVitalsReportingTask.kt`](../assets/convention/PlayVitalsReportingTask.kt)** - env check, then **`runBlocking { ... }`** with commented placeholders for **`PlayVitalsRepository`**, request, and Slack. Keep HTTP inside the repository's **`withContext(Dispatchers.IO)`** (avoid **`runBlocking(Dispatchers.IO)`** *and* another **`withContext(Dispatchers.IO)`** - pick one outer scope). Keep **`@TaskAction`** free of configuration-time work. **`build-logic/convention`** already depends on **`kotlinx-coroutines-core`** for **`runBlocking`**; add Reporting API artifacts when you uncomment the repository.
 
-**Registration:** sources ship under **`assets/convention/`** ([`PlayVitalsReportingConventionPlugin.kt`](../assets/convention/PlayVitalsReportingConventionPlugin.kt), [`PlayVitalsReportingTask.kt`](../assets/convention/PlayVitalsReportingTask.kt)), registered in [`assets/convention/build.gradle.kts`](../assets/convention/build.gradle.kts). Add catalog plugin **`app-play-vitals`** from [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template) to **`gradle/libs.versions.toml`**. After you copy convention sources into **`build-logic`**, add **`alias(libs.plugins.app.play.vitals)`** to the **`plugins { }`** block in the **root** **`build.gradle.kts`**. Apply it there **only** (not in **`app`** or feature modules). For where to copy files, how the root block should look, and CI, see [gradle-setup.md](/references/gradle-setup.md) and [QUICK_REFERENCE.md](../assets/convention/QUICK_REFERENCE.md).
+**Registration:** sources ship under **`assets/convention/`** ([`PlayVitalsReportingConventionPlugin.kt`](../assets/convention/PlayVitalsReportingConventionPlugin.kt), [`PlayVitalsReportingTask.kt`](../assets/convention/PlayVitalsReportingTask.kt)), registered in [`assets/convention/build.gradle.kts`](../assets/convention/build.gradle.kts). Add catalog plugin **`app-play-vitals`** from [`assets/libs.versions.toml.template`](../assets/libs.versions.toml.template) to **`gradle/libs.versions.toml`**. After you copy convention sources into **`build-logic`**, add **`alias(libs.plugins.app.play.vitals)`** to the **`plugins { }`** block in the **root** **`build.gradle.kts`**. Apply it there **only** (not in **`app`** or feature modules). For where to copy files, how the root block should look, and CI, see [gradle-setup.md](gradle-setup.md) and [QUICK_REFERENCE.md](../assets/convention/QUICK_REFERENCE.md).
 
 **CI/CD:** schedule a job (for example nightly) that runs `./gradlew <yourReportingTask>` and injects secrets at runtime: service account JSON, Slack token or webhook URL, and the **`apps/...`** resource name for the app you report on.
 
-**Kotlin and coroutines:** Gradle tasks run on the build JVM; I/O belongs in **`@TaskAction`** (or a worker). Use **`suspend`** + **`withContext(Dispatchers.IO)`** in a dedicated class for clarity and tests; the task only **`runBlocking { … }`**. Avoid duplicate **`Dispatchers.IO`** if the task already uses **`runBlocking(Dispatchers.IO)`**. See [kotlin-patterns.md](/references/kotlin-patterns.md) and [coroutines-patterns.md](/references/coroutines-patterns.md). Avoid heavy work during **configuration** phase.
+**Kotlin and coroutines:** Gradle tasks run on the build JVM; I/O belongs in **`@TaskAction`** (or a worker). Use **`suspend`** + **`withContext(Dispatchers.IO)`** in a dedicated class for clarity and tests; the task only **`runBlocking { … }`**. Avoid duplicate **`Dispatchers.IO`** if the task already uses **`runBlocking(Dispatchers.IO)`**. See [kotlin-patterns.md](kotlin-patterns.md) and [coroutines-patterns.md](coroutines-patterns.md). Avoid heavy work during **configuration** phase.
 
 ### Startup time (user experience)
 
@@ -168,7 +168,7 @@ Required:
 - Design for **Doze** and **App Standby**: batch work; use FCM for push.
 - Release **WakeLocks** with timeouts; never hold partial wake locks across idle.
 
-StrictMode and main-thread guardrails: [android-strictmode.md](/references/android-strictmode.md).
+StrictMode and main-thread guardrails: [android-strictmode.md](android-strictmode.md).
 
 ## Benchmark
 
@@ -181,7 +181,7 @@ Use when:
 - Measuring Compose navigation, list scrolling, or animation jank.
 - Producing repeatable numbers for CI gating.
 
-Module setup: see [gradle-setup.md](/references/gradle-setup.md) → "Benchmark Module (Optional)".
+Module setup: see [gradle-setup.md](gradle-setup.md) → "Benchmark Module (Optional)".
 
 #### Compose Macrobenchmark Example
 ```kotlin
@@ -576,7 +576,7 @@ Install: **Settings** → **Plugins** → **Marketplace** → "Compose Stability
 
 ### Gradle Plugin for CI/CD
 
-Setup: [gradle-setup.md](/references/gradle-setup.md) → "Compose Stability Analyzer (Optional)".
+Setup: [gradle-setup.md](gradle-setup.md) → "Compose Stability Analyzer (Optional)".
 
 #### Generate Baseline
 
@@ -976,9 +976,9 @@ fun DeferredContent(content: @Composable () -> Unit) {
 
 ### Splash Screen
 
-Required: Add `androidx.core:core-splashscreen` to `:app` (`implementation(libs.androidx.core.splashscreen)`); pin the version in `gradle/libs.versions.toml` using `assets/libs.versions.toml.template` (`splashscreen`). Module wiring: [gradle-setup.md](/references/gradle-setup.md).
+Required: Add `androidx.core:core-splashscreen` to `:app` (`implementation(libs.androidx.core.splashscreen)`); pin the version in `gradle/libs.versions.toml` using `assets/libs.versions.toml.template` (`splashscreen`). Module wiring: [gradle-setup.md](gradle-setup.md).
 
-Required: Call `installSplashScreen()` on the process launcher activity before `super.onCreate()` so Android 12+ system splash and compat pre-12 share one theme-backed path. Attribute list and platform rules: [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen). Legacy `windowBackground` themes and dedicated splash activities: [migration.md](/references/migration.md) → **Legacy splash to Splash Screen API**.
+Required: Call `installSplashScreen()` on the process launcher activity before `super.onCreate()` so Android 12+ system splash and compat pre-12 share one theme-backed path. Attribute list and platform rules: [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen). Legacy `windowBackground` themes and dedicated splash activities: [migration.md](migration.md) → **Legacy splash to Splash Screen API**.
 
 **Icon mask:** Size `windowSplashScreenAnimatedIcon` per [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen): with `Theme.SplashScreen.IconBackground`, use **240×240 dp** artwork inside a **160 dp** diameter circle; with `Theme.SplashScreen` only, **288×288 dp** inside **192 dp**. Re-read the live doc when bumping `compileSdk`. On API 31+, check that doc for optional `splashScreenIconSize`.
 
@@ -991,7 +991,7 @@ Use `Theme.SplashScreen.IconBackground` when the foreground needs a solid circul
 
 **Required: `onCreate` call order**
 
-`installSplashScreen()` → `super.onCreate()` → `setKeepOnScreenCondition { }` (if used) → `enableEdgeToEdge()` → `setContent { }`. The splash window is system-drawn until handoff; first app frames still need inset handling (`Scaffold` / `innerPadding` - see [migration.md](/references/migration.md) Edge-to-Edge, `references/compose-patterns.md`).
+`installSplashScreen()` → `super.onCreate()` → `setKeepOnScreenCondition { }` (if used) → `enableEdgeToEdge()` → `setContent { }`. The splash window is system-drawn until handoff; first app frames still need inset handling (`Scaffold` / `innerPadding` - see [migration.md](migration.md) Edge-to-Edge, `references/compose-patterns.md`).
 
 Splash dismissal merges system-controlled minimum visibility, `windowSplashScreenAnimationDuration` when set (API 31+, max 1000 ms), and `setKeepOnScreenCondition` when registered. Copy the exact interaction from [Splash screen](https://developer.android.com/develop/ui/views/launch/splash-screen) when auditing a new `compileSdk`.
 
@@ -999,7 +999,7 @@ Test the launcher activity on **minSdk**, on **API 31+**, on at least one gestur
 
 After handoff to Compose, call `ReportDrawn*` so metrics track full display when primary UI is ready, not only splash dismissal ([Startup Performance Metrics (TTID & TTFD)](#startup-performance-metrics-ttid-ttfd)).
 
-**Forbidden when:** Holding the splash for open-ended network work; dismiss for local readiness and use in-app placeholders for long remote work ([migration.md](/references/migration.md) → **Legacy splash to Splash Screen API**).
+**Forbidden when:** Holding the splash for open-ended network work; dismiss for local readiness and use in-app placeholders for long remote work ([migration.md](migration.md) → **Legacy splash to Splash Screen API**).
 
 **Wrong:**
 
@@ -1198,7 +1198,7 @@ fun UserCard(config: Config) {
 data class Config(val title: String, val color: Color)
 ```
 
-Stability annotations (`@Immutable`, `@Stable`): [compose-patterns.md → Stability Annotations](/references/compose-patterns.md#stability-annotations-immutable-vs-stable).
+Stability annotations (`@Immutable`, `@Stable`): [compose-patterns.md → Stability Annotations](compose-patterns.md#stability-annotations-immutable-vs-stable).
 
 ### derivedStateOf - Reducing Recomposition Frequency
 

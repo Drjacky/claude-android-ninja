@@ -132,7 +132,7 @@ Forbidden: treating every background kill as a leak without checking limiter sta
 R8 (the default code shrinker/obfuscator in AGP) renames classes, methods, and fields in release
 builds. Crash stack traces from production are obfuscated and unreadable without the mapping file.
 
-For R8 build configuration and keep rules, see [gradle-setup.md](/references/gradle-setup.md#r8-proguard-configuration).
+For R8 build configuration and keep rules, see [gradle-setup.md](gradle-setup.md#r8-proguard-configuration).
 
 ### R8 keep-rules troubleshooting
 
@@ -142,7 +142,7 @@ Required workflow:
 
 1. Reproduce with `./gradlew assembleRelease` (or the project's release bundle task).
 2. Inspect `app/build/outputs/mapping/<variant>/usage.txt` and `seeds.txt` before adding keeps ([Debugging Unexpected Removal](#debugging-unexpected-removal)).
-3. Run the keep-rules audit in [gradle-setup.md → R8 Keep-Rules Audit](/references/gradle-setup.md#r8-keep-rules-audit).
+3. Run the keep-rules audit in [gradle-setup.md → R8 Keep-Rules Audit](gradle-setup.md#r8-keep-rules-audit).
 4. Cross-check official guidance: [Configure and troubleshoot R8 Keep Rules](https://developer.android.com/blog/posts/configure-and-troubleshoot-r8-keep-rules).
 
 Required: upload `mapping.txt` with every release (Crashlytics/Sentry plugins when configured).
@@ -282,7 +282,7 @@ fun MyScreen(state: UiState) {
 - Missing `equals()` on state data classes - a new instance with identical values still triggers recomposition without structural equality.
 - Unstable lambda references when Strong Skipping is disabled. With Compose Compiler 2.0+ / Kotlin 2.0+ defaults, this is rare - verify before chasing.
 
-Stability annotations (`@Immutable`, `@Stable`) and Compose compiler metrics: [compose-patterns.md](/references/compose-patterns.md#stability-annotations-immutable-vs-stable), [android-performance.md](/references/android-performance.md).
+Stability annotations (`@Immutable`, `@Stable`) and Compose compiler metrics: [compose-patterns.md](compose-patterns.md#stability-annotations-immutable-vs-stable), [android-performance.md](android-performance.md).
 
 ## Multi-Layer Boundary Debugging
 

@@ -159,7 +159,7 @@ Forbidden:
 | Classes missing from report         | Check exclusion patterns in `assets/convention/config/Jacoco.kt`; confirm module applies the JaCoCo convention plugin.                                                                             |
 | Robolectric / JDK 11+ class loading | Convention plugin already sets `isIncludeNoLocationClasses = true` and `excludes = listOf("jdk.internal.*")`. If overriding, keep both.                                                            |
 | `MissingValueException` / unresolved `Provider` during `compile*JavaWithJavac` after AGP or API bump | Drop to **Tier 1**: remove `app.android.application.jacoco` / `app.android.library.jacoco` from the failing module temporarily or fork `Jacoco.kt` without the `ScopedArtifacts.forScope(...).toGet(...)` block; rerun `./gradlew help --stacktrace`. Re-enable Tier 2 only after configuration is green. |
-| Unknown configure failure           | Run `./gradlew help --stacktrace` (and a build scan when CI allows) before bumping Kotlin or KSP; see [gradle-setup.md](/references/gradle-setup.md#agp-9-verification).                            |
+| Unknown configure failure           | Run `./gradlew help --stacktrace` (and a build scan when CI allows) before bumping Kotlin or KSP; see [gradle-setup.md](gradle-setup.md#agp-9-verification).                            |
 
 ## References
 

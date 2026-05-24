@@ -4,7 +4,7 @@ Required:
 - SDK-specific code lives only in `core:data` (or `core:analytics`); feature modules call a `CrashReporter` interface from `core:domain`.
 - Provider initialization happens once, in the `app` module.
 - Swap providers by changing the Hilt binding + convention plugin only - never by touching feature code.
-- Play Vitals is optional store-level signal, not a Crashlytics replacement: see [android-performance.md → Optional: Play Vitals observability](/references/android-performance.md#optional-play-vitals-observability-play-developer-reporting-api).
+- Play Vitals is optional store-level signal, not a Crashlytics replacement: see [android-performance.md → Optional: Play Vitals observability](android-performance.md#optional-play-vitals-observability-play-developer-reporting-api).
 
 ## Table of Contents
 
@@ -444,7 +444,7 @@ Forbidden:
 
 ## ProGuard/R8 Mapping Upload
 
-Both providers require mapping file upload for symbolicated crashes in release builds. See [gradle-setup.md](/references/gradle-setup.md#r8-proguard-configuration) for R8 build configuration and `assets/proguard-rules.pro.template` for all keep rules.
+Both providers require mapping file upload for symbolicated crashes in release builds. See [gradle-setup.md](gradle-setup.md#r8-proguard-configuration) for R8 build configuration and `assets/proguard-rules.pro.template` for all keep rules.
 
 ### Firebase Crashlytics
 

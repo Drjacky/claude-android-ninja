@@ -1,6 +1,6 @@
 # Testing Patterns
 
-Required: hand-written fakes (no mocking libraries) in feature/core modules; Google Truth for assertions; Turbine for `Flow`; Hilt + Robolectric/Compose UI for integration. MockK is permitted only inside the `app` module for Navigation 3 framework types. Layered targets follow [architecture.md](/references/architecture.md) and [modularization.md](/references/modularization.md).
+Required: hand-written fakes (no mocking libraries) in feature/core modules; Google Truth for assertions; Turbine for `Flow`; Hilt + Robolectric/Compose UI for integration. MockK is permitted only inside the `app` module for Navigation 3 framework types. Layered targets follow [architecture.md](architecture.md) and [modularization.md](modularization.md).
 
 ## Table of Contents
 1. [Testing Philosophy](#testing-philosophy)
@@ -1917,11 +1917,11 @@ Required when a screen exposes:
 - `Modifier.scrollable` or `Modifier.transformable` reachable on tablet, foldable, Chromebook, or desktop form factors.
 - Custom `pointerInput` gesture detectors that branch on drag, pinch, or two-finger swipe.
 
-Cross-reference: trackpad behavior change in [compose-patterns.md → Trackpad and mouse input](/references/compose-patterns.md#trackpad-and-mouse-input-compose-111).
+Cross-reference: trackpad behavior change in [compose-patterns.md → Trackpad and mouse input](compose-patterns.md#trackpad-and-mouse-input-compose-111).
 
 ## Agent automation (ADB and UIAutomator)
 
-Commands and test shapes an **agent** proposes or runs **only when** a device or emulator is already attached, `adb` resolves, and the session allows shell access. Crash analysis and long `dumpsys`: [android-debugging.md](/references/android-debugging.md). Deep-link `am start` and `pm verify-app-links` matrices: [Testing Deep Links](#testing-deep-links).
+Commands and test shapes an **agent** proposes or runs **only when** a device or emulator is already attached, `adb` resolves, and the session allows shell access. Crash analysis and long `dumpsys`: [android-debugging.md](android-debugging.md). Deep-link `am start` and `pm verify-app-links` matrices: [Testing Deep Links](#testing-deep-links).
 
 ### Agent vs device
 
@@ -1956,7 +1956,7 @@ adb -s SERIAL shell am start -W -n com.example.app/.MainActivity
 
 Use `am start -W` when the agent needs a deterministic return after cold start (timeout and exit code surface launch failures).
 
-Cold-start measurement stays in [android-performance.md → Macrobenchmark (Compose)](/references/android-performance.md#macrobenchmark-compose); keep ADB launch checks lightweight.
+Cold-start measurement stays in [android-performance.md → Macrobenchmark (Compose)](android-performance.md#macrobenchmark-compose); keep ADB launch checks lightweight.
 
 ### Logcat for smoke proof
 
@@ -1965,7 +1965,7 @@ adb -s SERIAL logcat --pid=$(adb -s SERIAL shell pidof -s com.example.app)
 adb -s SERIAL logcat -d -s AndroidRuntime:E | tail -n 80
 ```
 
-Use after install or `am start` to confirm absence of immediate process death; full crash triage stays in [android-debugging.md](/references/android-debugging.md).
+Use after install or `am start` to confirm absence of immediate process death; full crash triage stays in [android-debugging.md](android-debugging.md).
 
 ### UIAutomator v2 (instrumented smoke)
 
@@ -2003,7 +2003,7 @@ class SmokeLaunchTest {
 }
 ```
 
-Dependencies: add `androidx.test.uiautomator:uiautomator` on `androidTestImplementation`; pin the version beside other AndroidX Test libraries in the catalog ([dependencies.md](/references/dependencies.md)).
+Dependencies: add `androidx.test.uiautomator:uiautomator` on `androidTestImplementation`; pin the version beside other AndroidX Test libraries in the catalog ([dependencies.md](dependencies.md)).
 
 ### When Compose test vs UIAutomator
 
@@ -2011,7 +2011,7 @@ Dependencies: add `androidx.test.uiautomator:uiautomator` on `androidTestImpleme
 |---------------------------------------------------|---------------------------------------------------------------------------------------------------------|
 | Single-process Compose tree                       | `createComposeRule` + semantics in [UI Tests](#ui-tests)                                                |
 | Cross-app or hybrid View/Compose with stable `id` | UIAutomator `By.res` / `By.text`                                                                        |
-| Macrobenchmark / Baseline Profile collection      | [android-performance.md](/references/android-performance.md) generator patterns with `UiAutomator` APIs |
+| Macrobenchmark / Baseline Profile collection      | [android-performance.md](android-performance.md) generator patterns with `UiAutomator` APIs |
 
 ### CI wiring (reference only)
 
@@ -2019,7 +2019,7 @@ Agent-allowed: add a workflow job that starts an emulator action (or uses the te
 
 ### Further ADB
 
-Meminfo, `gfxinfo`, port forwarding, `run-as` listing: [android-debugging.md → ADB Quick Reference](/references/android-debugging.md#adb-quick-reference).
+Meminfo, `gfxinfo`, port forwarding, `run-as` listing: [android-debugging.md → ADB Quick Reference](android-debugging.md#adb-quick-reference).
 
 ## Pre-release UI state checklist
 
@@ -2029,14 +2029,14 @@ Routing for auditing **screens and flows** before ship. Pair with [Screenshot Te
 
 | State or edge                          | Audit in code (agent)                                       | Deep rules                                                                                                                                                                                              |
 |----------------------------------------|-------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Empty first load                       | `UiState` branches, empty lists, placeholders               | [compose-patterns.md → Loading and refresh UX](/references/compose-patterns.md#loading-and-refresh-ux)                                                                                                  |
-| Loading / pull-to-refresh              | Skeleton vs full-screen replacement, stale-while-revalidate | [compose-patterns.md → Loading and refresh UX](/references/compose-patterns.md#loading-and-refresh-ux)                                                                                                  |
-| Recoverable error                      | Retry control, dismissible error surface                    | [compose-patterns.md](/references/compose-patterns.md), [kotlin-patterns.md](/references/kotlin-patterns.md)                                                                                            |
-| Offline / no network path              | Cached reads, queued writes, visible offline state          | [android-data-sync.md → Offline-First Architecture](/references/android-data-sync.md#offline-first-architecture), [Network State Monitoring](/references/android-data-sync.md#network-state-monitoring) |
-| Sync conflict in UI                    | User path to resolve or defer                               | [android-data-sync.md → Conflict Resolution](/references/android-data-sync.md#conflict-resolution)                                                                                                      |
-| Permission denied or settings required | Rationale, link to app settings where applicable            | [android-permissions.md → Requesting Runtime Permissions in Compose](/references/android-permissions.md#requesting-runtime-permissions-in-compose)                                                      |
-| Session expired / forced sign-out      | Navigation to auth, cleared back stack                      | [architecture.md](/references/architecture.md)                                                                                                                                                          |
-| RTL / long strings / density           | Truncation, mirroring, overflow                             | [android-i18n.md](/references/android-i18n.md)                                                                                                                                                          |
+| Empty first load                       | `UiState` branches, empty lists, placeholders               | [compose-patterns.md → Loading and refresh UX](compose-patterns.md#loading-and-refresh-ux)                                                                                                  |
+| Loading / pull-to-refresh              | Skeleton vs full-screen replacement, stale-while-revalidate | [compose-patterns.md → Loading and refresh UX](compose-patterns.md#loading-and-refresh-ux)                                                                                                  |
+| Recoverable error                      | Retry control, dismissible error surface                    | [compose-patterns.md](compose-patterns.md), [kotlin-patterns.md](kotlin-patterns.md)                                                                                            |
+| Offline / no network path              | Cached reads, queued writes, visible offline state          | [android-data-sync.md → Offline-First Architecture](android-data-sync.md#offline-first-architecture), [Network State Monitoring](android-data-sync.md#network-state-monitoring) |
+| Sync conflict in UI                    | User path to resolve or defer                               | [android-data-sync.md → Conflict Resolution](android-data-sync.md#conflict-resolution)                                                                                                      |
+| Permission denied or settings required | Rationale, link to app settings where applicable            | [android-permissions.md → Requesting Runtime Permissions in Compose](android-permissions.md#requesting-runtime-permissions-in-compose)                                                      |
+| Session expired / forced sign-out      | Navigation to auth, cleared back stack                      | [architecture.md](architecture.md)                                                                                                                                                          |
+| RTL / long strings / density           | Truncation, mirroring, overflow                             | [android-i18n.md](android-i18n.md)                                                                                                                                                          |
 
 Stop: do not treat a screen as complete when only the success branch exists in Compose unless domain rules make other branches impossible; then document that exhaustively (for example sealed `when` with a comment or test proving exhaustiveness).
 
@@ -2488,7 +2488,7 @@ fun `paging data contains expected items`() = runTest {
 
 ### `paging-testing`: `asSnapshot` and `TestPager`
 
-Required: `testImplementation(libs.androidx.paging.testing)` and catalog rules in [dependencies.md](/references/dependencies.md#paging-3-test-artifact). Keep the `paging` version ref aligned with `paging-runtime` and `paging-compose`.
+Required: `testImplementation(libs.androidx.paging.testing)` and catalog rules in [dependencies.md](dependencies.md#paging-3-test-artifact). Keep the `paging` version ref aligned with `paging-runtime` and `paging-compose`.
 
 Use `Flow<PagingData<T>>.asSnapshot { }` when the test drives the same `Flow` the UI collects and asserts the rendered item list after explicit loads, scrolls, or refresh.
 
@@ -2532,13 +2532,13 @@ Forbidden:
 
 ## Localization Testing
 
-See [android-i18n.md](/references/android-i18n.md#testing-localization) for locales, plurals, RTL, parameterized locale tests, RTL screenshots, and date/time/currency formatting.
+See [android-i18n.md](android-i18n.md#testing-localization) for locales, plurals, RTL, parameterized locale tests, RTL screenshots, and date/time/currency formatting.
 
 ## Cross-references
 
-- [architecture.md](/references/architecture.md) — Layering and fakes
-- [compose-patterns.md](/references/compose-patterns.md) — UiState, previews, screenshot tests
-- [android-performance.md](/references/android-performance.md) — Macrobenchmark and Baseline Profiles
-- [android-debugging.md](/references/android-debugging.md) — ADB and release triage
-- [coroutines-patterns.md](/references/coroutines-patterns.md) — Flow and `runTest`
+- [architecture.md](architecture.md) — Layering and fakes
+- [compose-patterns.md](compose-patterns.md) — UiState, previews, screenshot tests
+- [android-performance.md](android-performance.md) — Macrobenchmark and Baseline Profiles
+- [android-debugging.md](android-debugging.md) — ADB and release triage
+- [coroutines-patterns.md](coroutines-patterns.md) — Flow and `runTest`
 - [Hilt Testing](https://developer.android.com/training/dependency-injection/hilt-testing) — Official Hilt testing guide

@@ -101,13 +101,13 @@ Use `AndroidView` only for views that have no Compose equivalent (e.g., `MapView
 
 ### Compose-XML interop (hardening)
 
-**Theme:** Wrap every `ComposeView.setContent { }` root in the same `MaterialTheme` entry used by fully Compose screens ([android-theming.md](/references/android-theming.md)). Forbidden: rely on legacy XML `ThemeOverlay` colors inside Compose without mapping tokens to `MaterialTheme.colorScheme`.
+**Theme:** Wrap every `ComposeView.setContent { }` root in the same `MaterialTheme` entry used by fully Compose screens ([android-theming.md](android-theming.md)). Forbidden: rely on legacy XML `ThemeOverlay` colors inside Compose without mapping tokens to `MaterialTheme.colorScheme`.
 
-**Focus and IME:** When a legacy `EditText` sits beside `ComposeView`, coordinate `FocusRequester` in Compose with `View.clearFocus` / `requestFocus` on the View side so IME and `windowSoftInputMode` stay aligned with [compose-patterns.md](/references/compose-patterns.md) edge-to-edge and IME sections.
+**Focus and IME:** When a legacy `EditText` sits beside `ComposeView`, coordinate `FocusRequester` in Compose with `View.clearFocus` / `requestFocus` on the View side so IME and `windowSoftInputMode` stay aligned with [compose-patterns.md](compose-patterns.md) edge-to-edge and IME sections.
 
-**ViewModel scope:** `ComposeView` inside a `Fragment` uses `hiltViewModel()` on that fragment's graph; avoid activity-scoped ViewModels for nested composables unless navigation explicitly requires it ([architecture.md → ViewModel placement](/references/architecture.md#viewmodel-placement)).
+**ViewModel scope:** `ComposeView` inside a `Fragment` uses `hiltViewModel()` on that fragment's graph; avoid activity-scoped ViewModels for nested composables unless navigation explicitly requires it ([architecture.md → ViewModel placement](architecture.md#viewmodel-placement)).
 
-**Testing:** Hybrid screens may pair Espresso or UIAutomator on View subtrees with `createComposeRule` on isolated Compose mounts; otherwise one instrumented screenshot or journey per [testing.md](/references/testing.md) and the baseline workflow in [XML to Compose](#xml-to-compose).
+**Testing:** Hybrid screens may pair Espresso or UIAutomator on View subtrees with `createComposeRule` on isolated Compose mounts; otherwise one instrumented screenshot or journey per [testing.md](testing.md) and the baseline workflow in [XML to Compose](#xml-to-compose).
 
 **Long-lived `AndroidView`:** Keep only for surfaces without first-class Compose equivalents (`MapView`, `WebView`, `AdView`, vendor SDK views). Forbidden: wrap `TextView` or `RecyclerView` only to postpone Compose migration.
 

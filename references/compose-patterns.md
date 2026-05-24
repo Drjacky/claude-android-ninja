@@ -1,6 +1,6 @@
 # Jetpack Compose Patterns
 
-Required: Material 3, Navigation 3, adaptive layouts, edge-to-edge, lifecycle-aware state collection. Kotlin code aligns with [kotlin-patterns.md](/references/kotlin-patterns.md). Accessibility (semantics, touch targets, TalkBack) is mandatory - [android-accessibility.md](/references/android-accessibility.md). Theming via Material 3 semantic roles - [android-theming.md](/references/android-theming.md). All user-facing text via string resources - [android-i18n.md](/references/android-i18n.md).
+Required: Material 3, Navigation 3, adaptive layouts, edge-to-edge, lifecycle-aware state collection. Kotlin code aligns with [kotlin-patterns.md](kotlin-patterns.md). Accessibility (semantics, touch targets, TalkBack) is mandatory - [android-accessibility.md](android-accessibility.md). Theming via Material 3 semantic roles - [android-theming.md](android-theming.md). All user-facing text via string resources - [android-i18n.md](android-i18n.md).
 
 ## Table of Contents
 
@@ -25,7 +25,7 @@ Required: Material 3, Navigation 3, adaptive layouts, edge-to-edge, lifecycle-aw
 
 ### Feature Screen Pattern
 
-Split each feature screen into a `Route` (state collection + navigation glue) and a stateless `Screen` (pure UI). `Navigator` interfaces live in the feature module; implementations live in `app` (see [modularization.md](/references/modularization.md)).
+Split each feature screen into a `Route` (state collection + navigation glue) and a stateless `Screen` (pure UI). `Navigator` interfaces live in the feature module; implementations live in `app` (see [modularization.md](modularization.md)).
 
 ```kotlin
 // feature-auth/presentation/AuthRoute.kt
@@ -88,7 +88,7 @@ fun LoginScreen(
 }
 ```
 
-Navigation setup, destinations, and `Navigator` interfaces: [android-navigation.md](/references/android-navigation.md).
+Navigation setup, destinations, and `Navigator` interfaces: [android-navigation.md](android-navigation.md).
 
 ## Naming Conventions
 
@@ -255,7 +255,7 @@ sealed class AuthAction {
 
 ### ViewModel with Form State
 
-Use delegation for shared behaviour (validation, analytics, feature flags); never an inheritance base class. See [kotlin-delegation.md](/references/kotlin-delegation.md).
+Use delegation for shared behaviour (validation, analytics, feature flags); never an inheritance base class. See [kotlin-delegation.md](kotlin-delegation.md).
 
 For process-death survival, include `SavedStateHandle` in ViewModels and persist critical UI state (forms, in-progress flows) using `savedStateHandle.getStateFlow()` for automatic restoration.
 
@@ -1385,7 +1385,7 @@ fun FloatingHero(item: Item, onClick: () -> Unit) {
 }
 ```
 
-`Card` / `OutlinedCard` / `ElevatedCard` already pull the right surface, content color, border, and (for Elevated) shadow from `MaterialTheme`. Don't pass `colors = CardDefaults.cardColors(containerColor = ...)` to swap variants - use the dedicated composable instead, otherwise the on-color and border defaults silently drift out of sync. See [Color Pairing Rules](/references/android-theming.md#color-pairing-rules) and [Surface Container Hierarchy](/references/android-theming.md#surface-container-hierarchy) for the underlying tokens.
+`Card` / `OutlinedCard` / `ElevatedCard` already pull the right surface, content color, border, and (for Elevated) shadow from `MaterialTheme`. Don't pass `colors = CardDefaults.cardColors(containerColor = ...)` to swap variants - use the dedicated composable instead, otherwise the on-color and border defaults silently drift out of sync. See [Color Pairing Rules](android-theming.md#color-pairing-rules) and [Surface Container Hierarchy](android-theming.md#surface-container-hierarchy) for the underlying tokens.
 
 #### Clickable card → use the `onClick` overload
 
@@ -1915,7 +1915,7 @@ Compose skips more work when the compiler can prove stability. Declare that cont
 
 **Required:** Import `@Immutable` / `@Stable` from `androidx.compose.runtime`.
 
-**Domain models:** Either add `androidx.compose.runtime` to the Gradle module that owns annotated domain types (Kotlin-only) or keep annotations on UI-layer models and cover domain types with the stability configuration in [`android-strictmode.md`](/references/android-strictmode.md#2-compose-stability-guardrails).
+**Domain models:** Either add `androidx.compose.runtime` to the Gradle module that owns annotated domain types (Kotlin-only) or keep annotations on UI-layer models and cover domain types with the stability configuration in [`android-strictmode.md`](android-strictmode.md#2-compose-stability-guardrails).
 
 ```kotlin
 // core/domain/build.gradle.kts
@@ -2650,7 +2650,7 @@ Image(
 - `sharedElement` - exact match (same content, animates position/size)
 - `sharedBounds` - bounds morph (different content, animates container bounds)
 
-Navigation 3 shared elements: [android-navigation.md](/references/android-navigation.md).
+Navigation 3 shared elements: [android-navigation.md](android-navigation.md).
 
 #### Visual debugging (Compose 1.11+)
 
@@ -3304,7 +3304,7 @@ Behavior changes in Compose 1.11:
 
 Forbidden: branching gesture logic on `PointerType.Touch` to gate trackpad behaviour.
 
-Test trackpad gestures with `performTrackpadInput` - see [testing.md](/references/testing.md).
+Test trackpad gestures with `performTrackpadInput` - see [testing.md](testing.md).
 
 ### graphicsLayer - GPU Transforms
 
@@ -3344,7 +3344,7 @@ Box(Modifier.testTag("submit_button"))
 composeTestRule.onNodeWithTag("submit_button").performClick()
 ```
 
-Comprehensive accessibility patterns: [android-accessibility.md](/references/android-accessibility.md).
+Comprehensive accessibility patterns: [android-accessibility.md](android-accessibility.md).
 
 ### Always Accept Modifier Parameter
 
@@ -3586,7 +3586,7 @@ Wire `Pager(config = ..., remoteMediator = ..., pagingSourceFactory = { dao.pagi
 - Store remote page keys in Room (for example a `RemoteKeys` entity with `nextKey`, `prevKey`, and a query or feed id column). Read keys at the start of `load`, persist updated keys in the same transaction as entity inserts for that page.
 - After backend writes or sync completion that change list contents, invalidate the backing `PagingSource` or trigger mediator refresh so `Pager` reloads.
 
-Add `androidx.room3:room3-paging` and `@DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)` on the DAO or `@Database` per [Room 3 release notes](https://developer.android.com/jetpack/androidx/releases/room3). Conflict handling, backoff, and non-paged sync: [android-data-sync.md](/references/android-data-sync.md).
+Add `androidx.room3:room3-paging` and `@DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)` on the DAO or `@Database` per [Room 3 release notes](https://developer.android.com/jetpack/androidx/releases/room3). Conflict handling, backoff, and non-paged sync: [android-data-sync.md](android-data-sync.md).
 
 **Forbidden:**
 - Returning `LAUNCH_INITIAL_REFRESH` when `SKIP_INITIAL_REFRESH` matches the warm-cache entry rule (forces avoidable network on every launch that already has Room pages).
@@ -3949,7 +3949,7 @@ fun ProductCard(product: Product, onClick: () -> Unit) { }
 
 ## Deprecated Patterns & Migrations
 
-All migration guides have been consolidated into [migration.md](/references/migration.md). It covers:
+All migration guides have been consolidated into [migration.md](migration.md). It covers:
 
 - Accompanist to official APIs
 - Compose API migrations (`collectAsStateWithLifecycle`, `mutableIntStateOf`, `animateItem`, `Modifier.Node`, `Modifier.onFirstVisible` -> `Modifier.onVisibilityChanged`)
@@ -4080,13 +4080,13 @@ fun ValidatedEmailField(
 
 ## Cross-references
 
-- [architecture.md](/references/architecture.md) — ViewModel patterns and state management
-- [modularization.md](/references/modularization.md) — Feature modules and dependency rules
-- [android-navigation.md](/references/android-navigation.md) — Navigation 3 and adaptive navigation
-- [android-accessibility.md](/references/android-accessibility.md) — Semantics and TalkBack
-- [android-theming.md](/references/android-theming.md) — Material 3, dynamic color, typography
-- [android-i18n.md](/references/android-i18n.md) — Localization, RTL, string resources
-- [kotlin-patterns.md](/references/kotlin-patterns.md) — Immutability and data classes
-- [testing.md](/references/testing.md) — Compose UI tests
-- [migration.md](/references/migration.md) — Accompanist, Compose, Material, RxJava, Navigation migrations
+- [architecture.md](architecture.md) — ViewModel patterns and state management
+- [modularization.md](modularization.md) — Feature modules and dependency rules
+- [android-navigation.md](android-navigation.md) — Navigation 3 and adaptive navigation
+- [android-accessibility.md](android-accessibility.md) — Semantics and TalkBack
+- [android-theming.md](android-theming.md) — Material 3, dynamic color, typography
+- [android-i18n.md](android-i18n.md) — Localization, RTL, string resources
+- [kotlin-patterns.md](kotlin-patterns.md) — Immutability and data classes
+- [testing.md](testing.md) — Compose UI tests
+- [migration.md](migration.md) — Accompanist, Compose, Material, RxJava, Navigation migrations
 
