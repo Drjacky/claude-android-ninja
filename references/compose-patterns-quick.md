@@ -7,7 +7,7 @@ Required before UI work:
 - Route + stateless `Screen`; `collectAsStateWithLifecycle()`; one-shot events via `Channel` + `receiveAsFlow()` in the Route.
 - Material 3 semantic colors only - [android-theming.md](android-theming.md).
 - String resources only - [android-i18n.md](android-i18n.md).
-- Accessibility on every interactive/icon node - [android-accessibility.md](android-accessibility.md).
+- Accessibility on every interactive/icon node - [android-accessibility-quick.md](android-accessibility-quick.md).
 
 ## Section routing
 

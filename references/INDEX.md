@@ -8,7 +8,7 @@ Forbidden: load every file below; load a multi-thousand-line file in full when a
 
 | File                                                 | Lines | Open when                                                                       | Quick                                                      |
 |------------------------------------------------------|------:|---------------------------------------------------------------------------------|------------------------------------------------------------|
-| [android-accessibility.md](android-accessibility.md) |  1526 | TalkBack, semantics, touch targets, contrast, WCAG, Espresso a11y checks        | -                                                          |
+| [android-accessibility.md](android-accessibility.md) |  1526 | TalkBack, semantics, touch targets, contrast, WCAG, Espresso a11y checks        | [android-accessibility-quick.md](android-accessibility-quick.md) |
 | [android-ci-cd.md](android-ci-cd.md)                 |   129 | Play AAB, tracks, signing boundaries, rollout; agent vs Console work            | -                                                          |
 | [android-code-coverage.md](android-code-coverage.md) |   168 | JaCoCo unit + instrumented coverage, CI, ScopedArtifacts pitfalls               | -                                                          |
 | [android-data-sync.md](android-data-sync.md)         |  2344 | Offline-first, WorkManager sync, conflict resolution, cache invalidation        | [android-data-sync-quick.md](android-data-sync-quick.md)   |
@@ -20,7 +20,7 @@ Forbidden: load every file below; load a multi-thousand-line file in full when a
 | [android-notifications.md](android-notifications.md) |  1239 | Channels, FGS, MediaStyle, PiP, sharesheet from notification taps               | -                                                          |
 | [android-performance.md](android-performance.md)     |  1384 | Macrobenchmark, baseline profiles, vitals, recomposition, startup, APA/Perfetto | -                                                          |
 | [android-permissions.md](android-permissions.md)     |   811 | Runtime permissions, Photo Picker, contacts, API 37 location privacy            | -                                                          |
-| [android-security.md](android-security.md)           |  1795 | Pinning, encryption, biometrics, Play Integrity, Credential Manager, URI grants | -                                                          |
+| [android-security.md](android-security.md)           |  1795 | Pinning, encryption, biometrics, Play Integrity, Credential Manager, URI grants | [android-security-quick.md](android-security-quick.md)     |
 | [android-strictmode.md](android-strictmode.md)       |   236 | StrictMode, cleartext detection, Compose stability diagnostics                  | -                                                          |
 | [android-theming.md](android-theming.md)             |  2118 | Material 3 color roles, dynamic color, contrast, typography, shapes             | [android-theming-quick.md](android-theming-quick.md)       |
 | [architecture.md](architecture.md)                   |   961 | MVVM layers, repositories, DI, network, DataStore vs Room                       | -                                                          |
@@ -42,6 +42,8 @@ Forbidden: load every file below; load a multi-thousand-line file in full when a
 
 | Quick                                                      | Full file                                      | Lines |
 |------------------------------------------------------------|------------------------------------------------|------:|
+| [android-accessibility-quick.md](android-accessibility-quick.md) | [android-accessibility.md](android-accessibility.md) |  1526 |
+| [android-security-quick.md](android-security-quick.md)     | [android-security.md](android-security.md)     |  1795 |
 | [compose-patterns-quick.md](compose-patterns-quick.md)     | [compose-patterns.md](compose-patterns.md)     |  4092 |
 | [testing-quick.md](testing-quick.md)                       | [testing.md](testing.md)                       |  2544 |
 | [android-data-sync-quick.md](android-data-sync-quick.md)   | [android-data-sync.md](android-data-sync.md)   |  2344 |

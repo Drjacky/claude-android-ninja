@@ -9,6 +9,7 @@ Forbidden: load this file on every task; it is large by design.
 ### android-accessibility.md (1526 lines)
 
 Open when: TalkBack, semantics, touch targets, contrast, WCAG, Espresso a11y checks
+Quick routing: [android-accessibility-quick.md](android-accessibility-quick.md)
 
 - [Table of Contents](android-accessibility.md#table-of-contents)
 - [WCAG 2.2 Criteria That Apply Here](android-accessibility.md#wcag-22-criteria-that-apply-here)
@@ -496,6 +497,7 @@ Open when: Runtime permissions, Photo Picker, contacts, API 37 location privacy
 ### android-security.md (1795 lines)
 
 Open when: Pinning, encryption, biometrics, Play Integrity, Credential Manager, URI grants
+Quick routing: [android-security-quick.md](android-security-quick.md)
 
 - [Table of Contents](android-security.md#table-of-contents)
 - [Dependencies](android-security.md#dependencies)
