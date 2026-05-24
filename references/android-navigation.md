@@ -336,7 +336,7 @@ Navigation 3 uses explicit state management with Unidirectional Data Flow:
 
 **1. NavigationState** - Holds current route and back stacks:
 ```kotlin
-// Copy this into NavigationState.kt in your app module
+// CORRECT: NavigationState.kt in the app module
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -415,7 +415,7 @@ fun NavigationState.toEntries(
 
 **2. Navigator** - Modifies navigation state:
 ```kotlin
-// Copy this into Navigator.kt in your app module
+// CORRECT: Navigator.kt in the app module
 import androidx.navigation3.runtime.NavKey
 
 class Navigator(val state: NavigationState) {
@@ -2095,7 +2095,7 @@ The child entry's `viewModel<SharedCounterViewModel>()` call resolves to the sam
 ### `hiltViewModel()` Scope Mistakes
 
 ```kotlin
-// Bad: hiltViewModel() inside a nested composable (wrong scope)
+// WRONG: hiltViewModel() inside a nested composable (wrong scope)
 @Composable
 fun ProductCard() {
     // ViewModelStore follows the NavEntry — every ProductCard shares one ViewModel.
@@ -2103,7 +2103,7 @@ fun ProductCard() {
     val viewModel: ProductViewModel = hiltViewModel() 
 }
 
-// Good: Pass state and callbacks down from the route/screen level
+// CORRECT: Pass state and callbacks down from the route/screen level
 @Composable
 fun ProductCard(product: Product, onClick: () -> Unit) {
     // Pure UI component
@@ -2115,7 +2115,7 @@ Escape hatch for genuinely complex, single-instance, non-screen composables: [Sc
 ### ViewModel Navigation
 
 ```kotlin
-// Bad: Passing Navigator to ViewModel (breaks unidirectional data flow and testability)
+// WRONG: Passing Navigator to ViewModel (breaks unidirectional data flow and testability)
 class AuthViewModel(private val navigator: AuthNavigator) : ViewModel() {
     fun login() {
         // ...
@@ -2123,7 +2123,7 @@ class AuthViewModel(private val navigator: AuthNavigator) : ViewModel() {
     }
 }
 
-// Good: Emit a one-shot event, let the Route composable handle navigation
+// CORRECT: Emit a one-shot event, let the Route composable handle navigation
 class AuthViewModel : ViewModel() {
     private val _events = Channel<AuthEvent>()
     val events = _events.receiveAsFlow()
@@ -2138,13 +2138,13 @@ class AuthViewModel : ViewModel() {
 ### Passing Complex Objects in NavKeys
 
 ```kotlin
-// Bad: Passing large or complex objects in navigation routes
+// WRONG: Passing large or complex objects in navigation routes
 @Serializable
 data class ProductDetail(
     val product: Product // Product can exceed SavedStateHandle limits or hold non-Parcelable fields
 ) : ProductsDestination
 
-// Good: Pass only IDs, fetch data in the destination
+// CORRECT: Pass only IDs, fetch data in the destination
 @Serializable
 data class ProductDetail(
     val productId: String // Small, easily serializable ID

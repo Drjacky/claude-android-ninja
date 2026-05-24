@@ -298,7 +298,7 @@ class AuthViewModel @Inject constructor(
     private val _navigationEvents = Channel<AuthNavigationEvent>(Channel.BUFFERED)
     val navigationEvents: Flow<AuthNavigationEvent> = _navigationEvents.receiveAsFlow()
 
-    // Alternative: SharedFlow when several collectors need the same stream or replay is intended
+    // Use SharedFlow when several collectors need the same stream or replay is intended
     // private val _navigationEvents = MutableSharedFlow<AuthNavigationEvent>(
     //     replay = 0,
     //     extraBufferCapacity = 1,
@@ -596,12 +596,12 @@ fun SearchScreen(viewModel: SearchViewModel) {
 ```
 
 ```kotlin
-// Bad: captures initial value only
+// WRONG: captures initial value only
 LaunchedEffect(Unit) {
     viewModel.search(query)
 }
 
-// Bad: restarts the effect on every keystroke
+// WRONG: restarts the effect on every keystroke
 LaunchedEffect(query) {
     delay(300)
     viewModel.search(query)
@@ -626,10 +626,10 @@ cache["key"] = user
 **Gotcha:** In-place mutation of elements does NOT trigger recomposition:
 
 ```kotlin
-// Bad: in-place mutation
+// WRONG: in-place mutation
 items[0].name = "Updated"
 
-// Good: replace via copy
+// CORRECT: replace via copy
 items[0] = items[0].copy(name = "Updated")
 ```
 
@@ -2051,7 +2051,7 @@ data class Config(
 | Regular mutable class          | **None**     | Let Compose treat as unstable                                   |
 | `java.time` classes            | **None**     | `LocalDate`, `LocalTime`, `LocalDateTime` (Unstable by default) |
 
-> **Warning:** Standard Java time classes like `LocalDate`, `LocalTime`, and `LocalDateTime` are considered **unstable** by Compose. If you use them in your state, you must either wrap them in a stable class, map them to primitives (like epoch milliseconds), or configure them as stable via a stability configuration file.
+**Required:** `LocalDate`, `LocalTime`, and `LocalDateTime` are unstable in Compose state. Wrap them in a stable holder, map to primitives (epoch milliseconds), or register them in a stability configuration file.
 
 
 #### Persistent Collections for Performance
@@ -2091,7 +2091,7 @@ class AuthEventsViewModel @Inject constructor(
 1. **Don't guess**: Only add annotations when you have **proven performance issues** (use Compose Compiler reports)
 2. **Don't lie**: Never annotate a type as `@Immutable` or `@Stable` unless it truly meets the contract
 3. **Domain models**: Always `@Immutable` (from `core/domain`)
-4. **UI models**: Usually `@Immutable` (display-only data)
+4. **UI models**: `@Immutable` for display-only data
 5. **ViewModels**: Never annotate (already stable via Hilt/Compose integration)
 6. **Repositories**: Mark interface `@Stable` if implementations guarantee stability
 7. **Form state classes**: Use `@Stable` with `mutableStateOf` properties
@@ -2227,7 +2227,6 @@ fun AuthEventCard(
     }
 }
 
-// Ensure your data model is immutable for Compose stability
 @Immutable
 data class AuthEvent(
     val id: String,
@@ -2678,7 +2677,7 @@ GPU-accelerated transforms that skip recomposition and relayout.
 val offset by animateFloatAsState(targetValue = 100f, label = "offset")
 Box(modifier = Modifier.graphicsLayer(translationX = offset))
 
-// Bad: relayout every frame
+// WRONG: relayout every frame
 val offsetDp by animateDpAsState(targetValue = 100.dp, label = "offset")
 Box(modifier = Modifier.offset(x = offsetDp))
 ```
@@ -2690,30 +2689,30 @@ Box(modifier = Modifier.offset(x = offsetDp))
 ### Animation Anti-Patterns
 
 ```kotlin
-// Bad: instant visibility flip
+// WRONG: instant visibility flip
 if (visible) { Text("Content") }
 // Good
 AnimatedVisibility(visible = visible) { Text("Content") }
 
-// Bad: recreated every recomposition
+// WRONG: recreated every recomposition
 val animatable = Animatable(0f)
 // Good
 val animatable = remember { Animatable(0f) }
 
-// Bad: state mutation during composition (infinite loop)
+// WRONG: state mutation during composition (infinite loop)
 var position by remember { mutableFloatStateOf(0f) }
 position += 10f
-// Good: drive from a coroutine
+// CORRECT: drive from a coroutine
 LaunchedEffect(Unit) {
     repeat(10) { position += 10f; delay(16) }
 }
 
-// Bad: missing label
+// WRONG: missing label
 val size by animateDpAsState(targetValue = 100.dp)
 // Good
 val size by animateDpAsState(targetValue = 100.dp, label = "card_size")
 
-// Bad: ignores reduced-motion preference
+// WRONG: ignores reduced-motion preference
 AnimatedVisibility(visible = visible, enter = fadeIn() + slideInVertically()) { Content() }
 // Good
 val reducedMotion = LocalReducedMotion.current
@@ -2867,7 +2866,7 @@ fun SnackbarDemo(snackbarHostState: SnackbarHostState) {
 ```
 
 ```kotlin
-// Bad: blocks UI thread
+// WRONG: blocks UI thread
 Button(onClick = {
     runBlocking { fetchData() }
 }) { Text("Fetch") }
@@ -2902,13 +2901,13 @@ fun TimedMessage(
 Without it, changing `onTimeout` either restarts the effect (if used as key) or calls a stale callback (if captured directly):
 
 ```kotlin
-// Bad: restarts on every lambda identity change
+// WRONG: restarts on every lambda identity change
 LaunchedEffect(onTimeout) {
     delay(5000)
     onTimeout()
 }
 
-// Bad: captures stale onTimeout
+// WRONG: captures stale onTimeout
 LaunchedEffect(Unit) {
     delay(5000)
     onTimeout()
@@ -3020,7 +3019,7 @@ fun LocationTracker(locationManager: LocationManager) {
 **Required:** Use `LifecycleResumeEffect` / `LifecycleStartEffect` instead of hand-rolling `DisposableEffect` + `LifecycleEventObserver` on `LocalLifecycleOwner`; they match lifecycle edges with less code and mandatory cleanup hooks.
 
 ```kotlin
-// BAD: Manual lifecycle observer boilerplate
+// WRONG: Manual lifecycle observer boilerplate
 DisposableEffect(lifecycleOwner) {
     val observer = LifecycleEventObserver { _, event ->
         when (event) {
@@ -3033,7 +3032,7 @@ DisposableEffect(lifecycleOwner) {
     onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
 }
 
-// GOOD: Dedicated lifecycle effect
+// CORRECT: Dedicated lifecycle effect
 LifecycleResumeEffect(Unit) {
     startCamera()
     onPauseOrDispose { stopCamera() }
@@ -3059,7 +3058,7 @@ LifecycleResumeEffect(Unit) {
 ### Side Effect Anti-Patterns
 
 ```kotlin
-// Bad: wrong key - never re-runs on userId change
+// WRONG: wrong key - never re-runs on userId change
 @Composable
 fun UserProfile(userId: String) {
     var user by remember { mutableStateOf<User?>(null) }
@@ -3072,7 +3071,7 @@ LaunchedEffect(userId) {
     user = repository.loadUser(userId)
 }
 
-// Bad: missing onDispose
+// WRONG: missing onDispose
 DisposableEffect(Unit) {
     val listener = Listener()
     manager.register(listener)
@@ -3084,7 +3083,7 @@ DisposableEffect(Unit) {
     onDispose { manager.unregister(listener) }
 }
 
-// Bad: stale capture
+// WRONG: stale capture
 var count by remember { mutableIntStateOf(0) }
 LaunchedEffect(Unit) {
     delay(1000)
@@ -3095,7 +3094,7 @@ LaunchedEffect(Unit) {
     snapshotFlow { count }.collect { println("Count: $it") }
 }
 
-// Bad: navigation during composition
+// WRONG: navigation during composition
 if (isLoggedIn) {
     navigator.navigateToHome()
 }
@@ -3241,7 +3240,7 @@ Box(mod.padding(16.dp))
 `Modifier.Node` is the recommended API for custom modifiers. `Modifier.composed` is deprecated.
 
 ```kotlin
-// Modifier.Node API (recommended)
+// CORRECT: Modifier.Node API (Modifier.composed is deprecated)
 private class HighlightNode(var color: Color) : DrawModifierNode, Modifier.Node() {
     override fun ContentDrawScope.draw() {
         drawContent()
@@ -3373,22 +3372,22 @@ fun UserCard(user: User, onClick: () -> Unit) {
 ### Modifier Anti-Patterns
 
 ```kotlin
-// Bad: padding before size
+// WRONG: padding before size
 Modifier.padding(16.dp).size(100.dp)
 // Good
 Modifier.size(100.dp).padding(16.dp)
 
-// Bad: clickable before clip (ripple overflows)
+// WRONG: clickable before clip (ripple overflows)
 Modifier.clickable { }.clip(RoundedCornerShape(8.dp))
 // Good
 Modifier.clip(RoundedCornerShape(8.dp)).clickable { }
 
-// Bad: background before clip
+// WRONG: background before clip
 Modifier.background(Color.Blue).clip(RoundedCornerShape(8.dp))
 // Good
 Modifier.clip(RoundedCornerShape(8.dp)).background(Color.Blue)
 
-// Bad: hardcoded modifier
+// WRONG: hardcoded modifier
 @Composable
 fun BadCard() {
     Box(Modifier.padding(16.dp).background(Color.Blue)) { }
@@ -3479,13 +3478,13 @@ Values are scoped to descendants. Inner providers override outer ones.
 ### CompositionLocal Anti-Patterns
 
 ```kotlin
-// Bad: generic DI container
+// WRONG: generic DI container
 val LocalEverything = compositionLocalOf { AppContainer() }
 
-// Bad: MutableState inside CompositionLocal
+// WRONG: MutableState inside CompositionLocal
 val LocalCounter = compositionLocalOf { mutableStateOf(0) }
 
-// Good: provide the value, hoist the state
+// CORRECT: provide the value, hoist the state
 val LocalCount = compositionLocalOf { 0 }
 @Composable
 fun Parent() {
@@ -3784,7 +3783,7 @@ Button(onClick = { scope.launch { pagerState.animateScrollToPage(2) } }) {
 ### Nested Scrolling Pitfalls
 
 ```kotlin
-// Bad: nested same-axis scrollables fight
+// WRONG: nested same-axis scrollables fight
 LazyColumn {
     item {
         Column(Modifier.verticalScroll(rememberScrollState())) {
@@ -3881,7 +3880,7 @@ Pass `@Composable` lambdas, not pre-composed values. Optional slots use nullable
 Composables execute during composition at unpredictable times. Always use callbacks:
 
 ```kotlin
-// Bad: composables must not return values
+// WRONG: composables must not return values
 @Composable
 fun UserInput(): String {
     var text by remember { mutableStateOf("") }
@@ -3925,11 +3924,11 @@ private fun ProductDetailContent(
     // Pure UI rendering - no ViewModel dependency
 }
 
-// Bad: ViewModel reaches a child
+// WRONG: ViewModel reaches a child
 @Composable
 fun ProductCard(viewModel: ProductDetailViewModel) { }
 
-// Good: child takes only data + callbacks
+// CORRECT: child takes only data + callbacks
 @Composable
 fun ProductCard(product: Product, onClick: () -> Unit) { }
 ```

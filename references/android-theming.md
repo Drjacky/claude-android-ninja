@@ -127,7 +127,7 @@ Material 3 defines ~40 semantic color roles. Use these on `MaterialTheme.colorSc
 | Error Container    | `errorContainer`   | Error banner / inline error fill |
 | On Error Container | `onErrorContainer` | Text/icons on `errorContainer`   |
 
-**Surface roles** (the modern depth system - prefer over `background`)
+**Surface roles** (prefer surface container tones over `background`)
 
 | Role                      | `colorScheme.*`           | Use for                                                       |
 |---------------------------|---------------------------|---------------------------------------------------------------|
@@ -387,12 +387,11 @@ val DarkColorScheme = darkColorScheme(
 
 ### Generating Custom Color Schemes
 
-Use Material Theme Builder to generate custom schemes:
+Use [Material Theme Builder](https://m3.material.io/theme-builder) to export a Compose scheme:
 
-1. Visit [Material Theme Builder](https://m3.material.io/theme-builder)
-2. Select your brand color
-3. Export as Compose (Kotlin)
-4. Replace the color values in `Color.kt`
+- Pick the brand color
+- Export as Compose (Kotlin)
+- Replace values in `Color.kt`
 
 ### Using Colors in Composables
 
@@ -2094,10 +2093,11 @@ private fun ProfileCardPreview() {
 ### Material Theme Builder
 
 Use [Material Theme Builder](https://m3.material.io/theme-builder) to:
-1. Generate custom color schemes from brand colors
-2. Preview components with your theme
-3. Export Compose code directly
-4. Ensure WCAG contrast compliance
+
+- Generate custom color schemes from brand colors
+- Preview components against the scheme
+- Export Compose (Kotlin)
+- Check WCAG contrast in the builder
 
 ### Dynamic Color Considerations
 

@@ -877,7 +877,7 @@ private suspend fun refreshTasks() {
 override suspend fun createTask(task: Task): Result<Task> = runCatching {
     taskDao.insert(task.toEntity())
     
-    // Invalidate list cache since we added an item
+    // CORRECT: invalidate list cache after insert
     cacheManager.invalidateCache("tasks")
     
     syncCoordinator.scheduleSyncNow()

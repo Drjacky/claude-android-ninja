@@ -28,7 +28,7 @@ Required before adding modules or copying `assets/convention/` into an **existin
 
 Forbidden:
 
-- Copy `assets/convention/` into `build-logic/` when convention plugins already exist unless the user asked to adopt this skill's build logic.
+- Copy `assets/convention/` into `build-logic/` when convention plugins already exist unless the user asked to adopt the convention plugins from `assets/convention/`.
 - Add feature-to-feature dependencies that violate [Dependency Rules](#dependency-rules).
 
 Version catalog and SDK pins: [dependencies.md → Existing project (brownfield)](dependencies.md#existing-project-brownfield).

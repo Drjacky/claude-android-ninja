@@ -2379,9 +2379,9 @@ fun `when products loaded then state is success`() = runTest {
 }
 ```
 
-### Important: `cachedIn()` Limitations
+### `cachedIn()` limitations
 
-**Warning:** `cachedIn(viewModelScope)` caches `PagingData` and can swallow exceptions, making error-state testing unreliable.
+**Required:** When testing error paths on `PagingData`, avoid `cachedIn(viewModelScope)` in the code under test; it caches emissions and can hide failures from Turbine assertions.
 
 ```kotlin
 // WRONG: Problematic for error testing
