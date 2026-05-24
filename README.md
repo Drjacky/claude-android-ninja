@@ -211,12 +211,9 @@ From the repo root:
 ./.github/scripts/check-skill-ergonomics.sh  # INDEX/SKILL line caps; -quick.md for refs >= 1500 lines
 ./.github/scripts/check-skill-voice.sh       # directive-first prose ban-list (SKILL.md + references/)
 ./.github/scripts/check-skill-typography.sh  # ASCII dashes, quotes, spaces, ellipsis (skill markdown)
-./scripts/validate_translations.sh           # Android res/ locale key parity (run from app repo root)
 ```
 
 CI runs the full skill package validation on push and pull requests (`.github/workflows/validate-skill.yml`). `skills-ref` checks `name` / `description` frontmatter only; it does not require renaming `claude-android-ninja`.
-
-`validate_translations.sh` is for Android app repositories: copy or symlink it into the app repo, or run it with the project path as an argument.
 
 ## Contributing
 
