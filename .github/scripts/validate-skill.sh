@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT}"
 
+echo "==> Reference line counts (INDEX-sections headings, anchors, ~N blurbs)"
+"${ROOT}/.github/scripts/check-skill-index-line-counts.sh"
+
 echo "==> Internal markdown links"
 "${ROOT}/.github/scripts/check-skill-links.sh"
 

@@ -206,7 +206,9 @@ Use `--copy` instead of symlinks when your environment does not support symlinks
 From the repo root:
 
 ```bash
-./.github/scripts/validate-skill.sh          # links + ergonomics + voice + typography + skills-ref frontmatter
+./.github/scripts/validate-skill.sh          # line counts + links + ergonomics + voice + typography + skills-ref frontmatter
+./.github/scripts/check-skill-index-line-counts.sh  # reference line counts in skill markdown
+./.github/scripts/check-skill-index-line-counts.sh --fix  # refresh stale counts locally
 ./.github/scripts/check-skill-links.sh       # internal markdown links only
 ./.github/scripts/check-skill-ergonomics.sh  # INDEX/SKILL line caps; -quick.md for refs >= 1500 lines
 ./.github/scripts/check-skill-voice.sh       # directive-first prose ban-list (SKILL.md + references/)
