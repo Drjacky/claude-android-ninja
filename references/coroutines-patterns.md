@@ -1,5 +1,9 @@
 # Coroutines Patterns
 
+**Agent read contract:** Open [coroutines-patterns-quick.md](coroutines-patterns-quick.md) first. Read only the section you need below. Stop after that section unless the task needs `callbackFlow` samples or pitfall code blocks here.
+
+Forbidden: load this entire file when the quick file plus one section cover the task.
+
 ## Table of Contents
 
 1. [Android coroutine rules](#android-coroutine-rules)
@@ -11,7 +15,7 @@
 
 Use coroutines in a testable, lifecycle-aware way. Reference: [developer.android.com/kotlin/coroutines/coroutines-best-practices](https://developer.android.com/kotlin/coroutines/coroutines-best-practices).
 
-**Data Synchronization:** For retry mechanisms with exponential backoff and background sync patterns, see `references/android-data-sync.md`.
+**Data synchronization:** For retry, backoff, and WorkManager sync, see [android-data-sync-quick.md](android-data-sync-quick.md).
 
 ### Inject Dispatchers (Avoid Hardcoding)
 
@@ -962,6 +966,8 @@ class HardwarePrinterRepository(
 - Always wrap `withContext` *inside* `withTimeout`, never the reverse. The timeout must cover the dispatcher switch.
 - Use `withTimeoutOrNull` when `null` is an acceptable outcome. Use `withTimeout` when timeout must be distinguished from other failures.
 
+Optional depth below: open only when bridging callback APIs to `Flow` / `suspend` (not standard ViewModel `StateFlow` work).
+
 ## Bridging Imperative Callbacks to Coroutines
 
 Android and third-party SDKs expose many callback-based APIs. Use the right bridge depending on whether the callback produces **a stream of values** or **a single result**.
@@ -1623,3 +1629,5 @@ actually matters (it suspends when the buffer is full).
 
 For RxJava coexistence patterns (StateFlow bridge, disposal management, paging) and the
 RxJava-to-Coroutines migration path, see [migration.md](migration.md#rxjava-to-coroutines).
+
+Re-orient: [coroutines-patterns-quick.md](coroutines-patterns-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#coroutines-patternsmd-1625-lines)

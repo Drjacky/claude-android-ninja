@@ -2112,6 +2112,8 @@ Use [Material Theme Builder](https://m3.material.io/theme-builder) to:
 - Always provide **static fallback** for API < 31
 - Test with **various wallpapers** - light, dark, colorful, monochrome
 
+Re-orient: [android-theming-quick.md](android-theming-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-themingmd-2118-lines)
+
 ## References
 
 - [Material Design 3](https://m3.material.io/)

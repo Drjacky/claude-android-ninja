@@ -1,6 +1,10 @@
 # Design Patterns (Android-Focused)
 
-Pattern catalog for feature, module, business-logic, and utility design. Aligned with [architecture.md](architecture.md) and [modularization.md](modularization.md). Cache, conflict-resolution, and sync patterns live in [android-data-sync.md](android-data-sync.md).
+**Agent read contract:** Open [design-patterns-quick.md](design-patterns-quick.md) first. Read only the section you need below (use the table of contents). Stop after that section unless the task needs full GoF examples or Room FTS samples here.
+
+Forbidden: load this entire file when the quick file plus one section cover the task.
+
+Pattern catalog for feature, module, business-logic, and utility design. Aligned with [architecture.md](architecture.md) and [modularization.md](modularization.md). Cache, conflict-resolution, and sync patterns live in [android-data-sync-quick.md](android-data-sync-quick.md).
 
 ## Table of Contents
 1. [Principles](#principles)
@@ -666,6 +670,8 @@ class CachedAuthDataSource @Inject constructor(
     }
 }
 ```
+
+Optional depth below: open only when applying a specific GoF behavioral pattern beyond [design-patterns-quick.md](design-patterns-quick.md).
 
 ## Behavioral Patterns
 
@@ -1680,6 +1686,8 @@ class AppNavigator(private val navigator: Navigator) : ProfileNavigator, AuthNav
 }
 ```
 
+Optional depth below: Room-specific pattern catalog - prefer [architecture.md](architecture.md) and [migration.md](migration.md#room-2x-to-room-3) for standard DAO/repository setup.
+
 ## Room Database Patterns
 
 Guidance targets **Room 3** (`androidx.room3`): annotations such as `@Dao`, `@Entity`, `@Query` live in the `androidx.room3` package, and the database **must** be built with `.setDriver(...)` (for example [`BundledSQLiteDriver`](https://developer.android.com/reference/kotlin/androidx/sqlite/driver/bundled/BundledSQLiteDriver)). Invalidation is **Flow**-based (`InvalidationTracker.createFlow`); do not use removed `InvalidationTracker.Observer` APIs.
@@ -1747,4 +1755,6 @@ interface NoteDao {
     fun searchNotes(query: String): Flow<List<NoteEntity>>
 }
 ```
+
+Re-orient: [design-patterns-quick.md](design-patterns-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#design-patternsmd-1750-lines)
 

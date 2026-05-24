@@ -1,5 +1,9 @@
 # Android Security
 
+**Agent read contract:** Open [android-security-quick.md](android-security-quick.md) first. Read only the section you need below (use the table of contents). Stop after that section unless the task needs Play Integrity setup, checklists, or full code samples here.
+
+Forbidden: load this entire file when the quick file plus one section cover the task.
+
 Required: server is the trust boundary; the client only collects credentials and forwards integrity tokens. Layer Play Integrity (server-decoded) + Android Keystore + EncryptedSharedPreferences/EncryptedFile + network security config. Heuristic root/emulator checks are telemetry only - never the sole gate.
 
 ## Table of Contents
@@ -1086,6 +1090,8 @@ Google Play can show **in-app dialogs** so users fix licensing, Play services, o
 | `MEETS_STRONG_INTEGRITY`  | Genuine device, recent security patch, boot verified |
 | `MEETS_VIRTUAL_INTEGRITY` | Running in an emulator recognized by Google Play     |
 
+Optional depth below: supplementary telemetry only - not authoritative gates. Summary: [android-security-quick.md](android-security-quick.md).
+
 ## Root & Emulator Detection
 
 ### Relationship to Play Integrity
@@ -1780,6 +1786,8 @@ Use this checklist for every release:
 - [ ] StrongBox used when available
 
 ## Rules
+
+Re-orient: [android-security-quick.md](android-security-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-securitymd-1795-lines)
 
 Required:
 - Server is the trust boundary; client never makes the final authorization decision.

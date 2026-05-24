@@ -1,5 +1,9 @@
 # Android Accessibility (Compose)
 
+**Agent read contract:** Open [android-accessibility-quick.md](android-accessibility-quick.md) first. Read only the section you need below (use the table of contents). Stop after that section unless the task needs WCAG tables, code samples, or Espresso patterns here.
+
+Forbidden: load this entire file when the quick file plus one section cover the task.
+
 Required target: **WCAG 2.2 Level AA** plus the Android-specific rules below (48dp touch targets, TalkBack semantics, Material 3 contrast tokens). WCAG 2.2 is backwards-compatible with 2.1; every 2.1 AA criterion still applies.
 
 ## Table of Contents
@@ -990,6 +994,8 @@ fun AccessibleClickableCard(
 }
 ```
 
+Optional depth below: open only for extended component recipes beyond [android-accessibility-quick.md](android-accessibility-quick.md).
+
 ## Common Patterns
 
 Accessibility patterns for common UI components.
@@ -1498,6 +1504,8 @@ android {
 ```
 
 ## Rules
+
+Re-orient: [android-accessibility-quick.md](android-accessibility-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-accessibilitymd-1526-lines)
 
 **Required:**
 - Provide `contentDescription` for all icons and images
