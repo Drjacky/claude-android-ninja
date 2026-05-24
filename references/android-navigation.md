@@ -1,5 +1,9 @@
 # Navigation
 
+**Agent read contract:** Open [android-navigation-quick.md](android-navigation-quick.md) first. Read only the section you need below. Stop after that section unless the task needs full setup or deep-link samples here.
+
+Forbidden: load this entire file when the quick file plus one section cover the task.
+
 Required: Navigation 3 with type-safe `@Serializable` `NavKey` destinations, feature-defined `Navigator` interfaces, app-module wiring. Kotlin code must align with [kotlin-patterns.md](kotlin-patterns.md). Versions live in `assets/libs.versions.toml.template` (`navigation3` bundle).
 
 Pin the catalog `navigation3` ref to the latest **stable** release from [Navigation 3 releases](https://developer.android.com/jetpack/androidx/releases/navigation3) (template: `1.1.2`). Reference [nav3-recipes](https://github.com/android/nav3-recipes) for multi-back-stack, Hilt, and scene patterns.
@@ -485,6 +489,8 @@ End-to-end flow diagrams (UI → data → navigation): [architecture.md](archite
 ## Migration
 
 Navigation 2.x → Navigation3: [migration.md → Navigation 2.x to Navigation3](migration.md#navigation-2x-to-navigation3).
+
+Optional depth below: open only for Navigation3 transition / shared-element work beyond [android-navigation-quick.md](android-navigation-quick.md).
 
 ## Animations
 

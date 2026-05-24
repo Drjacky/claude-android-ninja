@@ -1,6 +1,10 @@
 # Jetpack Compose Patterns
 
-Required: Material 3, Navigation 3, adaptive layouts, edge-to-edge, lifecycle-aware state collection. Kotlin code aligns with [kotlin-patterns.md](kotlin-patterns.md). Accessibility (semantics, touch targets, TalkBack) is mandatory - [android-accessibility.md](android-accessibility.md). Theming via Material 3 semantic roles - [android-theming.md](android-theming.md). All user-facing text via string resources - [android-i18n.md](android-i18n.md).
+**Agent read contract:** Open [compose-patterns-quick.md](compose-patterns-quick.md) first. Read only the section you need from this file (use the table of contents below). Stop after that section unless the task needs code samples, checklists, or migration tables here.
+
+Forbidden: load this entire file when the quick file plus one section cover the task.
+
+Required: Material 3, Navigation 3, adaptive layouts, edge-to-edge, lifecycle-aware state collection. Kotlin code aligns with [kotlin-patterns.md](kotlin-patterns.md). Accessibility (semantics, touch targets, TalkBack) is mandatory - [android-accessibility-quick.md](android-accessibility-quick.md). Theming via Material 3 semantic roles - [android-theming-quick.md](android-theming-quick.md). All user-facing text via string resources - [android-i18n.md](android-i18n.md).
 
 ## Table of Contents
 
@@ -2281,6 +2285,8 @@ fun AuthEventCard(
 
 Optimize only when profiling identifies a real recomposition or allocation hotspot.
 
+Optional depth below: open only when the task needs motion APIs beyond [compose-patterns-quick.md](compose-patterns-quick.md#animation).
+
 ## Animation
 
 ### State-Based Animations
@@ -3237,6 +3243,8 @@ Box(mod.padding(16.dp))
 
 ### Custom Modifiers with Modifier.Node
 
+Optional depth: skip unless the task requires a custom `Modifier.Node` (not standard modifier chains).
+
 Use `Modifier.Node` for custom modifiers. `Modifier.composed` is deprecated.
 
 ```kotlin
@@ -3575,6 +3583,9 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
 **Anti-pattern:** Never call `searchResults.refresh()` directly in the composable body (it will loop infinitely). Call it only in event handlers (e.g., `PullToRefresh` or a retry button).
 
 #### Offline-first paging and RemoteMediator
+
+Routing summary: [compose-patterns-quick.md](compose-patterns-quick.md#offline-first-paging-and-remotemediator). Sync and WorkManager: [android-data-sync-quick.md](android-data-sync-quick.md).
+
 
 Use `RemoteMediator` when the list reads a Room 3 `PagingSource` and each page is fetched from a remote API and written into Room inside `load`.
 
@@ -4079,13 +4090,16 @@ fun ValidatedEmailField(
 
 ## Cross-references
 
+Re-orient: [compose-patterns-quick.md](compose-patterns-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#compose-patternsmd-4092-lines)
+
+
 - [architecture.md](architecture.md) — ViewModel patterns and state management
 - [modularization.md](modularization.md) — Feature modules and dependency rules
 - [android-navigation.md](android-navigation.md) — Navigation 3 and adaptive navigation
-- [android-accessibility.md](android-accessibility.md) — Semantics and TalkBack
-- [android-theming.md](android-theming.md) — Material 3, dynamic color, typography
+- [android-accessibility-quick.md](android-accessibility-quick.md) — Semantics and TalkBack
+- [android-theming-quick.md](android-theming-quick.md) — Material 3, dynamic color, typography
 - [android-i18n.md](android-i18n.md) — Localization, RTL, string resources
 - [kotlin-patterns.md](kotlin-patterns.md) — Immutability and data classes
-- [testing.md](testing.md) — Compose UI tests
+- [testing-quick.md](testing-quick.md) — Compose UI tests
 - [migration.md](migration.md) — Accompanist, Compose, Material, RxJava, Navigation migrations
 

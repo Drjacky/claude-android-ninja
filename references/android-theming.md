@@ -1,8 +1,12 @@
 # Android Theming
 
+**Agent read contract:** Open [android-theming-quick.md](android-theming-quick.md) first. Read only the section you need below. Stop after that section unless the task needs full token tables or export steps here.
+
+Forbidden: load this entire file when the quick file plus one section cover the task.
+
 Material Design 3 theming: dynamic color, custom color schemes, typography scales, shape theming, dark/light mode.
 
-All Kotlin code must align with `references/kotlin-patterns.md`. Theme usage in composables: `references/compose-patterns.md`. Color contrast targets: `references/android-accessibility.md`.
+All Kotlin code must align with [kotlin-patterns.md](kotlin-patterns.md). Theme usage in composables: [compose-patterns-quick.md](compose-patterns-quick.md). Color contrast targets: [android-accessibility-quick.md](android-accessibility-quick.md).
 
 ## Table of Contents
 
@@ -1162,6 +1166,8 @@ fun ProductCard(product: Product) {
     }
 }
 ```
+
+Optional depth below: open only for M3 Expressive motion/shape beyond [android-theming-quick.md](android-theming-quick.md).
 
 ## Material 3 Expressive
 

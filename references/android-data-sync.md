@@ -1,5 +1,9 @@
 # Android Data Synchronization & Offline-First
 
+**Agent read contract:** Open [android-data-sync-quick.md](android-data-sync-quick.md) first. Read only the section you need below. Stop after that section unless the task needs full Worker/repository samples here.
+
+Forbidden: load this entire file when the quick file plus one section cover the task.
+
 Required: local Room 3 DB is the single source of truth, UI observes it, all writes are local-first + WorkManager-scheduled.
 
 Kotlin code must align with [kotlin-patterns.md](kotlin-patterns.md). Repository / data-layer rules: [architecture.md](architecture.md). Async + structured concurrency: [coroutines-patterns.md](coroutines-patterns.md). Foreground sync services: [android-notifications.md](android-notifications.md).

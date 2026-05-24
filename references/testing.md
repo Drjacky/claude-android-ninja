@@ -1,5 +1,9 @@
 # Testing Patterns
 
+**Agent read contract:** Open [testing-quick.md](testing-quick.md) first. Read only the section you need below. Stop after that section unless the task needs full examples or checklists here.
+
+Forbidden: load this entire file when the quick file plus one section cover the task.
+
 Required: hand-written fakes (no mocking libraries) in feature/core modules; Google Truth for assertions; Turbine for `Flow`; Hilt + Robolectric/Compose UI for integration. MockK is permitted only inside the `app` module for Navigation 3 framework types. Layered targets follow [architecture.md](architecture.md) and [modularization.md](modularization.md).
 
 ## Table of Contents
@@ -2039,6 +2043,8 @@ Routing for auditing **screens and flows** before ship. Pair with [Screenshot Te
 | RTL / long strings / density           | Truncation, mirroring, overflow                             | [android-i18n.md](android-i18n.md)                                                                                                                                                          |
 
 Stop: do not treat a screen as complete when only the success branch exists in Compose unless domain rules make other branches impossible; then document that exhaustively (for example sealed `when` with a comment or test proving exhaustiveness).
+
+Optional depth below: open only for screenshot / Paparazzi / Roborazzi setup beyond [testing-quick.md](testing-quick.md).
 
 ## Screenshot Testing
 
