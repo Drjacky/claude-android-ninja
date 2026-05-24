@@ -592,7 +592,7 @@ fun ProductsListView(state: ProductsUiState) {
 - Use import aliases (`as CoreUiR`) when a file reads strings from multiple modules.
 - Promote shared copy to `core:common` or `core:ui` when multiple features need the same key.
 - Shared UI chrome strings live in `core:ui`; feature modules depend on that module instead of copying XML.
-- Non-transitive R class wiring: [gradle-setup.md → Non-transitive R classes](/references/gradle-setup.md#non-transitive-r-classes).
+- Non-transitive R class wiring: [gradle-setup.md → Non-transitive R classes](gradle-setup.md#non-transitive-r-classes).
 
 ## Architecture Integration
 
@@ -999,8 +999,22 @@ jobs:
       
       - name: Validate all translations exist
         run: |
-          # Check that all string keys exist in all locales
+          # From repo root; compares values-*/strings.xml, plurals.xml, arrays.xml to values/
           ./scripts/validate_translations.sh
+          # Optional: fail on locale-only keys not in default
+          # ./scripts/validate_translations.sh --strict
+```
+
+Run from an Android project root (or pass a path):
+
+```bash
+./scripts/validate_translations.sh
+./scripts/validate_translations.sh /path/to/android-project
+./scripts/validate_translations.sh --strict
+```
+
+Scans every `**/res/values/` tree under the root. For each `values-*/` directory that contains `strings.xml`, `plurals.xml`, or `arrays.xml`, every resource `name` in the default `values/` file must exist in the locale file.
+
 ```
 
 ## Common Pitfalls
