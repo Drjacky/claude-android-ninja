@@ -2,6 +2,29 @@
 
 Required: Gradle 9.x wrapper, JVM 17+, KSP (never kapt), version catalog, convention plugins in `build-logic/convention`. Module structure follows [modularization.md](/references/modularization.md). Gradle wrapper and catalog `agp` are independent pins; a high Gradle version does not force a matching AGP patch.
 
+## Verify after toolchain or module changes
+
+Required after a new module, DI graph change, navigation graph change, Room schema change, or AGP/Kotlin/KSP bump:
+
+```bash
+./gradlew help
+./gradlew :app:assembleDebug
+```
+
+Use the project's actual app module name when it is not `:app`.
+
+Required when unit tests were added or touched:
+
+```bash
+./gradlew testDebugUnitTest
+```
+
+Use `connectedDebugAndroidTest` or `connectedCheck` only when an emulator or device is available and the user expects instrumented runs.
+
+Forbidden: claim the build passes without running Gradle when the environment exposes it.
+
+Catalog and AGP pin rules: [dependencies.md → Version Strategy](/references/dependencies.md#version-strategy). AGP 404 / `compileSdk` 37: [AGP version pin (resolve before merge)](#agp-version-pin-resolve-before-merge).
+
 ## AGP 9 Key Changes
 
 - **Built-in Kotlin**: AGP 9 has built-in Kotlin support. The `org.jetbrains.kotlin.android` plugin is no longer needed for Android modules. Remove it from all `build.gradle.kts` files and convention plugins.

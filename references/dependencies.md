@@ -50,6 +50,23 @@ Use `androidx.paging:paging-testing` on test source sets only (`testImplementati
 
 ## Version Strategy
 
+### Existing project (brownfield)
+
+Required before changing versions in a user repo:
+
+1. Treat the project's `gradle/libs.versions.toml` (or equivalent) as source of truth, not `assets/libs.versions.toml.template`.
+2. Read `compileSdk`, `targetSdk`, and applied AGP/Kotlin/KSP lines from convention plugins or the `app` module.
+3. Propose template/catalog upgrades only when the user asks, `./gradlew help` fails, or a migration doc in [migration.md](migration.md) requires a bump.
+4. After any catalog or AGP/Kotlin/KSP bump: `./gradlew help` must pass before merge.
+
+Forbidden:
+
+- Overwrite the user's version catalog with `assets/libs.versions.toml.template` without explicit request.
+- Bump AGP/Kotlin/KSP/Room in the same task as an unrelated feature without `./gradlew help` passing on the result.
+- Assume `compileSdk` / `targetSdk` 37 when the project pins lower values.
+
+Greenfield bootstrap pins: [SKILL.md](../SKILL.md) Workflow Decision Tree ("Creating a new project?") and `assets/libs.versions.toml.template`.
+
 ### Stability Requirements
 
 **Production apps:**

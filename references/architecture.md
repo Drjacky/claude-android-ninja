@@ -98,6 +98,19 @@ Four-layer architecture with strict module separation and unidirectional data fl
 8. **Navigation coordination**: App module coordinates navigation between features
 9. **Pattern fit**: Choose patterns that match Android constraints and the module boundaries (see `references/design-patterns.md`)
 
+### Stack defaults (greenfield)
+
+| Layer      | Default                                                             |
+|------------|---------------------------------------------------------------------|
+| UI         | Jetpack Compose + Material 3                                        |
+| Navigation | Navigation3 + type-safe `NavKey`                                    |
+| DI         | Hilt                                                                |
+| Local DB   | Room 3 (`androidx.room3`, KSP, `SQLiteDriver`)                      |
+| Async      | Coroutines + `StateFlow` / `Flow`                                   |
+| Modules    | Feature-first + `core/*` per [modularization.md](modularization.md) |
+
+**Brownfield:** follow the user repo's existing stack first. Use [migration.md](migration.md) for incremental moves. Forbidden: rip out working Navigation 2, Room 2, or XML in one pass unless the user scoped a migration.
+
 ## Cross-cutting anti-patterns (quick reference)
 
 Domain-specific pitfalls (navigation, Room 3, Paging, etc.) live in their topic references. **Scope:** layering and state shape. Deeper guidance on recomposition and stability: `references/android-performance.md` and `references/compose-patterns.md`.

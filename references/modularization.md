@@ -10,12 +10,28 @@ Multi-module is **required** for any project beyond a single throwaway sample. U
 - `core/domain` will be reused across product surfaces (app, Wear, TV).
 
 ## Table of Contents
-1. [Module Types](#module-types)
-2. [Module Structure](#module-structure)
-3. [Dependency Rules](#dependency-rules)
-4. [Creating Modules](#creating-modules)
-5. [Navigation Coordination](#navigation-coordination)
-6. [Build Configuration](#build-configuration)
+1. [Existing project alignment](#existing-project-alignment)
+2. [Module Types](#module-types)
+3. [Module Structure](#module-structure)
+4. [Dependency Rules](#dependency-rules)
+5. [Creating Modules](#creating-modules)
+6. [Navigation Coordination](#navigation-coordination)
+7. [Build Configuration](#build-configuration)
+
+## Existing project alignment
+
+Required before adding modules or copying `assets/convention/` into an **existing** repo:
+
+1. Read `settings.gradle.kts` (or `.gradle`) for `include(...)` names and `includeBuild("build-logic")`.
+2. Skim one feature module `build.gradle.kts` and a representative `*ViewModel` / `*Screen` to detect Navigation 2 vs 3, Room 2 vs 3, XML vs Compose-only, and Hilt vs manual DI.
+3. Match the project's module naming and dependency direction; open [migration.md](migration.md) when the repo lags skill defaults.
+
+Forbidden:
+
+- Copy `assets/convention/` into `build-logic/` when convention plugins already exist unless the user asked to adopt this skill's build logic.
+- Add feature-to-feature dependencies that violate [Dependency Rules](#dependency-rules).
+
+Version catalog and SDK pins: [dependencies.md → Existing project (brownfield)](dependencies.md#existing-project-brownfield).
 
 ## Build Configuration
 
