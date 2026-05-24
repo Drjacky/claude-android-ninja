@@ -1,6 +1,6 @@
 # Navigation (quick)
 
-Full guide: [android-navigation.md](android-navigation.md) (~2150 lines). Index: [INDEX.md](INDEX.md#android-navigationmd-2152-lines).
+Full guide: [android-navigation.md](android-navigation.md) (~2150 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#android-navigationmd-2152-lines).
 
 ## Section routing
 

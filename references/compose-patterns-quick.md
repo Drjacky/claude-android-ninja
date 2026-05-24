@@ -1,6 +1,6 @@
 # Compose patterns (quick)
 
-Full guide: [compose-patterns.md](compose-patterns.md) (~4100 lines). Index: [INDEX.md](INDEX.md#compose-patternsmd-4092-lines).
+Full guide: [compose-patterns.md](compose-patterns.md) (~4100 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#compose-patternsmd-4092-lines).
 
 Required before UI work:
 

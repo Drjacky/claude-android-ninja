@@ -1,6 +1,6 @@
 # Data sync (quick)
 
-Full guide: [android-data-sync.md](android-data-sync.md) (~2340 lines). Index: [INDEX.md](INDEX.md#android-data-syncmd-2344-lines).
+Full guide: [android-data-sync.md](android-data-sync.md) (~2340 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#android-data-syncmd-2344-lines).
 
 ## Section routing
 

@@ -50,7 +50,8 @@ Browse this skill on [SkillsMP](https://skillsmp.com/skills/drjacky-claude-andro
 
 ## Key Files
 - [`SKILL.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/SKILL.md) - entry point (Quick Reference, Examples, Troubleshooting)
-- [`references/INDEX.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/INDEX.md) - all 29 reference files, section anchors, quick companions
+- [`references/INDEX.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/INDEX.md) - summary table of all reference files and quick companions (~50 lines)
+- [`references/INDEX-sections.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/INDEX-sections.md) - detailed section anchors (open only when quick routing is insufficient)
 - [`references/workflows.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/workflows.md) - extended task routing when Quick Reference is not enough
 - [`references/architecture.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/architecture.md) - architecture principles, data/domain/ui/common layers, nullable network DTOs, and flows
 - [`references/modularization.md`](https://github.com/Drjacky/claude-android-ninja/blob/master/references/modularization.md) - module structure, dependency rules, and feature module creation
