@@ -897,6 +897,7 @@ Quick routing: [compose-patterns-quick.md](compose-patterns-quick.md)
 ### coroutines-patterns.md (1625 lines)
 
 Open when: Dispatchers, Flow, StateFlow, testing coroutines, callbackFlow
+Quick routing: [coroutines-patterns-quick.md](coroutines-patterns-quick.md)
 
 - [Table of Contents](coroutines-patterns.md#table-of-contents)
 - [Android coroutine rules](coroutines-patterns.md#android-coroutine-rules)
@@ -1014,6 +1015,7 @@ Open when: Version catalog, BOMs, pins, brownfield alignment, adding dependencie
 ### design-patterns.md (1750 lines)
 
 Open when: Gang-of-four style patterns adapted for Android modules
+Quick routing: [design-patterns-quick.md](design-patterns-quick.md)
 
 - [Table of Contents](design-patterns.md#table-of-contents)
 - [Principles](design-patterns.md#principles)

@@ -26,10 +26,10 @@ Forbidden: load every file below; load a multi-thousand-line file in full when a
 | [architecture.md](architecture.md)                   |   961 | MVVM layers, repositories, DI, network, DataStore vs Room                       | -                                                          |
 | [code-quality.md](code-quality.md)                   |   319 | Detekt convention plugin, custom rules, CI                                      | -                                                          |
 | [compose-patterns.md](compose-patterns.md)           |  4092 | Screens, state, side effects, lists, edge-to-edge, forms, animation             | [compose-patterns-quick.md](compose-patterns-quick.md)     |
-| [coroutines-patterns.md](coroutines-patterns.md)     |  1625 | Dispatchers, Flow, StateFlow, testing coroutines, callbackFlow                  | -                                                          |
+| [coroutines-patterns.md](coroutines-patterns.md)     |  1625 | Dispatchers, Flow, StateFlow, testing coroutines, callbackFlow                  | [coroutines-patterns-quick.md](coroutines-patterns-quick.md) |
 | [crashlytics.md](crashlytics.md)                     |   709 | Firebase/Sentry interfaces, breadcrumbs, PII scrubbing                          | -                                                          |
 | [dependencies.md](dependencies.md)                   |   289 | Version catalog, BOMs, pins, brownfield alignment, adding dependencies          | -                                                          |
-| [design-patterns.md](design-patterns.md)             |  1750 | Gang-of-four style patterns adapted for Android modules                         | -                                                          |
+| [design-patterns.md](design-patterns.md)             |  1750 | Gang-of-four style patterns adapted for Android modules                         | [design-patterns-quick.md](design-patterns-quick.md)       |
 | [gradle-setup.md](gradle-setup.md)                   |  1086 | Convention plugins, flavors, R8 audit, build performance, verify Gradle         | -                                                          |
 | [kotlin-delegation.md](kotlin-delegation.md)         |   750 | Interface delegation instead of base ViewModels                                 | -                                                          |
 | [kotlin-patterns.md](kotlin-patterns.md)             |  1049 | Kotlin style, Result types, ViewModel patterns (all Kotlin code)                | -                                                          |
@@ -44,6 +44,8 @@ Forbidden: load every file below; load a multi-thousand-line file in full when a
 |------------------------------------------------------------|------------------------------------------------|------:|
 | [android-accessibility-quick.md](android-accessibility-quick.md) | [android-accessibility.md](android-accessibility.md) |  1526 |
 | [android-security-quick.md](android-security-quick.md)     | [android-security.md](android-security.md)     |  1795 |
+| [coroutines-patterns-quick.md](coroutines-patterns-quick.md) | [coroutines-patterns.md](coroutines-patterns.md) |  1625 |
+| [design-patterns-quick.md](design-patterns-quick.md)     | [design-patterns.md](design-patterns.md)     |  1750 |
 | [compose-patterns-quick.md](compose-patterns-quick.md)     | [compose-patterns.md](compose-patterns.md)     |  4092 |
 | [testing-quick.md](testing-quick.md)                       | [testing.md](testing.md)                       |  2544 |
 | [android-data-sync-quick.md](android-data-sync-quick.md)   | [android-data-sync.md](android-data-sync.md)   |  2344 |
