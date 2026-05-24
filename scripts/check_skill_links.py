@@ -10,7 +10,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 LINK_RE = re.compile(r"\]\(([^)]+)\)")
 FORBIDDEN_ABS_REF = "](/references/"
-SCAN_GLOBS = ("SKILL.md", "references/**/*.md", "assets/convention/*.md", "README.md")
+SCAN_GLOBS = (
+    "SKILL.md",
+    "references/**/*.md",
+    "assets/convention/*.md",
+    "README.md",
+)
 
 
 def is_external(url: str) -> bool:
