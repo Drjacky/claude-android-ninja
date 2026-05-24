@@ -7,6 +7,9 @@ cd "${ROOT}"
 echo "==> Internal markdown links"
 "${ROOT}/scripts/check-skill-links.sh"
 
+echo "==> Agent ergonomics (INDEX/SKILL size, -quick.md coverage)"
+"${ROOT}/scripts/check-skill-ergonomics.sh"
+
 run_skills_ref() {
   # skills-ref requires the path basename to match `name:` in frontmatter (not ".").
   skills-ref validate "${ROOT}"

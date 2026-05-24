@@ -207,7 +207,8 @@ From the repo root:
 
 ```bash
 ./scripts/check-skill-links.sh       # internal markdown links only
-./scripts/validate-skill.sh          # links + agentskills skills-ref frontmatter
+./scripts/validate-skill.sh          # links + ergonomics guards + agentskills skills-ref frontmatter
+./scripts/check-skill-ergonomics.sh  # INDEX/SKILL line caps; -quick.md for refs >= 1500 lines
 ./scripts/validate_translations.sh   # Android res/ locale key parity (run from app repo root)
 ```
 
