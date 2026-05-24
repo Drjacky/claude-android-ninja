@@ -210,6 +210,7 @@ From the repo root:
 ./scripts/validate-skill.sh          # links + ergonomics + voice + agentskills skills-ref frontmatter
 ./scripts/check-skill-ergonomics.sh  # INDEX/SKILL line caps; -quick.md for refs >= 1500 lines
 ./scripts/check-skill-voice.sh       # directive-first prose ban-list (SKILL.md + references/)
+./scripts/check-skill-typography.sh  # ASCII dashes, quotes, spaces, ellipsis (skill markdown)
 ./scripts/validate_translations.sh   # Android res/ locale key parity (run from app repo root)
 ```
 

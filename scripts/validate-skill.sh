@@ -13,6 +13,9 @@ echo "==> Agent ergonomics (INDEX/SKILL size, -quick.md coverage)"
 echo "==> Skill-doc voice"
 "${ROOT}/scripts/check-skill-voice.sh"
 
+echo "==> Markdown typography (ASCII punctuation and spaces)"
+"${ROOT}/scripts/check-skill-typography.sh"
+
 run_skills_ref() {
   # skills-ref requires the path basename to match `name:` in frontmatter (not ".").
   skills-ref validate "${ROOT}"
