@@ -476,6 +476,7 @@ sentry {
     projectName.set("your-project")
     authToken.set(System.getenv("SENTRY_AUTH_TOKEN"))
 }
+```
 
 ## Breadcrumbs
 

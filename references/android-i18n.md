@@ -1015,8 +1015,6 @@ Run from an Android project root (or pass a path):
 
 Scans every `**/res/values/` tree under the root. For each `values-*/` directory that contains `strings.xml`, `plurals.xml`, or `arrays.xml`, every resource `name` in the default `values/` file must exist in the locale file.
 
-```
-
 ## Common Pitfalls
 
 ### Pitfall: RTL skipped
