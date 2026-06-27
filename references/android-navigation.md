@@ -6,7 +6,7 @@ Forbidden: load this entire file when the quick file plus one section cover the 
 
 Required: Navigation 3 with type-safe `@Serializable` `NavKey` destinations, feature-defined `Navigator` interfaces, app-module wiring. Kotlin code must align with [kotlin-patterns.md](kotlin-patterns.md). Versions live in `assets/libs.versions.toml.template` (`navigation3` bundle).
 
-Pin the catalog `navigation3` ref to the latest **stable** release from [Navigation 3 releases](https://developer.android.com/jetpack/androidx/releases/navigation3) (template: `1.1.2`). Reference [nav3-recipes](https://github.com/android/nav3-recipes) for multi-back-stack, Hilt, and scene patterns.
+Pin the catalog `navigation3` ref to the latest **stable** release from [Navigation 3 releases](https://developer.android.com/jetpack/androidx/releases/navigation3) (template: `1.1.3`). Reference [nav3-recipes](https://github.com/android/nav3-recipes) for multi-back-stack, Hilt, and scene patterns.
 
 **Use when:** Navigation3 **1.2+** (`DeepLinkRequest`, `UriDeepLinkMatcher`, expanded matcher APIs) - pin an alpha from the same release page; keep the template catalog on stable until 1.2 graduates.
 
