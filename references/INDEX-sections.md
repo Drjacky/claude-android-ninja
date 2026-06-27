@@ -219,7 +219,7 @@ Open when: Material Symbols, Coil3, Canvas, Palette, launcher icons
 - [Rules](android-graphics.md#rules)
 - [Additional Resources](android-graphics.md#additional-resources)
 
-### android-i18n.md (1057 lines)
+### android-i18n.md (1055 lines)
 
 Open when: strings.xml, plurals, RTL, locale formatting, translation CI
 
@@ -945,7 +945,7 @@ Quick routing: [coroutines-patterns-quick.md](coroutines-patterns-quick.md)
   - [Using emit() on MutableStateFlow](coroutines-patterns.md#using-emit-on-mutablestateflow)
 - [Coexisting with RxJava (Legacy Code)](coroutines-patterns.md#coexisting-with-rxjava-legacy-code)
 
-### crashlytics.md (709 lines)
+### crashlytics.md (710 lines)
 
 Open when: Firebase/Sentry interfaces, breadcrumbs, PII scrubbing
 
