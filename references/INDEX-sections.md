@@ -593,7 +593,7 @@ Quick routing: [android-security-quick.md](android-security-quick.md)
   - [Device Security](android-security.md#device-security)
 - [Rules](android-security.md#rules)
 
-### android-strictmode.md (236 lines)
+### android-strictmode.md (235 lines)
 
 Open when: StrictMode, cleartext detection, Compose stability diagnostics
 

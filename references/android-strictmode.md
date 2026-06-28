@@ -124,11 +124,14 @@ composeCompiler {
     if (enableReports) {
         reportsDestination = layout.buildDirectory.dir("compose-reports")
     }
-    
-    enableStrongSkippingMode = true
-    stabilityConfigurationFile = rootProject.file("stability_config.conf")
+
+    stabilityConfigurationFiles.add(
+        rootProject.layout.projectDirectory.file("compose_compiler_config.conf")
+    )
 }
 ```
+
+Strong Skipping is on by default on Kotlin 2.0+; do not set `enableStrongSkippingMode` (removed from the `composeCompiler {}` DSL).
 
 **Generating reports:**
 ```bash
@@ -148,17 +151,13 @@ Reports will be in `build/compose-metrics/` and `build/compose-reports/` for eac
 
 ### Stability Configuration File
 
-Create `stability_config.conf` in your **root project directory** to mark external types as stable.
-
-Use the filename from the [Compose Compiler stability configuration](https://developer.android.com/develop/ui/compose/performance/stability/fix#configuration-file) documentation.
+Create `compose_compiler_config.conf` in your **root project directory** to mark external types as stable.
 
 Use this when third-party or generated types are immutable in fact but lack `@Stable`/`@Immutable`. Without an entry here, Compose marks them unstable and recomposes unnecessarily.
 
-`stability_config.conf`:
-
 **Common patterns to include:**
 
-`compose-stability.conf`:
+`compose_compiler_config.conf`:
 ```text
 // Kotlin immutable collections (mark all as stable)
 kotlin.collections.*
@@ -190,10 +189,10 @@ After building, review the generated metrics:
 
 ```bash
 # View unstable composables
-cat build/compose_reports/module_composables.txt
+cat build/compose-reports/module_composables.txt
 
 # View detailed stability info
-cat build/compose_reports/module_classes.txt
+cat build/compose-reports/module_classes.txt
 ```
 
 Look for:
