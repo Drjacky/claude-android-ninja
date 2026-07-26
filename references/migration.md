@@ -820,6 +820,21 @@ Route background audio and video through Media3 `MediaSessionService`, `mediaPla
 
 `screenOrientation`, `resizableActivity="false"`, and aspect-ratio caps are ignored on `sw600dp+` displays at API 36+; API 37 keeps that rule and expects the app window to fill the display on those devices. Build `WindowSizeClass`-driven UIs instead of manifest locks. Games (`android:appCategory="game"`) follow platform carve-outs; confirm eligibility in [Android 17 migration](https://developer.android.com/about/versions/17/migration). In-repo layout rules: [compose-patterns.md → Adaptive Layouts (Mandatory on API 36+ for Large Screens)](compose-patterns.md#adaptive-layouts-mandatory-on-api-36-for-large-screens).
 
+**The temporary opt-out is gone at target 37.** `PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY` no longer works; `android:appCategory="game"` is the only remaining exemption. Test the behavior before retargeting with the `UNIVERSAL_RESIZABLE_BY_DEFAULT` compat flag:
+
+```bash
+adb shell am compat enable UNIVERSAL_RESIZABLE_BY_DEFAULT <package>
+```
+
+Replace display-metrics APIs that report the wrong bounds in a resizable window:
+
+| Deprecated                                                          | Use instead                                     |
+|---------------------------------------------------------------------|-------------------------------------------------|
+| `Display.getMetrics()`, `getSize()`, `getRealSize()`, `getRealMetrics()` | `WindowManager.getCurrentWindowMetrics()`, or `WindowMetricsCalculator` from Jetpack WindowManager |
+| `View.getWindowVisibleDisplayFrame()`                                | `WindowInsets` APIs                              |
+
+Forbidden: requesting runtime permissions from a transparent trampoline Activity. On a resizable window the prompt can be sized or positioned unexpectedly - request from the Activity that owns the visible UI.
+
 ### IME after rotation
 
 Target SDK 37 does not restore IME visibility across configuration changes by default. Wire `android:windowSoftInputMode` and runtime `WindowInsetsControllerCompat` per [compose-patterns.md → IME (soft keyboard) insets](compose-patterns.md#ime-soft-keyboard-insets).

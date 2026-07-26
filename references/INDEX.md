@@ -16,7 +16,7 @@ Forbidden: load every file below; load a multi-thousand-line file in full when a
 | [android-graphics.md](android-graphics.md)           |  1195 | Icons, adaptive launcher specs, custom drawing, Material Symbols, Coil3, Canvas                                      | -                                                                |
 | [android-i18n.md](android-i18n.md)                   |  1055 | strings.xml, plurals, RTL, locale formatting, translation CI                                                         | -                                                                |
 | [android-media.md](android-media.md)                 |   176 | Media3 background playback API 37, picking, sharing, preloading                                                      | -                                                                |
-| [android-navigation.md](android-navigation.md)       |  2162 | Navigation3, deep links, App Links, adaptive layouts, large screens                                                  | [android-navigation-quick.md](android-navigation-quick.md)       |
+| [android-navigation.md](android-navigation.md)       |  2251 | Navigation3, deep links, App Links, adaptive layouts, large screens                                                  | [android-navigation-quick.md](android-navigation-quick.md)       |
 | [android-notifications.md](android-notifications.md) |  1322 | Channels, FGS, MediaStyle, PiP, sharesheet from notification taps                                                    | -                                                                |
 | [android-performance.md](android-performance.md)     |  1385 | Macrobenchmark, baseline profiles, vitals, recomposition, startup, APA/Perfetto                                      | -                                                                |
 | [android-permissions.md](android-permissions.md)     |   921 | Runtime permissions, Photo Picker, contact picker session URIs, `ACCESS_LOCAL_NETWORK`, API 37 location privacy       | -                                                                |
@@ -33,7 +33,7 @@ Forbidden: load every file below; load a multi-thousand-line file in full when a
 | [gradle-setup.md](gradle-setup.md)                   |  1310 | Convention plugins, flavors, R8 `optimization {}` DSL, R8 config analyzer, build performance, verify Gradle          | -                                                                |
 | [kotlin-delegation.md](kotlin-delegation.md)         |   750 | Interface delegation instead of base ViewModels                                                                      | -                                                                |
 | [kotlin-patterns.md](kotlin-patterns.md)             |  1053 | Kotlin style, Result types, ViewModel patterns (all Kotlin code)                                                     | -                                                                |
-| [migration.md](migration.md)                         |   945 | XML→Compose, LiveData, RxJava, Nav2→3, Room 2→3, API 37                                                              | -                                                                |
+| [migration.md](migration.md)                         |   960 | XML→Compose, LiveData, RxJava, Nav2→3, Room 2→3, API 37                                                              | -                                                                |
 | [modularization.md](modularization.md)               |   417 | Module types, dependency rules, feature modules, existing-project alignment                                          | -                                                                |
 | [testing.md](testing.md)                             |  2611 | Pre-release UI states, ADB/UIAutomator, Fakes, Turbine, Hilt tests, Compose UI, deep links                           | [testing-quick.md](testing-quick.md)                             |
 | [workflows.md](workflows.md)                         |   342 | Task not in Quick Reference; greenfield bootstrap; multi-topic routing                                               | -                                                                |
@@ -49,7 +49,7 @@ Forbidden: load every file below; load a multi-thousand-line file in full when a
 | [compose-patterns-quick.md](compose-patterns-quick.md)           | [compose-patterns.md](compose-patterns.md)           |  4202 |
 | [testing-quick.md](testing-quick.md)                             | [testing.md](testing.md)                             |  2611 |
 | [android-data-sync-quick.md](android-data-sync-quick.md)         | [android-data-sync.md](android-data-sync.md)         |  2415 |
-| [android-navigation-quick.md](android-navigation-quick.md)       | [android-navigation.md](android-navigation.md)       |  2162 |
+| [android-navigation-quick.md](android-navigation-quick.md)       | [android-navigation.md](android-navigation.md)       |  2251 |
 | [android-theming-quick.md](android-theming-quick.md)             | [android-theming.md](android-theming.md)             |  2126 |
 
 

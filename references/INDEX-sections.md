@@ -296,7 +296,7 @@ Open when: Media3 background playback API 37, picking, sharing, preloading
   - [Manifest](android-media.md#manifest)
   - [Service skeleton](android-media.md#service-skeleton)
 
-### android-navigation.md (2162 lines)
+### android-navigation.md (2251 lines)
 
 Open when: Navigation3, deep links, App Links, adaptive layouts, large screens
 Quick routing: [android-navigation-quick.md](android-navigation-quick.md)
@@ -324,6 +324,10 @@ Quick routing: [android-navigation-quick.md](android-navigation-quick.md)
 - [Scenes & Custom Layouts](android-navigation.md#scenes-custom-layouts)
   - [Scene Interface](android-navigation.md#scene-interface)
   - [SceneStrategy](android-navigation.md#scenestrategy)
+    - [Pass a list, not a chain](android-navigation.md#pass-a-list-not-a-chain)
+    - [Implementing a custom Scene](android-navigation.md#implementing-a-custom-scene)
+    - [Scene decorators](android-navigation.md#scene-decorators)
+    - [NavMetadata DSL](android-navigation.md#navmetadata-dsl)
   - [Dialog Navigation](android-navigation.md#dialog-navigation)
   - [Bottom Sheet Navigation](android-navigation.md#bottom-sheet-navigation)
   - [Custom Scene: List-Detail Layout](android-navigation.md#custom-scene-list-detail-layout)
@@ -334,6 +338,7 @@ Quick routing: [android-navigation-quick.md](android-navigation-quick.md)
   - [Task Management](android-navigation.md#task-management)
   - [AndroidManifest Setup](android-navigation.md#androidmanifest-setup)
   - [onNewIntent for singleTask](android-navigation.md#onnewintent-for-singletask)
+  - [Broad manifest scope with server-side path routing (Android 15+)](android-navigation.md#broad-manifest-scope-with-server-side-path-routing-android-15)
   - [App Links Verification](android-navigation.md#app-links-verification)
   - [Dynamic App Links (Android 15+, API 35)](android-navigation.md#dynamic-app-links-android-15-api-35)
   - [DomainVerificationManager Runtime Check](android-navigation.md#domainverificationmanager-runtime-check)
@@ -1223,7 +1228,7 @@ Open when: Kotlin style, Result types, ViewModel patterns (all Kotlin code)
   - [Generic Suspending Functions](kotlin-patterns.md#generic-suspending-functions)
 - [Rules Summary](kotlin-patterns.md#rules-summary)
 
-### migration.md (945 lines)
+### migration.md (960 lines)
 
 Open when: XML→Compose, LiveData, RxJava, Nav2→3, Room 2→3, API 37
 

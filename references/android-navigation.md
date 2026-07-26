@@ -6,7 +6,9 @@ Forbidden: load this entire file when the quick file plus one section cover the 
 
 Required: Navigation 3 with type-safe `@Serializable` `NavKey` destinations, feature-defined `Navigator` interfaces, app-module wiring. Kotlin code must align with [kotlin-patterns.md](kotlin-patterns.md). Versions live in `assets/libs.versions.toml.template` (`navigation3` bundle).
 
-Pin the catalog `navigation3` ref to the latest **stable** release from [Navigation 3 releases](https://developer.android.com/jetpack/androidx/releases/navigation3) (template: `1.1.3`). Reference [nav3-recipes](https://github.com/android/nav3-recipes) for multi-back-stack, Hilt, and scene patterns.
+Pin the catalog `navigation3` ref to the latest **stable** release from [Navigation 3 releases](https://developer.android.com/jetpack/androidx/releases/navigation3) (template: `1.1.4`). Reference [nav3-recipes](https://github.com/android/nav3-recipes) for multi-back-stack, Hilt, and scene patterns.
+
+On 1.1.x, `NavDisplay` / `rememberSceneState` take a **list** of scene strategies and a separate list of scene decorators; the single-strategy parameter and the `then` operator are deprecated ([Pass a list, not a chain](#pass-a-list-not-a-chain)). Predictive Back now animates in Studio previews with `navigationevent` 1.1.1+.
 
 **Use when:** Navigation3 **1.2+** (`DeepLinkRequest`, `UriDeepLinkMatcher`, expanded matcher APIs) - pin an alpha from the same release page; keep the template catalog on stable until 1.2 graduates.
 
@@ -622,6 +624,60 @@ Returns `null` if it cannot handle the entries, letting the next strategy try. B
 - `SinglePaneSceneStrategy` - displays the last entry full-screen (default)
 - `DialogSceneStrategy` - renders entries marked as dialogs in an overlay
 
+#### Pass a list, not a chain
+
+**Required:** `NavDisplay` and `rememberSceneState` take **`sceneStrategies: List<SceneStrategy<T>>`**. Strategies are tried in order; the first non-null `Scene` wins.
+
+```kotlin
+NavDisplay(
+    backStack = backStack,
+    sceneStrategies = listOf(dialogStrategy, listDetailStrategy),
+    // ...
+)
+```
+
+**Forbidden:** the singular `sceneStrategy =` parameter and the `then` infix operator. Both are **`@Deprecated`** in Navigation3 1.1.x in favour of the list APIs.
+
+```kotlin
+// WRONG: deprecated single-strategy parameter
+NavDisplay(sceneStrategy = dialogStrategy then listDetailStrategy, ...)
+```
+
+#### Implementing a custom Scene
+
+A custom `Scene` **must** be a `data class` or implement `equals` / `hashCode` over `key`, `entries`, and `previousEntries` - excluding lambda/callback properties, which are never stable. Without it `NavDisplay` treats every recomposition as a new `Scene` and re-runs the top-level transition.
+
+When writing a **decorating** scene (one that wraps another), derive the key from the wrapped scene so built-in animations still work:
+
+```kotlin
+override val key: Any = scene::class to scene.key
+```
+
+#### Scene decorators
+
+`SceneDecoratorStrategy` is split out of `SceneStrategy` and supplied separately:
+
+```kotlin
+NavDisplay(
+    backStack = backStack,
+    sceneStrategies = listOf(listDetailStrategy),
+    sceneDecoratorStrategies = listOf(myDecorator),
+    // ...
+)
+```
+
+Its single function is `SceneDecoratorStrategyScope<T>.decorateScene(scene: Scene<T>): Scene<T>`.
+
+**`OverlayScene`s are not decorated.** A decorator that must also affect dialogs or bottom sheets has to handle them another way. `OverlayScene` also gained a suspending `onRemoved` callback for teardown.
+
+#### NavMetadata DSL
+
+Attach typed metadata to an entry with `MetadataKey`, the `NavMetadataKeys` built-ins, and the `metadata { }` builder rather than raw map keys:
+
+```kotlin
+metadata { put(SomeKey, value) }
+```
+
 ### Dialog Navigation
 
 Use `DialogSceneStrategy` to show entries as dialogs:
@@ -642,7 +698,7 @@ fun DialogExample() {
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
-        sceneStrategy = dialogStrategy,
+        sceneStrategies = listOf(dialogStrategy),
         entryProvider = entryProvider {
             entry<HomeRoute> {
                 HomeScreen(
@@ -732,7 +788,7 @@ fun BottomSheetExample() {
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
-        sceneStrategy = bottomSheetStrategy,
+        sceneStrategies = listOf(bottomSheetStrategy),
         entryProvider = entryProvider {
             entry<HomeRoute> {
                 HomeScreen(
@@ -840,7 +896,7 @@ val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>()
 NavDisplay(
     backStack = backStack,
     onBack = { backStack.removeLastOrNull() },
-    sceneStrategy = listDetailStrategy,
+    sceneStrategies = listOf(listDetailStrategy),
     entryProvider = entryProvider {
         entry<ConversationList>(
             metadata = ListDetailSceneStrategy.listPane()
@@ -878,7 +934,7 @@ fun MaterialListDetailExample() {
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
-        sceneStrategy = listDetailStrategy,
+        sceneStrategies = listOf(listDetailStrategy),
         entryProvider = entryProvider {
             entry<ProductList>(
                 metadata = ListDetailSceneStrategy.listPane(
@@ -973,6 +1029,8 @@ Required roles per parse:
 - `DeepLinkRequest` materialises path segments and query parameters for matching.
 - `DeepLinkMatcher` selects the first matching pattern.
 - `KeyDecoder` decodes matched arguments into the concrete `NavKey`.
+
+**These APIs are on the Navigation3 1.2 alpha line only and are still churning.** `1.2.0-alpha05` removed every `DeepLinkRequest.from*` factory function in favour of constructors plus a `requestExtras { }` DSL, so snippets written against an earlier alpha do not compile. Treat the shapes above as illustrative of the roles, and read the [release notes](https://developer.android.com/jetpack/androidx/releases/navigation3) for the exact signatures on whatever alpha you pin. The template stays on stable `1.1.4` ([dependencies.md](dependencies.md#pinned-prerelease-required-for-feature-parity)).
 
 ### Synthetic Back Stack
 
@@ -1129,7 +1187,38 @@ Forbidden: `android:autoVerify="true"` on a custom-scheme filter. App Links veri
 
 Forbidden: combining `<data android:scheme="https" />` and `<data android:scheme="myapp" />` in one filter - every scheme/host pair becomes a verification target and the non-https schemes break `autoVerify`.
 
-Required: keep `pathPrefix` entries narrow. Forbidden: `pathPrefix="/"` on production builds - claims every URL on the host and the system rejects the verification batch.
+Required **when path routing lives in the manifest**: keep `pathPrefix` entries narrow. Forbidden in that case: `pathPrefix="/"` on production builds - claims every URL on the host and the system rejects the verification batch.
+
+#### Broad manifest scope with server-side path routing (Android 15+)
+
+If you adopt [Dynamic App Links](#dynamic-app-links-android-15-api-35), the guidance **inverts**: declare the broadest scope in the manifest (scheme + host, no paths) and do all path-level routing server-side in `assetlinks.json`. Server rules can only ever **narrow** manifest scope, never widen it, so a narrow manifest permanently caps what the server can route.
+
+Declare the broad scope with `<uri-relative-filter-group>`:
+
+```xml
+<intent-filter android:autoVerify="true">
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data android:scheme="https" />
+    <data android:host="example.com" />
+
+    <!-- Android 14 and lower ignore uri-relative-filter-group entirely, so this
+         path keeps them matching nothing while Android 15+ still verifies the domain. -->
+    <data android:path="/no_match_for_older_android_versions" />
+
+    <uri-relative-filter-group android:allow="true">
+        <data android:pathPattern="/.*" />
+    </uri-relative-filter-group>
+</intent-filter>
+```
+
+Two failure modes specific to this pattern:
+
+- With `<uri-relative-filter-group>` present, a **missing or invalid `assetlinks.json` fails verification entirely** on Android 15+ - not just for some paths.
+- A **valid `assetlinks.json` that contains no `dynamic_app_link_components`** opens the app for **every** path on the host, which is exactly what the narrow-manifest rule existed to prevent.
+
+Choose one model per host and state it in the manifest comment: narrow manifest paths (works everywhere, requires a release to change routing) or broad manifest + server rules (Android 15+ routing changes without a release).
 
 ### onNewIntent for singleTask
 
@@ -2159,4 +2248,4 @@ data class ProductDetail(
 ) : ProductsDestination
 ```
 
-Re-orient: [android-navigation-quick.md](android-navigation-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-navigationmd-2162-lines)
+Re-orient: [android-navigation-quick.md](android-navigation-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-navigationmd-2251-lines)
