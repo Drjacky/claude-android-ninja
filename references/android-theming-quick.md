@@ -1,6 +1,6 @@
 # Theming (quick)
 
-Full guide: [android-theming.md](android-theming.md) (~2150 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#android-themingmd-2139-lines).
+Full guide: [android-theming.md](android-theming.md) (~2140 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#android-themingmd-2139-lines).
 
 ## Section routing
 

@@ -1,6 +1,6 @@
 # Android accessibility (quick)
 
-Full guide: [android-accessibility.md](android-accessibility.md) (~1530 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#android-accessibilitymd-1571-lines).
+Full guide: [android-accessibility.md](android-accessibility.md) (~1570 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#android-accessibilitymd-1571-lines).
 
 Required before shipping interactive Compose UI:
 
