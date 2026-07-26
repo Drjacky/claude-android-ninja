@@ -626,7 +626,7 @@ Open when: StrictMode, cleartext detection, Compose stability diagnostics
 - [Uploading StrictMode Signals to Crash Reporters](android-strictmode.md#uploading-strictmode-signals-to-crash-reporters)
 - [References](android-strictmode.md#references)
 
-### android-theming.md (2126 lines)
+### android-theming.md (2139 lines)
 
 Open when: Material 3 color roles, dynamic color, contrast, typography, shapes
 Quick routing: [android-theming-quick.md](android-theming-quick.md)
@@ -687,6 +687,7 @@ Quick routing: [android-theming-quick.md](android-theming-quick.md)
   - [System Default](android-theming.md#system-default)
   - [User-Controlled Theme](android-theming.md#user-controlled-theme)
   - [Theme Switcher UI](android-theming.md#theme-switcher-ui)
+  - [WebView content follows the app theme](android-theming.md#webview-content-follows-the-app-theme)
 - [Theme Preferences](android-theming.md#theme-preferences)
   - [DataStore Implementation](android-theming.md#datastore-implementation)
   - [Repository](android-theming.md#repository)

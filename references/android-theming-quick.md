@@ -1,6 +1,6 @@
 # Theming (quick)
 
-Full guide: [android-theming.md](android-theming.md) (~2130 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#android-themingmd-2126-lines).
+Full guide: [android-theming.md](android-theming.md) (~2150 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#android-themingmd-2139-lines).
 
 ## Section routing
 
@@ -17,6 +17,7 @@ Full guide: [android-theming.md](android-theming.md) (~2130 lines). Section anch
 | Type scale | [Typography Scales](android-theming.md#typography-scales) |
 | Shapes | [Shape Theming](android-theming.md#shape-theming) |
 | Dark/light toggle | [Dark/Light Mode Switching](android-theming.md#darklight-mode-switching) |
+| WebView stays light in dark theme | [WebView content follows the app theme](android-theming.md#webview-content-follows-the-app-theme) |
 | User preference storage | [Theme Preferences](android-theming.md#theme-preferences) |
 | Nested `MaterialTheme` | [Scoped Themes](android-theming.md#scoped-themes) |
 | ViewModel / DataStore | [Architecture Integration](android-theming.md#architecture-integration) |
@@ -36,5 +37,8 @@ Full guide: [android-theming.md](android-theming.md) (~2130 lines). Section anch
 
 - Raw `Color(0xFF...)` for theme surfaces without scoped override.
 - `left`/`right` padding for RTL-sensitive layout (use start/end).
+- `androidx.compose.material.icons.Icons.*` - Material Symbols drawables via `painterResource` ([android-graphics.md](android-graphics.md#material-symbols-icons)).
+- M3 Expressive APIs (`MaterialExpressiveTheme`, `MotionScheme.expressive()`) on the stable `material3` 1.4.0 pin - they ship only on the 1.5.0-alpha line.
+- Locking the app to light theme to avoid a themed-WebView mismatch.
 
 Open the full file for harmonization math, expressive M3, and preview setup.

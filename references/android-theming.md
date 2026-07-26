@@ -1395,6 +1395,19 @@ fun ThemeSettingsScreen(
 }
 ```
 
+### WebView content follows the app theme
+
+A `WebView` does not inherit the Compose color scheme. Without opting in, embedded web content stays light while the rest of the app is dark.
+
+```kotlin
+// API 33+ (WebSettingsCompat covers older levels via androidx.webkit)
+webView.settings.isAlgorithmicDarkeningAllowed = true
+```
+
+This lets the web content honor its own `prefers-color-scheme` media query, or be algorithmically darkened when it has no dark styles. Security configuration for the same `WebView`: [android-security.md → WebView Security](android-security.md#webview-security).
+
+Forbidden: locking the app to light theme to avoid this mismatch. It overrides the user's accessibility and personalization choice.
+
 ## Theme Preferences
 
 ### DataStore Implementation
@@ -2112,7 +2125,7 @@ Use [Material Theme Builder](https://m3.material.io/theme-builder) to:
 - Always provide **static fallback** for API < 31
 - Test with **various wallpapers** - light, dark, colorful, monochrome
 
-Re-orient: [android-theming-quick.md](android-theming-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-themingmd-2126-lines)
+Re-orient: [android-theming-quick.md](android-theming-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-themingmd-2139-lines)
 
 ## References
 

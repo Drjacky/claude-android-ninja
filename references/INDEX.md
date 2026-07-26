@@ -22,7 +22,7 @@ Forbidden: load every file below; load a multi-thousand-line file in full when a
 | [android-permissions.md](android-permissions.md)     |   921 | Runtime permissions, Photo Picker, contact picker session URIs, `ACCESS_LOCAL_NETWORK`, API 37 location privacy       | -                                                                |
 | [android-security.md](android-security.md)           |  1849 | Play Integrity (Standard/Classic), `requestHash`/`nonce`, pinning, encryption, biometrics, Credential Manager        | [android-security-quick.md](android-security-quick.md)           |
 | [android-strictmode.md](android-strictmode.md)       |   235 | StrictMode, cleartext detection, Compose stability diagnostics                                                       | -                                                                |
-| [android-theming.md](android-theming.md)             |  2126 | Material 3 color roles, dynamic color, contrast, typography, shapes                                                  | [android-theming-quick.md](android-theming-quick.md)             |
+| [android-theming.md](android-theming.md)             |  2139 | Material 3 color roles, dynamic color, contrast, typography, shapes                                                  | [android-theming-quick.md](android-theming-quick.md)             |
 | [architecture.md](architecture.md)                   |   975 | MVVM layers, repositories, DI, network, DataStore vs Room                                                            | -                                                                |
 | [code-quality.md](code-quality.md)                   |   319 | Detekt convention plugin, custom rules, CI                                                                           | -                                                                |
 | [compose-patterns.md](compose-patterns.md)           |  4202 | Screens, state, side effects, lists, edge-to-edge, forms, animation                                                  | [compose-patterns-quick.md](compose-patterns-quick.md)           |
@@ -50,7 +50,7 @@ Forbidden: load every file below; load a multi-thousand-line file in full when a
 | [testing-quick.md](testing-quick.md)                             | [testing.md](testing.md)                             |  2611 |
 | [android-data-sync-quick.md](android-data-sync-quick.md)         | [android-data-sync.md](android-data-sync.md)         |  2415 |
 | [android-navigation-quick.md](android-navigation-quick.md)       | [android-navigation.md](android-navigation.md)       |  2251 |
-| [android-theming-quick.md](android-theming-quick.md)             | [android-theming.md](android-theming.md)             |  2126 |
+| [android-theming-quick.md](android-theming-quick.md)             | [android-theming.md](android-theming.md)             |  2139 |
 
 
 Detailed section anchors (open only when quick routing is insufficient): [INDEX-sections.md](INDEX-sections.md).
