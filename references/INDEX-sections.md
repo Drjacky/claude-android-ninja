@@ -6,7 +6,7 @@ Forbidden: load this file on every task; it is large by design.
 
 ## Sections by file
 
-### android-accessibility.md (1534 lines)
+### android-accessibility.md (1571 lines)
 
 Open when: TalkBack, semantics, touch targets, contrast, WCAG, Espresso a11y checks
 Quick routing: [android-accessibility-quick.md](android-accessibility-quick.md)
@@ -28,6 +28,7 @@ Quick routing: [android-accessibility-quick.md](android-accessibility-quick.md)
   - [Testing Touch Targets](android-accessibility.md#testing-touch-targets)
 - [Screen Reader Navigation](android-accessibility.md#screen-reader-navigation)
   - [Traversal Order](android-accessibility.md#traversal-order)
+  - [Hiding sensitive fields from accessibility services](android-accessibility.md#hiding-sensitive-fields-from-accessibility-services)
   - [Heading Structure](android-accessibility.md#heading-structure)
   - [Live Region Announcements](android-accessibility.md#live-region-announcements)
   - [Skip to Content](android-accessibility.md#skip-to-content)
@@ -185,7 +186,7 @@ Open when: Logcat, ANR, R8 mapping, release crashes, memory-limiter repro
 - [ADB Quick Reference](android-debugging.md#adb-quick-reference)
 - [Red Flags](android-debugging.md#red-flags)
 
-### android-graphics.md (1195 lines)
+### android-graphics.md (1216 lines)
 
 Open when: Material Symbols, Coil3, Canvas, Palette, launcher icons
 
@@ -222,7 +223,7 @@ Open when: Material Symbols, Coil3, Canvas, Palette, launcher icons
 - [Rules](android-graphics.md#rules)
 - [Additional Resources](android-graphics.md#additional-resources)
 
-### android-i18n.md (1055 lines)
+### android-i18n.md (1063 lines)
 
 Open when: strings.xml, plurals, RTL, locale formatting, translation CI
 
@@ -973,7 +974,7 @@ Quick routing: [coroutines-patterns-quick.md](coroutines-patterns-quick.md)
   - [Using emit() on MutableStateFlow](coroutines-patterns.md#using-emit-on-mutablestateflow)
 - [Coexisting with RxJava (Legacy Code)](coroutines-patterns.md#coexisting-with-rxjava-legacy-code)
 
-### crashlytics.md (710 lines)
+### crashlytics.md (726 lines)
 
 Open when: Firebase/Sentry interfaces, breadcrumbs, PII scrubbing
 

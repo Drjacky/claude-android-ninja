@@ -960,6 +960,14 @@ For very complex plural rules, consider using ICU MessageFormat:
 </resources>
 ```
 
+ICU comes from the platform, so its version and data move with the OS release - Android 17 ships
+**ICU 78 / Unicode 17 / CLDR 48**. Formatted output (dates, numbers, currency, collation, plural
+category selection) can therefore differ between API levels for the same input.
+
+**Forbidden:** asserting on exact formatted output in tests. A test expecting `"Jan 5, 2026"` or a
+specific space character breaks when ICU data changes. Assert on parsed values, or format both the
+expected and actual value through the same formatter instance.
+
 ### Relative measurements
 
 Some languages (Thai, Japanese) may need different line heights or text sizes:
