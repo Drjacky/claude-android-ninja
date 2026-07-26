@@ -17,7 +17,7 @@ Required before coroutine work in ViewModels/repositories:
 | Dispatchers, scopes, cancellation, exceptions | [Android coroutine rules](coroutines-patterns.md#android-coroutine-rules) |
 | `StateFlow` vs `SharedFlow` vs `Channel` | [Android coroutine rules](coroutines-patterns.md#stateflow-for-new-code-not-livedata) |
 | `stateIn`, `shareIn`, `combine` | [Android coroutine rules](coroutines-patterns.md#convert-cold-flows-to-hot-stateflows-with-statein) |
-| `flatMapLatest`, backpressure, debounce | [Android coroutine rules](coroutines-patterns.md#flatmaplatest-for-sequential-flow-switching-flatmapmerge-for-concurrent) |
+| `flatMapLatest`, backpressure, debounce | [Android coroutine rules](coroutines-patterns.md#use-flatmaplatest-for-sequential-flow-switching-flatmapmerge-for-concurrent) |
 | `callbackFlow`, `suspendCancellableCoroutine` | [Bridging Imperative Callbacks to Coroutines](coroutines-patterns.md#bridging-imperative-callbacks-to-coroutines) |
 | SupervisorJob, `combine` side effects, search debounce | [Common Pitfalls](coroutines-patterns.md#common-pitfalls) |
 | Legacy RxJava coexistence | [Coexisting with RxJava](coroutines-patterns.md#coexisting-with-rxjava-legacy-code) |
