@@ -20,7 +20,7 @@ Forbidden: load every file below; load a multi-thousand-line file in full when a
 | [android-notifications.md](android-notifications.md) |  1239 | Channels, FGS, MediaStyle, PiP, sharesheet from notification taps                                                    | -                                                                |
 | [android-performance.md](android-performance.md)     |  1384 | Macrobenchmark, baseline profiles, vitals, recomposition, startup, APA/Perfetto                                      | -                                                                |
 | [android-permissions.md](android-permissions.md)     |   832 | Runtime permissions, Photo Picker, contacts, `ACCESS_LOCAL_NETWORK`, API 37 location privacy                          | -                                                                |
-| [android-security.md](android-security.md)           |  1805 | Play Integrity (Standard/Classic), `requestHash`/`nonce`, pinning, encryption, biometrics, Credential Manager        | [android-security-quick.md](android-security-quick.md)           |
+| [android-security.md](android-security.md)           |  1849 | Play Integrity (Standard/Classic), `requestHash`/`nonce`, pinning, encryption, biometrics, Credential Manager        | [android-security-quick.md](android-security-quick.md)           |
 | [android-strictmode.md](android-strictmode.md)       |   236 | StrictMode, cleartext detection, Compose stability diagnostics                                                       | -                                                                |
 | [android-theming.md](android-theming.md)             |  2118 | Material 3 color roles, dynamic color, contrast, typography, shapes                                                  | [android-theming-quick.md](android-theming-quick.md)             |
 | [architecture.md](architecture.md)                   |   961 | MVVM layers, repositories, DI, network, DataStore vs Room                                                            | -                                                                |
@@ -43,7 +43,7 @@ Forbidden: load every file below; load a multi-thousand-line file in full when a
 | Quick                                                            | Full file                                            | Lines |
 |------------------------------------------------------------------|------------------------------------------------------|------:|
 | [android-accessibility-quick.md](android-accessibility-quick.md) | [android-accessibility.md](android-accessibility.md) |  1526 |
-| [android-security-quick.md](android-security-quick.md)           | [android-security.md](android-security.md)           |  1805 |
+| [android-security-quick.md](android-security-quick.md)           | [android-security.md](android-security.md)           |  1849 |
 | [coroutines-patterns-quick.md](coroutines-patterns-quick.md)     | [coroutines-patterns.md](coroutines-patterns.md)     |  1625 |
 | [design-patterns-quick.md](design-patterns-quick.md)             | [design-patterns.md](design-patterns.md)             |  1750 |
 | [compose-patterns-quick.md](compose-patterns-quick.md)           | [compose-patterns.md](compose-patterns.md)           |  4092 |

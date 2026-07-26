@@ -453,7 +453,7 @@ Open when: Macrobenchmark, baseline profiles, vitals, recomposition, startup, AP
   - [Performance Checklist](android-performance.md#performance-checklist)
 - [References](android-performance.md#references)
 
-### android-permissions.md (811 lines)
+### android-permissions.md (832 lines)
 
 Open when: Runtime permissions, Photo Picker, contacts, API 37 location privacy
 
@@ -494,7 +494,7 @@ Open when: Runtime permissions, Photo Picker, contacts, API 37 location privacy
   - [Performance Checks (Macrobenchmark)](android-permissions.md#performance-checks-macrobenchmark)
 - [References](android-permissions.md#references)
 
-### android-security.md (1805 lines)
+### android-security.md (1849 lines)
 
 Open when: Pinning, encryption, biometrics, Play Integrity, Credential Manager, URI grants
 Quick routing: [android-security-quick.md](android-security-quick.md)
@@ -562,6 +562,7 @@ Quick routing: [android-security-quick.md](android-security-quick.md)
   - [Prevent Screenshots (FLAG_SECURE)](android-security.md#prevent-screenshots-flag_secure)
   - [Per-Screen Screenshot Prevention in Compose](android-security.md#per-screen-screenshot-prevention-in-compose)
   - [Preventing Recent Apps Thumbnail](android-security.md#preventing-recent-apps-thumbnail)
+  - [Hiding sensitive content from accessibility services](android-security.md#hiding-sensitive-content-from-accessibility-services)
 - [Secure Database (Room 3)](android-security.md#secure-database-room-3)
   - [Building the database (driver required)](android-security.md#building-the-database-driver-required)
   - [SQLCipher / full-database encryption](android-security.md#sqlcipher-full-database-encryption)
@@ -982,7 +983,7 @@ Open when: Firebase/Sentry interfaces, breadcrumbs, PII scrubbing
   - [Custom Scrubbing for Both Providers](crashlytics.md#custom-scrubbing-for-both-providers)
 - [Gradle & Setup Guidance](crashlytics.md#gradle-setup-guidance)
 
-### dependencies.md (289 lines)
+### dependencies.md (359 lines)
 
 Open when: Version catalog, BOMs, pins, brownfield alignment, adding dependencies
 
@@ -1070,7 +1071,7 @@ Quick routing: [design-patterns-quick.md](design-patterns-quick.md)
   - [Critical Performance Rules](design-patterns.md#critical-performance-rules)
   - [Full-Text Search (FTS) Pattern](design-patterns.md#full-text-search-fts-pattern)
 
-### gradle-setup.md (1086 lines)
+### gradle-setup.md (1310 lines)
 
 Open when: Convention plugins, flavors, R8 audit, build performance, verify Gradle
 
@@ -1203,7 +1204,7 @@ Open when: Kotlin style, Result types, ViewModel patterns (all Kotlin code)
   - [Generic Suspending Functions](kotlin-patterns.md#generic-suspending-functions)
 - [Rules Summary](kotlin-patterns.md#rules-summary)
 
-### migration.md (802 lines)
+### migration.md (945 lines)
 
 Open when: XML→Compose, LiveData, RxJava, Nav2→3, Room 2→3, API 37
 

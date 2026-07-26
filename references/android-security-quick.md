@@ -1,6 +1,6 @@
 # Android security (quick)
 
-Full guide: [android-security.md](android-security.md) (~1800 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#android-securitymd-1805-lines).
+Full guide: [android-security.md](android-security.md) (~1850 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#android-securitymd-1849-lines).
 
 Required before security-sensitive work:
 
@@ -26,6 +26,8 @@ Required before security-sensitive work:
 | Integrity Standard/Classic, decode | [Play Integrity API](android-security.md#play-integrity-api) |
 | Root/emulator heuristics | [Root & Emulator Detection](android-security.md#root-emulator-detection) |
 | FLAG_SECURE, screenshots | [Screenshot & Screen Recording Prevention](android-security.md#screenshot-screen-recording-prevention) |
+| Hide fields from a11y services | [Hiding sensitive content from accessibility services](android-security.md#hiding-sensitive-content-from-accessibility-services) |
+| Cross-profile loopback (Android 17) | [Cross-profile loopback (Android 17)](android-security.md#cross-profile-loopback-android-17) |
 | SQLCipher / Room encryption | [Secure Database (Room 3)](android-security.md#secure-database-room-3) |
 | Clipboard sensitivity | [Secure Clipboard](android-security.md#secure-clipboard) |
 | WebView hardening | [WebView Security](android-security.md#webview-security) |
@@ -41,6 +43,7 @@ Required before security-sensitive work:
 
 - Layer controls; fail closed on errors; minimum permissions.
 - Android Keystore over software-managed keys; StrongBox when available.
+- Assert key placement with `KeyInfo.getSecurityLevel()` (API 31+); `isInsideSecureHardware()` is deprecated.
 - Track CVEs in dependencies; run security checks in CI.
 
 **Forbidden:**
@@ -48,5 +51,9 @@ Required before security-sensitive work:
 - Logging tokens, PII, or sensitive payloads.
 - Hardcoding API keys, signing material, or secrets in source.
 - Caching integrity verdicts to authorize unrelated later actions on the client.
+- Inferring hardware-backed keys from "key generation did not throw".
+- Treating **absent** Play Integrity verdict fields as a pass - a replayed token returns cleared verdicts.
+- Declaring a `USE_LOOPBACK_INTERFACE` permission; it does not exist (LAN access is `ACCESS_LOCAL_NETWORK`).
+- Minting a Keystore key per session/record at target SDK 37 (50,000-key cap, `ERROR_TOO_MANY_KEYS`).
 
 Open the full file for Standard/Classic code samples, `requestHash`/`nonce` examples, and checklist tables.
