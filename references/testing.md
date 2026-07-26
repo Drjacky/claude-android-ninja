@@ -2361,7 +2361,7 @@ class FakeProductRepository : ProductRepository {
     }
     
     fun emitError() {
-        // CORRECT: PagingData has no error channel — surface failures via Result or a parallel error Flow
+        // CORRECT: PagingData has no error channel - surface failures via Result or a parallel error Flow
         pagingFlow.tryEmit(PagingData.empty())
     }
     

@@ -629,7 +629,7 @@ fun ElevationDemo() {
         shadowElevation = 6.dp,
     ) {
         Icon(
-            imageVector = Icons.Filled.Add,
+            painter = painterResource(R.drawable.ic_add),
             contentDescription = "Compose",
             tint = MaterialTheme.colorScheme.onPrimaryContainer,
             modifier = Modifier.padding(16.dp),

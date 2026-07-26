@@ -945,7 +945,8 @@ SubcomposeAsyncImage(
 ) {
     when (painter.state) {
         is AsyncImagePainter.State.Loading -> CircularProgressIndicator()
-        is AsyncImagePainter.State.Error -> Icon(Icons.Default.BrokenImage, null)
+        is AsyncImagePainter.State.Error ->
+            Icon(painterResource(R.drawable.ic_broken_image), contentDescription = null)
         else -> SubcomposeAsyncImageContent()
     }
 }

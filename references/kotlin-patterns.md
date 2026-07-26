@@ -415,7 +415,7 @@ interface AuthRepository {
 val userId = UserId("123")
 val email = Email("user@example.com")
 
-userRepository.getUser(userId) // CORRECT: compiles — `UserId` matches repository API
+userRepository.getUser(userId) // CORRECT: compiles - `UserId` matches repository API
 userRepository.getUser(email) // WRONG: Compile error - type safety!
 
 // CORRECT: Type-safe domain values

@@ -1582,7 +1582,7 @@ data class UserList(
     val users: List<User> // Immutable interface
 )
 
-// CORRECT: Better — Persistent collection
+// CORRECT: Better - Persistent collection
 @Immutable
 data class UserList(
     val users: PersistentList<User> // Efficient immutable updates

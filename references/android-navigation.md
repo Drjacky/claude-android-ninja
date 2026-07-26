@@ -2104,7 +2104,7 @@ The child entry's `viewModel<SharedCounterViewModel>()` call resolves to the sam
 // WRONG: hiltViewModel() inside a nested composable (wrong scope)
 @Composable
 fun ProductCard() {
-    // ViewModelStore follows the NavEntry — every ProductCard shares one ViewModel.
+    // ViewModelStore follows the NavEntry - every ProductCard shares one ViewModel.
     // Multiple ProductCards will share the exact same ViewModel instance.
     val viewModel: ProductViewModel = hiltViewModel() 
 }
