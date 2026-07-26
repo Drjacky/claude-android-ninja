@@ -490,6 +490,8 @@ class SoftwareEncryption {
 | Key extraction          | Difficult            | Near impossible           |
 | Availability            | Most devices API 24+ | API 28+ (select devices)  |
 
+**Server-side key attestation** (proving to your backend that a key is hardware-backed) is a distinct workflow from the local checks below. If the product needs it, do not hand-roll certificate-chain validation - use the official [`android/keyattestation`](https://github.com/android/keyattestation) library and note two current constraints: a new **ECDSA P-384 root** (`CN=Key Attestation CA1`) began signing chains in **February 2026**, so verifiers must trust **two** root anchors (roots are also published as JSON at `https://android.googleapis.com/attestation/root`), and devices launched on Android 16+ support **only Remote Key Provisioning**, whose leaf certificates are short-lived and must be checked for expiry. Reference: [Verifying hardware-backed key pairs](https://developer.android.com/privacy-and-security/security-key-attestation).
+
 ### Using Hardware-Backed Keys
 
 ```kotlin
@@ -554,18 +556,31 @@ class KeystoreManager @Inject constructor(
         }
     }
 
-    fun isHardwareBackedKeystore(): Boolean {
-        // TEE-backed on most devices API 24+
-        return try {
-            val keyInfo = keyStore.getKey("test_key", null)
-            // Key generation test passed = hardware backed
-            true
-        } catch (_: Exception) {
-            false
+    /**
+     * Reports where an existing key actually lives. Never infer hardware backing from the
+     * absence of an exception - a software-backed key generates and loads without error.
+     */
+    fun isHardwareBacked(alias: String): Boolean {
+        val key = keyStore.getKey(alias, null) ?: return false
+        val factory = SecretKeyFactory.getInstance(key.algorithm, "AndroidKeyStore")
+        val keyInfo = factory.getKeySpec(key, KeyInfo::class.java) as KeyInfo
+
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            keyInfo.securityLevel == KeyProperties.SecurityLevelEnum.TRUSTED_ENVIRONMENT ||
+                keyInfo.securityLevel == KeyProperties.SecurityLevelEnum.STRONGBOX
+        } else {
+            @Suppress("DEPRECATION")
+            keyInfo.isInsideSecureHardware
         }
     }
 }
 ```
+
+**Required:** check key placement with **`KeyInfo.getSecurityLevel()`** compared against `KeyProperties.SecurityLevelEnum.TRUSTED_ENVIRONMENT` / `STRONGBOX` on API 31+. `KeyInfo.isInsideSecureHardware()` is deprecated and only the fallback for older API levels.
+
+**Forbidden:** treating "key generation did not throw" as proof of hardware backing. `KeyGenParameterSpec` silently falls back to software on devices without a TEE unless you assert the security level, and `setIsStrongBoxBacked(true)` throws `StrongBoxUnavailableException` rather than degrading - catch that specific exception if you intend to fall back to TEE.
+
+**Key count cap (target SDK 37):** apps targeting API 37+ may hold at most **50,000** Keystore keys (200,000 below that). Exceeding it throws `KeyStoreException` whose `getNumericErrorCode()` returns **`ERROR_TOO_MANY_KEYS`**. A key per session, per record, or per message will hit this - use a fixed key set and derive per-item material instead.
 
 ### DI Integration
 
@@ -945,8 +960,12 @@ Library `minSdk` for both follows the Play Integrity library version you ship (s
 - Create `StandardIntegrityManager` via `IntegrityManagerFactory.createStandard(context)`.
 - **Once per session (or after errors below):** call `prepareIntegrityToken` with `PrepareIntegrityTokenRequest` that sets your **Google Cloud project number**. Keep the resulting `StandardIntegrityTokenProvider` in memory.
 - **On each protected action:** build a stable digest of the data you need to bind (for example SHA-256 of a canonical string of request fields), pass it as **`requestHash`** in `StandardIntegrityTokenRequest`. Do not put sensitive values in plaintext in the hash input; hash them.
-- If you receive **`INTEGRITY_TOKEN_PROVIDER_INVALID`**, prepare a new provider and retry the token request.
+- If you receive **`INTEGRITY_TOKEN_PROVIDER_INVALID`** (error code **19**), prepare a new provider and retry the token request.
+- **`requestHash` is capped at 500 bytes.** Hash to a fixed-length digest rather than passing a concatenated request body, or you will hit `REQUEST_HASH_TOO_LONG` only on large requests.
 - Optional: use **`verdictOptOut`** on a Standard request to skip optional verdicts that add latency when you do not need them (see API reference / release notes).
+- **Automatic replay protection:** Google Play detects re-decryption of the same token, and the replayed response comes back with verdicts **cleared** rather than as an error. A backend that treats "missing verdict fields" as "pass" will accept replays - treat absent verdicts as failure.
+- **App access risk** in Standard requests requires library **1.4.0+** and Android 6+, and can be waived per request via `verdictOptOut`.
+- `deviceAttributes.sdkVersion` in the verdict now spans **19...37**; do not hard-code an upper bound when parsing it.
 
 ### Classic API client flow
 
@@ -1371,6 +1390,31 @@ fun PaymentScreen() {
 
 `FLAG_SECURE` also prevents the app from appearing in the recent apps screenshot.
 
+### Hiding sensitive content from accessibility services
+
+`FLAG_SECURE` blocks screenshots and recording but does **not** stop a malicious accessibility service from reading node text. Mark the specific nodes instead, which keeps the screen usable for legitimate assistive tech elsewhere in the tree.
+
+```kotlin
+// Compose
+Text(
+    text = accountNumber,
+    modifier = Modifier.semantics { sensitiveData = true }
+)
+```
+
+```xml
+<!-- Views -->
+<EditText
+    android:id="@+id/cardNumber"
+    android:accessibilityDataSensitive="yes" />
+```
+
+Views can also set it at runtime with `view.isAccessibilityDataSensitive = true`.
+
+Note the implicit default: a View that already sets **`setFilterTouchesWhenObscured(true)`** is treated as accessibility-sensitive automatically, so existing hardened Views may need no change.
+
+Scope: apply to card numbers, OTPs, balances, and recovery phrases - not to whole screens, which would break screen readers for the entire flow. Accessibility trade-offs: [android-accessibility.md](android-accessibility.md).
+
 ## Secure Database (Room 3)
 
 Room 3 requires a [`SQLiteDriver`](https://developer.android.com/kotlin/multiplatform/sqlite#sqlite-driver) on [`Room.databaseBuilder`](https://developer.android.com/jetpack/androidx/releases/room3). It does **not** support `SupportSQLiteOpenHelper.Factory` or `openHelperFactory` (removed with SupportSQLite).
@@ -1787,7 +1831,7 @@ Use this checklist for every release:
 
 ## Rules
 
-Re-orient: [android-security-quick.md](android-security-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-securitymd-1805-lines)
+Re-orient: [android-security-quick.md](android-security-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-securitymd-1849-lines)
 
 Required:
 - Server is the trust boundary; client never makes the final authorization decision.
