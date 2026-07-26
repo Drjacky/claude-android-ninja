@@ -70,12 +70,13 @@ Open when: Play AAB, tracks, signing boundaries, rollout; agent vs Console work
 - [Play developer verification](android-ci-cd.md#play-developer-verification)
 - [Release notes and policy surfaces](android-ci-cd.md#release-notes-and-policy-surfaces)
 
-### android-code-coverage.md (168 lines)
+### android-code-coverage.md (192 lines)
 
 Open when: JaCoCo unit + instrumented coverage, CI, ScopedArtifacts pitfalls
 
 - [Table of Contents](android-code-coverage.md#table-of-contents)
 - [Coverage tiers](android-code-coverage.md#coverage-tiers)
+  - [Optional: AGP aggregated reports (AGP 9.2+)](android-code-coverage.md#optional-agp-aggregated-reports-agp-92)
 - [Setup](android-code-coverage.md#setup)
   - [Apply Convention Plugins](android-code-coverage.md#apply-convention-plugins)
 - [Generating Coverage Reports](android-code-coverage.md#generating-coverage-reports)

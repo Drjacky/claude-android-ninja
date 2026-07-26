@@ -22,6 +22,23 @@ Required: ship JaCoCo on `debug` with unit-test execution data on every PR. Comb
 
 Escalate from Tier 1 to Tier 2 only after `./gradlew help` and `./gradlew testDebugUnitTest` succeed.
 
+### Optional: AGP aggregated reports (AGP 9.2+)
+
+If the goal is only a **readable cross-module dashboard** rather than a machine-parsable coverage XML for a CI gate, AGP can aggregate unit and instrumentation results itself:
+
+```properties
+# gradle.properties
+android.experimental.reportAggregationSupport=true
+```
+
+Scope and limits:
+
+- Aggregates **test results** across modules and variants into HTML. It is not a substitute for the JaCoCo XML that Codecov / a coverage threshold consumes.
+- Experimental - the flag and output layout can change between AGP minors. Do not build a CI gate on it.
+- Independent of the tier ladder above; it neither replaces nor requires the `ScopedArtifacts` wiring.
+
+Use the JaCoCo convention plugins for any coverage number that gates a merge; use this flag for human inspection during a debugging session ([gradle-setup.md](gradle-setup.md#aggregated-test-and-coverage-reports-optional-agp-92)).
+
 ## Setup
 
 ### Apply Convention Plugins
@@ -74,6 +91,13 @@ The following are automatically excluded from coverage:
 - Android generated files (`R.class`, `BuildConfig.class`, `Manifest`)
 - Hilt generated classes (`*_Hilt*.class`, `Hilt_*.class`, `*_Factory.class`)
 - Dagger components (`*Component.class`, `*Module.class`)
+- Room 3 KSP output (`*_Impl.class` - generated DAO and `RoomDatabase` implementations)
+- Compose compiler output (`ComposableSingletons*.class`, synthetic lambda holders)
+
+Required: exclude generated code rather than writing tests for it. Room `_Impl` classes and Compose
+`ComposableSingletons` are large, fully generated, and unreachable by unit tests, so leaving them in
+deflates the coverage percentage and pushes an agent toward writing meaningless tests to recover it.
+Test the DAO **interface** through an in-memory database instead ([testing.md](testing.md)).
 
 ## CI Integration
 
