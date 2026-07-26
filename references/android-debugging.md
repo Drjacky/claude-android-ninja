@@ -132,7 +132,7 @@ Forbidden: treating every background kill as a leak without checking limiter sta
 R8 (the default code shrinker/obfuscator in AGP) renames classes, methods, and fields in release
 builds. Crash stack traces from production are obfuscated and unreadable without the mapping file.
 
-For R8 build configuration and keep rules, see [gradle-setup.md](gradle-setup.md#r8-proguard-configuration).
+For R8 build configuration and keep rules, see [gradle-setup.md](gradle-setup.md#r8-and-proguard-configuration).
 
 ### R8 keep-rules troubleshooting
 

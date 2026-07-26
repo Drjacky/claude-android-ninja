@@ -1621,7 +1621,7 @@ Use `assets/proguard-rules.pro.template` as the source of truth for all keep rul
 - **Crash report readability** - `SourceFile,LineNumberTable` attributes preserved
 - **Mapping file upload** - Firebase and Sentry Gradle plugins handle this automatically
 
-See [gradle-setup.md](gradle-setup.md#r8-proguard-configuration) for build configuration and debugging shrunk builds.
+See [gradle-setup.md](gradle-setup.md#r8-and-proguard-configuration) for build configuration and debugging shrunk builds.
 
 ### Manifest Security
 

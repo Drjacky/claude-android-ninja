@@ -30,13 +30,13 @@ Catalog and AGP pin rules: [dependencies.md → Version Strategy](dependencies.m
 - **Built-in Kotlin**: AGP 9 has built-in Kotlin support. The `org.jetbrains.kotlin.android` plugin is no longer needed for Android modules. Remove it from all `build.gradle.kts` files and convention plugins.
 - **Compose Compiler**: The `org.jetbrains.kotlin.plugin.compose` plugin is still required for Compose modules.
 - **compileSdk syntax**: Use `compileSdk { version = release(37) }` instead of `compileSdk = 37`. AGP 9.0+ supports `compileSdk` 37 (Android 17) on the stable channel; no `compileSdkPreview` flag is needed.
-- **Gradle Managed Devices**: Use `localDevices { create("name") { ... } }` instead of `devices { maybeCreate("name", ManagedVirtualDevice::class.java).apply { ... } }`. Device groups use `create("ci")` instead of `maybeCreate("ci")`. Reference devices via `localDevices[name]` instead of `devices[name]`.
+- **Gradle Managed Devices** (now called *build-managed devices* in the docs): Use `localDevices { create("name") { ... } }` instead of `devices { maybeCreate("name", ManagedVirtualDevice::class.java).apply { ... } }`. Device groups use `create("ci")` instead of `maybeCreate("ci")`. Reference devices via `localDevices[name]` instead of `devices[name]`. Wiring lives in `assets/convention/config/GradleManagedDevices.kt`; see [Build-managed devices](#build-managed-devices) for shards and ATD limits.
 - **Removed gradle.properties**: `org.gradle.configureondemand`, `android.enableBuildCache`, `android.enableJetifier`, `android.defaults.buildfeatures.aidl`, `android.defaults.buildfeatures.renderscript`, `android.defaults.buildfeatures.resvalues`, `android.defaults.buildfeatures.shaders`, and `org.gradle.configuration-cache.problems=warn` are removed.
 - **CommonExtension**: Type parameters removed; use `CommonExtension` instead of `CommonExtension<*, *, *, *, *, *>`.
 - **KotlinAndroidProjectExtension**: Not registered with built-in Kotlin; configure compiler options via `tasks.withType<KotlinCompile>().configureEach { compilerOptions { ... } }` instead.
-- **Hilt**: Minimum version **2.59.2** required for AGP 9 (older versions access removed `BaseExtension`).
-- **KSP**: Use the **KSP2** line on Maven Central ([KSP releases](https://github.com/google/ksp/releases)). Catalog `ksp` may be a `kotlinVersion-kspToolVersion` string (e.g. `2.2.21-2.0.5`) or a standalone KSP release (e.g. `2.3.7`); the KSP patch does not have to match the Kotlin patch. Pick the highest KSP release that lists support for the catalog `kotlin` version, then verify `./gradlew help`. KSP1 (`*-1.0.x`) is incompatible with AGP 9.
-- **kapt fallback (`legacy-kapt`)**: Use KSP everywhere it exists. If a processor has no KSP equivalent under AGP 9, use the **`org.jetbrains.kotlin.kapt`** plugin (a.k.a. `legacy-kapt`) for that single module only; the new built-in Kotlin pipeline does not run kapt automatically.
+- **Hilt**: Minimum version **2.59.2** required for AGP 9 (older versions access removed `BaseExtension`). Template pins the newest stable (`2.60.1`).
+- **KSP**: Minimum **2.3.6** for AGP 9. Use the **KSP2** line on Maven Central ([KSP releases](https://github.com/google/ksp/releases)). Catalog `ksp` may be a `kotlinVersion-kspToolVersion` string (e.g. `2.2.21-2.0.5`) or a standalone KSP release (e.g. `2.3.10`); the KSP patch does not have to match the Kotlin patch. Pick the highest KSP release that lists support for the catalog `kotlin` version, then verify `./gradlew help`. KSP1 (`*-1.0.x`) is incompatible with AGP 9. KSP **2.3.10** is the first release that fixes R-class resolution under AGP 9 built-in Kotlin - do not pin lower on AGP 9.
+- **kapt fallback (`com.android.legacy-kapt`)**: Use KSP everywhere it exists. `org.jetbrains.kotlin.kapt` / `kotlin("kapt")` is **incompatible with built-in Kotlin and must be removed**. For a processor with no KSP implementation, apply **`com.android.legacy-kapt`** to that single module, versioned with **the same version as AGP**. See [kapt under AGP 9](#kapt-under-agp-9).
 - **Type-safe project accessors**: Enabled by default in Gradle 9; `enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")` is no longer needed in `settings.gradle.kts`.
 - **JVM 17 minimum**: Gradle 9 requires JVM 17+ to run.
 - **Legacy API removal**: `BaseExtension`, `applicationVariants.all`, `Convention` type, and `com.android.build.gradle.api.*` legacy APIs are removed. Use `androidComponents` API instead.
@@ -52,6 +52,45 @@ After completing the AGP 9 upgrade, remove these now-obsolete flags from `gradle
 
 Do **not** add `android.disallowKotlinSourceSets=false`. It re-enables a removed escape hatch and masks real migration work.
 
+### kapt under AGP 9
+
+Required order, fail-fast:
+
+1. Remove every `org.jetbrains.kotlin.kapt` / `kotlin("kapt")` application and its `libs.versions.toml` plugin entry. It is **incompatible** with built-in Kotlin.
+2. For each remaining `kapt(...)` dependency, decide whether the processor supports KSP: unzip the processor jar and look for
+   `META-INF/services/com.google.devtools.ksp.processing.SymbolProcessorProvider`. Present means KSP-capable - switch the configuration to `ksp(...)`.
+3. Only for processors with no KSP implementation, apply `com.android.legacy-kapt` **on that module alone**:
+
+```kotlin
+// gradle/libs.versions.toml - version.ref must be the AGP version
+// android-legacy-kapt = { id = "com.android.legacy-kapt", version.ref = "agp" }
+
+plugins {
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.legacy.kapt)
+}
+```
+
+Forbidden:
+
+- Applying `com.android.legacy-kapt` project-wide "just in case". It reintroduces the slow pipeline everywhere.
+- Reaching for `legacy-kapt` for **Room** - Room 3 is KSP-only, so a Room module never needs it.
+- Setting `android.disallowKotlinSourceSets=false` to make a kapt module configure.
+
+Known issue: `com.android.legacy-kapt` has been reported to skip annotation processing where `kotlin-kapt` did not. If generated sources go missing after the swap, verify the generated-source directory before assuming a processor bug.
+
+### Per-module escape hatches (temporary)
+
+Use only to stage a large migration; all three disappear in AGP 10.
+
+| Need                                                     | Mechanism                                                                 |
+|----------------------------------------------------------|---------------------------------------------------------------------------|
+| Keep one module on the legacy DSL                        | `android.newDsl.optOut=:legacy-lib` in `gradle.properties` (AGP 9.4+)      |
+| Migrate to built-in Kotlin module by module              | `android.builtInKotlin=false` globally, then apply `com.android.built-in-kotlin` (same version as AGP) per migrated module; remove both when done |
+| Module has no Kotlin sources (drops the Kotlin compile task and `kotlin-stdlib`) | `android { enableKotlin = false }`                    |
+
+Forbidden: leaving any of these in place as a permanent configuration. `android.newDsl` and `android.builtInKotlin` are **deleted in AGP 10**, and the legacy DSL/variant API is removed with them.
+
 ### Built-in Kotlin (AGP 9)
 
 | Situation                                   | Action                                                                                                                                                                                                                                            |
@@ -66,11 +105,29 @@ Required:
 - After changing catalog `agp`, run `./gradlew help`. Failure to resolve `com.android.tools.build:gradle:<version>` (HTTP 404 from `google()`) means that exact version is not published yet; pick the highest published AGP that still supports `compileSdk` 37. Cross-check [Android Gradle Plugin release notes](https://developer.android.com/build/releases/gradle-plugin).
 - Treat Gradle compatibility tables as JVM / Gradle runtime guidance only; they do not guarantee every future AGP coordinate exists on Maven.
 
+### AGP requires a minimum Gradle wrapper
+
+Each AGP minor raises the **minimum Gradle** version. Bumping catalog `agp` without bumping `gradle/wrapper/gradle-wrapper.properties` fails at configuration time.
+
+| catalog `agp` | Minimum Gradle wrapper | Max `compileSdk` |
+|---------------|------------------------|------------------|
+| 9.0           | 9.1.0                  | 36.1             |
+| 9.1           | 9.3.1                  | 37               |
+| 9.2           | 9.4.1                  | 37               |
+| 9.3           | 9.5.0                  | 37               |
+| 9.4           | 9.6.0                  | 37               |
+
+JDK 17, Build Tools `36.0.0`, and NDK `28.2.13676358` are the defaults across all of AGP 9.0-9.4.
+
 ### Example tested stack (re-verify after every bump)
 
 | Gradle wrapper | catalog `agp` | catalog `kotlin` | catalog `ksp` | Verify                                                                                                  |
 |----------------|---------------|------------------|---------------|---------------------------------------------------------------------------------------------------------|
-| 9.5.x          | 9.2.x         | 2.3.21           | 2.3.7         | `./gradlew help` on a clean checkout after editing `libs.versions.toml`; swap pins if resolution fails. |
+| 9.5.x          | 9.3.1         | 2.3.21           | 2.3.10        | `./gradlew help` on a clean checkout after editing `libs.versions.toml`; swap pins if resolution fails. |
+
+Kotlin is deliberately held at `2.3.21`: Kotlin 2.4 requires R8 `9.1.29`, which this AGP does not ship - see [dependencies.md → Kotlin requires a matching AGP / R8](dependencies.md#kotlin-requires-a-matching-agp--r8).
+
+AGP 9.3 is the floor for the `optimization { }` DSL and the `analyze<Variant>R8Config` task ([R8 and ProGuard Configuration](#r8-and-proguard-configuration)). AGP 9.4 is alpha-only at time of writing - do not pin it.
 
 ### AGP 9 Verification
 
@@ -85,8 +142,17 @@ On failure, the failing task name identifies the module / DSL block to fix. For 
 
 ### AGP 9 Toolchain Compatibility Notes
 
-- **Paparazzi**: Versions **`<= 2.0.0-alpha04`** are incompatible with AGP 9. Upgrade to a release that explicitly supports AGP 9 before flipping the AGP version, or temporarily disable Paparazzi modules.
+- **Paparazzi**: Upgrade to **`2.0.0-alpha04` or higher**, then disable HTML test reports in **every** module applying `app.cash.paparazzi`. Paparazzi reaches into internal Gradle classes for HTML reports, which breaks on the Gradle 9 wrapper AGP 9 requires:
+
+  ```kotlin
+  tasks.withType<Test>().configureEach {
+      reports.html.required = false
+  }
+  ```
+
+  If that is not acceptable, disable the Paparazzi modules until upstream fixes it (cashapp/paparazzi#2111).
 - **KMP**: This AGP 9 path is Android-only. Kotlin Multiplatform projects require a separate migration.
+- **Verification is three steps, not one**: Gradle IDE sync succeeds, `./gradlew help` succeeds, `./gradlew build --dry-run` succeeds. Do not run `clean` as part of verifying a DSL change.
 
 ## Table of Contents
 1. [Project Structure](#project-structure)
@@ -574,7 +640,9 @@ android {
     testBuildType = "benchmark"
 
     defaultConfig {
-        minSdk = libs.findVersion("minSdk").get().toString().toInt()
+        minSdk {
+            version = release(libs.versions.minSdk.get().toInt())
+        }
         testInstrumentationRunner = "androidx.benchmark.junit4.AndroidBenchmarkRunner"
     }
 }
@@ -588,6 +656,35 @@ dependencies {
 ```
 
 **Required:** `:app` declares a matching `benchmark` build type (`create("benchmark")` under Module Build Files).
+
+### Build-managed devices
+
+Emulators declared in Gradle and provisioned by the build (docs now say *build-managed*; the DSL is still `managedDevices`). Wiring: `assets/convention/config/GradleManagedDevices.kt`, applied by the library/application/feature conventions.
+
+Run:
+
+```bash
+./gradlew :app:pixel9api36googleDebugAndroidTest   # one device
+./gradlew :app:ciGroupDebugAndroidTest             # a device group
+```
+
+Options:
+
+| Need                          | Setting                                                                          |
+|-------------------------------|----------------------------------------------------------------------------------|
+| Parallel shards               | `android.experimental.androidTest.numManagedDeviceShards=<n>` in `gradle.properties` (results emitted per shard) |
+| Headless CI (no GPU)          | `-Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect`           |
+| Faster, lighter images        | `systemImageSource = "aosp-atd"` or `"google-atd"`                                |
+
+Constraints:
+
+- Minimum API 27.
+- **ATD images are API 30 only and disable hardware rendering**, so screenshot tests that depend on hardware rendering cannot run on them - keep those on a standard image.
+- Agent rule: only run these when the user has an emulator-capable environment and asked for instrumented runs ([Verify after toolchain or module changes](#verify-after-toolchain-or-module-changes)).
+
+### Aggregated test and coverage reports (optional, AGP 9.2+)
+
+`android.experimental.reportAggregationSupport=true` in `gradle.properties` produces HTML dashboards aggregating unit + instrumentation results across modules and variants. Experimental; treat it as an alternative to hand-wired report merging, not a replacement for the JaCoCo wiring in [android-code-coverage.md](android-code-coverage.md).
 
 ### Compose stability analyzer
 
@@ -767,9 +864,55 @@ With `android.nonTransitiveRClass=true`, each module generates its own R class c
 - Group cross-module resource imports at the top of the file.
 - String ownership rules: [android-i18n.md → String resource ownership](android-i18n.md#string-resource-ownership).
 
-### R8 / ProGuard Configuration
+### R8 and ProGuard Configuration
 
-R8 is the default code shrinker and obfuscator in AGP. Enable it in release builds:
+R8 is the default code shrinker and obfuscator in AGP. On the pinned stack (AGP 9.3+) use the `optimization { }` block:
+
+```kotlin
+buildTypes {
+    release {
+        optimization {
+            // Turns on BOTH code optimization and optimized resource shrinking.
+            enable = true
+        }
+    }
+}
+```
+
+`optimization { enable = true }` already includes the default Android platform keep rules, so `getDefaultProguardFile(...)` is no longer listed. Opt out only when you have audited the consequences:
+
+```kotlin
+optimization {
+    enable = true
+    keepRules {
+        includeDefault = false
+    }
+}
+```
+
+**Keep rules live in a source set, not `proguardFiles`.** Files use the `.keep` suffix under `src/<variant>/keepRules/`:
+
+```
+app/src/main/keepRules/app-rules.keep          // all variants
+app/src/flavor1/keepRules/flavor1-rules.keep   // one flavor
+```
+
+Copy `assets/proguard-rules.pro.template` to `app/src/main/keepRules/app-rules.keep` (or `app/proguard-rules.pro` on the legacy DSL) and adjust `com.example.*` package names to match your project. The template includes rules for every library in the version catalog.
+
+Filter a misbehaving library's consumer rules instead of fighting them:
+
+```kotlin
+release {
+    optimization {
+        enable = true
+        keepRules {
+            ignoreFrom("com.somelibrary:somelibrary")
+        }
+    }
+}
+```
+
+#### Legacy DSL (AGP < 9.3 only)
 
 ```kotlin
 buildTypes {
@@ -777,6 +920,7 @@ buildTypes {
         isMinifyEnabled = true
         isShrinkResources = true
         proguardFiles(
+            // proguard-android.txt is DISALLOWED from AGP 9.0 - it contains -dontoptimize
             getDefaultProguardFile("proguard-android-optimize.txt"),
             "proguard-rules.pro"
         )
@@ -784,7 +928,41 @@ buildTypes {
 }
 ```
 
-Copy `assets/proguard-rules.pro.template` to `app/proguard-rules.pro` and adjust `com.example.*` package names to match your project. The template includes rules for every library in the version catalog.
+The legacy DSL still works on AGP 9.3+, so brownfield projects need not migrate in the same change as an AGP bump.
+
+#### AGP 9 R8 defaults that change existing behavior
+
+These flipped to `true` by default. Each one can break a build or silently change output on an otherwise unmodified project.
+
+| Default                                          | Consequence                                                                                                                                       |
+|--------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| `android.r8.strictFullModeForKeepRules`          | **`-keep class A` no longer implies `-keep class A { <init>(); }`.** Reflectively instantiated classes need the constructor named explicitly, or they fail at runtime, not build time. |
+| `android.proguard.failOnMissingFiles`            | A keep file listed but not present now **fails the build** instead of being ignored.                                                               |
+| `android.r8.proguardAndroidTxt.disallowed`       | `getDefaultProguardFile("proguard-android.txt")` is rejected; only `proguard-android-optimize.txt` is supported.                                    |
+| `android.r8.optimizedResourceShrinking`          | R8 shrinks code and resources against one graph. Automatic from AGP 9.0; the flag is only needed on 8.12/8.13.                                     |
+| `android.r8.globalOptionsInConsumerRules.disallowed` | Publishing a library/feature **fails** if its consumer rules contain `-dontoptimize` / `-dontobfuscate`. Grep `<app>/build/outputs/mapping/<variant>/configuration.txt` for `# REMOVED CONSUMER RULE:`. |
+| `android.enableAppCompileTimeRClass`             | Apps compile against non-final `R`. Refactor any `switch` over `R` fields to chained `if`.                                                          |
+
+Because of `strictFullModeForKeepRules`, audit reflection keeps when upgrading:
+
+```proguard
+# Insufficient under AGP 9 strict full mode - the constructor is NOT kept
+-keep class com.example.model.User
+
+# Correct
+-keep class com.example.model.User {
+    <init>();
+    <fields>;
+}
+```
+
+#### R8 option changes worth knowing
+
+- **`-processkotlinnullchecks <keep|remove_message|remove>`** (AGP 9.0+): default `remove_message`, which strips the message but keeps the check on `kotlin.jvm.internal.Intrinsics` null checks. Set it explicitly only with a measured reason.
+- **Repackaging is the default from AGP 9.1** - classes move to the unnamed package as if `-repackageclasses` were set. Opt out with the new **`-dontrepackage`** rule (needed when a framework resolves classes by package name).
+- **`-keepattributes` wildcards stopped matching runtime-invisible attributes in AGP 9.2.** `-keepattributes *`, `*Annotation*`, and `*Invisible*` no longer retain `RuntimeInvisibleAnnotations`, `RuntimeInvisibleParameterAnnotations`, or `RuntimeInvisibleTypeAnnotations`; name them explicitly if a processor reads them at runtime.
+- **`-addconfigurationdebugging` is removed** (now warns).
+- Negated member patterns are supported from AGP 9.2, e.g. `-keepclassmembers class com.example.MyClass { *** !*ForTesting(...); }`.
 
 **Required:**
 - Rely on AndroidX/Jetpack consumer rules inside AARs; add manual keep rules only when library docs or R8 full-mode errors demand it.
@@ -792,6 +970,22 @@ Copy `assets/proguard-rules.pro.template` to `app/proguard-rules.pro` and adjust
 - Add `-dontwarn` for Tink error-prone annotations when using `EncryptedSharedPreferences`.
 - Keep SQLCipher native methods in shrinker output.
 - Upload `mapping.txt` to Crashlytics/Sentry so release stacks decode (Gradle plugins wire this when configured).
+
+#### Incremental R8 adoption on a brownfield app (`packageScope`)
+
+Use only when an existing app ships **unshrunk** and enabling R8 wholesale is too risky. Requires AGP 9.0+, R8 full mode (incompatible with compatibility mode), and `android.r8.gradual.support=true` in `gradle.properties`.
+
+```kotlin
+release {
+    optimization {
+        enable = true
+        // Optimize dependencies first; app code stays untouched.
+        packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+    }
+}
+```
+
+Adoption ladder - ship and verify each rung before widening: AndroidX/Kotlin → Google libraries (`com.google.**`) and OkHttp (`okhttp3.**`, `okio.**`) → app packages → **remove `packageScope` entirely**. Leaving it in place permanently means most of the app is never optimized. Prioritize the next package by DEX size using APK Analyzer on an R8-off release build.
 
 **Debugging shrunk builds:**
 
@@ -811,7 +1005,36 @@ See [android-security.md](android-security.md#proguard-r8-hardening) for securit
 
 ### R8 Keep-Rules Audit
 
-Run when `proguard-rules.pro` grows past ~50 lines, release APK/AAB size regresses, or a release-only crash points at a missing class/member. Steps are ordered worst-impact first; skip any step whose rule class does not appear in the file.
+Run when the keep-rule set grows past ~50 lines, release APK/AAB size regresses, or a release-only crash points at a missing class/member. Steps are ordered worst-impact first; skip any step whose rule class does not appear in the file.
+
+**Step 0 - Generate the R8 Configuration Analyzer report first.** Do not audit rules by hand; R8 now reports which rules are dead, duplicated, or subsumed. Requires R8 `9.3.7-dev`+, bundled with AGP 9.3.0+.
+
+```bash
+# AGP 9.3+: standalone, skips APK/Bundle packaging
+./gradlew :app:analyzeReleaseR8Config
+# -> app/build/reports/r8/r8-config-analyzer-release.html
+
+# Also emitted automatically by any R8 release build
+./gradlew :app:assembleRelease
+# -> app/build/outputs/mapping/release/configanalyzer.html
+```
+
+Disable the automatic report with `android.experimental.r8.enableR8ConfigurationAnalyzer=false`. On AGP 9.2 and earlier the only route is
+`./gradlew assembleRelease -Dcom.android.tools.r8.dumpkeepradiushtmltodirectory=<output_dir>`.
+
+Read the report in this order:
+
+| Report section         | Action                                                                                                  |
+|------------------------|---------------------------------------------------------------------------------------------------------|
+| **Unused rules**       | Match zero classes/members - delete outright, zero risk.                                                 |
+| **Identical rules**    | Exact duplicates - keep one.                                                                             |
+| **Subsumed rules**     | A broader rule already covers them - delete the broader one (see Step 3).                                |
+| Shrinking / Optimization / Obfuscation scores | Percentage of classes, fields, and methods still available to each R8 phase. Track as a CI metric; a score of `0.0` means a global `-dontoptimize` / `-dontobfuscate` / `-dontshrink` is in force. |
+| Per-rule blocked %     | Ranks which rules cost the most optimization - this is the work queue for Steps 2-4.                     |
+
+Rules attributed to a default AGP file are **not** yours to edit. Library-owned rules that dominate the report are a bug report to the library maintainer, or a candidate for `keepRules { ignoreFrom("group:artifact") }`.
+
+Manual fallbacks when a report is unavailable: `-printconfiguration build/outputs/logs/configuration.txt` to dump the merged configuration, and `-whyareyoukeeping class com.example.Foo` to explain a single retention.
 
 **Step 1 - Drop redundant library rules.** The libraries below ship consumer rules inside the AAR/JAR. App-side duplicates only mask narrower rules - delete them first.
 
@@ -844,7 +1067,7 @@ If a release build fails after deleting one of the above, the failure points to 
 - `-keep class com.example.** { *; }` subsumes every per-class rule under that package - **delete the package-wide rule**, keep the per-class rules.
 - A conditional `-if ... -keep <1>` subsumes the equivalent unconditional `-keep` for the same class - delete the unconditional one.
 
-R8 emits no "redundant rule" report. To verify a suspected redundancy, comment the broader rule out, run `./gradlew assembleRelease`, and confirm `mapping.txt` still contains the narrower-kept symbol.
+Read these off the analyzer's **Subsumed rules** section (Step 0) rather than reasoning about them by hand. Without a report, verify a suspected redundancy by commenting the broader rule out, running `./gradlew assembleRelease`, and confirming `mapping.txt` still contains the narrower-kept symbol.
 
 **Step 4 - Narrow reflection-driven keeps.** For every remaining package- or class-wide rule, locate the reflection site (search for `Class.forName`, `::class.java`, `getDeclaredMethod`, `getDeclaredField`, JNI symbol lookups, `META-INF/services/` entries, Gson `TypeToken`, Moshi adapter lookups, Retrofit `Proxy`). Replace the broad rule with one that targets only the reflected members:
 
@@ -870,13 +1093,14 @@ R8 emits no "redundant rule" report. To verify a suspected redundancy, comment t
 
 For annotation-driven reflection, use `-if @YourAnnotation class **` so the rule scales as new annotated classes are added.
 
-**Step 5 - AGP 9 default optimizations.** AGP 9 enables additional R8 optimizations by default. Re-run steps 1-4 after every AGP upgrade and every major library bump. Track release APK/AAB size as a CI metric to surface silent regressions.
+**Step 5 - AGP 9 default optimizations.** AGP 9 enables additional R8 optimizations by default and changes keep-rule semantics ([AGP 9 R8 defaults](#agp-9-r8-defaults-that-change-existing-behavior)). In particular `strictFullModeForKeepRules` means an existing `-keep class A` no longer retains `A`'s constructor - re-audit every reflection keep. Re-run steps 0-4 after every AGP upgrade and every major library bump. Track release APK/AAB size **and** the analyzer's three scores as CI metrics to surface silent regressions.
 
-**Final guardrail.** Before shipping any `proguard-rules.pro` change:
+**Final guardrail.** Before shipping any keep-rule change:
 
 1. `./gradlew assembleRelease` (or `bundleRelease`) succeeds.
-2. Run a UI Automator smoke test over the packages whose rules changed (see [testing.md](testing.md)).
-3. Diff `mapping.txt` line count against the previous release. Drops are the win signal; jumps mean a broader keep slipped in.
+2. `./gradlew :app:analyzeReleaseR8Config` shows no new **Unused** rules and no score regression.
+3. Run a UIAutomator smoke test over the packages whose rules changed (see [testing.md](testing.md)).
+4. Diff `mapping.txt` line count against the previous release. Drops are the win signal; jumps mean a broader keep slipped in.
 
 ## Build Performance
 

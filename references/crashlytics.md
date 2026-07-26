@@ -444,7 +444,7 @@ Forbidden:
 
 ## ProGuard/R8 Mapping Upload
 
-Both providers require mapping file upload for symbolicated crashes in release builds. See [gradle-setup.md](gradle-setup.md#r8-proguard-configuration) for R8 build configuration and `assets/proguard-rules.pro.template` for all keep rules.
+Both providers require mapping file upload for symbolicated crashes in release builds. See [gradle-setup.md](gradle-setup.md#r8-and-proguard-configuration) for R8 build configuration and `assets/proguard-rules.pro.template` for all keep rules.
 
 ### Firebase Crashlytics
 
