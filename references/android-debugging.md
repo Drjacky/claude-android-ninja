@@ -119,13 +119,29 @@ Required: confirm whether the device applies a memory limiter before chasing hea
 
 ```bash
 adb shell am memory-limiter status
-adb shell am memory-limiter manual <packageName> <limitMb>
-adb shell am memory-limiter ignore <packageName>
+adb shell am memory-limiter manual <pid> <limitMB>   # also: max | none
+adb shell am memory-limiter ignore <uid>             # also: none | all
+```
+
+Note the argument types: `manual` takes a **pid**, `ignore` takes a **uid**. Neither accepts a package name - resolve it first with `adb shell pidof <package>` or `adb shell dumpsys package <package> | grep userId`.
+
+**Confirm it after the fact rather than guessing.** A kill from this mechanism is attributable from the app's own exit records:
+
+```kotlin
+val am = context.getSystemService<ActivityManager>()!!
+am.getHistoricalProcessExitReasons(context.packageName, 0, 10).forEach { info ->
+    // reason == REASON_OTHER and description contains "MemoryLimiter:AnonSwap"
+    if (info.reason == ApplicationExitInfo.REASON_OTHER &&
+        info.description?.contains("MemoryLimiter:AnonSwap") == true
+    ) {
+        // Device-imposed memory cap, not an app leak.
+    }
+}
 ```
 
 Reproduce under a manual cap, then profile retained size (Memory Profiler / heap dump). Cross-link: [migration.md → Memory limiter (all apps on affected devices)](migration.md#memory-limiter-all-apps-on-affected-devices).
 
-Forbidden: treating every background kill as a leak without checking limiter status on the test device.
+Forbidden: treating every background kill as a leak without checking limiter status on the test device, or without reading `ApplicationExitInfo` first.
 
 ## R8 Stack Trace De-obfuscation
 
@@ -145,6 +161,17 @@ Required workflow:
 3. Run the keep-rules audit in [gradle-setup.md → R8 Keep-Rules Audit](gradle-setup.md#r8-keep-rules-audit).
 4. Cross-check official guidance: [Configure and troubleshoot R8 Keep Rules](https://developer.android.com/blog/posts/configure-and-troubleshoot-r8-keep-rules).
 
+**Check this first on AGP 9.** `android.r8.strictFullModeForKeepRules` defaults to `true`, so an existing `-keep class com.example.Model` **no longer retains the constructor**. Reflective instantiation (Gson, custom deserializers) then fails at runtime in release only, with the class present in `seeds.txt` - which makes it look like the keep rule is working. Name the members explicitly:
+
+```proguard
+-keep class com.example.Model {
+    <init>();
+    <fields>;
+}
+```
+
+Other AGP 9 defaults that produce release-only surprises - repackaging into the default package (9.1+), `-keepattributes` wildcards no longer matching runtime-invisible annotations (9.2), and `-processkotlinnullchecks` stripping null-check messages: [gradle-setup.md → AGP 9 R8 defaults](gradle-setup.md#agp-9-r8-defaults-that-change-existing-behavior).
+
 Required: upload `mapping.txt` with every release (Crashlytics/Sentry plugins when configured).
 
 **Wrong:** add `-keep class com.example.** { *; }` before checking `usage.txt` / `seeds.txt`.
@@ -162,9 +189,23 @@ After a release build (`./gradlew assembleRelease`), R8 produces these files in
 | `usage.txt`         | Lists classes and members that were removed (tree-shaken)     |
 | `seeds.txt`         | Lists classes and members matched by `-keep` rules (retained) |
 | `configuration.txt` | The merged R8 configuration from all sources                  |
+| `configanalyzer.html` | Keep-rule scoring and unused/duplicate/subsumed rule report ([gradle-setup.md](gradle-setup.md#r8-keep-rules-audit)) |
 
 **Always archive `mapping.txt` alongside every release build.** Without it, production crash
 traces cannot be decoded. Crashlytics and Sentry Gradle plugins upload this automatically.
+
+### Matching a trace to its mapping file
+
+R8 now emits **`r8-map-id-<MAP_ID>`** as the source-file attribute instead of `SourceFile`, so an incoming stack trace identifies which build produced it:
+
+```
+at a.b.c.b(r8-map-id-3f9a1c...)
+```
+
+- `MAP_ID` is the **full** map hash, not a 7-character prefix - match on the whole value when selecting an archived `mapping.txt`.
+- In **ProGuard-compatibility mode** this does not apply while `-keepattributes SourceFile` is present; remove that rule to get the map id.
+
+AGP 9.0+ Logcat **automatically de-obfuscates R8 stack traces** for locally built variants, so `retrace` is only needed for traces coming from CI artifacts, Play Console, or a crash reporter.
 
 ### Using retrace (Automated)
 

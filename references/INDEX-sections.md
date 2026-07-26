@@ -149,7 +149,7 @@ Quick routing: [android-data-sync-quick.md](android-data-sync-quick.md)
   - [Performance Considerations](android-data-sync.md#performance-considerations)
 - [References](android-data-sync.md#references)
 
-### android-debugging.md (355 lines)
+### android-debugging.md (396 lines)
 
 Open when: Logcat, ANR, R8 mapping, release crashes, memory-limiter repro
 
@@ -170,6 +170,7 @@ Open when: Logcat, ANR, R8 mapping, release crashes, memory-limiter repro
 - [R8 Stack Trace De-obfuscation](android-debugging.md#r8-stack-trace-de-obfuscation)
   - [R8 keep-rules troubleshooting](android-debugging.md#r8-keep-rules-troubleshooting)
   - [R8 Output Files](android-debugging.md#r8-output-files)
+  - [Matching a trace to its mapping file](android-debugging.md#matching-a-trace-to-its-mapping-file)
   - [Using retrace (Automated)](android-debugging.md#using-retrace-automated)
   - [Manual De-obfuscation](android-debugging.md#manual-de-obfuscation)
   - [Debugging Unexpected Removal](android-debugging.md#debugging-unexpected-removal)
