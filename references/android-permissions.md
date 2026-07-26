@@ -10,7 +10,7 @@ Compose-first runtime permission patterns. Declare in the `:app` manifest only; 
 5. [Rationale and Don't Ask Again](#rationale-and-dont-ask-again)
 6. [Version-Specific Handling](#version-specific-handling)
 7. [Android 16 (API 36) Permission Changes](#android-16-api-36-permission-changes)
-8. [Android 17 (API 37) location privacy](#android-17-location-privacy)
+8. [Android 17 (API 37) Permission Changes](#android-17-api-37-permission-changes) - [local network](#local-network-access-api-37), [location privacy](#android-17-location-privacy), [location button](#system-location-button-one-time-precise-access-no-permission)
 9. [Testing](#testing)
 
 ## Where Permissions Live
@@ -83,36 +83,91 @@ API 37-specific routing (approximate-first, background, FGS): [Android 17 locati
 
 **Forbidden:** `READ_CONTACTS` when the system contact picker satisfies the UX.
 
-Required: set `ContactsContract.Contacts.EXTRA_USE_SYSTEM_CONTACTS_PICKER` to `true` on the pick Intent so the platform contact picker UI is used. Official flow: [Contact picker (Android 17)](https://developer.android.com/about/versions/17/features/contact-picker).
+Android 17 (API 37) picker: launch **`ContactsPickerSessionContract.ACTION_PICK_CONTACTS`** through the **`StartActivityForResult`** contract, declaring which data fields you need. The result is a **session URI** granting temporary read access to only the selected data. Official flow: [Contact picker (Android 17)](https://developer.android.com/about/versions/17/features/contact-picker).
+
+Do **not** use `ActivityResultContracts.PickContact()` for this - it cannot carry the data-field extras and yields a single legacy contact URI.
+
+Verify the requested-fields extra name against the installed SDK before relying on it: the platform documentation refers to it both as `ContactsPickerSessionContract.EXTRA_REQUESTED_DATA_FIELDS` (prose) and `EXTRA_PICK_CONTACTS_REQUESTED_DATA_FIELDS` (samples). Use whichever the `android.provider.ContactsPickerSessionContract` class on `compileSdk` 37 actually declares; do not hard-code the string literal.
 
 ```kotlin
+import android.provider.ContactsContract
+import android.provider.ContactsContract.CommonDataKinds.Email
+import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsPickerSessionContract
+
 @Composable
 fun ContactPickButton(
-    onContactPicked: (Uri) -> Unit,
+    onContactsPicked: (Uri) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickContact()
-    ) { uri ->
-        uri?.let(onContactPicked)
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // Session URI: query it, then persist what you need before the grant expires.
+            result.data?.data?.let(onContactsPicked)
+        }
     }
 
     Button(
-        onClick = { launcher.launch(null) },
+        onClick = {
+            val requestedFields = arrayListOf(
+                Phone.CONTENT_ITEM_TYPE,
+                Email.CONTENT_ITEM_TYPE,
+            )
+            val intent = Intent(ContactsPickerSessionContract.ACTION_PICK_CONTACTS).apply {
+                putExtra(ContactsContract.Contacts.EXTRA_USE_SYSTEM_CONTACTS_PICKER, true)
+                putStringArrayListExtra(
+                    ContactsPickerSessionContract.EXTRA_PICK_CONTACTS_REQUESTED_DATA_FIELDS,
+                    requestedFields
+                )
+                // Multi-select is opt-in
+                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                putExtra(ContactsPickerSessionContract.EXTRA_PICK_CONTACTS_SELECTION_LIMIT, 5)
+                // true = only show contacts having every requested field
+                putExtra(ContactsPickerSessionContract.EXTRA_PICK_CONTACTS_MATCH_ALL_DATA_FIELDS, false)
+            }
+            launcher.launch(intent)
+        },
         modifier = modifier
     ) {
-        Text("Choose contact")
+        Text("Choose contacts")
     }
 }
 ```
 
-Raw Intent (multi-select or custom caller): set the platform extra before `startActivity`.
+Reading the session URI - the cursor follows the `ContactsContract.Data` schema, one row per data item:
 
 ```kotlin
-val pickIntent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI).apply {
-    putExtra(ContactsContract.Contacts.EXTRA_USE_SYSTEM_CONTACTS_PICKER, true)
+private suspend fun readPickedContacts(
+    sessionUri: Uri,
+    context: Context
+): List<PickedContact> = withContext(Dispatchers.IO) {
+    val projection = arrayOf(
+        ContactsContract.Contacts.LOOKUP_KEY,
+        ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
+        ContactsContract.Data.MIMETYPE,
+        ContactsContract.Data.DATA1,
+    )
+
+    // Session URIs reject custom selection / selectionArgs - pass null for both.
+    context.contentResolver.query(sessionUri, projection, null, null, null)?.use { cursor ->
+        // Group rows by LOOKUP_KEY: one contact yields several rows (each phone, each email).
+        buildPickedContacts(cursor)
+    } ?: emptyList()
 }
 ```
+
+Required:
+
+- **Request the narrowest field set.** The picker filters out contacts lacking the requested fields, which is both better UX and less data.
+- **Group rows by `ContactsContract.Contacts.LOOKUP_KEY`** - a contact with three phone numbers returns three rows.
+- **Persist what you need immediately.** The grant is temporary and does not survive process death.
+- Pass `null` for `selection` / `selectionArgs`; supplying them **throws**.
+
+Do not read account metadata from the result - it is stripped to prevent fingerprinting. At target SDK 37, `ACCOUNT_NAME` / `ACCOUNT_TYPE` are also removed from `ContactsContract.Data` generally ([migration.md → Contacts provider tightening](migration.md#contacts-provider-tightening-target-sdk-37)).
+
+**Backward compatibility:** at target SDK 37 the system automatically upgrades an existing `Intent.ACTION_PICK` to the new picker UI, so a legacy call site is not broken - it just does not get multi-field requests, profile switching, or the single session URI. To trial the new UI while still targeting a lower SDK, add `EXTRA_USE_SYSTEM_CONTACTS_PICKER` to your existing `ACTION_PICK` intent.
 
 ## Requesting Runtime Permissions in Compose
 
@@ -692,6 +747,12 @@ fun buildHealthPermissions(): List<String> = when {
 }
 ```
 
+### App-Owned Photos Pre-Selection
+
+When targeting API 36, the photo picker pre-selects photos owned by the requesting app. Users can deselect these to revoke access. No code changes are needed, but be aware that users may deselect previously accessible photos.
+
+## Android 17 (API 37) Permission Changes
+
 ### Local network access (API 37)
 
 At **target SDK 37** local network access is blocked by default and gated by the runtime permission **`ACCESS_LOCAL_NETWORK`** (in the `NEARBY_DEVICES` permission group). Android 16 only had a temporary opt-in phase that reused `NEARBY_WIFI_DEVICES`; that is not the API to target now.
@@ -760,11 +821,7 @@ adb reboot                 # required for the change to take effect
 
 Cross-links: [migration.md → Local network access (target SDK 37)](migration.md#local-network-access-target-sdk-37); Cast and media device selection in [android-media.md](android-media.md).
 
-### App-Owned Photos Pre-Selection
-
-When targeting API 36, the photo picker pre-selects photos owned by the requesting app. Users can deselect these to revoke access. No code changes are needed, but be aware that users may deselect previously accessible photos.
-
-## Android 17 location privacy
+### Android 17 location privacy
 
 Required at target SDK 37: request the narrowest location tier the feature needs; justify background and precise access in UX copy and Play declarations.
 
@@ -779,6 +836,38 @@ Required at target SDK 37: request the narrowest location tier the feature needs
 **Wrong:** request fine + background on first launch before the user starts a location-dependent action.
 
 **Correct:** foreground coarse or fine in context, then background only after the user enables a feature that needs it.
+
+### Coarse location is no longer a fixed grid
+
+Android 17 replaces the static **2 km** coarse-location grid with a **population-density-dependent** area: sparsely populated regions get a larger area to keep the privacy guarantee consistent. Consequences for code that assumed a constant:
+
+- Do not hard-code a 2 km radius for uncertainty circles, cache keys, or "is the user near X" checks derived from coarse fixes.
+- Read the accuracy off the `Location` object (`Location.getAccuracy()`) rather than assuming a bound.
+- A coarse fix in a rural area can now be far less precise than the same code saw on Android 16 - verify any distance threshold that gates UI.
+
+### System location button (one-time precise access, no permission)
+
+**Status: prerelease.** `androidx.core.locationbutton` is at **`1.0.0-alpha01`** with no stable release, so it is **not** in `assets/libs.versions.toml.template`. Do not add it to a production catalog without an explicit decision recorded per [dependencies.md → Pinned prerelease required for feature parity](dependencies.md#pinned-prerelease-required-for-feature-parity).
+
+**Use when:** a single user action needs precise location and you would otherwise request `ACCESS_FINE_LOCATION` permanently - "locate me" on a map, autofill an address, share current position once.
+
+The user taps a system-rendered button; the app receives session-scoped precise location with **no runtime permission and no prompt**, gated by `Manifest.permission.USE_LOCATION_BUTTON`. Because the system renders and validates the button, consent is tied to the tap.
+
+| Artifact                                                | Use                                  |
+|---------------------------------------------------------|--------------------------------------|
+| `androidx.core.locationbutton:locationbutton`            | View-based                            |
+| `androidx.core.locationbutton:locationbutton-compose`    | Compose                               |
+| `androidx.core.locationbutton:locationbutton-testing`    | Test support                          |
+
+Customization is deliberately bounded: background/icon colors, outline, size, shape, and a label chosen from a predefined list. The location **icon is mandatory and non-customizable**, and font size is system-managed for accessibility - do not attempt to restyle either.
+
+The Jetpack library **falls back to the standard permission prompt automatically on Android 16 and below**, so the call site does not need a version branch.
+
+**Forbidden:** using the location button as a substitute for `ACCESS_BACKGROUND_LOCATION` or continuous tracking - it is per-session, action-scoped access only.
+
+### Location access transparency (Android 17)
+
+A persistent indicator now appears whenever a non-system app accesses location, matching the existing microphone/camera treatment, and users can attribute and revoke from a "Recent app use" dialog. Practical effect: silent or speculative location reads become visible to the user, so remove background polling that is not tied to a feature the user turned on.
 
 Cross-links: [android-performance.md → Excessive partial wake locks](android-performance.md#excessive-partial-wake-locks-play-vitals-core-metric) for wake-lock substitutes; [migration.md → Android 17 location privacy](migration.md#android-17-location-privacy); platform summary: [Redefining location privacy (Android 17)](https://developer.android.com/about/versions/17/behavior-changes-17).
 

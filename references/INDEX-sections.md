@@ -453,7 +453,7 @@ Open when: Macrobenchmark, baseline profiles, vitals, recomposition, startup, AP
   - [Performance Checklist](android-performance.md#performance-checklist)
 - [References](android-performance.md#references)
 
-### android-permissions.md (832 lines)
+### android-permissions.md (921 lines)
 
 Open when: Runtime permissions, Photo Picker, contacts, API 37 location privacy
 
@@ -485,9 +485,13 @@ Open when: Runtime permissions, Photo Picker, contacts, API 37 location privacy
   - [Notification Permissions (Android 13+)](android-permissions.md#notification-permissions-android-13)
 - [Android 16 (API 36) Permission Changes](android-permissions.md#android-16-api-36-permission-changes)
   - [Health & Fitness Permissions](android-permissions.md#health-fitness-permissions)
-  - [Local network access (API 37)](android-permissions.md#local-network-access-api-37)
   - [App-Owned Photos Pre-Selection](android-permissions.md#app-owned-photos-pre-selection)
-- [Android 17 location privacy](android-permissions.md#android-17-location-privacy)
+- [Android 17 (API 37) Permission Changes](android-permissions.md#android-17-api-37-permission-changes)
+  - [Local network access (API 37)](android-permissions.md#local-network-access-api-37)
+  - [Android 17 location privacy](android-permissions.md#android-17-location-privacy)
+  - [Coarse location is no longer a fixed grid](android-permissions.md#coarse-location-is-no-longer-a-fixed-grid)
+  - [System location button (one-time precise access, no permission)](android-permissions.md#system-location-button-one-time-precise-access-no-permission)
+  - [Location access transparency (Android 17)](android-permissions.md#location-access-transparency-android-17)
 - [Testing](android-permissions.md#testing)
   - [Grant Permission in Tests](android-permissions.md#grant-permission-in-tests)
   - [Test Permission Denial Flow](android-permissions.md#test-permission-denial-flow)
