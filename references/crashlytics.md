@@ -124,6 +124,10 @@ plugins {
 - `io.sentry.kotlin.compiler.gradle` (`@Composable` auto-tagging)
 - `sentry-android` and `sentry-compose-android` dependencies
 
+Two independent version lines: catalog `sentry` is the **SDK** and `sentryPlugin` is the **Gradle
+plugin**; they do not share a version. Keep `autoInstallation.sentryVersion` pinned to `sentry` so the
+plugin does not silently resolve a different SDK than the catalog declares.
+
 **Manual setup (if not using convention plugin):**
 
 ```kotlin
@@ -237,7 +241,19 @@ plugins {
 - `com.google.gms.google-services` and `com.google.firebase.crashlytics`
 - Firebase BoM (centralized version)
 - `firebase-analytics` + `firebase-crashlytics`
-- Native symbol upload + debug build settings
+- Mapping upload on release builds, skipped for debug
+
+**Native symbol upload is opt-in.** `nativeSymbolUploadEnabled` defaults to `false` because enabling it
+requires a symbol generator and unstripped `.so` inputs - on an app with no native code it fails the
+release build. Turn it on only for projects that ship native libraries:
+
+```properties
+# gradle.properties
+app.crashlytics.nativeSymbols=true
+```
+
+**Forbidden:** setting `mappingFileUploadEnabled = false` on a release build. Without the mapping file,
+production stack traces cannot be de-obfuscated ([android-debugging.md](android-debugging.md#matching-a-trace-to-its-mapping-file)).
 
 **Manual setup (if not using convention plugin):**
 

@@ -25,10 +25,16 @@ class FirebaseConventionPlugin : Plugin<Project> {
             }
 
             extensions.configure<CrashlyticsExtension> {
-                // Enable collection of native symbols for NDK crashes
-                nativeSymbolUploadEnabled = true
-                
-                // Disable Crashlytics collection in debug builds
+                // Only enable for projects that actually ship native libraries. When true, the
+                // plugin requires a symbol generator and unstripped .so inputs, so enabling it
+                // on a pure-Kotlin app fails the release build.
+                nativeSymbolUploadEnabled = providers
+                    .gradleProperty("app.crashlytics.nativeSymbols")
+                    .map { it.toBoolean() }
+                    .getOrElse(false)
+
+                // Skip mapping upload for debug builds; release builds must upload it or
+                // production stack traces cannot be de-obfuscated.
                 if (project.gradle.startParameter.taskNames.any { it.contains("Debug") }) {
                     mappingFileUploadEnabled = false
                 }
