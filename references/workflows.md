@@ -147,10 +147,14 @@ For files with a `-quick.md` companion, open the **quick** file first; open the 
 → Use [android-media.md](android-media.md) → "Background media playback hardening (API 37)" for `MediaSessionService`, `mediaPlayback` foreground service type, and `MediaSession` lifecycle  
 → Add Media3 via `../assets/libs.versions.toml.template` (`media3` ref, `media3-playback` bundle); align pins with [dependencies.md → Media3](dependencies.md#media3)  
 → Required: declare `FOREGROUND_SERVICE_MEDIA_PLAYBACK` and `android:foregroundServiceType="mediaPlayback"`; build a `MediaSession` around a Media3 `Player`; release session and player in `onDestroy()`; stop the service on `Player.STATE_ENDED`  
-→ Forbidden: standalone `MediaPlayer` / `AudioTrack` / raw `ExoPlayer` background playback without a `MediaSession`; `requestAudioFocus()` from a service with no session; manual wake locks alongside `MediaSessionService`  
+→ Forbidden: standalone `MediaPlayer` / `AudioTrack` / raw `ExoPlayer` background playback without a `MediaSession`; `requestAudioFocus()` from a service with no session; manual wake locks alongside `MediaSessionService` (Media3 sets one itself since 1.9.0)  
+
+**Background audio is silent with no exception?**
+→ Use [android-media.md → Diagnosing silent audio failures](android-media.md#diagnosing-silent-audio-failures) - `adb shell cmd audio set-enable-hardening throw` makes the failure visible; `adb shell dumpsys audio` reports the hardening level  
 
 **Preloading the next Media3 playback item?**
 → Use [android-media.md → Playback preloading (Media3)](android-media.md#playback-preloading-media3)  
+→ Required: one `DefaultPreloadManager.Builder` per manager, `ExoPlayer` from that builder's `buildExoPlayer()`, release the manager **before** the player, and manage the sliding window yourself (there is none built in)  
 
 **Sharing logic across ViewModels or avoiding base classes?**
 → Use delegation via interfaces as described in [kotlin-delegation.md](kotlin-delegation.md)  

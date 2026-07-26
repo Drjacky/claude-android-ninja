@@ -48,6 +48,19 @@ These `-ktx` artifacts are now **empty compatibility shims**; their extensions m
 
 `lifecycle-*-ktx` and `work-runtime-ktx` are **not** affected - keep those `-ktx` coordinates.
 
+### androidx.hilt artifacts
+
+All share the `androidxHilt` version ref (currently `1.4.0`). These are **separate** from the Dagger Hilt `hilt` ref.
+
+| Artifact                                        | Add when                                                                 |
+|-------------------------------------------------|--------------------------------------------------------------------------|
+| `hilt-lifecycle-viewmodel-compose`              | Any `hiltViewModel()` call site (wired by the feature convention plugin)   |
+| `hilt-work` + `hilt-compiler` (on `ksp`)        | Any `@HiltWorker` ([android-data-sync.md](android-data-sync.md#hiltworker-prerequisites)) |
+
+Forbidden: `hilt-navigation-compose` - deprecated, and it pulls `navigation-compose` (Navigation 2) into a Navigation3 project ([architecture.md](architecture.md#hiltviewmodel-artifact-and-import)).
+
+`androidx.hilt` 1.4.0 compiles against `compileSdk` 37, so Compose usage requires **AGP >= 9.2.0**.
+
 ### Room 3
 
 Room 3 is **stable** (`androidx.room3` `3.0.0`). Room 2.x (`androidx.room`) is in maintenance (patch releases only).
@@ -68,6 +81,16 @@ Forbidden in this stack: `room3-livedata`, `room3-rxjava3`, `room3-guava`. This 
 
 ### Media3
 Required for background playback at target SDK 37: `androidx.media3:media3-exoplayer`, `media3-session` (catalog `media3` version ref, bundle `media3-playback`). Pin from [Media3 releases](https://developer.android.com/jetpack/androidx/releases/media3). Playback rules: [android-media.md](android-media.md).
+
+Optional Media3 artifacts - add a `[libraries]` entry reusing `version.ref = "media3"` only when a call site needs one:
+
+| Artifact                   | Add when                                                          |
+|----------------------------|-------------------------------------------------------------------|
+| `media3-ui-compose`, `media3-ui-compose-material3` | Compose-native player UI (**not** at parity with `media3-ui`) |
+| `media3-inspector-frame`   | `FrameExtractor` (moved out of `media3-inspector` in 1.10.0)        |
+| `media3-effect-lottie`     | `LottieOverlay` (moved in 1.10.0)                                  |
+
+Template pins `1.10.1` stable; `1.11.0` is `rc01` ([android-media.md → Media3 version and artifacts](android-media.md#media3-version-and-artifacts)).
 
 ### Navigation3 and SavedState
 Pin `navigation3` from [Navigation 3 releases](https://developer.android.com/jetpack/androidx/releases/navigation3) (template: latest stable). Pin `savedstateCompose` from [SavedState releases](https://developer.android.com/jetpack/androidx/releases/savedstate) when using `savedstate-compose` with `@Serializable` `NavKey` graphs.

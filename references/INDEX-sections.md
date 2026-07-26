@@ -87,7 +87,7 @@ Open when: JaCoCo unit + instrumented coverage, CI, ScopedArtifacts pitfalls
 - [Troubleshooting](android-code-coverage.md#troubleshooting)
 - [References](android-code-coverage.md#references)
 
-### android-data-sync.md (2350 lines)
+### android-data-sync.md (2415 lines)
 
 Open when: Offline-first, WorkManager sync, conflict resolution, cache invalidation
 Quick routing: [android-data-sync-quick.md](android-data-sync-quick.md)
@@ -122,6 +122,7 @@ Quick routing: [android-data-sync-quick.md](android-data-sync-quick.md)
   - [Configurable Retry Policy](android-data-sync.md#configurable-retry-policy)
   - [Retry with Jitter](android-data-sync.md#retry-with-jitter)
 - [WorkManager Integration](android-data-sync.md#workmanager-integration)
+  - [`@HiltWorker` prerequisites](android-data-sync.md#hiltworker-prerequisites)
   - [Sync Coordinator](android-data-sync.md#sync-coordinator)
   - [Initialize Periodic Sync in Application](android-data-sync.md#initialize-periodic-sync-in-application)
   - [Work Constraints](android-data-sync.md#work-constraints)
@@ -279,7 +280,7 @@ Open when: strings.xml, plurals, RTL, locale formatting, translation CI
   - [Pitfall: no expansion testing](android-i18n.md#pitfall-no-expansion-testing)
 - [External Resources](android-i18n.md#external-resources)
 
-### android-media.md (120 lines)
+### android-media.md (176 lines)
 
 Open when: Media3 background playback API 37, picking, sharing, preloading
 
@@ -287,8 +288,11 @@ Open when: Media3 background playback API 37, picking, sharing, preloading
 - [Picking media and documents](android-media.md#picking-media-and-documents)
 - [Sharing media and files](android-media.md#sharing-media-and-files)
 - [Scoped storage and permissions](android-media.md#scoped-storage-and-permissions)
+- [Media3 version and artifacts](android-media.md#media3-version-and-artifacts)
+  - [Compose player UI (`media3-ui-compose`)](android-media.md#compose-player-ui-media3-ui-compose)
 - [Playback preloading (Media3)](android-media.md#playback-preloading-media3)
 - [Background media playback hardening (API 37)](android-media.md#background-media-playback-hardening-api-37)
+  - [Diagnosing silent audio failures](android-media.md#diagnosing-silent-audio-failures)
   - [Manifest](android-media.md#manifest)
   - [Service skeleton](android-media.md#service-skeleton)
 
@@ -994,7 +998,7 @@ Open when: Firebase/Sentry interfaces, breadcrumbs, PII scrubbing
   - [Custom Scrubbing for Both Providers](crashlytics.md#custom-scrubbing-for-both-providers)
 - [Gradle & Setup Guidance](crashlytics.md#gradle-setup-guidance)
 
-### dependencies.md (359 lines)
+### dependencies.md (382 lines)
 
 Open when: Version catalog, BOMs, pins, brownfield alignment, adding dependencies
 
@@ -1004,6 +1008,7 @@ Open when: Version catalog, BOMs, pins, brownfield alignment, adding dependencie
 - [Dependency Selection](dependencies.md#dependency-selection)
   - [Room 3](dependencies.md#room-3)
   - [Merged KTX artifacts (do not add the `-ktx` coordinate)](dependencies.md#merged-ktx-artifacts-do-not-add-the--ktx-coordinate)
+  - [androidx.hilt artifacts](dependencies.md#androidxhilt-artifacts)
   - [Media3](dependencies.md#media3)
   - [Navigation3 and SavedState](dependencies.md#navigation3-and-savedstate)
   - [Paging 3 test artifact](dependencies.md#paging-3-test-artifact)
@@ -1405,7 +1410,7 @@ Quick routing: [testing-quick.md](testing-quick.md)
 - [Localization Testing](testing.md#localization-testing)
 - [Cross-references](testing.md#cross-references)
 
-### workflows.md (336 lines)
+### workflows.md (340 lines)
 
 Open when: Task not in Quick Reference; greenfield bootstrap; multi-topic routing
 
