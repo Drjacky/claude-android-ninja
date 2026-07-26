@@ -666,6 +666,15 @@ Compose apps call `setContent { }` on `ComponentActivity`; View-only apps call `
 
 Jetpack **Room 2.x** (`androidx.room`) and **Room 3** (`androidx.room3`) use different Maven coordinates and runtime APIs. The target is **Room 3** on Android with **KSP**, a **`SQLiteDriver`**, and **coroutine-first DAOs** (`suspend`, **`Flow`**). Official background: [Room 3 release notes](https://developer.android.com/jetpack/androidx/releases/room3), [Room 3 announcement](https://android-developers.googleblog.com/2026/03/room-30-modernizing-room.html), and [Save data with Room](https://developer.android.com/training/data-storage/room).
 
+Room 3 is **stable** at `3.0.0`. Do not pin a `3.0.0-alphaNN` / `-rc` build. `androidx.sqlite` requires **minSdk 23**, which is the effective floor for Room 3 on Android.
+
+Migrating from an earlier Room 3 **alpha** rather than from Room 2? Two renames landed in `3.0.0-rc01` and will not compile against an alpha-era codebase:
+
+| Room 3 alpha (<= `3.0.0-alpha06`) | Room 3 `3.0.0` stable |
+|-----------------------------------|-----------------------|
+| `@TypeConverter`                  | **`@ColumnTypeConverter`** |
+| Implicit `PagingSource` / `LiveData` / Rx DAO return types | Explicit `@DaoReturnTypeConverters(...)` registration |
+
 ### Gradle and artifacts
 
 | Room 2.x                                                            | Room 3                                                                                             |
@@ -682,7 +691,17 @@ Add **`androidx.sqlite:sqlite-bundled`** and call **`.setDriver(BundledSQLiteDri
 ### Packages and generated code
 
 - Replace imports **`androidx.room.*`** with **`androidx.room3.*`** (`RoomDatabase`, `Room`, `@Database`, `@Entity`, `@Dao`, `@Query`, `Migration`, etc.).
+- Rename **`@TypeConverter`** to **`@ColumnTypeConverter`** (and its import). `@TypeConverters` on the `@Database` / `@Dao` keeps its name.
 - Regenerate with KSP after changing coordinates; update **R8** rules to **`androidx.room3.RoomDatabase`** / **`@androidx.room3.Entity`** (`assets/proguard-rules.pro.template`).
+
+If KSP fails with **`Method too large`** on the generated `onValidateSchema`, lower the processor option **`room.validationSplitSize`** (default `300` statements):
+
+```kotlin
+// build-logic AndroidRoomConventionPlugin.kt, or ksp { } in the module
+ksp {
+    arg("room.validationSplitSize", "150")
+}
+```
 
 ### SupportSQLite and `SQLiteDriver`
 
@@ -695,9 +714,45 @@ Room 3 is backed by the **`androidx.sqlite`** driver APIs. **`SupportSQLiteDatab
 
 **SupportSQLite → driver** migration: [Migrate from SupportSQLite](https://developer.android.com/kotlin/multiplatform/room#migrate) (Android-relevant parts apply even in Android-only apps).
 
-### Composite relation keys (Room 3.0.0-alpha05+)
+### DAO return type converters
 
-`@Relation` and `@Junction` accept **array**-valued `parentColumns` and `entityColumns` for composite foreign keys. Regenerate with KSP after bumping the catalog `room3` pin.
+Room 3 only knows `suspend` and `Flow` out of the box. **Any other return type must be registered explicitly** - the implicit support Room 2 had is gone.
+
+| DAO return type                    | Converter to register                 | Artifact                     |
+|------------------------------------|---------------------------------------|------------------------------|
+| `PagingSource`                     | `PagingSourceDaoReturnTypeConverter`  | `androidx.room3:room3-paging` |
+| `LiveData`                         | `LiveDataDaoReturnTypeConverter`      | `room3-livedata` (avoid - migrate to `Flow`) |
+| `Observable` / `Flowable` / `Single` / `Maybe` / `Completable` | `RxDaoReturnTypeConverters` | `room3-rxjava3` (avoid - migrate to `Flow`) |
+| `ListenableFuture`                 | `GuavaDaoReturnTypeConverter`         | `room3-guava` (avoid - migrate to `suspend`) |
+
+```kotlin
+@Database(entities = [ArticleEntity::class], version = 1)
+@DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun articleDao(): ArticleDao
+}
+```
+
+Required: when migrating a Room 2 DAO that returned `LiveData` or an Rx type, convert it to **`Flow`** rather than adding the bridge artifact.
+
+### Builder and configuration changes
+
+| Room 2.x                                     | Room 3                                                                 |
+|----------------------------------------------|------------------------------------------------------------------------|
+| `setQueryExecutor(...)` / `setTransactionExecutor(...)` | A `CoroutineContext` + dispatcher on the builder - `Executor` config is removed |
+| `DatabaseConfiguration` (public)              | Removed from the public API                                            |
+| Implicit connection count                     | `setSingleConnectionPool()` / `setMultipleConnectionPool()`             |
+| `Room.databaseBuilder(context, ...)`          | Overloads without an Android `Context` also exist                      |
+
+### Schema and entity features new in Room 3
+
+- `@Relation` and `@Junction` accept **array**-valued `parentColumns` / `entityColumns` for composite foreign keys.
+- `@Entity(withoutRowId = true)` creates the table with SQLite `WITHOUT ROWID`.
+- `PrimaryKey.algorihtm` selects the generation algorithm when `autoGenerate = true` (the property really is spelled `algorihtm` in the API).
+- Constructor properties with **default values** in a DAO result class are optional - a matching result column is no longer required.
+- FTS5 via `@Fts5` (`TOKENIZER_ASCII`, `TOKENIZER_TRIGRAM`, `detail = FULL | COLUMN | NONE`).
+
+Regenerate with KSP after adopting any of these.
 
 ### Invalidation and tests
 
@@ -745,9 +800,13 @@ Set `android:windowSoftInputMode="adjustResize"` on the launcher `Activity` that
 
 At target SDK 37, cleartext defaults off unless a Network Security Config or manifest flag overrides it. Replace blanket `usesCleartextTraffic="true"` with domain-scoped NSC entries for dev and staging hosts. Full directives: [android-security.md → Network Security Configuration](android-security.md#network-security-configuration).
 
-### Loopback (127.0.0.1)
+### Cross-profile loopback (127.0.0.1)
 
-Cross-process loopback sockets require the API 37 permission and pairing rules in [android-security.md → Loopback access (API 37)](android-security.md#loopback-access-api-37).
+Android 17 blocks **cross-profile** loopback traffic by default, for **all apps regardless of `targetSdk`**. Loopback inside the same profile (the normal case, including instrumented tests against `MockWebServer`) is unaffected, and there is **no permission to opt back in**. Rules: [android-security.md → Cross-profile loopback (Android 17)](android-security.md#cross-profile-loopback-android-17).
+
+### Local network access (target SDK 37)
+
+Reaching any device on the LAN now requires the runtime permission `ACCESS_LOCAL_NETWORK`, or a system-mediated picker. This breaks Chromecast discovery, local HTTP/IoT bridges, and `.local` mDNS silently: UDP fails with `EPERM` and TCP simply times out. Directives, the permissionless `NsdManager` picker, and the "do not declare below target 37" rule: [android-permissions.md → Local network access (API 37)](android-permissions.md#local-network-access-api-37).
 
 ### Certificate Transparency
 
@@ -764,6 +823,28 @@ Route background audio and video through Media3 `MediaSessionService`, `mediaPla
 ### IME after rotation
 
 Target SDK 37 does not restore IME visibility across configuration changes by default. Wire `android:windowSoftInputMode` and runtime `WindowInsetsControllerCompat` per [compose-patterns.md → IME (soft keyboard) insets](compose-patterns.md#ime-soft-keyboard-insets).
+
+### Activity recreation defaults inverted (`recreateOnConfigChanges`)
+
+Android 17 **stops recreating activities by default** for `keyboard`, `keyboardHidden`, `navigation`, `touchscreen`, `colorMode`, and `uiMode` (the last only for transitions to/from desk mode). Activities receive `onConfigurationChanged()` instead.
+
+Pure-Compose screens usually benefit: fewer restarts, state preserved. The failure mode is **resource reloading**.
+
+Required:
+
+- Audit anything that relied on recreation to re-read resources after one of those changes.
+- **`AndroidView` and `AndroidFragment` do not refresh their resources automatically** - update the wrapped View manually in the update lambda, or opt that Activity back into recreation.
+- Ultra HDR toggling (`COLOR_MODE_HDR` <-> `COLOR_MODE_DEFAULT`) no longer restarts the Activity; recheck any logic that assumed it did ([android-graphics.md](android-graphics.md)).
+
+Opt back in per Activity with the new manifest attribute:
+
+```xml
+<activity
+    android:name=".MainActivity"
+    android:recreateOnConfigChanges="colorMode|uiMode" />
+```
+
+Forbidden: adding `android:recreateOnConfigChanges` for every config type as a blanket "keep old behavior" move - it discards the frame-time and state-retention win for the screens that did not need it.
 
 ### JVM unit tests without Robolectric
 
@@ -785,9 +866,13 @@ Required for reproduction: use platform `am memory-limiter` commands on a suppor
 
 ```bash
 adb shell am memory-limiter status
-adb shell am memory-limiter manual <packageName> <limitMb>
-adb shell am memory-limiter ignore <packageName>
+adb shell am memory-limiter manual <pid> <limitMB>   # also: max | none
+adb shell am memory-limiter ignore <uid>             # also: none | all
 ```
+
+Note the argument types: `manual` takes a **pid**, `ignore` takes a **uid** - not package names.
+
+Detect it after the fact rather than guessing: a kill from this mechanism reports `ApplicationExitInfo.getDescription()` containing **`MemoryLimiter:AnonSwap`** with reason `REASON_OTHER`.
 
 Use when: investigating unexplained background kills or OOM on specific OEM builds without a reproducible leak.
 
@@ -800,3 +885,61 @@ Target SDK 37 tightens location access patterns (approximate-first flows, backgr
 ### Explicit URI grants on shares
 
 Attach `FLAG_GRANT_READ_URI_PERMISSION` or `FLAG_GRANT_WRITE_URI_PERMISSION` explicitly when putting `content` URIs on intents that do **not** receive implicit URI grants. Which actions get implicit grants vs explicit flags: [android-security.md → URI grants on outbound intents](android-security.md#uri-grants-on-outbound-intents).
+
+From **Android 18** the system stops auto-granting even for `ACTION_SEND`, `ACTION_SEND_MULTIPLE`, and `ACTION_IMAGE_CAPTURE`. Find the sites now instead of waiting:
+
+```kotlin
+StrictMode.setVmPolicy(
+    StrictMode.VmPolicy.Builder()
+        .detectImplicitUriPermissionGrant()
+        .penaltyLog()
+        .build()
+)
+```
+
+Logcat also prints `Please set the grant explicitly in the app`. Wire this in the debug build alongside the other StrictMode detectors ([android-strictmode.md](android-strictmode.md)).
+
+### Reflection and JNI hardening (target SDK 37)
+
+| Change                                                                 | Required action                                                                                          |
+|------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
+| `android.os.MessageQueue` is now lock-free; its private fields/methods moved | Stop reflecting into `MessageQueue`. In instrumentation, use `TestLooperManager.peekWhen()` / `poll()`.    |
+| `static final` fields are genuinely immutable                          | Reflective writes throw `IllegalAccessException`; JNI `SetStatic<Type>Field` crashes immediately. Remove field-patching test hacks and "static final override" tricks. |
+| Native libraries loaded with `System.load()` must be read-only         | A writable `.so` path throws `UnsatisfiedLinkError` - copy to internal storage and clear the write bit, or load from the APK. |
+
+Any of these three appearing in a mocking/test-only utility is the usual cause; audit `src/test` and `src/androidTest` helpers as well as production code.
+
+### Background activity launch (target SDK 37)
+
+Background-activity-launch restrictions now extend to `IntentSender`. Replace `ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED` with **`MODE_BACKGROUND_ACTIVITY_START_ALLOW_IF_VISIBLE`**; the unconditional mode no longer grants a launch from the background.
+
+### Keystore key cap (target SDK 37)
+
+Non-system apps targeting 37+ are capped at **50,000** Keystore keys (200,000 otherwise). Exceeding it throws `KeyStoreException` whose `getNumericErrorCode()` returns the new **`ERROR_TOO_MANY_KEYS`**. Apps that mint a key per session or per record must switch to a fixed key set - see [android-security.md](android-security.md#android-keystore-tee--strongbox).
+
+### Contacts provider tightening (target SDK 37)
+
+- `ACCOUNT_NAME`, `ACCOUNT_TYPE`, and `ACCOUNT_TYPE_AND_DATA_SET` are **removed from `ContactsContract.Data`**. Read them from `ContactsContract.RawContacts`, joined on `RAW_CONTACT_ID`.
+- Without `READ_CONTACTS`, queries against `ContactsContract.Data` run with `setStrictColumns(true)` / `setStrictGrammar(true)`; non-conforming projections and selections throw instead of degrading.
+
+Prefer dropping `READ_CONTACTS` entirely for the contact picker: [android-permissions.md → Contact picker (privacy-first)](android-permissions.md#contact-picker-privacy-first).
+
+### SMS one-time passcodes (all apps)
+
+WebOTP-format messages are withheld for **3 hours** from apps that are not the domain-verified recipient: `SMS_RECEIVED_ACTION` is not delivered and SMS provider queries are filtered during the delay. An OTP autofill flow built on raw SMS reading will appear to hang.
+
+Required: read one-time passcodes through the **SMS Retriever** or **SMS User Consent** API, neither of which needs the `RECEIVE_SMS` / `READ_SMS` permissions. Forbidden: a manifest `BroadcastReceiver` on `SMS_RECEIVED_ACTION` as an OTP transport.
+
+### Play targetSdk deadlines (context for scheduling)
+
+| Date                | Requirement                                                                                       |
+|---------------------|---------------------------------------------------------------------------------------------------|
+| **31 Aug 2026**     | New apps and updates must target **API 36+**; existing apps must target **API 35+** to stay available to new users on newer OS versions |
+| **1 Nov 2026**      | End of the extension window requested in Play Console                                              |
+| **Aug 2027**        | New apps and updates must target **API 37**                                                        |
+
+Only permanently-private apps distributed inside an organization are exempt. Upload gating is a Console concern, not a repo change: [android-ci-cd.md](android-ci-cd.md).
+
+### Libraries that force the AGP floor
+
+Several libraries now compile against `compileSdk` 37 and therefore **require AGP >= 9.2.0** in the consuming project: Compose `1.12`, `navigation3` `1.2.0-alpha03+`, `androidx.hilt` `1.4.0` (when using Compose), `androidx.pdf`, `androidx.photopicker`, and `androidx.glance` `1.3.0-alpha`. If a Gradle sync fails immediately after bumping one of these, check the AGP pin before anything else ([gradle-setup.md → AGP requires a minimum Gradle wrapper](gradle-setup.md#agp-requires-a-minimum-gradle-wrapper)).
