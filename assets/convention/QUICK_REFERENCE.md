@@ -207,15 +207,16 @@ com.example.core.model.*
 - Android library + Compose + Hilt
 - Auto-adds dependencies: `:core:ui`, `:core:domain`, `:core:data`
 - Lifecycle (ViewModel + runtime-compose)
-- Navigation3 (runtime + compose)
+- Navigation3 (`navigation3-runtime` + `navigation3-ui`)
 - Adaptive layouts (adaptive, adaptive-layout, adaptive-navigation, navigation-suite)
 - Managed devices
 
 ### Room Plugin (Room 3)
-- `androidx.room3` Gradle plugin + KSP
+- `androidx.room3` Gradle plugin + KSP. Room 3 is **stable** (`3.0.0`); pin from the version catalog.
 - `room3-runtime` + `sqlite-bundled` (for `BundledSQLiteDriver()` on `Room.databaseBuilder`)
 - `room3-compiler` (KSP); DAOs use **`suspend`** and **`Flow`** (no separate Room KTX artifact)
-- `room3 { schemaDirectory(...) }` for schema export and auto-migrations
+- `room3 { schemaDirectory(...) }` - **required** whenever the `androidx.room3` plugin is applied; schemas are emitted per variant and must be committed for schema validation and auto-migrations
+- Annotate column converters with **`@ColumnTypeConverter`** (Room 3 renamed `@TypeConverter`); DAO return types beyond `suspend` / `Flow` need `@DaoReturnTypeConverters` (for example `PagingSourceDaoReturnTypeConverter` from `room3-paging`)
 
 ### Hilt Plugin
 - Hilt Android + KSP compiler
@@ -316,6 +317,8 @@ Required output paths after enabling metrics:
 | Hilt compiler errors            | Apply KSP plugin before Hilt in the same `plugins` block                                         |
 | Room schemas not found          | Create `$projectDir/schemas/` or disable export until migrations exist                           |
 | Room 3 build fails (driver)     | `Room.databaseBuilder` must call `.setDriver(BundledSQLiteDriver())` (or another `SQLiteDriver`) |
+| KSP: unresolved `@TypeConverter` | Room 3 renamed it to **`@ColumnTypeConverter`**; update the annotation and its import            |
+| Room KSP: `Method too large` on `onValidateSchema` | Lower the KSP option `room.validationSplitSize` (default `300` statements)      |
 
 ## Migration Checklist
 

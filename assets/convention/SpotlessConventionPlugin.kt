@@ -42,7 +42,7 @@ class SpotlessConventionPlugin : Plugin<Project> {
                     format("xml") {
                         target("src/**/*.xml")
                         trimTrailingWhitespace()
-                        indentWithSpaces(4)
+                        leadingTabsToSpaces(4)
                         endWithNewline()
                     }
                 }
