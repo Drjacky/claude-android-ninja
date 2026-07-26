@@ -66,6 +66,11 @@ fun MaterialSymbolExample() {
 
 Forbidden: `androidx.compose.material.icons.Icons.*` (e.g. `Icons.Default.Lock`). The artifact is unmaintained, ships M2 visuals, and inflates build time.
 
+**`material3` no longer depends on `material-icons-core`**, so `Icons.*` does not even resolve on the
+current pin unless the artifact is added back by hand. If an `Icons.Default.X` reference appears in
+existing code during a `material3` upgrade, replace it with a Material Symbols drawable rather than
+re-adding the dependency.
+
 ### Icon Organization
 
 ```kotlin
@@ -609,6 +614,22 @@ fun StarShape() {
     }
 }
 ```
+
+Prefer **`androidx.graphics:graphics-shapes`** over hand-rolled trigonometry for rounded polygons and
+shape morphing - it handles corner rounding and interpolation correctly:
+
+```kotlin
+// RoundedPolygon / Morph come from androidx.graphics:graphics-shapes
+val star = RoundedPolygon.star(
+    numVerticesPerRadius = 5,
+    innerRadius = 0.4f,
+    rounding = CornerRounding(radius = 0.1f),
+)
+```
+
+**`material3` no longer brings `graphics-shapes` transitively.** Declare it explicitly (own catalog
+version ref) or `RoundedPolygon` / `Morph` will not resolve after a `material3` bump
+([dependencies.md → Not covered by the Compose BOM](dependencies.md#not-covered-by-the-compose-bom)).
 
 #### Blend Modes
 
