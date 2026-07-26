@@ -1076,6 +1076,52 @@ class JitteredRetry @Inject constructor() : RetryStrategy {
 
 Schedule background sync with WorkManager for reliable execution.
 
+Template pin: `work` **2.11.2** (`work-runtime-ktx`). Two things to know before bumping an existing project:
+
+- **`minSdk` rose from 21 to 23 in 2.11.0.** A module below API 23 cannot take this version. The template `minSdk = 24` satisfies it.
+- Network-constraint correctness on Android 15+ was fixed across `2.11.1` / `2.11.2` - see [Work Constraints](#work-constraints).
+
+Available on the stable line and worth using: `Constraints.setRequiredNetworkRequest(...)` for granular network selection, `Configuration.workerCoroutineContext` to control the dispatcher `CoroutineWorker` runs on (avoids `Dispatchers.Default`), and `Configuration.setRemoteSessionTimeoutMillis(...)` for `RemoteWorkManager` session lifetime.
+
+Do **not** reach for `work-analytics` / `WorkMetricsInfo`: those ship only in `2.12.0-alphaNN`.
+
+### `@HiltWorker` prerequisites
+
+Every `@HiltWorker` in this file requires all three of the following. Missing any one fails at runtime with a worker-instantiation error, not at compile time.
+
+1. Dependencies: `androidx.hilt:hilt-work` plus the `androidx.hilt:hilt-compiler` KSP processor (version ref `androidxHilt`), alongside the Dagger Hilt wiring the `app.hilt` convention already applies.
+2. Constructor shape: `@AssistedInject constructor(@Assisted context: Context, @Assisted params: WorkerParameters, ...)`.
+3. Disable the default initializer and supply `HiltWorkerFactory` from the `Application`:
+
+```xml
+<!-- app/src/main/AndroidManifest.xml -->
+<provider
+    android:name="androidx.startup.InitializationProvider"
+    android:authorities="${applicationId}.androidx-startup"
+    android:exported="false"
+    tools:node="merge">
+    <meta-data
+        android:name="androidx.work.WorkManagerInitializer"
+        android:value="androidx.startup"
+        tools:node="remove" />
+</provider>
+```
+
+```kotlin
+@HiltAndroidApp
+class MyApplication : Application(), Configuration.Provider {
+
+    @Inject lateinit var workerFactory: HiltWorkerFactory
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
+}
+```
+
+**Forbidden:** `@HiltWorker` without removing `WorkManagerInitializer`. WorkManager initializes itself first with the default factory and cannot construct an assisted-injected worker.
+
 ### Sync Coordinator
 
 ```kotlin
@@ -1200,6 +1246,25 @@ fun scheduleSmartSync() {
     workManager.enqueue(syncRequest)
 }
 ```
+
+For requirements `NetworkType` cannot express (a specific transport, capability, or non-metered VPN), use `setRequiredNetworkRequest` instead of post-hoc checks inside `doWork()`:
+
+```kotlin
+val constraints = Constraints.Builder()
+    .setRequiredNetworkRequest(
+        NetworkRequest.Builder()
+            .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+            .build(),
+        // Fallback for API levels where NetworkRequest constraints are unsupported.
+        networkType = NetworkType.UNMETERED,
+    )
+    .build()
+```
+
+**Network constraints and blocked connectivity (Android 15+).** Before WorkManager `2.11.1`, a network constraint could be satisfied while connectivity was actually **blocked** (data saver, restricted background, firewall), so a worker started and its requests failed immediately - burning a retry attempt for a non-transient reason. `2.11.1` and `2.11.2` fix constraint evaluation to account for the blocked state.
+
+Required: pin WorkManager **>= 2.11.2** before treating "network constraint satisfied" as "network usable". If a project must stay below that, treat network failures inside `doWork()` as `Result.retry()` with backoff rather than `Result.failure()`.
 
 ### Work Chaining
 
@@ -2290,7 +2355,7 @@ fun `syncState reflects WorkInfo state`() = runTest {
 
 ## Rules
 
-Re-orient: [android-data-sync-quick.md](android-data-sync-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-data-syncmd-2350-lines)
+Re-orient: [android-data-sync-quick.md](android-data-sync-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-data-syncmd-2415-lines)
 
 Required:
 - Local DB is the only source UI observes; networking results land in the DB before reaching UI.
