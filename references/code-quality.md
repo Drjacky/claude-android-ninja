@@ -8,7 +8,7 @@ Required: Detekt on every module via the `build-logic` convention plugin. Single
 2. [Detekt Convention Plugin (Build Logic)](#detekt-convention-plugin-build-logic)
 3. [Apply in Modules](#apply-in-modules)
 4. [Running Detekt](#running-detekt)
-5. [Baselines & CI](#baselines-ci)
+5. [Baselines & CI](#baselines--ci)
 6. [Compose Rules](#compose-rules)
 7. [Suppressing Violations](#suppressing-violations)
 8. [Suppression rules](#suppression-rules)

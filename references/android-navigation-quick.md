@@ -13,7 +13,7 @@ Full guide: [android-navigation.md](android-navigation.md) (~2160 lines). Sectio
 | `NavigationState`, back stack | [Navigation 3 State Management](android-navigation.md#navigation-3-state-management) |
 | Invariants | [Navigation invariants](android-navigation.md#navigation-invariants) |
 | Transitions, predictive back | [Animations](android-navigation.md#animations) |
-| List-detail / custom panes | [Scenes & Custom Layouts](android-navigation.md#scenes-custom-layouts) |
+| List-detail / custom panes | [Scenes & Custom Layouts](android-navigation.md#scenes--custom-layouts) |
 | Scene strategy list, decorators | [Pass a list, not a chain](android-navigation.md#pass-a-list-not-a-chain) |
 | Server-side deep-link routing | [Broad manifest scope with server-side path routing](android-navigation.md#broad-manifest-scope-with-server-side-path-routing-android-15) |
 | HTTPS App Links, custom schemes | [Deep Links](android-navigation.md#deep-links) |

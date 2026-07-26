@@ -7,7 +7,7 @@ Required: every dependency goes through `assets/libs.versions.toml.template`. Do
 1. [Version Catalog Source of Truth](#version-catalog-source-of-truth)
 2. [Dependency Selection](#dependency-selection)
 3. [Version Strategy](#version-strategy)
-4. [Kotlin & Compose Compiler Compatibility](#kotlin-compose-compiler-compatibility)
+4. [Kotlin & Compose Compiler Compatibility](#kotlin--compose-compiler-compatibility)
 5. [Platform Dependencies (BOMs)](#platform-dependencies-boms)
 6. [Testing Dependencies](#testing-dependencies)
 7. [Build Performance Considerations](#build-performance-considerations)

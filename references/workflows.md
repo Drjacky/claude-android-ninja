@@ -72,7 +72,7 @@ For files with a `-quick.md` companion, open the **quick** file first; open the 
 → Enable dynamic color (Material You) for API 31+, harmonize brand/extended colors against `primary` - see [Brand Color Harmonization](android-theming.md#brand-color-harmonization)  
 → Honor the system contrast slider on Android 14+ (API 34) by shipping Medium/High-contrast scheme variants and reading `UiModeManager.getContrast()` - see [User Contrast Preference](android-theming.md#user-contrast-preference-android-14)  
 → For region-local palette overrides (destructive scopes, on-media toolbars), use a nested `MaterialTheme` with `colorScheme.copy(...)` - see [Scoped Themes](android-theming.md#scoped-themes)  
-→ Pick `Card` / `OutlinedCard` / `ElevatedCard` by surface separation, not importance, and override shapes at the **token** level - see [Card Variants](compose-patterns.md#card-variants-filled-outlined-elevated) and [Component Shape Defaults](compose-patterns.md#component-shape-defaults)  
+→ Pick `Card` / `OutlinedCard` / `ElevatedCard` by surface separation, not importance, and override shapes at the **token** level - see [Card Variants](compose-patterns.md#card-variants-filled--outlined--elevated) and [Component Shape Defaults](compose-patterns.md#component-shape-defaults)  
 
 **Writing any Kotlin code?**
 → **Always** follow [kotlin-patterns.md](kotlin-patterns.md)  
@@ -87,7 +87,7 @@ For files with a `-quick.md` companion, open the **quick** file first; open the 
 
 **Implementing Lists and Scrolling?**
 → Use `LazyColumn`/`LazyRow` with stable keys and `contentType` (see [compose-patterns-quick.md](compose-patterns-quick.md) → Lists & Scrolling)
-→ For large datasets, use Paging 3 (see [compose-patterns.md → Lists & Scrolling](compose-patterns.md#lists-scrolling))
+→ For large datasets, use Paging 3 (see [compose-patterns.md → Lists & Scrolling](compose-patterns.md#lists--scrolling))
 → For Room-backed grids with a remote API, use `RemoteMediator` ([compose-patterns.md](compose-patterns.md#offline-first-paging-and-remotemediator))
 
 **Handling Navigation?**
@@ -338,5 +338,5 @@ For files with a `-quick.md` companion, open the **quick** file first; open the 
 → Check [crashlytics.md](crashlytics.md) for PII scrubbing and data privacy
 
 **Implementing fraud-resistant or high-value flows (payments, session bootstrap, integrity-gated APIs)?**
-→ Read [android-security-quick.md](android-security-quick.md) first; then [android-security.md](android-security.md) sections: [Device trust](android-security.md#device-trust-and-abuse-resistance), [Play Integrity API](android-security.md#play-integrity-api), [Root & Emulator Detection](android-security.md#root-emulator-detection), [Security Checklist](android-security.md#security-checklist)  
+→ Read [android-security-quick.md](android-security-quick.md) first; then [android-security.md](android-security.md) sections: [Device trust](android-security.md#device-trust-and-abuse-resistance), [Play Integrity API](android-security.md#play-integrity-api), [Root & Emulator Detection](android-security.md#root--emulator-detection), [Security Checklist](android-security.md#security-checklist)  
 → If Cloud Console / Play Console enablement or the **Google Cloud project number** is missing, list the missing prerequisites (see [android-security-quick.md](android-security-quick.md)) and stop before wiring client code

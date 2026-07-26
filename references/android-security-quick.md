@@ -17,22 +17,22 @@ Required before security-sensitive work:
 | Cleartext, network config | [Network Security](android-security.md#network-security) |
 | OkHttp / certificate pins | [Certificate Pinning](android-security.md#certificate-pinning) |
 | Encrypted files, DataStore, keys | [Data Encryption at Rest](android-security.md#data-encryption-at-rest) |
-| TEE, StrongBox, key specs | [Android Keystore, TEE & StrongBox](android-security.md#android-keystore-tee-strongbox) |
+| TEE, StrongBox, key specs | [Android Keystore, TEE & StrongBox](android-security.md#android-keystore-tee--strongbox) |
 | BiometricPrompt, crypto auth | [Biometric Authentication](android-security.md#biometric-authentication) |
 | Passkeys, Credential Manager | [Credential Manager and Sign-In](android-security.md#credential-manager-and-sign-in) |
 | Advertising ID, privacy signals | [Device Identifiers and Privacy](android-security.md#device-identifiers-and-privacy) |
 | API 35+ privacy platform | [Android 15+ Platform Privacy](android-security.md#android-15-platform-privacy) |
 | Play Console declarations | [Play Console Data Safety](android-security.md#play-console-data-safety) |
 | Integrity Standard/Classic, decode | [Play Integrity API](android-security.md#play-integrity-api) |
-| Root/emulator heuristics | [Root & Emulator Detection](android-security.md#root-emulator-detection) |
-| FLAG_SECURE, screenshots | [Screenshot & Screen Recording Prevention](android-security.md#screenshot-screen-recording-prevention) |
+| Root/emulator heuristics | [Root & Emulator Detection](android-security.md#root--emulator-detection) |
+| FLAG_SECURE, screenshots | [Screenshot & Screen Recording Prevention](android-security.md#screenshot--screen-recording-prevention) |
 | Hide fields from a11y services | [Hiding sensitive content from accessibility services](android-security.md#hiding-sensitive-content-from-accessibility-services) |
 | Cross-profile loopback (Android 17) | [Cross-profile loopback (Android 17)](android-security.md#cross-profile-loopback-android-17) |
 | SQLCipher / Room encryption | [Secure Database (Room 3)](android-security.md#secure-database-room-3) |
 | Clipboard sensitivity | [Secure Clipboard](android-security.md#secure-clipboard) |
 | WebView hardening | [WebView Security](android-security.md#webview-security) |
 | `exported`, URI permissions | [Content Provider Security](android-security.md#content-provider-security) |
-| R8 obfuscation | [ProGuard / R8 Hardening](android-security.md#proguard-r8-hardening) |
+| R8 obfuscation | [ProGuard / R8 Hardening](android-security.md#proguard--r8-hardening) |
 | GitHub Actions secrets | [CI/CD Security](android-security.md#cicd-security) |
 | Pre-release checklist | [Security Checklist](android-security.md#security-checklist) |
 | Catalog aliases | [Dependencies](android-security.md#dependencies) |

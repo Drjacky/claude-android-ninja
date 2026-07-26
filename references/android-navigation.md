@@ -23,7 +23,7 @@ On 1.1.x, `NavDisplay` / `rememberSceneState` take a **list** of scene strategie
 6. [Navigation Flow](#navigation-flow)
 7. [Migration](#migration)
 8. [Animations](#animations)
-9. [Scenes & Custom Layouts](#scenes-custom-layouts)
+9. [Scenes & Custom Layouts](#scenes--custom-layouts)
 10. [Deep Links](#deep-links)
 11. [Conditional Navigation](#conditional-navigation)
 12. [Returning Results](#returning-results)

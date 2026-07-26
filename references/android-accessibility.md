@@ -11,7 +11,7 @@ Required target: **WCAG 2.2 Level AA** plus the Android-specific rules below (48
 2. [Semantic Properties](#semantic-properties)
 3. [Touch Target Sizes](#touch-target-sizes)
 4. [Screen Reader Navigation](#screen-reader-navigation)
-5. [Color & Visual Accessibility](#color-visual-accessibility)
+5. [Color & Visual Accessibility](#color--visual-accessibility)
 6. [Focus Management](#focus-management)
 7. [Common Patterns](#common-patterns)
 8. [Testing Accessibility](#testing-accessibility)

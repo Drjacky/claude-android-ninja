@@ -160,7 +160,7 @@ On failure, the failing task name identifies the module / DSL block to fix. For 
 3. [Convention Plugins](#convention-plugins) (includes [root-level reporting task registration](#registering-a-root-level-reporting-task-play-vitals))
 4. [Code Quality (Detekt)](#code-quality-detekt)
 5. [Module Build Files](#module-build-files)
-6. [Build Variants & Optimization](#build-variants-optimization)
+6. [Build Variants & Optimization](#build-variants--optimization)
 7. [Build Performance](#build-performance)
 
 ## Project Structure
@@ -1001,7 +1001,7 @@ Check `build/outputs/mapping/release/` for the mapping file after each release b
 
 Official troubleshooting walkthrough: [Configure and troubleshoot R8 Keep Rules](https://developer.android.com/blog/posts/configure-and-troubleshoot-r8-keep-rules). Release-only crash triage: [android-debugging.md → R8 keep-rules troubleshooting](android-debugging.md#r8-keep-rules-troubleshooting).
 
-See [android-security.md](android-security.md#proguard-r8-hardening) for security-specific hardening rules (log stripping, aggressive obfuscation, manifest settings).
+See [android-security.md](android-security.md#proguard--r8-hardening) for security-specific hardening rules (log stripping, aggressive obfuscation, manifest settings).
 
 ### R8 Keep-Rules Audit
 

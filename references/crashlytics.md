@@ -11,8 +11,8 @@ Required:
 1. [Architecture Placement](#architecture-placement)
 2. [Provider-Agnostic Interface](#provider-agnostic-interface)
 3. [Implementation Examples](#implementation-examples)
-4. [Sentry Setup (Convention Plugin + Compose)](#sentry-setup-convention-plugin-compose)
-5. [Firebase Crashlytics Setup (Convention Plugin + Compose)](#firebase-crashlytics-setup-convention-plugin-compose)
+4. [Sentry Setup (Convention Plugin + Compose)](#sentry-setup-convention-plugin--compose)
+5. [Firebase Crashlytics Setup (Convention Plugin + Compose)](#firebase-crashlytics-setup-convention-plugin--compose)
 6. [Wiring in the App Module](#wiring-in-the-app-module)
 7. [Rules](#rules)
 8. [ProGuard/R8 Mapping Upload](#proguardr8-mapping-upload)
@@ -20,7 +20,7 @@ Required:
 10. [Network Request Tracking](#network-request-tracking)
 11. [Testing Crash Reporting](#testing-crash-reporting)
 12. [Data Scrubbing (Privacy/GDPR)](#data-scrubbing-privacygdpr)
-13. [Gradle & Setup Guidance](#gradle-setup-guidance)
+13. [Gradle & Setup Guidance](#gradle--setup-guidance)
 
 ## Architecture Placement
 

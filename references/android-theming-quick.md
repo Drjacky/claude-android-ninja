@@ -31,7 +31,7 @@ Full guide: [android-theming.md](android-theming.md) (~2150 lines). Section anch
 - Full M3 role set in `Color.kt` when using dynamic color.
 - Depth via container tone first; shadows only when content is unknown underneath.
 - `outline` for interactive borders; `outlineVariant` for decorative dividers.
-- Compose UI: [compose-patterns.md → Theming & Design System](compose-patterns.md#theming-design-system).
+- Compose UI: [compose-patterns.md → Theming & Design System](compose-patterns.md#theming--design-system).
 
 **Forbidden:**
 

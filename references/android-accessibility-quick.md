@@ -18,7 +18,7 @@ Required before shipping interactive Compose UI:
 | 48dp targets, spacing | [Touch Target Sizes](android-accessibility.md#touch-target-sizes) |
 | Traversal order, headings, live regions | [Screen Reader Navigation](android-accessibility.md#screen-reader-navigation) |
 | Hide a field from a11y services | [Hiding sensitive fields](android-accessibility.md#hiding-sensitive-fields-from-accessibility-services) |
-| Contrast, color-only cues | [Color & Visual Accessibility](android-accessibility.md#color-visual-accessibility) |
+| Contrast, color-only cues | [Color & Visual Accessibility](android-accessibility.md#color--visual-accessibility) |
 | Focus order, keyboard | [Focus Management](android-accessibility.md#focus-management) |
 | Tabs, lists, forms, dialogs | [Common Patterns](android-accessibility.md#common-patterns) |
 | TalkBack, Espresso, checks | [Testing Accessibility](android-accessibility.md#testing-accessibility) |

@@ -13,17 +13,17 @@ Required: Material 3, Navigation 3, adaptive layouts, edge-to-edge, lifecycle-aw
    - [Loading and refresh UX](#loading-and-refresh-ux)
 3. [Component Patterns](#component-patterns)
 4. [Adaptive UI](#adaptive-ui)
-5. [Theming & Design System](#theming-design-system)
-6. [Previews & Testing](#previews-testing)
+5. [Theming & Design System](#theming--design-system)
+6. [Previews & Testing](#previews--testing)
 7. [Stability annotations & persistent collections](#stability-annotations-immutable-vs-stable)
 8. [Animation](#animation)
 9. [Side Effects](#side-effects)
 10. [Modifiers](#modifiers)
-11. [Deprecated Patterns & Migrations](#deprecated-patterns-migrations)
+11. [Deprecated Patterns & Migrations](#deprecated-patterns--migrations)
 12. [CompositionLocal](#compositionlocal)
-13. [Lists & Scrolling](#lists-scrolling)
+13. [Lists & Scrolling](#lists--scrolling)
 14. [View Composition Rules](#view-composition-rules)
-15. [Forms & Input](#forms-input)
+15. [Forms & Input](#forms--input)
 
 ## Screen Architecture
 
@@ -1789,7 +1789,7 @@ Every M3 component reads its corner radius from `MaterialTheme.shapes` via a `*D
 | `IconButton`, `FilledIconButton`, etc.                                          | `IconButtonDefaults.*Shape`                                                | `shapes.full`                                                       | Always circular at rest                                                      |
 | `FloatingActionButton`                                                          | `FloatingActionButtonDefaults.shape`                                       | `shapes.large`                                                      | 16dp corners                                                                 |
 | `ExtendedFloatingActionButton`                                                  | `FloatingActionButtonDefaults.extendedFabShape`                            | `shapes.large`                                                      |                                                                              |
-| `Card`, `OutlinedCard`, `ElevatedCard`                                          | `CardDefaults.shape` / `outlinedShape` / `elevatedShape`                   | `shapes.medium`                                                     | 12dp corners; see [Card Variants](#card-variants-filled-outlined-elevated) |
+| `Card`, `OutlinedCard`, `ElevatedCard`                                          | `CardDefaults.shape` / `outlinedShape` / `elevatedShape`                   | `shapes.medium`                                                     | 12dp corners; see [Card Variants](#card-variants-filled--outlined--elevated) |
 | `AssistChip`, `FilterChip`, `InputChip`, `SuggestionChip`                       | `ChipDefaults.*Shape`                                                      | `shapes.small`                                                      | 8dp corners                                                                  |
 | `TextField`, `OutlinedTextField`                                                | `TextFieldDefaults.shape` / `OutlinedTextFieldDefaults.shape`              | top-only `extraSmall` (filled), `extraSmall` all corners (outlined) | Filled rounds **top corners only**                                           |
 | `AlertDialog`, `BasicAlertDialog`                                               | `AlertDialogDefaults.shape`                                                | `shapes.extraLarge`                                                 | 28dp corners                                                                 |
@@ -2339,7 +2339,7 @@ fun AuthEventCard(
 
 Optimize only when profiling identifies a real recomposition or allocation hotspot.
 
-Optional depth below: open only when the task needs motion APIs beyond [compose-patterns-quick.md](compose-patterns-quick.md#animation).
+Optional depth below: open only when the task needs motion APIs beyond [compose-patterns-quick.md](compose-patterns-quick.md).
 
 ## Animation
 
@@ -3638,7 +3638,7 @@ fun SearchScreen(viewModel: SearchViewModel = hiltViewModel()) {
 
 #### Offline-first paging and RemoteMediator
 
-Routing summary: [compose-patterns-quick.md](compose-patterns-quick.md#offline-first-paging-and-remotemediator). Sync and WorkManager: [android-data-sync-quick.md](android-data-sync-quick.md).
+Routing summary: [compose-patterns-quick.md](compose-patterns-quick.md#section-routing). Sync and WorkManager: [android-data-sync-quick.md](android-data-sync-quick.md).
 
 
 Use `RemoteMediator` when the list reads a Room 3 `PagingSource` and each page is fetched from a remote API and written into Room inside `load`.

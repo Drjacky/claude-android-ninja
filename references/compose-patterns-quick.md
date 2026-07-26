@@ -17,20 +17,20 @@ Required before UI work:
 | UiState, loading without wiping layout | [State Management](compose-patterns.md#state-management) |
 | Cards, buttons, chips | [Component Patterns](compose-patterns.md#component-patterns) |
 | Phone / tablet / foldable | [Adaptive UI](compose-patterns.md#adaptive-ui) |
-| Theme tokens in composables | [Theming & Design System](compose-patterns.md#theming-design-system) |
-| `@Preview`, stability | [Previews & Testing](compose-patterns.md#previews-testing) |
+| Theme tokens in composables | [Theming & Design System](compose-patterns.md#theming--design-system) |
+| `@Preview`, stability | [Previews & Testing](compose-patterns.md#previews--testing) |
 | `@Immutable` / `@Stable` | [Stability annotations](compose-patterns.md#stability-annotations-immutable-vs-stable) |
 | Motion | [Animation](compose-patterns.md#animation) |
 | LaunchedEffect, DisposableEffect, lifecycle effects | [Side Effects](compose-patterns.md#side-effects) |
 | Modifier order, custom `Modifier.Node` | [Modifiers](compose-patterns.md#modifiers) |
-| LazyColumn, Paging, scroll state | [Lists & Scrolling](compose-patterns.md#lists-scrolling) |
+| LazyColumn, Paging, scroll state | [Lists & Scrolling](compose-patterns.md#lists--scrolling) |
 | `AndroidView`, interop | [View Composition Rules](compose-patterns.md#view-composition-rules) |
-| Accompanist / API migrations | [Deprecated Patterns & Migrations](compose-patterns.md#deprecated-patterns-migrations) |
+| Accompanist / API migrations | [Deprecated Patterns & Migrations](compose-patterns.md#deprecated-patterns--migrations) |
 | Material 3 API replacements | [Material 3 API replacements](compose-patterns.md#material-3-api-replacements) |
 | `ExoPlayer` / bitmap across rotation | [remember, retain, rememberSaveable...](compose-patterns.md#remember-retain-remembersaveable-and-rememberserializable) |
 | Pane hidden at narrow width | [Pane adapt strategies](compose-patterns.md#pane-adapt-strategies-material-3-adaptive-12) |
 | Trackpad drag stopped scrolling | [Trackpad and mouse input](compose-patterns.md#trackpad-and-mouse-input-compose-111) |
-| Text fields, validation | [Forms & Input](compose-patterns.md#forms-input) |
+| Text fields, validation | [Forms & Input](compose-patterns.md#forms--input) |
 | Edge-to-edge, IME insets (API 36+) | [Edge-to-Edge](compose-patterns.md#edge-to-edge-mandatory-on-api-36) in full file |
 | Offline Paging + `RemoteMediator` | [Offline-first paging](compose-patterns.md#offline-first-paging-and-remotemediator) |
 

@@ -8,7 +8,7 @@ StrictMode is a three-tier guardrail. Required in debug builds; optional with `p
 
 ## Table of Contents
 
-1. [Classic StrictMode (Thread + VM)](#1-classic-strictmode-thread-vm)
+1. [Classic StrictMode (Thread + VM)](#1-classic-strictmode-thread--vm)
 2. [Compose Stability Guardrails](#2-compose-stability-guardrails)
 3. [CI Guardrails (Optional)](#3-ci-guardrails-optional)
 4. [Uploading StrictMode Signals to Crash Reporters](#uploading-strictmode-signals-to-crash-reporters)
