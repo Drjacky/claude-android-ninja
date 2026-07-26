@@ -1153,6 +1153,17 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
 }
 ```
 
+**Two unrelated ktlint version lines exist - do not conflate them.** Spotless's `ktlint(...)` step takes the **ktlint engine** version (`com.pinterest.ktlint`, currently `1.x`), not the version of the standalone ktlint Gradle plugin (`org.jlleitschuh.gradle.ktlint`, currently `14.x`). The catalog keeps them separate:
+
+| Catalog key    | Means                                             | Consumed by                          |
+|----------------|---------------------------------------------------|--------------------------------------|
+| `ktlint`       | ktlint **engine** (`com.pinterest.ktlint`)         | `ktlint(libs.versions.ktlint.get())` in Spotless |
+| `ktlintPlugin` | `org.jlleitschuh.gradle.ktlint` **Gradle plugin**  | `libs.plugins.ktlint` (only if that plugin is applied instead of Spotless) |
+
+Passing a `14.x` value to Spotless's `ktlint(...)` fails to resolve, because no such ktlint engine release exists.
+
+Spotless 8 also renamed `indentWithSpaces(int)` to **`leadingTabsToSpaces(int)`**; the old name is deprecated (see `assets/convention/SpotlessConventionPlugin.kt`).
+
 ### Build Cache Configuration
 
 Create `gradle/init.gradle.kts` for team-wide build optimization:

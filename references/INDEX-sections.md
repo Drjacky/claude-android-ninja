@@ -774,12 +774,13 @@ Open when: MVVM layers, repositories, DI, network, DataStore vs Room
   - [Phase 3: Navigation Example (Separate Flow)](architecture.md#phase-3-navigation-example-separate-flow)
 - [Cross-references](architecture.md#cross-references)
 
-### code-quality.md (319 lines)
+### code-quality.md (349 lines)
 
 Open when: Detekt convention plugin, custom rules, CI
 
 - [Table of Contents](code-quality.md#table-of-contents)
 - [Version Catalog](code-quality.md#version-catalog)
+  - [Detekt 2.x coordinates and pairing](code-quality.md#detekt-2x-coordinates-and-pairing)
 - [Detekt Convention Plugin (Build Logic)](code-quality.md#detekt-convention-plugin-build-logic)
   - [Build Logic Registration](code-quality.md#build-logic-registration)
 - [Apply in Modules](code-quality.md#apply-in-modules)
@@ -1098,7 +1099,7 @@ Quick routing: [design-patterns-quick.md](design-patterns-quick.md)
   - [Critical Performance Rules](design-patterns.md#critical-performance-rules)
   - [Full-Text Search (FTS) Pattern](design-patterns.md#full-text-search-fts-pattern)
 
-### gradle-setup.md (1310 lines)
+### gradle-setup.md (1321 lines)
 
 Open when: Convention plugins, flavors, R8 audit, build performance, verify Gradle
 
