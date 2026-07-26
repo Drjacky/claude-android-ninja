@@ -117,15 +117,15 @@ At target SDK 37, Certificate Transparency is enforced by default for every HTTP
 
 Forbidden: a global `<base-config><ct-policy enabled="false"/></base-config>` (disables CT for every domain and undoes the platform default).
 
-### Loopback access (API 37)
+### Cross-profile loopback (Android 17)
 
-Apps targeting Android 17 must declare `android.permission.USE_LOOPBACK_INTERFACE` to reach `127.0.0.1` / `::1` from another app's process. Same-process loopback (instrumented tests against `MockWebServer` in the test process) is unaffected.
+Android 17 blocks **cross-profile** loopback traffic by default. This applies to **all apps regardless of `targetSdk`**, and there is **no permission or manifest flag to opt back in**.
 
-```xml
-<uses-permission android:name="android.permission.USE_LOOPBACK_INTERFACE" />
-```
+Unaffected: loopback within the same profile. That covers the normal cases - instrumented tests hitting `MockWebServer` in the test process, and any local socket between components of the same app in the same profile.
 
-Required only for: cross-process bridges to a local Web/Node/HTTP server (custom dev shells, Detox-style test harnesses). Production apps that only talk to remote HTTPS endpoints do not need this permission.
+Affected: a socket from a personal-profile app to a listener in the work profile (or the reverse), for example a dev shell or debug bridge that assumed `127.0.0.1` crossed the profile boundary. Redesign it to stay within one profile; there is no permission to request.
+
+Forbidden: declaring a `USE_LOOPBACK_INTERFACE`-style permission to "fix" this. No such platform permission exists - reaching other devices on the **LAN** is a different restriction, gated by `ACCESS_LOCAL_NETWORK` ([android-permissions.md → Local network access (API 37)](android-permissions.md#local-network-access-api-37)).
 
 ### OkHttp Security Configuration
 
