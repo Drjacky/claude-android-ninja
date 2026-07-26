@@ -639,26 +639,32 @@ items[0] = items[0].copy(name = "Updated")
 
 For ViewModel-level state, prefer `StateFlow<PersistentList<T>>` (see [Persistent Collections](#persistent-collections-for-performance)) over `SnapshotStateList`. Use `SnapshotStateList` only for UI-local state.
 
-### remember, rememberSaveable, and rememberSerializable
+### remember, retain, rememberSaveable, and rememberSerializable
 
 These APIs differ in **how long** state is kept and **what types** you can store. Official overview: [State lifespans in Compose](https://developer.android.com/develop/ui/compose/state-lifespans).
 
-|                                       | `remember`           | `rememberSaveable`                                                                                                                     | `rememberSerializable`                                                     |
-|---------------------------------------|----------------------|----------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| Survives recompositions               | Yes                  | Yes                                                                                                                                    | Yes                                                                        |
-| Survives activity / config recreation | No                   | Yes (restored value may be a **new** instance, `==` but not `===`)                                                                     | Same as `rememberSaveable`                                                 |
-| Survives process death                | No                   | Yes                                                                                                                                    | Yes                                                                        |
-| Custom / complex types                | Any (in memory only) | Primitives, `String`, arrays, built-in support for common types (`List`, `Map`, `State`, ...), **`@Parcelize`**, or a **custom `Saver`** | Types you can represent with **`kotlinx.serialization`** (`@Serializable`) |
+|                                       | `remember`           | `retain`                                        | `rememberSaveable`                                                                                                                     | `rememberSerializable`                                                     |
+|---------------------------------------|----------------------|-------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| Survives recompositions               | Yes                  | Yes                                             | Yes                                                                                                                                    | Yes                                                                        |
+| Survives activity / config recreation | No                   | **Yes** (same instance, `===`)                  | Yes (restored value may be a **new** instance, `==` but not `===`)                                                                     | Same as `rememberSaveable`                                                 |
+| Survives process death                | No                   | **No**                                          | Yes                                                                                                                                    | Yes                                                                        |
+| Custom / complex types                | Any (in memory only) | **Any** - no serialization required             | Primitives, `String`, arrays, built-in support for common types (`List`, `Map`, `State`, ...), **`@Parcelize`**, or a **custom `Saver`** | Types you can represent with **`kotlinx.serialization`** (`@Serializable`) |
 
 **When to use which**
 
 - **`remember`** - Default for composable-scoped state that can be recreated without harming UX: animation state, internal helpers, `LazyListState` when you do not need process death, ephemeral expand/collapse, hover. **Do not** store irreplaceable user input or form data in plain `remember`; it is cleared on configuration change and process death.
 
+- **`retain`** (`androidx.compose.runtime.retain`) - Expensive, **non-serializable** objects that must survive a configuration change but are meaningless after process death: `ExoPlayer`, decoded bitmaps, camera controllers, an in-flight `Flow` collection. It keeps the **same instance** across recreation, so there is no serialization cost and no identity change.
+
 - **`rememberSaveable`** - User-visible state the app cannot easily reload from elsewhere: text fields, toggles, scroll position, selected tab, navigation arguments mirrored in UI. Use this when your type is already `Parcelable`, fits the built-in `Saver` rules, or you hand-write a `Saver` / `mapSaver` / `listSaver`.
 
 - **`rememberSerializable`** - Same persistence guarantees as `rememberSaveable`, but **automatic persistence for `@Serializable` models** via `kotlinx.serialization`. Use it when your domain or UI model is already (or can be) marked `@Serializable`; use **`rememberSaveable`** for primitives, `Parcelable`, or manual `Saver`s when you are not using kotlinx.serialization.
 
-Both saveable variants serialize into a `Bundle`, so restored values are **equivalent** copies, not the same object identity.
+Both saveable variants serialize into a `Bundle`, so restored values are **equivalent** copies, not the same object identity. `retain` does not serialize at all.
+
+**Forbidden:** putting an `ExoPlayer`, `Bitmap`, or other heavyweight object into `rememberSaveable` / `rememberSerializable` - there is no correct `Saver` for them, and a `Bundle` is the wrong place. Use `retain` (config change) or a `ViewModel` (whole screen lifecycle) instead.
+
+`retain` complements rather than replaces a `ViewModel`: use `retain` for composable-scoped resources, and a `ViewModel` when the state belongs to the screen and must be shared with business logic.
 
 #### rememberSaveable with custom types
 
@@ -815,7 +821,7 @@ Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
             .padding(innerPadding)
             .imePadding()
             .verticalScroll(rememberScrollState())
-    ) { /* … */ }
+    ) { /* ... */ }
 }
 ```
 
@@ -829,7 +835,7 @@ Box(modifier = Modifier.safeDrawingPadding()) {
 
 // WRONG: outer padding does not consume insets; imePadding() double-pads.
 Box(modifier = Modifier.padding(WindowInsets.safeDrawing.asPaddingValues())) {
-    Column(modifier = Modifier.imePadding()) { /* … */ }
+    Column(modifier = Modifier.imePadding()) { /* ... */ }
 }
 ```
 
@@ -1027,12 +1033,15 @@ implementation(libs.bundles.adaptive)
 ```
 
 ```kotlin
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
+
 @Composable
 fun AdaptiveScreen(
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo()
 ) {
-    val isCompact = windowAdaptiveInfo.windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact
+    // Breakpoint predicates, not enum equality. WindowWidthSizeClass.Compact is the legacy API.
+    val isCompact = !windowAdaptiveInfo.windowSizeClass
+        .isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)
 
     if (isCompact) {
         CompactLayout()
@@ -1041,6 +1050,18 @@ fun AdaptiveScreen(
     }
 }
 ```
+
+**Forbidden:** comparing `windowSizeClass.widthSizeClass` against `WindowWidthSizeClass.Compact` / `Medium` / `Expanded`. Use `isWidthAtLeastBreakpoint(...)` / `isHeightAtLeastBreakpoint(...)` so new breakpoints do not silently fall into the wrong branch.
+
+#### Large and extra-large widths (WindowManager 1.5)
+
+Two breakpoints exist above `Expanded`: **Large** (1200-1600dp) and **Extra-large** (>=1600dp). They are **opt-in** so existing apps keep their current behavior:
+
+```kotlin
+val adaptiveInfo = currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = true)
+```
+
+Without that flag a 1600dp window reports as `Expanded`. Opt in only if the design actually distinguishes those sizes; otherwise the extra branches are dead code. To match the full set explicitly, use `WindowSizeClass.BREAKPOINTS_V2` instead of the default breakpoint set.
 
 ### Handling System Back Button
 
@@ -1252,7 +1273,8 @@ fun AuthActivityList(
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(),
     modifier: Modifier = Modifier
 ) {
-    val isWideScreen = windowAdaptiveInfo.windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+    val isWideScreen = windowAdaptiveInfo.windowSizeClass
+        .isWidthAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND)
     
     LazyColumn(
         modifier = modifier,
@@ -1417,7 +1439,7 @@ smaller, expand the touch area. Keep at least **8dp** between adjacent targets t
 
 ```kotlin
 IconButton(onClick = onClose) {
-    Icon(Icons.Default.Close, contentDescription = "Close")
+    Icon(painterResource(R.drawable.ic_close), contentDescription = "Close")
 }
 
 Box(
@@ -1426,7 +1448,7 @@ Box(
         .clickable { onAction() },
     contentAlignment = Alignment.Center
 ) {
-    Icon(modifier = Modifier.size(24.dp), imageVector = Icons.Default.Star, contentDescription = "Rate")
+    Icon(modifier = Modifier.size(24.dp), painter = painterResource(R.drawable.ic_star), contentDescription = "Rate")
 }
 ```
 
@@ -1467,7 +1489,12 @@ fun AdaptiveAppNavigation() {
         navigationSuiteItems = {
             AppDestinations.entries.forEach { destination ->
                 item(
-                    icon = { Icon(destination.icon, contentDescription = stringResource(destination.contentDescription)) },
+                    icon = {
+                        Icon(
+                            painter = painterResource(destination.icon),
+                            contentDescription = stringResource(destination.contentDescription)
+                        )
+                    },
                     label = { Text(stringResource(destination.label)) },
                     selected = destination == currentDestination,
                     onClick = { currentDestination = destination }
@@ -1485,12 +1512,12 @@ fun AdaptiveAppNavigation() {
 
 enum class AppDestinations(
     @StringRes val label: Int,
-    val icon: ImageVector,
+    @DrawableRes val icon: Int,
     @StringRes val contentDescription: Int
 ) {
-    HOME(R.string.home, Icons.Default.Home, R.string.home),
-    FAVORITES(R.string.favorites, Icons.Default.Favorite, R.string.favorites),
-    SETTINGS(R.string.settings, Icons.Default.Settings, R.string.settings),
+    HOME(R.string.home, R.drawable.ic_home, R.string.home),
+    FAVORITES(R.string.favorites, R.drawable.ic_favorite, R.string.favorites),
+    SETTINGS(R.string.settings, R.drawable.ic_settings, R.string.settings),
 }
 ```
 
@@ -1587,6 +1614,33 @@ fun CustomListDetailLayout() {
 }
 ```
 
+#### Pane adapt strategies (Material 3 Adaptive 1.2+)
+
+By default a pane that does not fit is **hidden**. Two other strategies exist for cases where hiding loses context:
+
+```kotlin
+ListDetailPaneScaffold(
+    directive = scaffoldNavigator.scaffoldDirective,
+    scaffoldState = scaffoldNavigator.scaffoldState,
+    // Instead of hiding, stack the supporting pane below the main one.
+    adaptStrategies = ListDetailPaneScaffoldDefaults.adaptStrategies(
+        extraPaneAdaptStrategy = AdaptStrategy.Reflow(
+            reflowUnder = ListDetailPaneScaffoldRole.Detail
+        )
+    ),
+    listPane = { AnimatedPane { /* ... */ } },
+    detailPane = { AnimatedPane { /* ... */ } },
+)
+```
+
+| Strategy                              | Behavior                                                        | Use when                                              |
+|---------------------------------------|-----------------------------------------------------------------|-------------------------------------------------------|
+| `AdaptStrategy.Hide` (default)         | Pane is removed                                                 | The pane is genuinely secondary                        |
+| `AdaptStrategy.Reflow(reflowUnder =)`  | Pane moves below the named pane in the same scroll flow          | Content still matters at narrow width (comments, metadata) |
+| `AdaptStrategy.Levitate(alignment =)`  | Pane floats above the others, dialog-like                        | Transient focused task that should not lose the background |
+
+Do not hand-roll width branching to emulate these - the scaffold already knows the directive.
+
 ### Supporting Pane Layout (NavigableSupportingPaneScaffold)
 
 Use `NavigableSupportingPaneScaffold` to display a main content pane with a contextual supporting pane. The supporting pane shows related info (e.g., similar items, metadata, tools).
@@ -1628,7 +1682,7 @@ fun MovieDetailWithSuggestions(movie: Movie) {
                                 }
                             }
                         ) {
-                            Icon(Icons.Default.Close, contentDescription = "Close")
+                            Icon(painterResource(R.drawable.ic_close), contentDescription = "Close")
                         }
                     }
                     SimilarMoviesList(movieId = movie.id)
@@ -3825,6 +3879,14 @@ LazyColumn(Modifier.nestedScroll(nestedScrollConnection)) {
 }
 ```
 
+### Trackpad and mouse input (Compose 1.11)
+
+Trackpad events now report `PointerType.Mouse` instead of a synthesized `Touch`. Consequences:
+
+- **Click-and-drag with a trackpad no longer scrolls a list.** That was a side effect of trackpad events masquerading as touch. Two-finger swipe and pinch are handled automatically by `Modifier.scrollable` / `Modifier.transformable`, so standard scrollables need no change.
+- Any custom gesture code that branched on `PointerType.Touch` to decide "is this a drag" must add `PointerType.Mouse`, or it silently stops responding to trackpads.
+- Do not reimplement drag-to-scroll to restore the old behavior; it is not the platform gesture.
+
 ### Lists Rules
 
 - Always provide stable, unique `key` for mutable lists (IDs, not indices)
@@ -3972,6 +4034,39 @@ All migration guides have been consolidated into [migration.md](migration.md). I
 - LiveData to StateFlow
 - RxJava to Coroutines
 
+### Material 3 API replacements
+
+Applies on the template pin (`material3` **1.4.0**). Use the replacement where it exists on 1.4.0; the rows marked **1.5.0-alpha only** must **not** be written against a 1.4.0 pin - they will not compile ([dependencies.md → Pinned prerelease](dependencies.md#pinned-prerelease-required-for-feature-parity)).
+
+| Deprecated                                                       | Replacement                                              | Available on |
+|------------------------------------------------------------------|----------------------------------------------------------|--------------|
+| `rememberModalBottomSheetState()`, `rememberStandardBottomSheetState()` | `rememberBottomSheetState()`                        | 1.4.0        |
+| `TextFieldLabelPosition.Attached`                                 | `TextFieldLabelPosition.Inside` / `.Cutout`              | 1.4.0        |
+| `OutlinedTextFieldDefaults.contentPadding()`                      | `contentPaddingWithLabel()` / `contentPaddingWithoutLabel()` | 1.4.0    |
+| `SearchBar(expanded =, onExpandedChange =)`                       | `SearchBarState` + slot-based `SearchBar`                 | 1.5.0-alpha only |
+| `TopSearchBar`                                                    | `AppBarWithSearch`                                        | 1.5.0-alpha only |
+| `TopAppBarDefaults.pinnedScrollBehavior()` / `enterAlwaysScrollBehavior()` overloads | overloads taking a `ScrollableState`     | 1.5.0-alpha only |
+| `TopAppBarState.isAtTop`                                          | `isAtStart`                                               | 1.5.0-alpha only |
+
+`androidx.compose.material3` **no longer depends on `material-icons-core`**. That artifact is forbidden here anyway ([android-graphics.md](android-graphics.md#material-symbols-icons)), but note the same removal applies to `graphics-shapes`: declare `androidx.graphics:graphics-shapes` explicitly if you use `RoundedPolygon` / `Morph`.
+
+### Compose 1.11 additions worth adopting
+
+| API                                              | Use                                                                                     |
+|--------------------------------------------------|-----------------------------------------------------------------------------------------|
+| `Modifier.visible(visible)`                      | Skip **drawing** without changing layout - cheaper than swapping content in/out, and keeps measured size stable |
+| `Modifier.scrollIndicator(state)` + `ScrollIndicatorState` | Platform scroll indicators instead of a hand-rolled scrollbar                   |
+
+### Experimental in Compose 1.11 - evaluation only
+
+**Forbidden in production code.** Named so an agent recognizes them, not so it adopts them:
+
+- `Grid` / `Modifier.gridItem` (`@ExperimentalGridApi`)
+- `FlexBox` / `Modifier.flex` (`@ExperimentalFlexBoxApi`) - note it **does not clamp on the main axis**, so children overflow unless you add `Modifier.clipToBounds()`
+- The Style API and `mediaQuery`
+
+Also forbidden: enabling `ComposeRuntimeFlags.isLinkBufferComposerEnabled`. It is off by default and the shipped Compose keep rules assume `false`, so turning it on requires editing app R8 rules for no user-visible gain.
+
 ## Forms & Input
 
 ### Keyboard Configuration
@@ -4048,7 +4143,9 @@ fun PasswordField(
         trailingIcon = {
             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                 Icon(
-                    imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                    painter = painterResource(
+                        if (passwordVisible) R.drawable.ic_visibility_off else R.drawable.ic_visibility
+                    ),
                     contentDescription = if (passwordVisible) "Hide password" else "Show password"
                 )
             }
@@ -4090,7 +4187,7 @@ fun ValidatedEmailField(
 
 ## Cross-references
 
-Re-orient: [compose-patterns-quick.md](compose-patterns-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#compose-patternsmd-4105-lines)
+Re-orient: [compose-patterns-quick.md](compose-patterns-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#compose-patternsmd-4202-lines)
 
 
 - [architecture.md](architecture.md) - ViewModel patterns and state management
