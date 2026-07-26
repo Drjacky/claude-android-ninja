@@ -729,9 +729,13 @@ inline fun <reified T : Activity> Context.startActivity() {
 context.startActivity<MainActivity>() // Type-safe!
 
 // CORRECT: Generic ViewModel retrieval with Hilt
+// Package is androidx.hilt.lifecycle.viewmodel.compose (artifact
+// androidx.hilt:hilt-lifecycle-viewmodel-compose). The older
+// androidx.hilt.navigation.compose.hiltViewModel is deprecated and drags in
+// navigation-compose (Navigation 2), which this Navigation3 stack must not depend on.
 @Composable
 inline fun <reified T : ViewModel> hiltViewModel(): T {
-    return androidx.hilt.navigation.compose.hiltViewModel()
+    return androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
 }
 
 // CORRECT: Type-safe navigation arguments

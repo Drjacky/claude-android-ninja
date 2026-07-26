@@ -1982,6 +1982,8 @@ fun MediaPlayerWidget(uri: Uri) {
 }
 ```
 
+When `rememberViewModelStoreOwner()` needs a Hilt-aware default factory, pass `rememberHiltViewModelFactory()`. As of `androidx.hilt` 1.4.0 it takes **no `ViewModelStoreOwner`** parameter (only an optional `delegateFactory`); a call passing an owner is written against 1.3.x and will not compile.
+
 ### Passing NavKey Arguments to Hilt ViewModels
 
 Navigation 3 uses assisted injection to pass `NavKey` arguments directly to ViewModels:
@@ -2157,4 +2159,4 @@ data class ProductDetail(
 ) : ProductsDestination
 ```
 
-Re-orient: [android-navigation-quick.md](android-navigation-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-navigationmd-2160-lines)
+Re-orient: [android-navigation-quick.md](android-navigation-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-navigationmd-2162-lines)

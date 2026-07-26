@@ -105,7 +105,7 @@ Four-layer architecture with strict module separation and unidirectional data fl
 | UI         | Jetpack Compose + Material 3                                        |
 | Navigation | Navigation3 + type-safe `NavKey`                                    |
 | DI         | Hilt                                                                |
-| Local DB   | Room 3 (`androidx.room3`, KSP, `SQLiteDriver`)                      |
+| Local DB   | Room 3 stable `3.0.0` (`androidx.room3`, KSP, `SQLiteDriver`); `androidx.sqlite` sets a **minSdk 23** floor, satisfied by the template `minSdk = 24` |
 | Async      | Coroutines + `StateFlow` / `Flow`                                   |
 | Modules    | Feature-first + `core/*` per [modularization.md](modularization.md) |
 
@@ -610,6 +610,20 @@ Over-scoping wastes memory; under-scoping duplicates heavy types or breaks singl
 | Feature-only deps parked in `SingletonComponent` preemptively | Wrong lifetime, memory         | `ViewModelComponent` / `@ViewModelScoped` when only screens need the type |
 
 **Navigation arguments and assisted injection:** `SavedStateHandle`, `@AssistedInject`, and `hiltViewModel` factory lambdas with Navigation3 - see `references/android-navigation.md` as the source of truth.
+
+#### `hiltViewModel()` artifact and import
+
+Required artifact: **`androidx.hilt:hilt-lifecycle-viewmodel-compose`** (catalog alias `androidx-hilt-lifecycle-viewmodel-compose`, version ref `androidxHilt`).
+
+```kotlin
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+```
+
+**Forbidden:** `androidx.hilt:hilt-navigation-compose` / `import androidx.hilt.navigation.compose.hiltViewModel`. That package is **deprecated** and its POM depends on `navigation-compose`, pulling Navigation 2 into a Navigation3-only project.
+
+Also provided by the same artifact: `rememberHiltViewModelFactory(...)` and `createHiltViewModelFactory(...)` for the rare case where a factory must be passed explicitly.
+
+`androidx.hilt` 1.4.0 compiles against `compileSdk` 37, so using it with Compose **requires AGP >= 9.2.0** ([migration.md → Libraries that force the AGP floor](migration.md#libraries-that-force-the-agp-floor)).
 
 Official docs: [Hilt Android](https://developer.android.com/training/dependency-injection/hilt-android), [Hilt with Compose](https://developer.android.com/develop/ui/compose/libraries#hilt).
 

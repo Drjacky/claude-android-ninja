@@ -292,7 +292,7 @@ Open when: Media3 background playback API 37, picking, sharing, preloading
   - [Manifest](android-media.md#manifest)
   - [Service skeleton](android-media.md#service-skeleton)
 
-### android-navigation.md (2160 lines)
+### android-navigation.md (2162 lines)
 
 Open when: Navigation3, deep links, App Links, adaptive layouts, large screens
 Quick routing: [android-navigation-quick.md](android-navigation-quick.md)
@@ -708,7 +708,7 @@ Quick routing: [android-theming-quick.md](android-theming-quick.md)
   - [Dynamic Color Considerations](android-theming.md#dynamic-color-considerations)
 - [References](android-theming.md#references)
 
-### architecture.md (961 lines)
+### architecture.md (975 lines)
 
 Open when: MVVM layers, repositories, DI, network, DataStore vs Room
 
@@ -731,6 +731,7 @@ Open when: MVVM layers, repositories, DI, network, DataStore vs Room
   - [Purpose](architecture.md#purpose)
   - [Module Setup](architecture.md#module-setup)
   - [Dependency Injection Setup](architecture.md#dependency-injection-setup)
+    - [`hiltViewModel()` artifact and import](architecture.md#hiltviewmodel-artifact-and-import)
   - [Use Case Pattern](architecture.md#use-case-pattern)
   - [Repository Interface Pattern](architecture.md#repository-interface-pattern)
   - [Domain Models](architecture.md#domain-models)
@@ -1170,7 +1171,7 @@ Open when: Interface delegation instead of base ViewModels
 - [Related References](kotlin-delegation.md#related-references)
 - [Sources](kotlin-delegation.md#sources)
 
-### kotlin-patterns.md (1049 lines)
+### kotlin-patterns.md (1053 lines)
 
 Open when: Kotlin style, Result types, ViewModel patterns (all Kotlin code)
 
