@@ -494,13 +494,14 @@ class BaselineProfileGenerator {
         includeInStartupProfile = true,
         profileBlock = {
             startActivityAndWait()
-            
-            // Add critical user journeys here
-            device.wait(Until.hasObject(By.res("auth_form")), 5000)
-            
+
+            // MacrobenchmarkScope extends UiAutomatorTestScope (Macrobenchmark 1.5+),
+            // so onElement { } is available directly and waits with a default timeout.
+            onElement { viewIdResourceName == "com.example.app:id/auth_form" }
+
             // Navigate through key screens
-            device.findObject(By.text("Login")).click()
-            device.waitForIdle()
+            onElement { text == "Login" }.click()
+            waitForStableInActiveWindow()
         }
     )
 }

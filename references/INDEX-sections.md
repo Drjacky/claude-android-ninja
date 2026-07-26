@@ -408,7 +408,7 @@ Open when: Channels, FGS, MediaStyle, PiP, sharesheet from notification taps
   - [PendingIntent Flags](android-notifications.md#pendingintent-flags)
 - [References](android-notifications.md#references)
 
-### android-performance.md (1384 lines)
+### android-performance.md (1385 lines)
 
 Open when: Macrobenchmark, baseline profiles, vitals, recomposition, startup, APA/Perfetto
 
@@ -1318,7 +1318,7 @@ Open when: Module types, dependency rules, feature modules, existing-project ali
 - [Navigation Coordination](modularization.md#navigation-coordination)
 - [Build Configuration](modularization.md#build-configuration)
 
-### testing.md (2552 lines)
+### testing.md (2611 lines)
 
 Open when: Fakes, Turbine, Hilt tests, Compose UI, ADB/UIAutomator, deep links
 Quick routing: [testing-quick.md](testing-quick.md)
@@ -1348,6 +1348,7 @@ Quick routing: [testing-quick.md](testing-quick.md)
   - [Testing Flow Emissions with Turbine](testing.md#testing-flow-emissions-with-turbine)
   - [Testing Cancellation](testing.md#testing-cancellation)
   - [Coroutine test rules](testing.md#coroutine-test-rules)
+    - [Testing a `StateFlow`](testing.md#testing-a-stateflow)
   - [Dispatcher Choices in Tests](testing.md#dispatcher-choices-in-tests)
 - [Hilt Testing](testing.md#hilt-testing)
   - [Testing Hilt-Injected ViewModels](testing.md#testing-hilt-injected-viewmodels)
@@ -1374,7 +1375,7 @@ Quick routing: [testing-quick.md](testing-quick.md)
   - [Device targeting](testing.md#device-targeting)
   - [Install, reset, launch](testing.md#install-reset-launch)
   - [Logcat for smoke proof](testing.md#logcat-for-smoke-proof)
-  - [UIAutomator v2 (instrumented smoke)](testing.md#uiautomator-v2-instrumented-smoke)
+  - [UIAutomator (instrumented smoke)](testing.md#uiautomator-instrumented-smoke)
   - [When Compose test vs UIAutomator](testing.md#when-compose-test-vs-uiautomator)
   - [CI wiring (reference only)](testing.md#ci-wiring-reference-only)
   - [Further ADB](testing.md#further-adb)
