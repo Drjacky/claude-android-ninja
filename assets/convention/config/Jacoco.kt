@@ -37,6 +37,12 @@ private val coverageExclusions = listOf(
     "**/*Module.class",
     "**/*Component.class",
     "**/*ComponentImpl.class",
+    // Room 3 (KSP-generated DAO and database implementations)
+    "**/*_Impl.class",
+    "**/*_Impl\$*.class",
+    // Compose compiler-generated lambda holders
+    "**/ComposableSingletons*.class",
+    "**/*\$\$ExternalSyntheticLambda*.class",
 )
 
 private fun String.capitalize() = replaceFirstChar {
