@@ -17,7 +17,7 @@ Forbidden: load every file below; load a multi-thousand-line file in full when a
 | [android-i18n.md](android-i18n.md)                   |  1055 | strings.xml, plurals, RTL, locale formatting, translation CI                                                         | -                                                                |
 | [android-media.md](android-media.md)                 |   176 | Media3 background playback API 37, picking, sharing, preloading                                                      | -                                                                |
 | [android-navigation.md](android-navigation.md)       |  2162 | Navigation3, deep links, App Links, adaptive layouts, large screens                                                  | [android-navigation-quick.md](android-navigation-quick.md)       |
-| [android-notifications.md](android-notifications.md) |  1239 | Channels, FGS, MediaStyle, PiP, sharesheet from notification taps                                                    | -                                                                |
+| [android-notifications.md](android-notifications.md) |  1322 | Channels, FGS, MediaStyle, PiP, sharesheet from notification taps                                                    | -                                                                |
 | [android-performance.md](android-performance.md)     |  1385 | Macrobenchmark, baseline profiles, vitals, recomposition, startup, APA/Perfetto                                      | -                                                                |
 | [android-permissions.md](android-permissions.md)     |   921 | Runtime permissions, Photo Picker, contact picker session URIs, `ACCESS_LOCAL_NETWORK`, API 37 location privacy       | -                                                                |
 | [android-security.md](android-security.md)           |  1849 | Play Integrity (Standard/Classic), `requestHash`/`nonce`, pinning, encryption, biometrics, Credential Manager        | [android-security-quick.md](android-security-quick.md)           |
@@ -36,7 +36,7 @@ Forbidden: load every file below; load a multi-thousand-line file in full when a
 | [migration.md](migration.md)                         |   945 | XML→Compose, LiveData, RxJava, Nav2→3, Room 2→3, API 37                                                              | -                                                                |
 | [modularization.md](modularization.md)               |   417 | Module types, dependency rules, feature modules, existing-project alignment                                          | -                                                                |
 | [testing.md](testing.md)                             |  2611 | Pre-release UI states, ADB/UIAutomator, Fakes, Turbine, Hilt tests, Compose UI, deep links                           | [testing-quick.md](testing-quick.md)                             |
-| [workflows.md](workflows.md)                         |   340 | Task not in Quick Reference; greenfield bootstrap; multi-topic routing                                               | -                                                                |
+| [workflows.md](workflows.md)                         |   342 | Task not in Quick Reference; greenfield bootstrap; multi-topic routing                                               | -                                                                |
 
 ## Quick companions (read before the full file)
 

@@ -361,7 +361,7 @@ Quick routing: [android-navigation-quick.md](android-navigation-quick.md)
   - [ViewModel Navigation](android-navigation.md#viewmodel-navigation)
   - [Passing Complex Objects in NavKeys](android-navigation.md#passing-complex-objects-in-navkeys)
 
-### android-notifications.md (1239 lines)
+### android-notifications.md (1322 lines)
 
 Open when: Channels, FGS, MediaStyle, PiP, sharesheet from notification taps
 
@@ -385,6 +385,9 @@ Open when: Channels, FGS, MediaStyle, PiP, sharesheet from notification taps
   - [Indeterminate Progress](android-notifications.md#indeterminate-progress)
 - [Progress-Centric Notifications (API 36+)](android-notifications.md#progress-centric-notifications-api-36)
   - [ProgressStyle Notification](android-notifications.md#progressstyle-notification)
+- [Metric Notifications (API 37+)](android-notifications.md#metric-notifications-api-37)
+- [Live Updates (API 36+)](android-notifications.md#live-updates-api-36)
+  - [Semantic coloring (API 37+)](android-notifications.md#semantic-coloring-api-37)
 - [Foreground Service Notifications](android-notifications.md#foreground-service-notifications)
   - [Foreground Service Setup](android-notifications.md#foreground-service-setup)
   - [Foreground Service in Android Service](android-notifications.md#foreground-service-in-android-service)
@@ -1410,7 +1413,7 @@ Quick routing: [testing-quick.md](testing-quick.md)
 - [Localization Testing](testing.md#localization-testing)
 - [Cross-references](testing.md#cross-references)
 
-### workflows.md (340 lines)
+### workflows.md (342 lines)
 
 Open when: Task not in Quick Reference; greenfield bootstrap; multi-topic routing
 

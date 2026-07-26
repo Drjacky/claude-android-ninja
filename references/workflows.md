@@ -142,6 +142,8 @@ For files with a `-quick.md` companion, open the **quick** file first; open the 
 → Use [android-notifications.md](android-notifications.md) for notification channels, styles, actions, and foreground services  
 → Check POST_NOTIFICATIONS permission on API 33+ before showing notifications  
 → Create notification channels at app startup (required for API 26+)  
+→ Pick the style by data shape: journey with milestones -> `ProgressStyle` (API 36+); up to 3 standalone values -> [`MetricStyle` (API 37+)](android-notifications.md#metric-notifications-api-37); single completion bar -> `setProgress()`  
+→ Status-chip / lock-screen promotion for an active, time-critical journey -> [Live Updates](android-notifications.md#live-updates-api-36) (`POST_PROMOTED_NOTIFICATIONS` + `setRequestPromotedOngoing`); forbidden with `RemoteViews`, `setColorized(true)`, `IMPORTANCE_MIN`, or as a group summary  
 
 **Playing audio or video in the background (target SDK 37)?**
 → Use [android-media.md](android-media.md) → "Background media playback hardening (API 37)" for `MediaSessionService`, `mediaPlayback` foreground service type, and `MediaSession` lifecycle  

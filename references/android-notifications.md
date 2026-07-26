@@ -12,6 +12,8 @@ All Kotlin code must align with `references/kotlin-patterns.md`. Permission hand
 - [Action Buttons](#action-buttons)
 - [Progress Notifications](#progress-notifications)
 - [Progress-Centric Notifications (API 36+)](#progress-centric-notifications-api-36)
+- [Metric Notifications (API 37+)](#metric-notifications-api-37)
+- [Live Updates (API 36+)](#live-updates-api-36)
 - [Foreground Service Notifications](#foreground-service-notifications)
 - [Media, PiP, Sharing, and Background Work](#media-pip-sharing-and-background-work)
 - [Navigation State (Navigation3)](#navigation-state-navigation3)
@@ -624,6 +626,84 @@ fun showProgressStyleNotification(
 - Use standard `setProgress()` for simple determinate/indeterminate tasks (downloads, uploads)
 - `ProgressStyle` is only available on API 36+; provide a fallback for older APIs
 
+## Metric Notifications (API 37+)
+
+`Notification.MetricStyle` (Android 17) shows up to **three** discrete values - score, temperature, countdown, price - rather than a journey. `NotificationCompat` support ships in `androidx.core:core` **1.19.0**.
+
+Constraints, all hard limits:
+
+- Maximum **3** metrics and maximum **3** actions.
+- `setContentTitle` is supported; **context text is not**.
+
+Value types for `Notification.Metric`:
+
+| Type             | Use                                          |
+|------------------|----------------------------------------------|
+| `FixedInt`       | Whole numbers (score, count)                  |
+| `FixedFloat`     | Decimals (price, rating)                      |
+| `FixedTime`      | An absolute time                              |
+| `TimeDifference` | A live-updating duration or countdown          |
+| `MetricValue`    | Base type for a custom value                  |
+
+Choose between the Android 16/17 styles by shape of the data, not by novelty:
+
+| Data shape                                  | Style                       |
+|---------------------------------------------|-----------------------------|
+| Position along a journey with milestones     | `ProgressStyle` (API 36+)    |
+| Up to 3 standalone values                    | `MetricStyle` (API 37+)      |
+| A single 0-100 completion bar                | `setProgress()` (all APIs)   |
+
+`MetricStyle` requires API 37, so branch on `Build.VERSION.SDK_INT` and fall back to `ProgressStyle` or plain text, exactly as the `ProgressStyle` sample above falls back.
+
+## Live Updates (API 36+)
+
+A Live Update is an **ongoing** notification the system promotes to a higher-visibility surface (status chip, lock screen). Use only for a user-initiated activity that is actively progressing and time-critical: navigation, delivery, ride, active workout, timer.
+
+Required:
+
+```xml
+<!-- Not a runtime permission -->
+<uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+```
+
+```kotlin
+NotificationCompat.Builder(context, NotificationChannels.CHANNEL_GENERAL)
+    .setSmallIcon(R.drawable.ic_notification)
+    .setContentTitle("Arriving in 4 min")       // required
+    .setOngoing(true)                            // required
+    .setRequestPromotedOngoing(true)             // request promotion
+    .setShortCriticalText("4 min")               // status chip text
+    .setStyle(progressStyle)
+    .setDeleteIntent(dismissIntent)              // detect dismissal
+    .build()
+```
+
+Allowed styles: standard, `BigTextStyle`, `CallStyle`, `ProgressStyle`, `MetricStyle`.
+
+**Forbidden** (each silently disqualifies promotion):
+
+- `customContentView` / any `RemoteViews`
+- Use as a group summary
+- `setColorized(true)`
+- A channel with `IMPORTANCE_MIN`
+- Reposting a Live Update the user dismissed - honor the dismissal
+
+Querying actual state (a promotion **request** is not a guarantee):
+
+| API                                                   | Answers                                              |
+|-------------------------------------------------------|------------------------------------------------------|
+| `NotificationManager.canPostPromotedNotifications()`   | Is the app allowed to promote at all                  |
+| `Notification.hasPromotableCharacteristics()`          | Does this notification qualify structurally            |
+| `Notification.FLAG_PROMOTED_ONGOING`                   | Was it actually promoted                               |
+
+Status chip text: `setShortCriticalText` is capped at **96 dp**; under ~7 characters is always shown. For live timers use `setWhen` with `setUsesChronometer(true)` and `setChronometerCountDown(true)` rather than repeatedly re-posting the notification.
+
+The raw extra behind the builder call is `NotificationCompat.EXTRA_REQUEST_PROMOTED_ONGOING`, if you need to inspect a `Notification` you did not build.
+
+### Semantic coloring (API 37+)
+
+`Notification.createSemanticStyleAnnotation(...)` applies system-consistent meaning to spans of notification text, with `SEMANTIC_STYLE_INFO`, `SEMANTIC_STYLE_SAFE`, `SEMANTIC_STYLE_CAUTION`, and `SEMANTIC_STYLE_DANGER`. Prefer it over hard-coded colors so the result respects theme and contrast settings ([android-theming.md](android-theming.md), [android-accessibility.md](android-accessibility.md)).
+
 ## Foreground Service Notifications
 
 Foreground services **require** a notification on all API levels.
@@ -1177,7 +1257,7 @@ fun `startSync shows progress notification`() = runTest {
 5. **Set unique notification IDs** to avoid overwriting notifications
 6. **Use foreground notifications** for long-running operations
 7. **Provide meaningful icons** for small icon, large icon, and action buttons
-8. **Test notifications** on multiple API levels (24, 26, 29, 31, 33, 36)
+8. **Test notifications** on multiple API levels (24, 26, 29, 31, 33, 36, 37)
 9. **Use interfaces** for testability in repositories/ViewModels
 10. **Handle notification permission** gracefully (don't crash if denied)
 
@@ -1191,6 +1271,9 @@ fun `startSync shows progress notification`() = runTest {
 6. **Never rely on notifications** for critical user-facing information (they can be disabled)
 7. **Never create channels dynamically** for every notification (create once at startup)
 8. **Never show notifications from background** on API 26+ without proper foreground service
+9. **Never build custom `RemoteViews` notifications** - prefer `NotificationCompat.DecoratedCustomViewStyle` or a platform style. At target SDK 37 custom notification `RemoteViews` are subject to stricter memory limits (the previous URI-based workaround is closed), so an oversized custom layout is dropped at post time.
+10. **Never repost a dismissed Live Update** - detect dismissal via `setDeleteIntent` ([Live Updates](#live-updates-api-36))
+11. **Never assume `setRequestPromotedOngoing(true)` promoted the notification** - verify with `FLAG_PROMOTED_ONGOING`
 
 ### Notification ID Strategy
 
