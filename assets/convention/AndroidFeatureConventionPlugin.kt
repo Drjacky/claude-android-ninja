@@ -34,6 +34,13 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 // Lifecycle
                 add("implementation", libs.findLibrary("androidx.lifecycle.runtime.compose").get())
                 add("implementation", libs.findLibrary("androidx.lifecycle.viewmodel.compose").get())
+
+                // hiltViewModel() for Compose. Deliberately NOT hilt-navigation-compose,
+                // which is deprecated and pulls in navigation-compose (Navigation 2).
+                add(
+                    "implementation",
+                    libs.findLibrary("androidx.hilt.lifecycle.viewmodel.compose").get()
+                )
                 
                 // Navigation3
                 add("implementation", libs.findLibrary("androidx.navigation3.runtime").get())

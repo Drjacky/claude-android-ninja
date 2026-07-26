@@ -207,6 +207,7 @@ com.example.core.model.*
 - Android library + Compose + Hilt
 - Auto-adds dependencies: `:core:ui`, `:core:domain`, `:core:data`
 - Lifecycle (ViewModel + runtime-compose)
+- `hilt-lifecycle-viewmodel-compose` for `hiltViewModel()` (**not** the deprecated `hilt-navigation-compose`, which pulls in Navigation 2)
 - Navigation3 (`navigation3-runtime` + `navigation3-ui`)
 - Adaptive layouts (adaptive, adaptive-layout, adaptive-navigation, navigation-suite)
 - Managed devices
@@ -222,6 +223,7 @@ com.example.core.model.*
 - Hilt Android + KSP compiler
 - Test dependencies (hilt-android-testing)
 - KSP for test variants (main, test, androidTest)
+- Floors for AGP 9: Dagger Hilt **>= 2.59.2**, KSP **>= 2.3.6**. `androidx.hilt` 1.4.0 with Compose needs **AGP >= 9.2.0**.
 
 ### Detekt Plugin
 - Detekt plugin + Compose rules
