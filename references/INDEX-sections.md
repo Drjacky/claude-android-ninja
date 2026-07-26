@@ -420,7 +420,7 @@ Open when: Channels, FGS, MediaStyle, PiP, sharesheet from notification taps
   - [PendingIntent Flags](android-notifications.md#pendingintent-flags)
 - [References](android-notifications.md#references)
 
-### android-performance.md (1385 lines)
+### android-performance.md (1417 lines)
 
 Open when: Macrobenchmark, baseline profiles, vitals, recomposition, startup, APA/Perfetto
 

@@ -209,13 +209,31 @@ class AuthStartupBenchmark {
 - Use `CompilationMode.Partial()` to approximate Baseline Profile behavior when comparing changes.
 - Use `StartupMode.COLD/WARM/HOT` to measure the scenario you care about.
 - Keep actions in `measureRepeated` focused and deterministic (e.g., navigate to one screen, scroll one list).
-- Wait for UI idleness with `device.waitForIdle()` between steps when needed.
+- Wait for UI idleness with `waitForStableInActiveWindow()` (or `device.waitForIdle()`) between steps when needed. `MacrobenchmarkScope` extends `UiAutomatorTestScope`, so `onElement { }` and the other UIAutomator 2.4 APIs are available directly ([testing.md](testing.md#uiautomator-instrumented-smoke)).
 - Use `FrameTimingMetric()` when measuring Compose list scroll or navigation jank.
+- `androidx.benchmark.requireAot` defaults to **true**, so compilation happens before microbenchmarks run.
+- `measureRepeated` on the **main thread is blocked by default** (it causes ANRs). UI benchmarks use **`measureRepeatedOnMainThread`**.
 
 #### Common Metrics
 - `StartupTimingMetric()` for cold/warm start.
 - `FrameTimingMetric()` for scrolling/jank.
 - `MemoryUsageMetric()` for memory regressions.
+- **`ArtMetric()`** detects JIT compilation and unoptimized class loading - the direct way to verify a Baseline Profile is actually being applied rather than inferring it from timings. Requires benchmark `1.4.x` when the app uses AGP/R8 9.1+ repackaging, which earlier versions failed to attribute.
+
+#### Startup Insights (experimental)
+
+Surfaces common startup problems automatically instead of reading the trace by hand:
+
+```kotlin
+@get:Rule
+val benchmarkRule = MacrobenchmarkRule(
+    experimentalConfig = ExperimentalConfig(
+        StartupInsightsConfig(isEnabled = true)
+    )
+)
+```
+
+`TraceProcessor` now lives in its own artifact, **`androidx.benchmark:benchmark-traceprocessor`**. Any custom `TraceMetric` or trace-reading code must update the import; the API is otherwise unchanged.
 
 #### Running Benchmarks
 Use a **physical device** (emulators add noise). Disable system animations:
@@ -293,6 +311,17 @@ Required: start from [Android Performance Analyzer](https://developer.android.co
 
 Forbidden: treating APA as a substitute for Macrobenchmark regression numbers on startup or scroll; pair trace analysis with [Macrobenchmark](#macrobenchmark-compose) metrics when claiming a regression.
 
+**Host and device prerequisites (v0.8.1).** Check these before recommending APA - each is a hard blocker, not a warning:
+
+| Requirement    | Detail                                                              |
+|----------------|---------------------------------------------------------------------|
+| Host OS        | macOS **12+ on ARM only** - Intel Macs are unsupported               |
+| Device         | Android **12+**                                                     |
+| Environment    | `ANDROID_HOME` must be set                                           |
+| Build under test | Release build with `android:debuggable="false"` for accurate ART data |
+
+A debuggable build reports misleading ART behavior (JIT and class-load patterns differ), so profiling a debug APK and drawing conclusions about startup is invalid. Use a release build with a temporary signing config instead.
+
 ### Perfetto (system traces)
 
 Required: treat scheduling, Binder/IPC waits, I/O blocks, and frame pipeline timing as **trace-backed** claims; Kotlin-only reasoning does not substitute for timeline evidence.
@@ -302,7 +331,7 @@ Required: treat scheduling, Binder/IPC waits, I/O blocks, and frame pipeline tim
 | Jank, missed frame deadlines, UI latency             | APA or Android Studio Profiler system trace; Macrobenchmark trace output; headless `perfetto` / SDK capture ([Android Perfetto](https://developer.android.com/tools/perfetto)).                                         |
 | Repeatable startup or scroll regressions             | Macrobenchmark metrics plus trace artifacts; align slice names with `trace {}` / `traceCoroutine` strings in app code.                                                                                                    |
 | GPU-focused render stages / counters                 | APA ([frame times](https://developer.android.com/android-performance-analyzer/analyze/frame-times), [texture memory bandwidth](https://developer.android.com/android-performance-analyzer/analyze/texture-mem-bw)); legacy AGI pages redirect to APA. |
-| Programmatic on-device capture                       | `ProfilingManager` and related Android SDK APIs when the task requires SDK-driven sessions ([Android Perfetto](https://developer.android.com/tools/perfetto)).                                                            |
+| Programmatic on-device capture                       | `ProfilingManager` and related Android SDK APIs when the task requires SDK-driven sessions ([Android Perfetto](https://developer.android.com/tools/perfetto)). Trigger-based capture avoids running a trace continuously: `TRIGGER_TYPE_COLD_START`, `TRIGGER_TYPE_OOM`, `TRIGGER_TYPE_KILL_EXCESSIVE_CPU_USAGE`, `TRIGGER_TYPE_ANOMALY`. |
 | User supplies `bugreport.zip` or a `.perfetto-trace` | User opens the artifact in [Perfetto UI](https://perfetto.dev/docs/visualization/perfetto-ui); routing and tool choice: [How do I start using Perfetto?](https://perfetto.dev/docs/getting-started/start-using-perfetto). |
 
 **Required:**
@@ -684,6 +713,8 @@ val locationRequest = LocationRequest.create().apply {
 
 ### Excessive partial wake locks (Play Vitals core metric)
 
+This metric is **out of beta** and is now a Play Vitals **core** metric, so it affects store treatment rather than being informational only.
+
 A user session is excessive when cumulative non-exempt wake locks exceed **2 hours in a 24-hour period**. The bad-behavior threshold trips when **>5% of sessions over 28 days** are excessive (enforced March 1, 2026). Crossing the threshold can warn users on the store listing and exclude the app from discovery surfaces. Inspect tag-level P90/P99 durations on the [Excessive partial wake locks dashboard](https://play.google.com/console/developers/app/vitals/metrics/details?metric=EXCESSIVE_BACKGROUND_WAKELOCKS&days=28); investigate any tag with P90/P99 > 60 minutes. Definition: [Android vitals - Excessive wake locks](https://developer.android.com/topic/performance/vitals/excessive-wakelock).
 
 Exempted: system-held wake locks for audio playback, location update callbacks, and user-initiated data transfer.
@@ -705,6 +736,7 @@ Replace manual partial wake locks with the API listed for each use case. See [Ch
 | Bluetooth pairing or background communication | [CompanionDeviceManager](https://developer.android.com/develop/connectivity/bluetooth/companion-device-pairing) and [BLE background guidance](https://developer.android.com/develop/connectivity/bluetooth/ble/background). Manual wake lock only for the duration of activity. |
 | Remote messaging from a server                | FCM; schedule an [expedited worker](https://developer.android.com/develop/background-work/background-tasks/persistent/getting-started/define-work#expedited) if extra processing is required.                                                                                   |
 | Network socket waiting for packets            | Acquire a wake lock only **after** a packet arrives, never while waiting on `readChannel.readRemaining(...)`.                                                                                                                                                                   |
+| Keepalive / heartbeat at an exact time        | `AlarmManager.setExactAndAllowWhileIdle(type, triggerAtMillis, tag, executor, listener)` (API 37). The listener form runs a short callback without the app holding a long partial wake lock across the wait.                                                                     |
 
 #### Diagnose stuck workers
 
@@ -812,9 +844,10 @@ imageView.load(imageUrl) {
 
 Required:
 
-1. **Enable R8.** `isMinifyEnabled = true` and `isShrinkResources = true` on every release build.
-2. **Ship AAB, not APK.** Play Store generates per-device splits.
-3. **Filter resources via `resConfigs`** to ship only supported languages.
+1. **Enable R8.** On AGP 9.3+ that is `optimization { enable = true }` on the release build type; on older AGP it is `isMinifyEnabled` + `isShrinkResources`. Exact DSL, keep-rule source sets, and the AGP 9 defaults that change behavior: [gradle-setup.md → R8 and ProGuard Configuration](gradle-setup.md#r8-and-proguard-configuration).
+2. **Measure what the rules cost.** `./gradlew :app:analyzeReleaseR8Config` ranks every keep rule by how much optimization it blocks and lists unused/duplicate rules: [gradle-setup.md → R8 Keep-Rules Audit](gradle-setup.md#r8-keep-rules-audit).
+3. **Ship AAB, not APK.** Play Store generates per-device splits.
+4. **Filter resources via `resConfigs`** to ship only supported languages.
 ```kotlin
 android {
     defaultConfig {
@@ -822,8 +855,8 @@ android {
     }
 }
 ```
-4. **Convert PNG → WebP** wherever it preserves quality.
-5. **Filter NDK ABIs** to common architectures.
+5. **Convert PNG → WebP** wherever it preserves quality.
+6. **Filter NDK ABIs** to common architectures.
 ```kotlin
 android {
     defaultConfig {
@@ -1266,23 +1299,22 @@ Preserve stability annotations in release builds:
 }
 ```
 
-Ensure `minifyEnabled` and `shrinkResources` are enabled:
+Ensure R8 is enabled on the release build type:
 
 ```kotlin
-// app/build.gradle.kts
+// app/build.gradle.kts - AGP 9.3+
 android {
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            optimization {
+                enable = true
+            }
         }
     }
 }
 ```
+
+On AGP below 9.3 use `isMinifyEnabled` / `isShrinkResources` with `proguardFiles(...)` instead. Both forms, the `.keep` source-set layout, and the AGP 9 keep-rule semantics change (`-keep class A` no longer keeps its constructor): [gradle-setup.md → R8 and ProGuard Configuration](gradle-setup.md#r8-and-proguard-configuration).
 
 Full R8 rules: `assets/proguard-rules.pro.template`.
 
