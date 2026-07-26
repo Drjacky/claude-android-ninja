@@ -903,6 +903,27 @@ Required:
 - `advanceUntilIdle()` before assertions; `advanceTimeBy(...)` for delay/timeout coverage.
 - Cover cancellation paths and cleanup of resources held inside `NonCancellable`/`finally` blocks.
 
+#### Testing a `StateFlow`
+
+Assert on **`.value`**, not on a list of collected emissions. `StateFlow` conflates and drops intermediate values, so an emission-count assertion is inherently flaky.
+
+A `StateFlow` produced by `stateIn(started = WhileSubscribed(...))` or `Lazily` **does not update without a collector** - `.value` stays at the initial value and the test fails for the wrong reason. Give it one:
+
+```kotlin
+@Test
+fun uiState_emitsSuccess() = runTest {
+    // Keeps the WhileSubscribed / Lazily flow active for the test body.
+    backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+        viewModel.uiState.collect()
+    }
+
+    advanceUntilIdle()
+    assertThat(viewModel.uiState.value).isEqualTo(UiState.Success(expected))
+}
+```
+
+Use Turbine when the **sequence** of states is the requirement (a genuine `Flow`, or an ordering contract). Do not use it to count `StateFlow` emissions.
+
 ### Dispatcher Choices in Tests
 
 | Dispatcher                  | Use when                                                      |
@@ -1901,10 +1922,28 @@ class AuthScreenTest {
 
 Required: write Compose UI tests against the v2 APIs. v1 APIs are deprecated.
 
+Entry points - the package is what selects v1 vs v2, so the import matters:
+
+| Need                        | v2 API                                                                    |
+|-----------------------------|---------------------------------------------------------------------------|
+| JUnit4 rule                 | `androidx.compose.ui.test.junit4.v2.createComposeRule()` / `createAndroidComposeRule<T>()` |
+| Rule-less test body         | `androidx.compose.ui.test.v2.runComposeUiTest { }` / `runAndroidComposeUiTest { }` |
+
 Behavior changes from v1:
 
 - Default Compose-internal dispatcher shifted from `UnconfinedTestDispatcher` to `StandardTestDispatcher`.
 - Coroutines launched inside a composable queue until the virtual clock advances; eager execution no longer happens by default.
+- `registerIdlingResource` / `unregisterIdlingResource` are now **extension functions** - an unresolved reference after migrating is a missing import, not a removed API.
+- Semantics click listeners must be invoked on the main thread.
+
+Synchronization helpers (prefer these over polling `waitUntil` with a hand-written predicate):
+
+| API                      | Use                                                                       |
+|--------------------------|---------------------------------------------------------------------------|
+| `hasPendingWork()`       | Assert the UI has (or has not) outstanding work                            |
+| `runWhenIdle { }`        | Run a block once idle                                                      |
+| `awaitAndRunWhenIdle { }`| Suspending variant                                                         |
+| `runWithoutImplicitWait { }` | Opt out of automatic waiting for one block, when you are asserting an intermediate frame |
 
 Migration: tests that relied on eager execution may need `composeTestRule.mainClock.advanceTimeBy(...)` or `composeTestRule.waitForIdle()` to flush queued work before assertions. Follow the [Compose test v2 migration guide](https://developer.android.com/develop/ui/compose/testing/migrate-v2) for the full API mapping.
 
@@ -1971,41 +2010,55 @@ adb -s SERIAL logcat -d -s AndroidRuntime:E | tail -n 80
 
 Use after install or `am start` to confirm absence of immediate process death; full crash triage stays in [android-debugging.md](android-debugging.md).
 
-### UIAutomator v2 (instrumented smoke)
+### UIAutomator (instrumented smoke)
 
 Use when: black-box smoke across process boundaries, launcher widgets, or system UI; single-process Compose surfaces use `createComposeRule` as in [UI Tests](#ui-tests).
 
-Agent-allowed: add or edit a class under `src/androidTest/...` with `@RunWith(AndroidJUnit4::class)`, `InstrumentationRegistry.getInstrumentation()`, `UiDevice.getInstance(instrumentation)`, then `device.wait(Until.hasObject(By.pkg("com.example.app").depth(0)), 5000)` (replace package and timeout with real values).
+**UIAutomator 2.4.0 replaced the entry point.** Write new tests with the `uiAutomator { }` scope (`UiAutomatorTestScope`), not `UiDevice.getInstance(...)` + `Until` / `By`. The old API still resolves, so an agent copying a pre-2.4 snippet gets working-but-legacy code that misses the built-in waiting.
 
-Minimal pattern (`src/androidTest/...`; replace `pkg` with the debug `applicationId`):
+Agent-allowed: add or edit a class under `src/androidTest/...` with `@RunWith(AndroidJUnit4::class)` and a `uiAutomator { }` body (replace package and timeouts with real values).
 
 ```kotlin
-import android.content.Intent
-import androidx.core.content.ContextCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.By
-import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.Until
+import androidx.test.uiautomator.uiAutomator
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SmokeLaunchTest {
     @Test
-    fun coldStart_reachesPackageSurface() {
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val device = UiDevice.getInstance(instrumentation)
-        val context = instrumentation.targetContext
-        val pkg = "com.example.app"
-        val launchIntent = context.packageManager.getLaunchIntentForPackage(pkg)
-            ?: error("missing launch intent for $pkg")
-        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        ContextCompat.startActivity(context, launchIntent, null)
-        device.wait(Until.hasObject(By.pkg(pkg).depth(0)), 10_000)
+    fun coldStart_reachesPackageSurface() = uiAutomator {
+        // startApp / startActivity wait for a new window, so launch is effectively synchronous.
+        startApp("com.example.app")
+        waitForAppToBeVisible("com.example.app")
+
+        // onElement waits up to 10s by default; no explicit Until.hasObject needed.
+        onElement { viewIdResourceName == "com.example.app:id/auth_form" }.click()
     }
 }
 ```
+
+Key API mapping:
+
+| Pre-2.4                                              | 2.4.0                                                          |
+|------------------------------------------------------|----------------------------------------------------------------|
+| `UiDevice.getInstance(instrumentation)`               | `uiAutomator { }` scope (`device` still available inside)       |
+| `device.wait(Until.hasObject(By.res(...)), 5000)`     | `onElement { viewIdResourceName == ... }` (default wait 10,000 ms) |
+| `device.findObject(By.text(...))`                     | `onElement { text == ... }` / `onElementOrNull { ... }`         |
+| Multiple matches via `findObjects`                    | `onElements { ... }`                                            |
+| `onView` (2.4 alpha naming)                           | **renamed** to `onElement`                                      |
+| Manual launch + poll                                  | `startApp(...)` / `startActivity(...)` / `startActivityIntent(...)` |
+| Hand-rolled idle loops                                | `waitForAppToBeVisible(...)`, `waitForStableInActiveWindow(...)` |
+| `node.getText()` in matchers                          | `textAsString` (a bundled lint rule flags `getText`)             |
+
+Also in 2.4.0:
+
+- **Screenshots and artifacts:** `ResultsReporter` collects files and calls `reportToInstrumentation()`, so failures ship artifacts without custom plumbing.
+- **Flaky system dialogs:** `watchFor(...)` with a `ScopedUiWatcher` dismisses interruptions for the scope's lifetime; `unregisterWatchers()` clears them.
+- **Deprecated:** `Configurator.getKeyInjectionDelay()` / `setKeyInjectionDelay()`.
+- Sibling artifacts `uiautomator-shell` / `uiautomator-shell-android` exist for shell-command execution; add only if a test genuinely needs shell access.
+
+Required: pass explicit timeouts on `onElement` for surfaces known to be slow rather than raising a global default, and prefer `viewIdResourceName` over `text` so tests survive translation ([android-i18n.md](android-i18n.md)).
 
 Dependencies: add `androidx.test.uiautomator:uiautomator` on `androidTestImplementation`; pin the version beside other AndroidX Test libraries in the catalog ([dependencies.md](dependencies.md)).
 
@@ -2014,8 +2067,8 @@ Dependencies: add `androidx.test.uiautomator:uiautomator` on `androidTestImpleme
 | Surface                                           | Use                                                                                                     |
 |---------------------------------------------------|---------------------------------------------------------------------------------------------------------|
 | Single-process Compose tree                       | `createComposeRule` + semantics in [UI Tests](#ui-tests)                                                |
-| Cross-app or hybrid View/Compose with stable `id` | UIAutomator `By.res` / `By.text`                                                                        |
-| Macrobenchmark / Baseline Profile collection      | [android-performance.md](android-performance.md) generator patterns with `UiAutomator` APIs |
+| Cross-app or hybrid View/Compose with stable `id` | `uiAutomator { onElement { viewIdResourceName == ... } }`                                                |
+| Macrobenchmark / Baseline Profile collection      | [android-performance.md](android-performance.md) - `MacrobenchmarkScope` extends `UiAutomatorTestScope`, so `onElement { }` works directly in the benchmark body |
 
 ### CI wiring (reference only)
 
@@ -2198,7 +2251,13 @@ Reference images: `{module}/src/screenshotTestDebug/reference/` - commit to VCS.
 
 - AGP 8.5+ (Gradle tasks); AGP 9.0+ for full IDE integration.
 - JDK 17+.
-- `com.android.compose.screenshot` plugin 0.0.1-alpha13+.
+- `com.android.compose.screenshot` plugin 0.0.1-alpha15 (catalog `screenshot`). Still prerelease on every stack - re-run `validateDebugScreenshotTest` after each pin bump ([dependencies.md → Pinned prerelease](dependencies.md#pinned-prerelease-required-for-feature-parity)).
+
+Breaking changes if you are upgrading from a pin older than alpha10:
+
+- **`@PreviewTest` is mandatory.** A `@Preview` without it is no longer collected, so the suite silently shrinks instead of failing.
+- Reference images moved to **`{module}/src/screenshotTest{Variant}/reference`**. Old golden directories are ignored, which reads as "everything changed" on the first run - move the files, do not re-record blindly.
+- The **`--updateFilter`** option and the **`{variant}PreviewScreenshotRender`** task were removed.
 
 ### Rules
 
@@ -2327,7 +2386,7 @@ object TestData {
 
 ## Rules
 
-Re-orient: [testing-quick.md](testing-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#testingmd-2552-lines)
+Re-orient: [testing-quick.md](testing-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#testingmd-2611-lines)
 
 Required:
 - Use Google Truth (`assertThat(actual).isEqualTo(expected)`); never JUnit `assertEquals` / `assertTrue` / `assertNotNull`.
