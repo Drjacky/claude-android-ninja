@@ -692,28 +692,38 @@ fun buildHealthPermissions(): List<String> = when {
 }
 ```
 
-### Local Network Permission
+### Local network access (API 37)
 
-Android 16 introduces local network access protection. Apps that access devices on the local network (mDNS, SSDP, NsdManager, raw sockets to LAN addresses) will need user permission.
+At **target SDK 37** local network access is blocked by default and gated by the runtime permission **`ACCESS_LOCAL_NETWORK`** (in the `NEARBY_DEVICES` permission group). Android 16 only had a temporary opt-in phase that reused `NEARBY_WIFI_DEVICES`; that is not the API to target now.
 
-**Current state (API 36 opt-in phase):**
-- Feature is opt-in for testing; enforcement begins in a future release
-- Declare `NEARBY_WIFI_DEVICES` permission for local network access
-- All networking APIs are affected (sockets, OkHttp, Cronet, etc.)
+**What is affected:** every networking API - platform and managed sockets, OkHttp, Cronet - for TCP connect/accept, UDP unicast/multicast/broadcast, and `.local` mDNS resolution. WebViews inherit the host app's state.
 
-```xml
-<uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
+**Exceptions:** a DNS server on the local network at port 53, and apps using the Output Switcher as an in-app picker. Ordinary internet traffic is unaffected.
+
+**Failure modes are quiet:** UDP fails with `EPERM`, TCP simply times out. From native code, `android_getnetworkblockedreason(int sockFd)` returns `ANDROID_NETWORK_BLOCKED_REASON_LNP`.
+
+#### Prefer a system picker (no permission)
+
+Required: try this first. A system-mediated picker returns connectable addresses without any local-network permission.
+
+```kotlin
+// Addresses from NsdServiceInfo.getHostAddresses() are connectable without ACCESS_LOCAL_NETWORK.
+val request = DiscoveryRequest.Builder("_http._tcp")
+    .setFlags(DiscoveryRequest.FLAG_SHOW_PICKER)
+    .build()
+
+nsdManager.registerServiceInfoCallback(request, executor, callback)
 ```
 
-**What is affected:**
-- Outgoing/incoming TCP connections to LAN addresses
-- UDP unicast, multicast, and broadcast to/from LAN
-- mDNS and SSDP service discovery
-- Any traffic to RFC1918 addresses (10.x, 172.16.x, 192.168.x), link-local, and multicast
+For media, the Cast **output switcher** covers device selection with no permission.
 
-**Exceptions:**
-- DNS traffic to a local DNS server (port 53)
-- Normal internet traffic is unaffected
+#### Declaring the permission
+
+Use only when a picker cannot express the feature (for example scanning an arbitrary subnet).
+
+```xml
+<uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+```
 
 ```kotlin
 @Composable
@@ -721,7 +731,6 @@ fun LocalNetworkPermissionRequest(
     onPermissionResult: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -729,15 +738,27 @@ fun LocalNetworkPermissionRequest(
     }
 
     Button(
-        onClick = {
-            launcher.launch(Manifest.permission.NEARBY_WIFI_DEVICES)
-        },
+        onClick = { launcher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK) },
         modifier = modifier
     ) {
-        Text("Grant Network Access")
+        Text("Allow local network access")
     }
 }
 ```
+
+**Forbidden:** declaring or requesting `ACCESS_LOCAL_NETWORK` while `targetSdk` is 36 or lower - local network access is implicitly granted via `INTERNET` there, and requesting it adds a permission prompt for nothing.
+
+Already-granted `NEARBY_DEVICES` permissions (for example Bluetooth) pre-grant this one. The group also gets a request-reset counter, so a prior group denial does not permanently consume the request.
+
+Testing the restriction on Android 16 before you retarget:
+
+```bash
+adb shell am compat enable RESTRICT_LOCAL_NETWORK <package>
+adb reboot                 # required for the change to take effect
+# revert with: adb shell am compat disable RESTRICT_LOCAL_NETWORK <package>
+```
+
+Cross-links: [migration.md → Local network access (target SDK 37)](migration.md#local-network-access-target-sdk-37); Cast and media device selection in [android-media.md](android-media.md).
 
 ### App-Owned Photos Pre-Selection
 
