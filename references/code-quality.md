@@ -1,6 +1,6 @@
 # Code Quality (Detekt)
 
-Required: Detekt on every module via the `build-logic` convention plugin. Single rules source (`plugins/detekt.yml`) with optional per-module overrides; type-resolution enabled on Android modules; Compose ruleset; Kotlin 2.2.x without legacy `buildscript`.
+Required: Detekt on every module via the `build-logic` convention plugin. Single rules source (`plugins/detekt.yml`) with optional per-module overrides; type-resolution enabled on Android modules; Compose ruleset; no legacy `buildscript` block.
 
 ## Table of Contents
 
@@ -21,6 +21,20 @@ Use `assets/libs.versions.toml.template` as the source of truth for:
 Use `assets/detekt.yml.template` as the baseline rules file; copy it to
 `plugins/detekt.yml` and customize it there (modules can optionally provide
 a local `detekt.yml` override).
+
+### Detekt 2.x coordinates and pairing
+
+Detekt 2.x moved to a **new Maven group**. Getting this wrong yields an unresolvable plugin, not a version conflict:
+
+| | Detekt 1.23.x | Detekt 2.x (template pin `2.0.0-alpha.5`) |
+|---|---|---|
+| Plugin ID   | `io.gitlab.arturbosch.detekt`              | **`dev.detekt`**                     |
+| Plugin artifact | `io.gitlab.arturbosch.detekt:detekt-gradle-plugin` | **`dev.detekt:detekt-gradle-plugin`** |
+| Task classes | `io.gitlab.arturbosch.detekt.Detekt`       | **`dev.detekt.gradle.Detekt`**        |
+
+**`composeRules` and `detekt` are a matched pair.** `io.nlopez.compose.rules:detekt` compiles against a specific `dev.detekt:detekt-core`, so bumping one alone breaks rule loading at execution time. The template pairs `composeRules = "0.6.3"` with `detekt = "2.0.0-alpha.5"`; verify the pairing in the compose-rules POM before changing either.
+
+Detekt 2.x is still on the alpha line, which is why it is listed under [dependencies.md → Pinned prerelease](dependencies.md#pinned-prerelease-required-for-feature-parity). Re-run `./gradlew detekt` after every bump of either pin.
 
 ## Detekt Convention Plugin (Build Logic)
 
@@ -177,6 +191,22 @@ If the project uses Gradle toolchains, Detekt will resolve the proper JDK automa
 ## Compose Rules
 The Compose detekt ruleset is configured in `assets/detekt.yml.template`. Use that template as-is.
 For compatibility information and latest rules, see: [Compose rules + detekt compatibility](https://mrmans0n.github.io/compose-rules/detekt/)
+
+The template's `Compose:` block is kept in sync with the ruleset's own default config. To verify after
+a `composeRules` bump, diff the rule keys against the `config/config.yml` bundled inside the
+`io.nlopez.compose.rules:detekt` jar - a rule absent from your config is **silently not run**, so a
+bump can quietly reduce coverage rather than fail.
+
+Two rules are deliberately turned off in the template, both because enabling them demands refactoring
+rather than a fix:
+
+| Rule                     | Off because                                                                 |
+|--------------------------|-----------------------------------------------------------------------------|
+| `ModifierComposed`       | Migrating `Modifier.composed` to `Modifier.Node` is a significant refactor    |
+| `ComposableNestingDepth` | The default threshold flags legitimately nested layouts; opt in per project    |
+
+`PreviewNaming` and `UnstableCollections` are also off by default in the template; enable
+`UnstableCollections` when adopting `kotlinx.collections.immutable` ([compose-patterns.md](compose-patterns.md)).
 
 ## Suppressing Violations
 
