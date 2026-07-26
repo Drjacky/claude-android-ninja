@@ -475,7 +475,9 @@ fun ProfileHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(16.dp)
+            // Required: traversalIndex on children has NO effect without this.
+            .semantics { isTraversalGroup = true },
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         // Avatar (traversal order: 1)
@@ -509,6 +511,41 @@ fun ProfileHeader(
     }
 }
 ```
+
+**Required:** `traversalIndex` is only honored **within a traversal group**. Setting it on children of a
+plain `Row` / `Column` / `Box` does nothing at all - the parent must declare
+`semantics { isTraversalGroup = true }`. This fails silently: the app looks correct and the reading
+order is simply unchanged.
+
+Containers that are already traversal groups, where no extra opt-in is needed:
+
+- Scroll containers (`LazyColumn`, `LazyRow`, `verticalScroll`, ...)
+- Material surfaces and components that establish their own semantics boundary
+
+Lower `traversalIndex` is visited first; the default is `0f`. Keep values sparse (`0f`, `1f`, `2f`) so a
+later insertion does not require renumbering.
+
+**Forbidden:** using `traversalIndex` to work around a layout whose visual order already differs from
+its composition order. Fix the layout; reading order should follow visual order by default.
+
+### Hiding sensitive fields from accessibility services
+
+`FLAG_SECURE` stops screenshots but does **not** prevent an accessibility service from reading node
+text. Mark individual sensitive nodes instead, so assistive tech keeps working everywhere else:
+
+```kotlin
+Text(
+    text = accountNumber,
+    modifier = Modifier.semantics { sensitiveData = true }
+)
+```
+
+Views use `android:accessibilityDataSensitive="yes"` or `view.isAccessibilityDataSensitive = true`. A
+View that already sets `setFilterTouchesWhenObscured(true)` is treated as sensitive automatically.
+
+Scope it to the field (card number, OTP, balance, recovery phrase), never a whole screen - marking a
+screen breaks screen readers for the entire flow. Security context:
+[android-security.md](android-security.md#hiding-sensitive-content-from-accessibility-services).
 
 ### Heading Structure
 
@@ -1505,7 +1542,7 @@ android {
 
 ## Rules
 
-Re-orient: [android-accessibility-quick.md](android-accessibility-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-accessibilitymd-1534-lines)
+Re-orient: [android-accessibility-quick.md](android-accessibility-quick.md) | Section index: [INDEX-sections.md](INDEX-sections.md#android-accessibilitymd-1571-lines)
 
 **Required:**
 - Provide `contentDescription` for all icons and images

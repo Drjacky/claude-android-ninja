@@ -1,6 +1,6 @@
 # Android accessibility (quick)
 
-Full guide: [android-accessibility.md](android-accessibility.md) (~1530 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#android-accessibilitymd-1534-lines).
+Full guide: [android-accessibility.md](android-accessibility.md) (~1530 lines). Section anchors: [INDEX-sections.md](INDEX-sections.md#android-accessibilitymd-1571-lines).
 
 Required before shipping interactive Compose UI:
 
@@ -17,6 +17,7 @@ Required before shipping interactive Compose UI:
 | `contentDescription`, roles, custom actions | [Semantic Properties](android-accessibility.md#semantic-properties) |
 | 48dp targets, spacing | [Touch Target Sizes](android-accessibility.md#touch-target-sizes) |
 | Traversal order, headings, live regions | [Screen Reader Navigation](android-accessibility.md#screen-reader-navigation) |
+| Hide a field from a11y services | [Hiding sensitive fields](android-accessibility.md#hiding-sensitive-fields-from-accessibility-services) |
 | Contrast, color-only cues | [Color & Visual Accessibility](android-accessibility.md#color-visual-accessibility) |
 | Focus order, keyboard | [Focus Management](android-accessibility.md#focus-management) |
 | Tabs, lists, forms, dialogs | [Common Patterns](android-accessibility.md#common-patterns) |
@@ -28,6 +29,8 @@ Required before shipping interactive Compose UI:
 
 - Concise labels (purpose, not "button" / "tap here").
 - `mergeDescendants` to group related content; `stateDescription` for state changes.
+- `traversalIndex` requires an ancestor with `isTraversalGroup = true`, otherwise it is a silent no-op.
+- `semantics { sensitiveData = true }` on sensitive fields (card number, OTP, balance) - `FLAG_SECURE` does not hide node text.
 - Support dark mode and high contrast.
 
 **Forbidden:**
@@ -36,5 +39,7 @@ Required before shipping interactive Compose UI:
 - `contentDescription` on purely decorative images.
 - Ignoring form validation error announcements.
 - Hardcoded user-visible strings in semantics.
+- `traversalIndex` used to compensate for a layout whose visual order differs from composition order - fix the layout.
+- Marking a whole screen `sensitiveData` - it breaks screen readers for the entire flow.
 
 Open the full file for WCAG tables, code samples, and Espresso patterns.
